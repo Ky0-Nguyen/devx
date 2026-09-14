@@ -54,6 +54,22 @@ open; J14 is partially met.
 
 **Phase.** M2 for the iOS collector.
 
+### Observing the app costs the app CPU, and the figure is now measured
+
+`dumpsys` is serviced by the target process, so polling it makes the app do
+the work of answering -- inside the very process being measured. Paired
+control runs on the emulator: an idle app used 440-650 ms of CPU over a
+10-12 s window with no capture and 2.0-2.4 s with one, so roughly 1.5-2 s of
+induced work per capture. It did not scale with the tick rate (four ticks cost
+about as much as fourteen), so most of it is per-capture.
+
+On an app that idle this is several times its own work; on a busy app the
+ratio would be far smaller, which is why the absolute figure is the honest
+one to quote. Nothing is subtracted -- one app on one emulator is not a
+correction factor, and subtracting an estimate would turn a known
+perturbation into an invented number. It is stated as a limitation on the
+overhead source, which previously reported only the host's wall time.
+
 ### CPU time is collected now, so "busy" and "waiting" are separable
 
 The process's own user and kernel CPU time, read from `/proc/<pid>/stat` and
@@ -529,8 +545,8 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**173 of 198** checklist items have at least one automated test
-(447 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 25 are enumerated with a stated
+**174 of 198** checklist items have at least one automated test
+(448 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 24 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

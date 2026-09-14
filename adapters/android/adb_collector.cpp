@@ -1907,8 +1907,31 @@ session::CaptureResult AdbCollector::finish(
         "each tick spawns processes on the device; a shorter tick interval "
         "means fresher numbers and more overhead");
     c.limitations.push_back(
-        "this is the collector's cost, not the app's, and must not be "
-        "subtracted from the app's own measurements");
+        "this is the collector's cost measured on the HOST -- wall time spent "
+        "talking to the device -- and must not be subtracted from the app's "
+        "own measurements");
+    // The part the host-side figure does not include, and the more important
+    // part: `dumpsys` is serviced by the target process itself, so polling it
+    // makes the app do work it would not otherwise do. Measured by paired
+    // control runs on an emulator (spec E18, I20): an idle
+    // io.pizzahut.hutbot.debug used 440-650 ms of CPU over a 10-12 s window
+    // with no capture, and 2.0-2.4 s over the same window with one -- about
+    // 1.6-1.9 s of induced work. It did not scale with the tick rate: four
+    // ticks cost as much as fourteen, so most of it is per-capture rather
+    // than per-tick.
+    c.limitations.push_back(
+        "the app itself does some of this work: `dumpsys` is serviced by the "
+        "target process, so observing it costs it CPU. Paired control runs on "
+        "an emulator measured an idle app at 440-650 ms of CPU per 10-12 s "
+        "with no capture and 2.0-2.4 s with one. The absolute figure is small "
+        "and it did not scale with the tick rate -- four ticks cost about as "
+        "much as fourteen -- but on an app this idle it is several times the "
+        "app's own work, so a CPU figure from a tick-based capture includes "
+        "the cost of being watched");
+    c.limitations.push_back(
+        "that induced cost is NOT subtracted from anything here, and must not "
+        "be: it is measured on one app on one emulator, and subtracting an "
+        "estimate would turn a known perturbation into an invented number");
     c.tested = device.form == model::DeviceForm::kPhysical
                    ? model::TestedState::kVerifiedOnPhysicalDevice
                    : model::TestedState::kVerifiedOnSimulatorOrEmulator;
