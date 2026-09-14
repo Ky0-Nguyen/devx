@@ -56,6 +56,9 @@ final class AppState: ObservableObject {
 
     @Published var devicesDoc: JSON = .null
     @Published var appsDoc: JSON = .null
+    // Remembered targets. A note this app made on this machine -- never
+    // evidence about the device, which is the whole of spec A23.
+    @Published var recents = RecentTargets()
     @Published var preflightDoc: JSON = .null
     @Published var sessionsDoc: JSON = .null
     @Published var sessionDoc: JSON = .null
@@ -142,6 +145,51 @@ final class AppState: ObservableObject {
         devices.filter { $0["trust"].text == "authorized" }
     }
     var apps: [JSON] { appsDoc["apps"].array }
+
+    var recentsPath: String { sessionsDir + "/recent-targets.json" }
+
+    func loadRecents() {
+        recents = RecentTargets.load(from: recentsPath)
+    }
+
+    /// Records the target being profiled. Called when a capture starts, not
+    /// when a row is clicked: a remembered target should mean "this was
+    /// profiled", not "this was looked at".
+    func rememberCurrentTarget() {
+        guard !selectedDevice.isEmpty, !selectedApp.isEmpty else { return }
+        var name = selectedApp
+        for a in apps {
+            if a["application_key"]["app_identifier"].text == selectedApp {
+                let display = a["display_name"].text
+                if !display.isEmpty { name = display }
+                break
+            }
+        }
+        recents.record(deviceId: selectedDevice, appIdentifier: selectedApp,
+                       name: name)
+        recents.save(to: recentsPath)
+    }
+
+    func toggleFavourite(_ target: RecentTarget) {
+        recents.setFavourite(target.id, !target.favourite)
+        recents.save(to: recentsPath)
+    }
+
+    func forgetRecent(_ target: RecentTarget) {
+        recents.forget(target.id)
+        recents.save(to: recentsPath)
+    }
+
+    /// Where a remembered target stands against the current enumeration.
+    ///
+    /// `didEnumerate` is false when no listing has been fetched, which is a
+    /// third state: an app missing from a listing and an app nobody listed
+    /// are different facts.
+    func presenceOf(_ target: RecentTarget) -> RecentPresence {
+        let ids = Set(apps.map { $0["application_key"]["app_identifier"].text })
+        let enumerated = !appsDoc.isNull && appsDoc["enumeration_failed"].bool != true
+        return presence(of: target, identifiers: ids, didEnumerate: enumerated)
+    }
     var sessions: [JSON] { sessionsDoc["sessions"].array }
     var issues: [JSON] { sessionDoc["analysis"]["issues"].array }
 
@@ -471,6 +519,10 @@ final class AppState: ObservableObject {
         let dir = sessionsDir, id = selectedSession, bins = timelineBins
         run("Binning \(id)…", { Core.timeline(dir: dir, id: id, bins: bins) }) {
             self.timelineDoc = $0
+            // The Timeline view renders this error itself, with room for the
+            // whole explanation. Leaving it in `lastError` too printed the
+            // same paragraph twice, once squeezed into the banner strip.
+            if !$0["error"].text.isEmpty { self.lastError = nil }
         }
     }
 
@@ -495,6 +547,7 @@ final class AppState: ObservableObject {
         let f = recordFrames, c = recordCpu, m = recordMemory, r = recordResetFrames
         let sched = recordScheduling, heap = recordHeap
         Core.resetCancel()
+        rememberCurrentTarget()
         recordDoc = .null
         let label = heap ? "Recording \(app) for \(d)s, then dumping the heap…"
                          : "Recording \(app) for \(d)s…"
@@ -522,6 +575,7 @@ final class AppState: ObservableObject {
             lastError = "Pick a device and an app identifier first."
             return
         }
+        rememberCurrentTarget()
         let dir = sessionsDir, dev = selectedDevice, app = selectedApp
         let hz = recordHz, f = recordFrames, c = recordCpu, m = recordMemory
         let r = recordResetFrames, tick = liveTickMs, win = liveCpuWindowMs

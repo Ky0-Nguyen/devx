@@ -38,6 +38,7 @@ struct DevXApp: App {
         if let b = launch.baseline { state.baselinePath = b }
         if let c = launch.candidate { state.candidatePath = c }
 
+        state.loadRecents()
         state.loadVersion()
         state.loadDevices()
         if state.tab != .sessions { state.loadSessions() }

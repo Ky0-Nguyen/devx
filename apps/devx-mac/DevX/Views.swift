@@ -134,6 +134,7 @@ struct AppsView: View {
                     Banner(kind: .bad, title: "App enumeration failed for this device",
                            message: "That is not the same as the device having no apps.")
                 }
+                RecentTargetsPanel()
                 }
                 Rectangle().fill(Term.line).frame(height: 1)
 
@@ -380,5 +381,82 @@ private struct CapabilityRow: View {
         }
         .padding(9)
         .termCard()
+    }
+}
+
+/// Recently profiled and favourited targets.
+///
+/// Spec A23 is an honesty rule rather than a feature: **a recent or favourite
+/// entry is not proof the app is running.** These rows are a note this app
+/// made on this machine; nothing about the device was consulted to write one,
+/// and time has passed. So no row shows a runtime state. What it shows instead
+/// is where the entry stands against the *current* enumeration -- and when it
+/// is absent from that listing, it says absent from the listing, not "not
+/// running", because a listing that could not see an app and an app that is
+/// gone are different facts.
+struct RecentTargetsPanel: View {
+    @EnvironmentObject var state: AppState
+
+    var body: some View {
+        let rows = state.selectedDevice.isEmpty
+            ? state.recents.ordered
+            : state.recents.forDevice(state.selectedDevice)
+        if !rows.isEmpty {
+            Panel(title: "Recently profiled",
+                  subtitle: "what was profiled from this machine — never "
+                          + "evidence that an app is running now") {
+                VStack(alignment: .leading, spacing: 7) {
+                    ForEach(rows) { target in
+                        row(target)
+                    }
+                }
+            }
+        }
+    }
+
+    private func row(_ target: RecentTarget) -> some View {
+        let presence = state.presenceOf(target)
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Button(target.favourite ? "★" : "☆") {
+                    state.toggleFavourite(target)
+                }
+                .buttonStyle(.plain)
+                .font(Term.font(13))
+                .foregroundStyle(target.favourite ? Term.amber : Term.dim)
+
+                Button {
+                    // Selecting a remembered target does not assert anything
+                    // about it: preflight and discovery still decide whether
+                    // it can be captured.
+                    state.selectedApp = target.appIdentifier
+                    if state.selectedDevice.isEmpty {
+                        state.selectedDevice = target.deviceId
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(target.appIdentifier)
+                            .font(Term.font(12)).foregroundStyle(Term.ink)
+                        if target.lastKnownName != target.appIdentifier {
+                            Text(target.lastKnownName + "  (the name when it "
+                                 + "was last profiled)")
+                                .font(Term.font(10)).foregroundStyle(Term.dim)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 0)
+                // Never a runtime state. Where it stands against the current
+                // listing, which is a different claim.
+                Chip(text: presence.label,
+                     tone: presence == .inListing ? .neutral : .caution)
+                Button("forget") { state.forgetRecent(target) }
+                    .buttonStyle(TermButtonStyle())
+            }
+            Text(presence.detail)
+                .font(Term.font(10)).foregroundStyle(Term.dim)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }

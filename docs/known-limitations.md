@@ -202,9 +202,30 @@ dominated the remainder and added an exact-reserve counting pre-pass. Measured:
 specification's own 1 GiB fixture. Now 2 GiB, overridable with
 `mpi analyze --max-input-mib`.
 
-**Related checklist.** I21 asks about UI responsiveness under the stress
-fixture. DevX now exists, but it has not been driven against a 1 GiB session;
-the ingest cost above is what is measured.
+**I21, now measured rather than deferred.** DevX was driven against a real
+1 GiB session (2,920,000 events, a 1.8 GB package on disk), and the answer
+splits in two:
+
+- **Opening it is cheap: the window rendered in about 1 second at 111 MB of
+  resident memory.** That is by design rather than luck -- the Issues view
+  reads the session's `report.json`, which is bounded by the number of
+  findings, not by the capture. The 1 GiB raw trace is never loaded to show
+  it.
+- **The Timeline tab was not cheap: 7.8 GB of peak resident memory**, settling
+  at 2.9 GB, because binning re-reads the whole trace. It rendered correctly
+  and the app survived on this 48 GB machine. On a 16 GB machine it would have
+  ended the process.
+
+So the timeline now refuses a trace over **256 MiB** by default and says what
+it measured: the trace's size, the 7.8 GB figure, and that
+`mpi timeline --max-input-mib` is how to say the machine has the room. A
+measurement that would take the process down is not a default worth having,
+and a silent 8 GB allocation is not a considered one either.
+
+For comparison, the same fixture on the command line: `mpi analyze` takes 8.0
+s and 5.5 GB; `mpi timeline` takes 7.4 s and 5.1 GB and emits a **170 KB**
+document. That last number is the design holding: whatever the capture's size,
+what the UI has to render is bounded by the bin count.
 
 ---
 
@@ -351,9 +372,16 @@ Still open, and all inherently UI behaviours:
   lapse. An expired one is now reported and not applied, and an unparseable
   one keeps the suppression while saying the date could not be read -- the
   other way round would silently un-suppress on a typo.
-- **A23** favourites and recents.
-- **A25** responsiveness with a very large app list. The emulator's 266 apps
+- **A25** responsiveness with a very large app list. The emulator's 265 apps
   render fine; nothing larger has been tried.
+- Recents and favourites exist now, and spec A23 turned out to be an honesty
+  rule rather than a feature: a remembered entry is not proof the app is
+  running. No such row carries a runtime state. What it shows is where the
+  entry stands against the *current* enumeration, and an entry absent from
+  that listing says "not in the current listing" -- never "not running",
+  because a listing that could not see an app and an app that is gone are
+  different facts. A third state covers having no listing to compare
+  against.
 - **I21** responsiveness under the 1 GiB stress fixture.
 - **J12** signing and packaging for distribution. The bundle is ad-hoc signed
   for local use only.
@@ -485,7 +513,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **158 of 198** checklist items have at least one automated test
-(432 test cases in 19 binaries, plus 166 Swift). The remaining 40 are enumerated with a stated
+(432 test cases in 19 binaries, plus 196 Swift). The remaining 40 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

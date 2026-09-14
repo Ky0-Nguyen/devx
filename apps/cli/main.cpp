@@ -35,6 +35,11 @@ COMMANDS
   analyze <session|trace>       Analyze a session package or a trace file.
   timeline <session|trace>      Draw the capture's tracks (--bins, --json).
                                 A blank column means NOT MEASURED, never zero.
+                                Binning re-reads the whole trace: measured at
+                                7.8 GB of peak memory on the 1 GiB stress
+                                fixture, so DevX refuses above 256 MiB and
+                                --max-input-mib is how you say you have the
+                                room.
   compare <baseline> <cand>     Compare two run-set JSON files.
   export <session>              Re-export a session (--format json|markdown).
   rules                         Describe every detector and its thresholds.

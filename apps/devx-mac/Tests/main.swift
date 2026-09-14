@@ -431,5 +431,129 @@ do {
           + "set to something that matches nothing")
 }
 
+
+// --- recents and favourites -------------------------------------------------
+// Spec A23 is an honesty rule, not a feature: a recent or favourite entry is
+// not proof the app is running. The tests are mostly about what an entry must
+// NOT be able to say.
+do {
+    var r = RecentTargets()
+    let t0 = Date(timeIntervalSince1970: 1_000)
+    r.record(deviceId: "d1", appIdentifier: "io.a", name: "A", at: t0)
+    r.record(deviceId: "d1", appIdentifier: "io.b", name: "B",
+             at: t0.addingTimeInterval(10))
+    check(r.entries.count == 2, "two targets remembered")
+    check(r.ordered.first?.appIdentifier == "io.b", "newest first")
+
+    // Re-profiling moves an entry rather than duplicating it.
+    r.record(deviceId: "d1", appIdentifier: "io.a", name: "A",
+             at: t0.addingTimeInterval(20))
+    check(r.entries.count == 2, "re-profiling does not duplicate")
+    check(r.ordered.first?.appIdentifier == "io.a", "and moves it to the front")
+
+    // The same identifier on another device is a different target: an app id
+    // is not unique across devices.
+    r.record(deviceId: "d2", appIdentifier: "io.a", name: "A",
+             at: t0.addingTimeInterval(30))
+    check(r.entries.count == 3, "the same app on another device is separate")
+    check(r.forDevice("d1").count == 2, "and filtering by device separates them")
+
+    // Favourites survive re-recording and are never evicted by the limit.
+    r.setFavourite("d1\u{1f}io.a", true)
+    check(r.entries.first(where: { $0.id == "d1\u{1f}io.a" })?.favourite == true,
+          "a favourite is marked")
+    r.record(deviceId: "d1", appIdentifier: "io.a", name: "A renamed",
+             at: t0.addingTimeInterval(40))
+    check(r.entries.first(where: { $0.id == "d1\u{1f}io.a" })?.favourite == true,
+          "re-profiling keeps the favourite mark")
+    check(r.entries.first(where: { $0.id == "d1\u{1f}io.a" })?.lastKnownName
+            == "A renamed",
+          "and updates the remembered name")
+
+    for i in 0..<40 {
+        r.record(deviceId: "d1", appIdentifier: "io.filler\(i)",
+                 name: "F", at: t0.addingTimeInterval(Double(100 + i)))
+    }
+    let favourites = r.entries.filter { $0.favourite }
+    check(favourites.count == 1,
+          "the favourite survived 40 later targets: someone marked it on "
+          + "purpose and dropping it would look like it was never marked")
+    check(r.entries.count <= RecentTargets.recentLimit + favourites.count,
+          "non-favourites are capped: got \(r.entries.count)")
+    check(r.ordered.first?.favourite == true, "favourites sort first")
+
+    r.forget("d1\u{1f}io.a")
+    check(!r.entries.contains { $0.id == "d1\u{1f}io.a" }, "forgetting removes it")
+}
+
+do {
+    // The rule itself: an entry says nothing about whether the app is running.
+    let target = RecentTarget(deviceId: "d1", appIdentifier: "io.a",
+                              lastKnownName: "A",
+                              lastUsedAt: Date(), favourite: true)
+    // In the listing: the app's own row carries the state, not this one.
+    let present = presence(of: target, identifiers: ["io.a"], didEnumerate: true)
+    check(present == .inListing, "an enumerated app is in the listing")
+    check(present.detail.contains("runtime state discovery reported"),
+          "and the state comes from discovery, not from being remembered")
+
+    // Absent from the listing is NOT "not running".
+    let absent = presence(of: target, identifiers: ["io.other"],
+                          didEnumerate: true)
+    check(absent == .notInListing, "an app not enumerated is not in the listing")
+    check(absent.label.contains("not in the current listing"),
+          "labelled as absent from the listing: got \(absent.label)")
+    check(!absent.label.contains("not running"),
+          "never labelled 'not running': a listing that could not see an app "
+          + "and an app that is gone are different facts")
+    check(absent.detail.contains("not the same as not running"),
+          "and the detail says so outright")
+
+    // No enumeration at all is a third state.
+    let unknown = presence(of: target, identifiers: [], didEnumerate: false)
+    check(unknown == .noListing, "no enumeration means nothing can be said")
+    check(unknown.detail.contains("says nothing about the device now"),
+          "and it says that")
+
+    // An empty listing that DID enumerate is a real answer, distinct from
+    // never having asked: a device can genuinely show no apps.
+    let emptyButAsked = presence(of: target, identifiers: [], didEnumerate: true)
+    check(emptyButAsked == .notInListing,
+          "an empty enumeration that ran is an answer, not a missing one")
+
+    for p in [RecentPresence.inListing, .notInListing, .noListing] {
+        check(!p.label.isEmpty && !p.detail.isEmpty,
+              "every presence state is explained")
+    }
+}
+
+do {
+    // Persistence round-trips, and a missing or corrupt file is an empty list
+    // rather than a failure: a machine that has profiled nothing is the
+    // normal first case.
+    let path = NSTemporaryDirectory() + "devx-recents-\(getpid()).json"
+    var r = RecentTargets()
+    r.record(deviceId: "d1", appIdentifier: "io.a", name: "A")
+    r.setFavourite("d1\u{1f}io.a", true)
+    r.save(to: path)
+    let back = RecentTargets.load(from: path)
+    check(back == r, "the list round-trips through a file")
+    check(back.entries.first?.favourite == true, "including the favourite mark")
+
+    try? "not json".write(toFile: path, atomically: true, encoding: .utf8)
+    check(RecentTargets.load(from: path).entries.isEmpty,
+          "a corrupt file reads as an empty list, not a crash")
+    try? FileManager.default.removeItem(atPath: path)
+    check(RecentTargets.load(from: path).entries.isEmpty,
+          "a missing file reads as an empty list")
+
+    // An entry with no device or no identifier is not recorded: a remembered
+    // target that cannot be selected again is noise.
+    var empty = RecentTargets()
+    empty.record(deviceId: "", appIdentifier: "io.a", name: "A")
+    empty.record(deviceId: "d1", appIdentifier: "", name: "A")
+    check(empty.entries.isEmpty, "an incomplete target is not remembered")
+}
+
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
