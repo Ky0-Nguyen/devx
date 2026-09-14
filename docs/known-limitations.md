@@ -56,13 +56,13 @@ open; J14 is partially met.
 
 ### CPU time is collected now, so "busy" and "waiting" are separable
 
- gives the process's own user and system CPU time, sampled
-on the same tick as memory. It is the counter that separates a process that
-was *busy* from one that was *waiting*, which wall-clock time cannot do and
-every CPU finding gets read as though it could. Measured on the emulator: 790
-ms of CPU over 5,107 ms of wall time.
+The process's own user and kernel CPU time, read from `/proc/<pid>/stat` and
+sampled on the same tick as memory. It is the counter that separates a process
+that was *busy* from one that was *waiting*, which wall-clock time cannot do
+and every CPU finding gets read as though it could. Measured on the emulator:
+790 ms of CPU over 5,107 ms of wall time.
 
- is read from the device, never assumed. It is 100 everywhere seen,
+`CLK_TCK` is read from the device, never assumed. It is 100 everywhere seen,
 which is what makes assuming it dangerous -- a wrong constant would scale
 every figure and look plausible. When it cannot be read the counter is not
 collected and the source says why.
