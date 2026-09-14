@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include "adapters/android/adb_adapter.hpp"
+#include "adapters/android/atrace_parser.hpp"
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
@@ -338,4 +339,185 @@ MPI_TEST(probe_never_claims_physical_verification_from_an_emulator, {"J18", "C20
                       " claims physical verification from an emulator-only "
                       "probe");
   }
+}
+
+
+// --- atrace / ftrace text ----------------------------------------------------
+
+MPI_TEST(atrace_reads_a_real_cold_start_trace, {"E10", "DET-03", "DET-09", "J14"}) {
+  const auto t = android::parse_atrace(
+      read_fixture("provider-output/android-atrace-cold-start.real.txt"));
+
+  // Every line in this real capture parses. atrace's own preamble
+  // ("capturing trace... done", "TRACE:") is recognised rather than counted
+  // as unreadable, so the unrecognised count keeps its meaning.
+  MPI_CHECK(t.lines_read > 400);
+  MPI_CHECK_EQ(t.lines_unrecognised, std::int64_t{0});
+
+  MPI_CHECK(t.switches.size() > 150);
+  MPI_CHECK(!t.wakings.empty());
+  MPI_CHECK(!t.blocked.empty());
+
+  // The buffer accounting the header carries. These are equal here, which is
+  // what makes the unequal case worth reporting.
+  MPI_CHECK(t.header_seen);
+  MPI_CHECK_EQ(t.entries_in_buffer, t.entries_written);
+  MPI_CHECK_EQ(t.dropped_events, std::int64_t{0});
+
+  // The trace clock, paired with wall time by the kernel itself.
+  MPI_CHECK(t.clock_sync.have_parent);
+  MPI_CHECK(t.clock_sync.have_realtime);
+  MPI_CHECK(t.clock_sync.parent_ns > 0);
+
+  // A thread name with a space in it survives: `next_comm=Firebase Backgr`
+  // must not be truncated to "Firebase".
+  bool multiword = false;
+  for (const auto& s : t.switches) {
+    if (s.next_comm.find(' ') != std::string::npos ||
+        s.prev_comm.find(' ') != std::string::npos) {
+      multiword = true;
+    }
+  }
+  MPI_CHECK_MSG(multiword, "a multi-word thread name should survive parsing");
+}
+
+MPI_TEST(atrace_distinguishes_blocked_from_merely_preempted, {"E10", "E06"}) {
+  const auto t = android::parse_atrace(
+      read_fixture("provider-output/android-atrace-cold-start.real.txt"));
+  std::size_t runnable = 0;
+  std::size_t sleeping = 0;
+  std::size_t uninterruptible = 0;
+  for (const auto& s : t.switches) {
+    switch (s.prev_state) {
+      case android::ThreadState::kRunning: ++runnable; break;
+      case android::ThreadState::kSleeping: ++sleeping; break;
+      case android::ThreadState::kUninterruptible: ++uninterruptible; break;
+      default: break;
+    }
+  }
+  // The distinction E10 asks for: a thread taken off the CPU while still
+  // runnable is contention, not idleness.
+  MPI_CHECK(runnable > 0);
+  MPI_CHECK(sleeping > 0);
+  // And this real cold start does show uninterruptible sleep.
+  MPI_CHECK(uninterruptible > 0);
+
+  // `R+` is still runnable: the '+' means preempted, not a different state.
+  MPI_CHECK(android::thread_state_from_ftrace("R+") ==
+            android::ThreadState::kRunning);
+  MPI_CHECK(android::thread_state_from_ftrace("D|K") ==
+            android::ThreadState::kUninterruptible);
+  MPI_CHECK(android::thread_state_from_ftrace("") ==
+            android::ThreadState::kOther);
+}
+
+MPI_TEST(atrace_only_treats_an_iowait_flag_as_io, {"DET-03", "C18"}) {
+  const auto t = android::parse_atrace(
+      read_fixture("provider-output/android-atrace-cold-start.real.txt"));
+  std::size_t iowait = 0;
+  std::size_t other = 0;
+  for (const auto& b : t.blocked) {
+    if (b.iowait) {
+      ++iowait;
+      // The kernel says where it blocked, which is the only location evidence
+      // this provider gives.
+      MPI_CHECK(!b.caller.empty());
+    } else {
+      ++other;
+    }
+  }
+  // This capture has both, which is the point: a `D` state alone says
+  // "blocked", and only `iowait=1` says "blocked on I/O".
+  MPI_CHECK(iowait > 0);
+  MPI_CHECK(other > 0);
+}
+
+MPI_TEST(atrace_reports_a_dropped_buffer_rather_than_absorbing_it,
+         {"D04", "E13"}) {
+  // The header form when the kernel dropped events. A trace with holes must
+  // not read as a quiet device.
+  const auto t = android::parse_atrace(
+      "# tracer: nop\n"
+      "# entries-in-buffer/entries-written: 1000/4096   #P:4\n"
+      " app-10 (   10) [000] d..2. 100.000100: sched_switch: prev_comm=app "
+      "prev_pid=10 prev_prio=120 prev_state=S ==> next_comm=swapper/0 "
+      "next_pid=0 next_prio=120\n");
+  MPI_CHECK(t.header_seen);
+  MPI_CHECK_EQ(t.dropped_events, std::int64_t{3096});
+  bool said = false;
+  for (const auto& w : t.warnings) {
+    if (w.find("not quiet periods on the device") != std::string::npos) said = true;
+  }
+  MPI_CHECK(said);
+}
+
+MPI_TEST(atrace_without_a_header_says_the_loss_is_unknown, {"E13", "C18"}) {
+  const auto t = android::parse_atrace(
+      " app-10 (   10) [000] d..2. 100.000100: sched_waking: comm=other "
+      "pid=11 prio=120 target_cpu=001\n");
+  MPI_CHECK(!t.header_seen);
+  MPI_CHECK_EQ(t.wakings.size(), std::size_t{1});
+  MPI_CHECK_EQ(t.wakings.front().waker_tid, 10);
+  MPI_CHECK_EQ(t.wakings.front().target_tid, 11);
+  bool said = false;
+  for (const auto& w : t.warnings) {
+    if (w.find("cannot be relied on") != std::string::npos) said = true;
+  }
+  MPI_CHECK_MSG(said, "an unknown drop count must be stated");
+}
+
+MPI_TEST(atrace_keeps_only_the_waking_that_identifies_a_waker, {"DET-09"}) {
+  // `sched_waking` is emitted by the waking thread; `sched_wakeup` is emitted
+  // on the target's CPU, so its emitter is not the waker. Keeping both would
+  // attribute a wake to whichever CPU happened to run the target.
+  const auto t = android::parse_atrace(
+      " holder-50 (   50) [000] d..2. 100.000100: sched_waking: comm=waiter "
+      "pid=60 prio=120 target_cpu=001\n"
+      " <idle>-0 (-------) [001] dNh3. 100.000200: sched_wakeup: comm=waiter "
+      "pid=60 prio=120 target_cpu=001\n");
+  MPI_CHECK_EQ(t.wakings.size(), std::size_t{1});
+  MPI_CHECK_EQ(t.wakings.front().waker_tid, 50);
+  MPI_CHECK_EQ(t.wakings.front().waker_comm, std::string("holder"));
+  MPI_CHECK_EQ(t.wakings.front().target_comm, std::string("waiter"));
+}
+
+MPI_TEST(atrace_reads_userspace_slices_and_tolerates_a_nameless_one,
+         {"DET-03", "D18"}) {
+  const auto t = android::parse_atrace(
+      read_fixture("provider-output/android-atrace-cold-start.real.txt"));
+  bool named = false;
+  bool nameless = false;
+  for (const auto& s : t.slices) {
+    if (!s.begin) continue;
+    if (s.name.empty()) {
+      // Real output contains `B|3378|` with no name at all. It is kept as
+      // read; a detector cannot name work from it, and must not invent one.
+      nameless = true;
+    } else {
+      named = true;
+    }
+  }
+  MPI_CHECK_MSG(named, "the real trace contains named slices");
+  MPI_CHECK_MSG(nameless, "and one with no name, which must not be guessed");
+
+  // Ends carry no name of their own.
+  const auto ends = android::parse_atrace(
+      " app-10 (   10) [000] ..... 100.000100: tracing_mark_write: B|10|doWork\n"
+      " app-10 (   10) [000] ..... 100.000200: tracing_mark_write: E|10\n");
+  MPI_CHECK_EQ(ends.slices.size(), std::size_t{2});
+  MPI_CHECK(ends.slices[0].begin);
+  MPI_CHECK_EQ(ends.slices[0].name, std::string("doWork"));
+  MPI_CHECK(!ends.slices[1].begin);
+  MPI_CHECK(ends.slices[1].name.empty());
+}
+
+MPI_TEST(atrace_timestamps_keep_their_precision, {"D13"}) {
+  // A 5-hour uptime with microsecond resolution: parsed through a double this
+  // loses digits, so the seconds and the fraction are handled separately.
+  const auto t = android::parse_atrace(
+      " app-10 (   10) [000] d..2. 17921.423446: sched_switch: prev_comm=app "
+      "prev_pid=10 prev_prio=120 prev_state=D ==> next_comm=swapper/0 "
+      "next_pid=0 next_prio=120\n");
+  MPI_CHECK_EQ(t.switches.size(), std::size_t{1});
+  MPI_CHECK_EQ(t.switches.front().timestamp_ns, model::TimeNs{17921423446000});
 }
