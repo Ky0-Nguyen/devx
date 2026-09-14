@@ -91,7 +91,7 @@ MPI_TEST(every_rule_declares_prerequisites_and_a_phase, {"section-10.3"}) {
 
 MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
-  for (const char* id : {"DET-03", "DET-05", "DET-06", "DET-07",
+  for (const char* id : {"DET-03", "DET-05", "DET-06",
                          "DET-09", "DET-10", "DET-11"}) {
     const auto* rec = record_for(r, id);
     MPI_CHECK_MSG(rec != nullptr, std::string("no run record for ") + id);
@@ -621,4 +621,88 @@ MPI_TEST(ruleset_and_engine_versions_are_recorded, {"H09"}) {
     MPI_CHECK_MSG(!rec.rule_version.empty(),
                   rec.rule_id + " must record its version");
   }
+}
+
+
+// --- DET-07, startup budget ---------------------------------------------------
+
+MPI_TEST(det07_needs_a_budget_before_it_will_judge_a_startup,
+         {"DET-07", "section-10.3"}) {
+  // The trace holds a real 5239 ms cold launch. Without a configured budget
+  // the rule still refuses to run: there is no platform standard for startup,
+  // so any default would be a number this tool invented.
+  const auto r = run(load("traces/android-cold-launch.real.mpi.json"));
+  const auto* rec = record_for(r, "DET-07");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "no startup budget is configured"));
+  MPI_CHECK(contains(rec->skipped_reasons, "will not invent a number"));
+}
+
+MPI_TEST(det07_reports_a_real_launch_over_budget, {"DET-07", "H01"}) {
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-07.budget_ms", 2000.0});
+  const auto trace = load("traces/android-cold-launch.real.mpi.json");
+  symbols::SymbolService symbols;
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  const auto* rec = record_for(r, "DET-07");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundIssues);
+
+  // Both endpoints reported 5239 ms, and two endpoints agreeing is one
+  // finding with two witnesses rather than two separate problems.
+  std::size_t startup_issues = 0;
+  const model::Issue* found = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-07") continue;
+    ++startup_issues;
+    found = &i;
+  }
+  MPI_CHECK_EQ(startup_issues, std::size_t{1});
+  if (found == nullptr) return;
+  MPI_CHECK(found->detection_status == model::DetectionStatus::kObserved);
+  MPI_CHECK(found->cause_status == model::CauseStatus::kUnknown);
+  MPI_CHECK(found->severity == model::Severity::kHigh);
+  // The endpoint is named: "startup" alone does not say what was measured.
+  MPI_CHECK(found->title.find("app_launch") != std::string::npos);
+  MPI_CHECK(found->title.find("startup_displayed") != std::string::npos);
+  MPI_CHECK_EQ(found->metrics.size(), std::size_t{2});
+  MPI_CHECK_EQ(found->evidence.size(), std::size_t{2});
+  MPI_CHECK(contains(found->missing_evidence, "One launch is one sample"));
+  // The budget is a project decision and the origin says so.
+  MPI_CHECK(found->threshold_origin.find("project_budget") != std::string::npos);
+  MPI_CHECK(found->baseline_value.has_value());
+}
+
+MPI_TEST(det07_under_budget_runs_and_says_what_it_measured, {"DET-07", "H11"}) {
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-07.budget_ms", 9000.0});
+  const auto trace = load("traces/android-cold-launch.real.mpi.json");
+  symbols::SymbolService symbols;
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  const auto* rec = record_for(r, "DET-07");
+  MPI_CHECK(rec != nullptr);
+  // Ran and found nothing, with the measurement recorded -- not silence.
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundNothing);
+  MPI_CHECK(contains(rec->skipped_reasons, "within the configured budget"));
+}
+
+MPI_TEST(det07_says_a_capture_without_a_launch_has_no_startup, {"DET-07", "H05"}) {
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-07.budget_ms", 500.0});
+  const auto trace = load("traces/positive-frames-js-cpu.mpi.json");
+  symbols::SymbolService symbols;
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  const auto* rec = record_for(r, "DET-07");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  // A budget alone is not evidence: an app that was already running has no
+  // startup in the capture at all.
+  MPI_CHECK(contains(rec->skipped_reasons, "no startup interval was recorded"));
 }

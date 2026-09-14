@@ -41,6 +41,20 @@ ExitCode cmd_record(const Invocation& inv) {
     return ExitCode::kUsage;
   }
 
+  // Argument validation first. A misspelled launch class is a usage error and
+  // reporting it should not depend on a device being reachable.
+  const std::string requested_launch_class = inv.flag("launch-class", "cold");
+  if (requested_launch_class != "cold" && requested_launch_class != "warm" &&
+      requested_launch_class != "hot") {
+    std::cerr << "error: --launch-class must be cold, warm or hot\n";
+    return ExitCode::kUsage;
+  }
+  if (inv.has_flag("wait-for-app-s") &&
+      std::atoi(inv.flag("wait-for-app-s").c_str()) <= 0) {
+    std::cerr << "error: --wait-for-app-s must be a positive integer\n";
+    return ExitCode::kUsage;
+  }
+
   auto svc = make_discovery(inv.global);
   const auto po = provider_options(inv.global);
 
@@ -105,12 +119,14 @@ ExitCode cmd_record(const Invocation& inv) {
     }
     return ExitCode::kUnsupportedOperation;
   }
+  const bool launch_requested = inv.has_flag("launch");
   if (!reval.app_still_present &&
-      target->runtime_state != model::RuntimeState::kRunning) {
+      target->runtime_state != model::RuntimeState::kRunning &&
+      !launch_requested) {
     std::cerr << "error: no live process of '" << inv.global.app
               << "' could be resolved.\n"
-                 "       `record` does not launch the app for you in this "
-                 "build. Start it on the device and retry.\n";
+                 "       Start it on the device, or record with --launch to "
+                 "have the app started and its startup measured.\n";
     return ExitCode::kNotFound;
   }
 
@@ -155,6 +171,17 @@ ExitCode cmd_record(const Invocation& inv) {
       }
       cfg.sample_frequency_hz = hz;
     }
+    cfg.launch_app = launch_requested;
+    cfg.launch_class = requested_launch_class;
+    if (inv.has_flag("wait-for-app-s")) {
+      cfg.wait_for_app = std::chrono::milliseconds(
+          std::atoi(inv.flag("wait-for-app-s").c_str()) * 1000);
+    } else if (launch_requested) {
+      // A launched app needs a moment to appear in the process list before
+      // the collector can pin it; without this the capture would begin
+      // against a target that does not exist yet.
+      cfg.wait_for_app = std::chrono::milliseconds(10000);
+    }
     if (inv.has_flag("no-frames")) cfg.frames = false;
     if (inv.has_flag("no-cpu")) cfg.cpu_samples = false;
     if (inv.has_flag("no-memory")) cfg.memory = false;
@@ -163,6 +190,66 @@ ExitCode cmd_record(const Invocation& inv) {
     manifest.state = session::SessionState::kRecording;
     manifest.state_transitions.push_back(
         std::string("preflight -> recording @ ") + time_util::now_iso8601_utc());
+
+    if (cfg.launch_app) {
+      std::cerr << "launching " << inv.global.app << " (" << cfg.launch_class
+                << ") ...\n";
+      const auto launched =
+          collector->launch(device, inv.global.app, cfg, trace);
+      for (const auto& c : launched.source_results) trace.capabilities.upsert(c);
+      for (const auto& n : launched.notes) std::cerr << "note: " << n << "\n";
+      if (!launched.supported) {
+        std::cerr << "error: " << launched.error << "\n";
+        return ExitCode::kUnsupportedOperation;
+      }
+      if (!launched.started) {
+        // Not fatal: the app may well be running, and the rest of the capture
+        // is still worth having. What is refused is a startup *measurement*.
+        warn(launched.error);
+      } else {
+        std::cerr << "launched " << inv.global.app;
+        if (!launched.launch_class.empty()) {
+          std::cerr << " (" << launched.launch_class << " per the platform)";
+        }
+        if (launched.total_time_ns.has_value()) {
+          std::cerr << ", TotalTime "
+                    << (*launched.total_time_ns / 1000000) << " ms";
+        }
+        if (launched.displayed_ns.has_value()) {
+          std::cerr << ", Displayed " << (*launched.displayed_ns / 1000000)
+                    << " ms";
+        }
+        std::cerr << "\n";
+      }
+
+      // Wait for the process the launch created, and re-resolve identity
+      // against it: the pid that existed before the launch is not the one to
+      // capture (spec A21, A22).
+      if (cfg.wait_for_app.count() > 0) {
+        const auto deadline =
+            std::chrono::steady_clock::now() + cfg.wait_for_app;
+        bool appeared = false;
+        while (std::chrono::steady_clock::now() < deadline) {
+          if (inv.global.cancel.cancelled()) return ExitCode::kCancelled;
+          const auto again = svc.revalidate(device, target->key,
+                                            trace.target.processes, po);
+          if (again.app_still_present && !again.processes.empty()) {
+            trace.target.processes = again.processes;
+            trace.target.runtime_state_at_capture = model::RuntimeState::kRunning;
+            appeared = true;
+            break;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+        if (!appeared) {
+          std::cerr << "error: '" << inv.global.app
+                    << "' did not appear as a running process within "
+                    << (cfg.wait_for_app.count() / 1000)
+                    << "s of the launch.\n";
+          return ExitCode::kNotFound;
+        }
+      }
+    }
 
     if (inv.has_flag("tick-ms")) {
       const int ms = std::atoi(inv.flag("tick-ms").c_str());

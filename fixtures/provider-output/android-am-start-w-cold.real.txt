@@ -1,0 +1,7 @@
+Starting: Intent { cmp=io.pizzahut.hutbot.debug/io.yum.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: io.pizzahut.hutbot.debug/io.yum.MainActivity
+TotalTime: 4889
+WaitTime: 4907
+Complete

@@ -83,18 +83,6 @@ std::vector<RulePtr> make_deferred_rules() {
       "heap capture is not implemented; allocation volume is not retained size"));
 
   r.push_back(std::make_shared<DeferredRule>(
-      "DET-07", "startup", "Startup budget exceedance", "M4",
-      std::vector<Prerequisite>{
-          {"startup_endpoints",
-           "defined process-start, first-frame, and fully-usable endpoints"},
-          {"configured_budget", "a project budget to compare against"},
-          {"launch_class", "cold / warm / hot classification for the launch"}},
-      "above budget for the stated launch class",
-      "needs the benchmark scenario model and the app marker for 'fully "
-      "usable'; a missing endpoint must produce an incomplete measurement, "
-      "never a fast one"));
-
-  r.push_back(std::make_shared<DeferredRule>(
       "DET-09", "scheduling", "Wait / lock contention", "M5",
       std::vector<Prerequisite>{
           {"scheduling_evidence",

@@ -430,3 +430,71 @@ MPI_TEST(uptime_is_read_or_refused_never_defaulted, {"E13", "section-8"}) {
   MPI_CHECK(android::parse_leading_double("0.00 0.00", zero));
   MPI_CHECK_EQ(zero, 0.0);
 }
+
+
+MPI_TEST(am_start_w_parses_a_real_cold_launch, {"DET-07", "J14"}) {
+  const auto r = android::parse_am_start_w(
+      read_fixture("provider-output/android-am-start-w-cold.real.txt"));
+  MPI_CHECK(r.started);
+  MPI_CHECK_EQ(r.status, std::string("ok"));
+  // The launch class is the platform's own classification, never inferred
+  // from how long the launch took.
+  MPI_CHECK_EQ(r.launch_state, std::string("COLD"));
+  MPI_CHECK_EQ(r.component,
+               std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
+  MPI_CHECK(r.total_time_ns.has_value());
+  MPI_CHECK_EQ(*r.total_time_ns, model::TimeNs{4889} * 1000000);
+  MPI_CHECK(r.wait_time_ns.has_value());
+  MPI_CHECK_EQ(*r.wait_time_ns, model::TimeNs{4907} * 1000000);
+  MPI_CHECK(r.refusal.empty());
+}
+
+MPI_TEST(am_start_w_refuses_the_zero_of_an_app_already_running,
+         {"DET-07", "E13", "section-8"}) {
+  // The real trap in this provider. Re-launching an app that is already
+  // foreground prints TotalTime: 0 with a warning, and a parser that takes
+  // the number at face value reports a zero-millisecond startup that sits
+  // comfortably inside any budget. The zero is a missing measurement.
+  const auto r = android::parse_am_start_w(
+      read_fixture("provider-output/android-am-start-w-already-running.real.txt"));
+  MPI_CHECK(!r.started);
+  MPI_CHECK_EQ(r.status, std::string("ok"));  // the command itself succeeded
+  MPI_CHECK(!r.total_time_ns.has_value());
+  MPI_CHECK(!r.wait_time_ns.has_value());
+  MPI_CHECK(!r.refusal.empty());
+  MPI_CHECK(r.refusal.find("not a startup duration") != std::string::npos);
+  MPI_CHECK(!r.warnings.empty());
+}
+
+MPI_TEST(displayed_log_parses_the_platform_first_frame_figure, {"DET-07", "J14"}) {
+  const auto recs = android::parse_displayed_log(
+      read_fixture("provider-output/android-displayed-logcat.real.txt"));
+  MPI_CHECK_EQ(recs.size(), std::size_t{1});
+  if (recs.empty()) return;
+  MPI_CHECK_EQ(recs.front().component,
+               std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
+  // "+4s889ms"
+  MPI_CHECK_EQ(recs.front().elapsed_ns, model::TimeNs{4889} * 1000000);
+}
+
+MPI_TEST(displayed_log_reads_each_unit_rather_than_assuming_a_shape, {"D18"}) {
+  const auto recs = android::parse_displayed_log(
+      "I ActivityTaskManager: Displayed a/.A for user 0: +687ms\n"
+      "I ActivityTaskManager: Displayed b/.B for user 0: +1m2s3ms\n"
+      "I ActivityTaskManager: Displayed c/.C for user 0: +12s\n"
+      "I ActivityTaskManager: nothing to see here\n");
+  MPI_CHECK_EQ(recs.size(), std::size_t{3});
+  if (recs.size() < 3) return;
+  MPI_CHECK_EQ(recs[0].elapsed_ns, model::TimeNs{687} * 1000000);
+  MPI_CHECK_EQ(recs[1].elapsed_ns,
+               (model::TimeNs{62} * 1000000000) + (model::TimeNs{3} * 1000000));
+  MPI_CHECK_EQ(recs[2].elapsed_ns, model::TimeNs{12} * 1000000000);
+}
+
+MPI_TEST(resolve_activity_reads_the_component_not_the_details, {"A21"}) {
+  MPI_CHECK_EQ(android::parse_resolved_activity(
+                   read_fixture("provider-output/android-resolve-activity.real.txt")),
+               std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
+  // A package with no launchable activity is a real answer, not an error.
+  MPI_CHECK(android::parse_resolved_activity("No activity found\n").empty());
+}

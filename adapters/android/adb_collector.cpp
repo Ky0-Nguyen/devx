@@ -111,6 +111,137 @@ model::Capability make_source(const char* id, const char* human,
 }  // namespace
 
 // Declared in the header for testing.
+AmStartResult parse_am_start_w(const std::string& text) {
+  AmStartResult r;
+  std::optional<model::TimeNs> total;
+  std::optional<model::TimeNs> wait;
+  bool not_started_warning = false;
+
+  std::istringstream in(text);
+  std::string line;
+  while (std::getline(in, line)) {
+    const std::string t = trim(line);
+    if (t.empty()) continue;
+    const auto colon = t.find(':');
+    const std::string key = colon == std::string::npos ? t : trim(t.substr(0, colon));
+    const std::string value =
+        colon == std::string::npos ? std::string() : trim(t.substr(colon + 1));
+
+    if (key == "Status") {
+      r.status = value;
+    } else if (key == "LaunchState") {
+      r.launch_state = value;
+    } else if (key == "Activity") {
+      r.component = value;
+    } else if (key == "Warning") {
+      r.warnings.push_back(value);
+      // The one warning that invalidates the numbers rather than qualifying
+      // them: nothing was launched, so there is no launch to time.
+      if (value.find("Activity not started") != std::string::npos) {
+        not_started_warning = true;
+      }
+    } else if (key == "Error" || key == "Error type") {
+      r.warnings.push_back(t);
+    } else if (key == "TotalTime") {
+      const auto ms = to_i64(value, -1);
+      if (ms >= 0) total = ms * 1000000;
+    } else if (key == "WaitTime") {
+      const auto ms = to_i64(value, -1);
+      if (ms >= 0) wait = ms * 1000000;
+    }
+  }
+
+  r.started = r.status == "ok" && !not_started_warning;
+  if (!r.started) {
+    r.refusal = not_started_warning
+                    ? "the platform reported that no activity was started "
+                      "(the intent went to the running top-most instance), so "
+                      "its TotalTime of 0 is not a startup duration"
+                    : "`am start -W` did not report Status: ok";
+    return r;
+  }
+  // A launch that really happened and really took no measurable time is not a
+  // thing the platform reports; a zero here means the same as the warning.
+  if (total.has_value() && *total == 0) {
+    r.started = false;
+    r.refusal =
+        "the platform reported TotalTime 0 for a launch it claimed to have "
+        "started, which is not a duration this tool will pass on as one";
+    return r;
+  }
+  r.total_time_ns = total;
+  r.wait_time_ns = wait;
+  return r;
+}
+
+std::vector<DisplayedRecord> parse_displayed_log(const std::string& text) {
+  std::vector<DisplayedRecord> out;
+  std::istringstream in(text);
+  std::string line;
+  while (std::getline(in, line)) {
+    const auto marker = line.find("Displayed ");
+    if (marker == std::string::npos) continue;
+    const auto plus = line.find(": +", marker);
+    if (plus == std::string::npos) continue;
+
+    DisplayedRecord rec;
+    // Between "Displayed " and the next space is the component.
+    const auto comp_start = marker + std::string("Displayed ").size();
+    const auto comp_end = line.find(' ', comp_start);
+    if (comp_end == std::string::npos) continue;
+    rec.component = line.substr(comp_start, comp_end - comp_start);
+    rec.raw = trim(line.substr(plus + 2));
+
+    // "+3s687ms", "+687ms", "+1m2s3ms": accumulate each unit rather than
+    // assuming a shape.
+    model::TimeNs total = 0;
+    std::int64_t digits = 0;
+    bool have_digits = false;
+    for (std::size_t i = 0; i < rec.raw.size(); ++i) {
+      const char c = rec.raw[i];
+      if (c >= '0' && c <= '9') {
+        digits = digits * 10 + (c - '0');
+        have_digits = true;
+        continue;
+      }
+      if (!have_digits) continue;
+      if (c == 'm' && i + 1 < rec.raw.size() && rec.raw[i + 1] == 's') {
+        total += digits * 1000000;
+        ++i;
+      } else if (c == 's') {
+        total += digits * 1000000000;
+      } else if (c == 'm') {
+        total += digits * 60ll * 1000000000;
+      } else {
+        continue;
+      }
+      digits = 0;
+      have_digits = false;
+    }
+    if (total <= 0) continue;
+    rec.elapsed_ns = total;
+    out.push_back(std::move(rec));
+  }
+  return out;
+}
+
+std::string parse_resolved_activity(const std::string& text) {
+  // The brief form prints the component on its own line; earlier lines are
+  // the resolution details. Taking the last line that looks like a component
+  // avoids depending on how many detail lines the platform printed.
+  std::string found;
+  std::istringstream in(text);
+  std::string line;
+  while (std::getline(in, line)) {
+    const std::string t = trim(line);
+    const auto slash = t.find('/');
+    if (slash == std::string::npos || slash == 0 || slash + 1 >= t.size()) continue;
+    if (t.find(' ') != std::string::npos || t.find('=') != std::string::npos) continue;
+    found = t;
+  }
+  return found;
+}
+
 bool parse_leading_double(const std::string& text, double& out) {
   const std::string t = trim(text);
   if (t.empty()) return false;
@@ -749,6 +880,168 @@ std::int64_t AdbCollector::drain_cpu_samples(model::NormalizedTrace& out) {
 // Streaming
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Launch and startup measurement
+// ---------------------------------------------------------------------------
+
+session::Collector::LaunchReport AdbCollector::launch(
+    const model::DeviceRef& device, const std::string& app_identifier,
+    const session::CaptureConfig& config, model::NormalizedTrace& out) {
+  session::Collector::LaunchReport report;
+  report.supported = true;
+
+  if (!proc::is_safe_argument(app_identifier, /*reject_option_like=*/true)) {
+    report.error = "refusing to launch identifier '" + app_identifier +
+                   "': it would be read as a command-line option";
+    return report;
+  }
+
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(60000);
+  po.cancel = config.cancel;
+
+  const auto source = [&](model::CapabilityStatus status,
+                          const std::string& evidence,
+                          std::vector<std::string> limitations = {}) {
+    auto c = make_source("android.capture.startup", "App startup timing",
+                         status, "am start -W");
+    c.evidence = evidence;
+    c.limitations = std::move(limitations);
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    report.source_results.push_back(std::move(c));
+  };
+
+  // The launchable component has to come from the platform: guessing
+  // `package/.MainActivity` is wrong for most real apps.
+  const auto resolved = proc::run(
+      shell_argv(device.device_id,
+                 {"cmd", "package", "resolve-activity", "--brief",
+                  app_identifier}),
+      po);
+  const std::string component =
+      resolved.ok() ? parse_resolved_activity(resolved.out) : std::string();
+  if (component.empty()) {
+    report.error = "no launchable activity could be resolved for '" +
+                   app_identifier +
+                   "'; the package may declare no launcher entry point";
+    source(model::CapabilityStatus::kUnsupported, report.error);
+    return report;
+  }
+
+  const bool cold = config.launch_class == "cold";
+  if (cold) {
+    // Only a force-stop makes the next launch genuinely cold. Whether it
+    // actually was is still read back from the platform, not assumed here.
+    proc::run(shell_argv(device.device_id, {"am", "force-stop", app_identifier}),
+              po);
+  }
+  // Clearing the log first so the Displayed line read afterwards belongs to
+  // this launch and not to an earlier one.
+  proc::run({"adb", "-s", device.device_id, "logcat", "-c"}, po);
+
+  // The device clock is read immediately before the launch so the marker sits
+  // on the same timeline as the rest of the capture.
+  model::TimeNs launch_at = 0;
+  {
+    const auto up = proc::run(
+        shell_argv(device.device_id, {"cat", "/proc/uptime"}), po);
+    double seconds = 0.0;
+    if (up.ok() && parse_leading_double(up.out, seconds) && seconds > 0.0) {
+      launch_at = static_cast<model::TimeNs>(seconds * 1'000'000'000.0);
+    }
+  }
+
+  const auto started = proc::run(
+      shell_argv(device.device_id, {"am", "start", "-W", "-n", component}), po);
+  if (!started.ok()) {
+    report.error = "`am start -W` failed: " +
+                   (started.spawned ? trim(started.err) : started.spawn_error);
+    source(model::CapabilityStatus::kUnsupported, report.error);
+    return report;
+  }
+
+  const auto parsed = parse_am_start_w(started.out);
+  report.launch_class = parsed.launch_state;
+  for (const auto& w : parsed.warnings) report.notes.push_back(w);
+
+  if (!parsed.started) {
+    // The app is up -- the intent was delivered -- but no launch was timed.
+    // Reporting that plainly is the whole point: the platform's zero is not a
+    // startup duration.
+    report.started = false;
+    report.error = parsed.refusal;
+    source(model::CapabilityStatus::kLimited, parsed.refusal,
+           {"the app is running, but this launch produced no startup "
+            "measurement; force-stop it first or record with "
+            "--launch-class=cold for a cold start"});
+    return report;
+  }
+
+  report.started = true;
+  report.total_time_ns = parsed.total_time_ns;
+  report.wait_time_ns = parsed.wait_time_ns;
+
+  // The platform's own first-frame figure, which is a different endpoint from
+  // TotalTime and is kept as its own marker rather than averaged with it.
+  const auto log = proc::run(
+      {"adb", "-s", device.device_id, "logcat", "-d", "-s",
+       "ActivityTaskManager"},
+      po);
+  if (log.ok()) {
+    for (const auto& rec : parse_displayed_log(log.out)) {
+      if (rec.component != component) continue;
+      report.displayed_ns = rec.elapsed_ns;
+    }
+  }
+
+  const auto add_marker = [&](const char* kind, model::TimeNs duration,
+                              const char* endpoint, const char* provider) {
+    model::Marker m;
+    m.event_id = std::string("startup-") + kind;
+    m.timestamp_ns = launch_at;
+    m.duration_ns = duration;
+    m.kind = kind;
+    m.payload = json::Value::object();
+    m.payload.set("component", json::Value::string(component));
+    m.payload.set("launch_class_requested",
+                  json::Value::string(config.launch_class));
+    m.payload.set("launch_class_reported",
+                  json::Value::string(parsed.launch_state));
+    m.payload.set("endpoint", json::Value::string(endpoint));
+    m.payload.set("provider", json::Value::string(provider));
+    out.markers.push_back(std::move(m));
+  };
+
+  if (report.total_time_ns.has_value()) {
+    add_marker("app_launch", *report.total_time_ns,
+               "the activity reported being drawn", "am start -W TotalTime");
+  }
+  if (report.displayed_ns.has_value()) {
+    add_marker("startup_displayed", *report.displayed_ns,
+               "the platform logged the first frame as displayed",
+               "ActivityTaskManager Displayed");
+  }
+
+  std::string evidence = "launched " + component + ", platform reported " +
+                         parsed.launch_state;
+  if (report.total_time_ns.has_value()) {
+    evidence += ", TotalTime " +
+                std::to_string(*report.total_time_ns / 1000000) + " ms";
+  }
+  if (report.displayed_ns.has_value()) {
+    evidence += ", Displayed " +
+                std::to_string(*report.displayed_ns / 1000000) + " ms";
+  }
+  source(model::CapabilityStatus::kAvailable, evidence,
+         {"TotalTime ends when the activity reported being drawn, which is "
+          "not when the app became interactive",
+          "a single launch is one sample; a startup claim needs repeated runs "
+          "(spec section 12)"});
+  return report;
+}
+
 session::CaptureResult AdbCollector::begin(
     const model::DeviceRef& device,
     const std::vector<model::ProcessInstance>& processes,
@@ -1236,6 +1529,11 @@ session::CaptureResult AdbCollector::finish(
     out.partial = true;
     out.partial_reasons.push_back("capture stopped by the operator");
   }
+  // Counters and a measured launch are evidence too. Deciding this from
+  // frames and CPU samples alone threw away a session that held a real
+  // startup measurement and five memory families.
+  if (!out.counters.empty() || !out.markers.empty()) result.any_data = true;
+
   if (!result.any_data) {
     out.partial = true;
     out.partial_reasons.push_back("no source produced data");
@@ -1676,14 +1974,45 @@ session::CaptureResult AdbCollector::capture(
   };
   for (const auto& f : out.frames) extend(f.start_ns, f.presented_ns.value_or(f.start_ns));
   for (const auto& s : out.cpu_samples) extend(s.timestamp_ns, s.timestamp_ns);
+  // A launch this collector performed is evidence with a real device
+  // timestamp, and a capture whose only evidence is the startup still has a
+  // window.
+  for (const auto& m : out.markers) {
+    extend(m.timestamp_ns, m.timestamp_ns + m.duration_ns.value_or(0));
+  }
+
+  // The memory reading has no timestamp of its own, so it is placed by
+  // reading the device clock right after it -- not pinned to the window's end,
+  // which is zero when nothing else was collected and would put the reading
+  // before the epoch.
+  if (!out.counters.empty()) {
+    model::TimeNs at = 0;
+    const auto up = proc::run(
+        shell_argv(device.device_id, {"cat", "/proc/uptime"}), po);
+    double seconds = 0.0;
+    if (up.ok() && parse_leading_double(up.out, seconds) && seconds > 0.0) {
+      at = static_cast<model::TimeNs>(seconds * 1'000'000'000.0);
+      extend(at, at);
+    } else if (have_window) {
+      at = hi;
+    }
+    if (at > 0) {
+      for (auto& series : out.counters) {
+        for (auto& pt : series.points) pt.first = at;
+      }
+    } else {
+      // No clock could be read: the values are real but unplaceable, so they
+      // are dropped rather than stamped with a time they were not taken at.
+      out.counters.clear();
+      out.ingestion_warnings.push_back(
+          "memory counters were discarded: the device clock could not be read, "
+          "so the readings could not be placed on the capture timeline");
+    }
+  }
+
   if (have_window) {
     out.window_start_ns = lo;
     out.window_end_ns = hi;
-  }
-  // The memory reading was taken at the end of the capture, so its point is
-  // placed there rather than at zero.
-  for (auto& s : out.counters) {
-    for (auto& pt : s.points) pt.first = out.window_end_ns;
   }
 
   record_failed_source_coverage(out, result.source_results);
@@ -1692,6 +2021,11 @@ session::CaptureResult AdbCollector::capture(
     out.partial = true;
     out.partial_reasons.push_back("capture cancelled by the operator");
   }
+  // Counters and a measured launch are evidence too. Deciding this from
+  // frames and CPU samples alone discarded a session that held a real startup
+  // measurement and five memory families.
+  if (!out.counters.empty() || !out.markers.empty()) result.any_data = true;
+
   if (!result.any_data) {
     out.partial = true;
     out.partial_reasons.push_back("no source produced data");

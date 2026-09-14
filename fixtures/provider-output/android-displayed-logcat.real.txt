@@ -1,0 +1,1 @@
+09-14 23:58:30.172   637   655 I ActivityTaskManager: Displayed io.pizzahut.hutbot.debug/io.yum.MainActivity for user 0: +4s889ms

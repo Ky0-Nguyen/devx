@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 115 of 198 checklist items have at
-least one automated test.** The remaining 83 are listed below with a stated
+**Coverage of specification section 18: 116 of 198 checklist items have at
+least one automated test.** The remaining 82 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (115 items, 336 test-case links)
+## Covered (116 items, 355 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -73,6 +73,7 @@ Two cautions on reading this:
 | A20 | `test_android_parsers` | `adapter_rejects_an_option_like_app_identifier` |
 | A20 | `test_ios_parsers` | `adapter_refuses_an_option_like_bundle_id` |
 | A20 | `test_process` | `process_rejects_option_like_identifier` |
+| A21 | `test_android_collector` | `resolve_activity_reads_the_component_not_the_details` |
 | A24 | `test_ios_parsers` | `readiness_for_an_unknown_identifier_is_absent` |
 | B02 | `test_android_parsers` | `proc_stat_handles_a_comm_name_containing_spaces` |
 | B02 | `test_android_parsers` | `proc_stat_malformed_returns_nothing_not_a_fake_value` |
@@ -130,6 +131,7 @@ Two cautions on reading this:
 | C18 | `test_json` | `json_null_is_distinct_from_absent` |
 | C18 | `test_report` | `unknown_values_are_shown_as_unknown_not_omitted` |
 | C18 | `test_symbols` | `absent_expected_bundle_id_downgrades_to_partial` |
+| C19 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
 | C19 | `test_compare` | `ineligible_side_blocks_certification` |
 | C19 | `test_eligibility` | `eligibility_reports_every_reason_not_just_the_first` |
 | C19 | `test_eligibility` | `user_override_is_audited_and_never_certifies` |
@@ -167,6 +169,7 @@ Two cautions on reading this:
 | D16 | `test_ios_parsers` | `launchctl_parser_handles_empty_and_header_only_input` |
 | D16 | `test_json` | `stream_parser_handles_empty_arrays_and_objects` |
 | D17 | `test_process` | `process_times_out_and_says_so` |
+| D18 | `test_android_collector` | `displayed_log_reads_each_unit_rather_than_assuming_a_shape` |
 | D18 | `test_android_collector` | `framestats_reads_the_header_rather_than_fixed_columns` |
 | D18 | `test_android_collector` | `framestats_refuses_a_header_missing_required_columns` |
 | D18 | `test_ingestion` | `unsupported_schema_version_is_reported_not_guessed` |
@@ -190,6 +193,7 @@ Two cautions on reading this:
 | E04 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
 | E12 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | E12 | `test_trace_model` | `cpu_percentage_declares_its_normalization` |
+| E13 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | E13 | `test_android_collector` | `uptime_is_read_or_refused_never_defaulted` |
 | E13 | `test_ingestion` | `derived_coverage_treats_absent_collector_as_a_full_gap` |
 | E13 | `test_report` | `coverage_gaps_are_reported_with_their_semantics` |
@@ -235,13 +239,17 @@ Two cautions on reading this:
 | G18 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
 | G19 | `test_symbols` | `path_traversal_in_a_source_map_is_rejected` |
 | G19 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
+| H01 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
+| H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
 | H02 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
 | H03 | `test_rules` | `det01_proxy_source_downgrades_to_suspected` |
 | H03 | `test_rules` | `det01_skips_when_no_frame_collector_ran` |
 | H03 | `test_rules` | `det04_skips_below_minimum_sample_population` |
 | H04 | `test_rules` | `threshold_override_changes_the_verdict` |
 | H05 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
+| H05 | `test_rules` | `det07_says_a_capture_without_a_launch_has_no_startup` |
+| H05 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
 | H05 | `test_rules` | `every_catalog_detector_is_registered` |
 | H05 | `test_rules` | `unimplemented_detectors_are_skipped_with_reasons` |
 | H05 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
@@ -252,10 +260,12 @@ Two cautions on reading this:
 | H10 | `test_eligibility` | `user_override_is_audited_and_never_certifies` |
 | H10 | `test_report` | `suppressed_issues_can_be_omitted_or_kept_with_their_reason` |
 | H10 | `test_rules` | `suppression_retains_reason_and_expiry` |
+| H11 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
 | H11 | `test_json` | `json_null_is_distinct_from_absent` |
 | H11 | `test_report` | `no_findings_is_distinguished_from_no_analysis` |
 | H11 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
 | H11 | `test_rules` | `det01_skips_when_no_frame_collector_ran` |
+| H11 | `test_rules` | `det07_under_budget_runs_and_says_what_it_measured` |
 | H11 | `test_rules` | `every_catalog_detector_is_registered` |
 | H11 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
 | H11 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
@@ -275,6 +285,7 @@ Two cautions on reading this:
 | H16 | `test_rules` | `no_issue_carries_an_uncalibrated_numeric_confidence` |
 | H17 | `test_rules` | `every_candidate_cause_lists_missing_evidence` |
 | I01 | `test_compare` | `clear_regression_is_detected` |
+| I02 | `test_compare` | `det08_skips_when_conditions_are_not_comparable` |
 | I02 | `test_compare` | `device_model_mismatch_blocks_a_verdict` |
 | I02 | `test_compare` | `simulator_vs_physical_is_never_comparable` |
 | I02 | `test_eligibility` | `simulator_is_not_benchmark_eligible` |
@@ -283,7 +294,9 @@ Two cautions on reading this:
 | I05 | `test_compare` | `thermal_and_power_mismatch_is_visible` |
 | I07 | `test_compare` | `launch_class_mismatch_blocks_a_verdict` |
 | I08 | `test_compare` | `cache_network_and_input_mismatch_blocks_a_verdict` |
+| I09 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
 | I09 | `test_compare` | `too_few_runs_is_inconclusive` |
+| I10 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
 | I10 | `test_compare` | `high_variance_is_inconclusive` |
 | I11 | `test_compare` | `missing_baseline_is_inconclusive_not_a_pass` |
 | I11 | `test_compare` | `run_with_no_measurement_is_excluded_and_visible` |
@@ -291,17 +304,21 @@ Two cautions on reading this:
 | I13 | `test_compare` | `both_absolute_and_relative_thresholds_must_clear` |
 | I13 | `test_compare` | `clear_improvement_is_detected` |
 | I13 | `test_compare` | `clear_regression_is_detected` |
+| I13 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
 | I13 | `test_compare` | `small_change_is_not_significant` |
 | I14 | `test_compare` | `explicit_exclusion_reason_is_honoured_and_shown` |
 | I14 | `test_compare` | `run_with_no_measurement_is_excluded_and_visible` |
 | I15 | `test_compare` | `incomplete_scenario_is_excluded_not_counted_as_fast` |
 | I16 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
+| I16 | `test_compare` | `det08_refuses_a_debug_versus_release_pair` |
+| I16 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
 | I16 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
 | I16 | `test_rules` | `diagnostic_session_never_reports_a_certified_benchmark` |
 | I17 | `test_android_collector` | `capture_config_records_its_preset_and_sources` |
 | I17 | `test_android_collector` | `capture_config_records_the_streaming_cadence` |
 | I17 | `test_compare` | `collector_sample_rate_mismatch_blocks_a_verdict` |
 | I19 | `test_compare` | `cross_platform_pair_cannot_gate` |
+| I19 | `test_compare` | `det08_refuses_a_cross_platform_pair` |
 | I19 | `test_compare` | `unknown_platform_blocks_equivalence` |
 | J01 | `test_devx_http` | `html_escape_neutralises_markup` |
 | J01 | `test_json` | `json_escapes_on_output` |
@@ -339,6 +356,8 @@ Two cautions on reading this:
 | J11 | `test_json` | `json_accessors_do_not_throw_on_type_mismatch` |
 | J11 | `test_process` | `process_honours_cancellation` |
 | J11 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
+| J14 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
+| J14 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
 | J14 | `test_android_collector` | `framestats_parses_real_emulator_output` |
 | J14 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | J14 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
@@ -358,7 +377,7 @@ Two cautions on reading this:
 | J18 | `test_ios_parsers` | `parses_real_simctl_device_listing` |
 | J18 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
 
-## Additional coverage keyed to specification sections and detector ids (18)
+## Additional coverage keyed to specification sections and detector ids (20)
 
 | Reference | Test binary | Test case |
 |---|---|---|
@@ -370,6 +389,21 @@ Two cautions on reading this:
 | DET-04 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
 | DET-04 | `test_rules` | `det04_refuses_to_name_a_function_without_symbols` |
 | DET-04 | `test_rules` | `obfuscated_frames_resolve_only_with_a_bound_mapping` |
+| DET-07 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
+| DET-07 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
+| DET-07 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
+| DET-07 | `test_rules` | `det07_needs_a_budget_before_it_will_judge_a_startup` |
+| DET-07 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
+| DET-07 | `test_rules` | `det07_says_a_capture_without_a_launch_has_no_startup` |
+| DET-07 | `test_rules` | `det07_under_budget_runs_and_says_what_it_measured` |
+| DET-08 | `test_compare` | `det08_does_not_report_an_improvement_as_an_issue` |
+| DET-08 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
+| DET-08 | `test_compare` | `det08_refuses_a_cross_platform_pair` |
+| DET-08 | `test_compare` | `det08_refuses_a_debug_versus_release_pair` |
+| DET-08 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
+| DET-08 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
+| DET-08 | `test_compare` | `det08_skips_when_conditions_are_not_comparable` |
+| DET-08 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
 | M0 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
 | M0 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
 | section-0.6 | `test_report` | `synthetic_data_is_announced_in_both_formats` |
@@ -377,6 +411,7 @@ Two cautions on reading this:
 | section-0.8 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
 | section-10.1 | `test_report` | `report_explains_how_to_read_detection_versus_cause` |
 | section-10.3 | `test_rules` | `det02_threshold_is_labelled_a_heuristic_not_a_standard` |
+| section-10.3 | `test_rules` | `det07_needs_a_budget_before_it_will_judge_a_startup` |
 | section-10.3 | `test_rules` | `every_rule_declares_prerequisites_and_a_phase` |
 | section-11 | `test_ingestion` | `hermes_samples_stay_on_an_unmapped_js_clock` |
 | section-11 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
@@ -405,6 +440,7 @@ Two cautions on reading this:
 | section-2.2 | `test_android_collector` | `live_snapshot_states_that_it_is_preliminary` |
 | section-6 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
 | section-7.3 | `test_eligibility` | `eligibility_never_implies_zero_overhead` |
+| section-8 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | section-8 | `test_android_collector` | `meminfo_absent_fields_stay_absent` |
 | section-8 | `test_android_collector` | `uptime_is_read_or_refused_never_defaulted` |
 | section-8 | `test_trace_model` | `unknown_metric_value_serializes_as_null_not_zero` |
@@ -412,7 +448,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (83)
+## Not yet covered (82)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -423,8 +459,7 @@ Two cautions on reading this:
 | A16 | selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested |
 | A17 | needs a live app that exits between listing and record (M2) |
 | A19 | the optional app SDK is not implemented (M3) |
-| A21 | launch-and-record is not implemented (M2) |
-| A22 | wait-for-app is not implemented (M2) |
+| A22 | NO STATED REASON |
 | A23 | favourites/recents is a UI concept (M2) |
 | A25 | large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested |
 | B01 | multi-process grouping needs an Android device with a multi-process app |
@@ -503,6 +538,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 14
-- test cases declaring at least one id: 273
-- checklist-item links: 336
-- section-18 coverage: 115/198 (58%)
+- test cases declaring at least one id: 290
+- checklist-item links: 355
+- section-18 coverage: 116/198 (59%)

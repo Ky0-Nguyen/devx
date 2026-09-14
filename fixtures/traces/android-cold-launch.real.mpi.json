@@ -1,0 +1,456 @@
+{
+  "schema_version": "2.0",
+  "session_id": "s-20260914170647-baddec7f",
+  "synthetic": false,
+  "synthetic_note": null,
+  "device": {
+    "platform": "android",
+    "device_id": "emulator-5554",
+    "display_name": "sdk_gphone16k_arm64",
+    "model": "sdk_gphone16k_arm64",
+    "os_version": "17",
+    "form": "emulator",
+    "trust": "authorized",
+    "connection": "usb",
+    "provider": "adb 1.0.41 (build.type=user)",
+    "observed_at": "2026-09-14T17:06:49Z",
+    "boot_id": "9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+  },
+  "target": {
+    "application_key": {
+      "platform": "android",
+      "device_id": "emulator-5554",
+      "app_identifier": "io.pizzahut.hutbot.debug",
+      "identifier_kind": "package_name",
+      "android_user_id": null,
+      "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+    },
+    "process_instances": [
+      {
+        "application_key": {
+          "platform": "android",
+          "device_id": "emulator-5554",
+          "app_identifier": "io.pizzahut.hutbot.debug",
+          "identifier_kind": "package_name",
+          "android_user_id": null,
+          "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+        },
+        "pid": 22869,
+        "process_start_time": "1322547",
+        "process_name": "io.pizzahut.hutbot.debug",
+        "uid": 10229,
+        "is_primary": true,
+        "ownership_evidence": "uid_and_process_name",
+        "ownership_note": "uid 10229 matches the installed package uid and the process name is package-owned",
+        "counts_toward_app_totals": true,
+        "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+      }
+    ],
+    "runtime_state": "running",
+    "discovery_scope": "complete_for_provider"
+  },
+  "build": {
+    "schema_version": "2.0",
+    "facts": [],
+    "conflicts": [],
+    "symbol_bindings": []
+  },
+  "capabilities": {
+    "schema_version": "2.0",
+    "capabilities": [
+      {
+        "id": "android.toolchain.adb",
+        "human_name": "Android Platform Tools (adb)",
+        "status": "available",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:47Z",
+        "evidence": "`/Users/tan4194/Library/Android/sdk/platform-tools/adb --version` reported 1.0.41",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "probed_only"
+      },
+      {
+        "id": "android.discovery.devices",
+        "human_name": "Android device discovery",
+        "status": "available",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:47Z",
+        "evidence": "`adb devices -l` returned 1 device line(s)",
+        "scope": "devices visible to this host's adb server; a device claimed by another adb server or an IDE may not appear",
+        "limitations": [
+          "every discovered Android device is an emulator; discovery is not verified against physical hardware"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.installed_apps",
+        "human_name": "Installed package enumeration",
+        "status": "available",
+        "provider": "adb shell pm",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:47Z",
+        "evidence": "`pm list packages -U` returned 260 package(s)",
+        "scope": "packages visible to the shell user for the queried Android user",
+        "limitations": [
+          "installed does not mean running, and does not mean profileable"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.running_processes",
+        "human_name": "Running process enumeration",
+        "status": "available",
+        "provider": "adb shell ps",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "`ps -A -o PID,PPID,USER,NAME` returned 308 parsed row(s)",
+        "scope": "processes visible to the shell user; shell has broader visibility than an ordinary app SDK would",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.process_mapping",
+        "human_name": "Process start-time / identity resolution",
+        "status": "available",
+        "provider": "adb shell /proc",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "/proc/self/stat parsed; field 22 (starttime) is readable",
+        "scope": "start time lets a process instance be distinguished across PID reuse and device reboot",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.profileable",
+        "human_name": "Permission to profile a selected app",
+        "status": "unknown",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [
+          "the target APK declares <profileable android:shell=\"true\"/> or is debuggable, or the device runs a userdebug/eng build"
+        ],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "not determinable at the device level: it depends on the selected package's manifest (<profileable> / android:debuggable) and the device build type",
+        "scope": "must be re-probed per selected package during preflight",
+        "limitations": [],
+        "recovery_action": "add <profileable android:shell=\"true\"/> to the target's manifest and reinstall",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.toolchain.xcrun",
+        "human_name": "Xcode command-line tools",
+        "status": "available",
+        "provider": "xcrun",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "xcode-select -p => /Applications/Xcode.app/Contents/Developer; devicectl 518.33; xctrace version 16.0 (17F113)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "probed_only"
+      },
+      {
+        "id": "ios.discovery.devices",
+        "human_name": "iOS device discovery",
+        "status": "available",
+        "provider": "devicectl + simctl",
+        "provider_version": "518.33",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "`devicectl list devices --json-output` reported 2 physical device(s) (0 reachable); `simctl list devices --json` reported 23 available simulator(s) (1 booted)",
+        "scope": "devices paired with this host, plus local simulators. Simulators are reported separately and are never treated as physical devices.",
+        "limitations": [
+          "verified against simulators only: no physical iOS device was reachable at probe time",
+          "2 physical device(s) are paired but unreachable (tunnelState is not connected); they are reported as offline, not as absent"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "ios.discovery.installed_apps",
+        "human_name": "Installed app enumeration (physical device)",
+        "status": "unknown",
+        "provider": "devicectl device info apps",
+        "provider_version": "518.33",
+        "prerequisites": [
+          "a reachable, paired physical device with Developer Mode enabled",
+          "Developer Disk Image services mounted (ddiServicesAvailable = true)"
+        ],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "every paired physical device is unreachable (connectionProperties.tunnelState != connected)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "connect and unlock a trusted iPhone or iPad with Developer Mode enabled, then re-run discovery",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.discovery.running_processes",
+        "human_name": "Running process enumeration (physical device)",
+        "status": "unknown",
+        "provider": "devicectl device info processes",
+        "provider_version": "518.33",
+        "prerequisites": [
+          "a reachable physical device with DDI services"
+        ],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "no reachable physical iOS device; not probed",
+        "scope": "",
+        "limitations": [
+          "iOS does not expose a general foreground/suspended signal, so even when this works the runtime state of an app is reported as running or unknown -- never guessed as suspended"
+        ],
+        "recovery_action": "connect and unlock a trusted device",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.discovery.simulator_apps",
+        "human_name": "Installed and running app enumeration (simulator)",
+        "status": "available",
+        "provider": "simctl",
+        "provider_version": null,
+        "prerequisites": [
+          "a booted iOS simulator",
+          "`plutil` to convert simctl's NeXTSTEP plist output to JSON"
+        ],
+        "observed_at": "2026-09-14T17:06:48Z",
+        "evidence": "simulator 456FA0D8-48C1-4BEC-B087-50E8A046EA5D: 29 app(s) listed, 3 with a launchd-attributed running process",
+        "scope": "simulator only. Simulator timing is never comparable to a physical device and is kept in a separate baseline (spec J18).",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "ios.capture.attach",
+        "human_name": "Permission to attach a profiler to a selected app",
+        "status": "unknown",
+        "provider": "xctrace",
+        "provider_version": "xctrace version 16.0 (17F113)",
+        "prerequisites": [
+          "the app is signed with a development profile by this developer, or carries get-task-allow / the debugger entitlement",
+          "a reachable device with Developer Mode enabled"
+        ],
+        "observed_at": "2026-09-14T17:06:49Z",
+        "evidence": "not determinable at the device level: it depends on the selected app's code signature and entitlements. It is re-probed per app during preflight.",
+        "scope": "an app the developer builds and signs. A third-party App Store app generally cannot be deeply attached, and this tool does not attempt to bypass that.",
+        "limitations": [
+          "no jailbreak, private API, or entitlement bypass is used or offered"
+        ],
+        "recovery_action": "build and install the target from Xcode with a development signing identity, then retry",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.capture.live_recording",
+        "human_name": "Live trace capture from a physical iOS device",
+        "status": "unknown",
+        "provider": "xctrace",
+        "provider_version": "xctrace version 16.0 (17F113)",
+        "prerequisites": [
+          "a reachable physical device",
+          "an attachable, developer-signed app"
+        ],
+        "observed_at": "2026-09-14T17:06:49Z",
+        "evidence": "xctrace version 16.0 (17F113) is installed, but live capture has NOT been exercised against a physical device in this environment",
+        "scope": "",
+        "limitations": [
+          "UNVERIFIED: no physical iOS device was reachable during implementation, so the live capture path is implemented but not demonstrated. This blocks the M2 gate for iOS."
+        ],
+        "recovery_action": "connect a trusted physical iPhone or iPad and run `mpi preflight` to convert this from unknown to a measured result",
+        "tested": "not_tested"
+      },
+      {
+        "id": "android.capture.startup",
+        "human_name": "App startup timing",
+        "status": "available",
+        "provider": "am start -W",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:07:00Z",
+        "evidence": "launched io.pizzahut.hutbot.debug/io.yum.MainActivity, platform reported COLD, TotalTime 5239 ms, Displayed 5239 ms",
+        "scope": "",
+        "limitations": [
+          "TotalTime ends when the activity reported being drawn, which is not when the app became interactive",
+          "a single launch is one sample; a startup claim needs repeated runs (spec section 12)"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.memory",
+        "human_name": "Process memory counters",
+        "status": "available",
+        "provider": "dumpsys meminfo",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:07:10Z",
+        "evidence": "`dumpsys meminfo io.pizzahut.hutbot.debug` yielded 5 counter series",
+        "scope": "",
+        "limitations": [
+          "a single instantaneous reading, not a time series: growth cannot be assessed from one point",
+          "RSS, PSS, private-dirty and the heaps are separate families and are never summed"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.frames",
+        "human_name": "Frame timing",
+        "status": "limited",
+        "provider": "dumpsys gfxinfo",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T17:07:10Z",
+        "evidence": "framestats yielded 0 frame record(s)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      }
+    ]
+  },
+  "requested_measurement_mode": "diagnostic",
+  "clock_domains": [
+    {
+      "id": "android.boottime.ns",
+      "base": "monotonic",
+      "provider": "android.kernel.boottime",
+      "monotonic": true
+    }
+  ],
+  "clock_mappings": [],
+  "primary_clock_domain": "android.boottime.ns",
+  "window_start_ns": 13225320000000,
+  "window_end_ns": 13240420000000,
+  "duration_ns": 15100000000,
+  "threads": [],
+  "counts": {
+    "events": 0,
+    "frames": 0,
+    "cpu_samples": 0,
+    "js_tasks": 0,
+    "markers": 2,
+    "counters": 5
+  },
+  "refresh_intervals": [],
+  "coverage": [],
+  "dropped_events_by_collector": {},
+  "ingestion_warnings": [],
+  "partial": false,
+  "partial_reasons": [],
+  "events": [],
+  "frames": [],
+  "js_tasks": [],
+  "markers": [
+    {
+      "event_id": "startup-app_launch",
+      "timestamp_ns": 13225320000000,
+      "duration_ns": 5239000000,
+      "kind": "app_launch",
+      "screen": null,
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "component": "io.pizzahut.hutbot.debug/io.yum.MainActivity",
+        "launch_class_requested": "cold",
+        "launch_class_reported": "COLD",
+        "endpoint": "the activity reported being drawn",
+        "provider": "am start -W TotalTime"
+      }
+    },
+    {
+      "event_id": "startup-startup_displayed",
+      "timestamp_ns": 13225320000000,
+      "duration_ns": 5239000000,
+      "kind": "startup_displayed",
+      "screen": null,
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "component": "io.pizzahut.hutbot.debug/io.yum.MainActivity",
+        "launch_class_requested": "cold",
+        "launch_class_reported": "COLD",
+        "endpoint": "the platform logged the first frame as displayed",
+        "provider": "ActivityTaskManager Displayed"
+      }
+    }
+  ],
+  "cpu_samples": [],
+  "counters": [
+    {
+      "name": "memory.rss_total_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "rss",
+      "points": [
+        [
+          13240420000000,
+          289210368
+        ]
+      ]
+    },
+    {
+      "name": "memory.pss_total_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "pss",
+      "points": [
+        [
+          13240420000000,
+          159472640
+        ]
+      ]
+    },
+    {
+      "name": "memory.private_dirty_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "private_dirty",
+      "points": [
+        [
+          13240420000000,
+          71073792
+        ]
+      ]
+    },
+    {
+      "name": "memory.native_heap_rss_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "native_heap",
+      "points": [
+        [
+          13240420000000,
+          14417920
+        ]
+      ]
+    },
+    {
+      "name": "memory.dalvik_heap_rss_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "dalvik_heap",
+      "points": [
+        [
+          13240420000000,
+          37568512
+        ]
+      ]
+    }
+  ]
+}

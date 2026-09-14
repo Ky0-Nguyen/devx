@@ -58,6 +58,18 @@ struct CaptureConfig {
   std::chrono::milliseconds cpu_window{5000};
   // Zero means run until stopped, which is what a live session does.
   bool run_until_stopped = false;
+
+  // Launch the app as part of the capture, so the startup itself is measured
+  // rather than requiring the operator to have started it already.
+  bool launch_app = false;
+  // "cold" force-stops first so the process starts from nothing; "warm" and
+  // "hot" leave whatever is running in place. The platform reports its own
+  // classification of what actually happened, and that -- not this request --
+  // is what gets recorded.
+  std::string launch_class = "cold";
+  // How long to wait for the app's process to appear after a launch. Zero
+  // means do not wait.
+  std::chrono::milliseconds wait_for_app{0};
   CancellationToken cancel;
 
   json::Value to_json() const;
@@ -120,6 +132,39 @@ class Collector {
   // same events. What differs is cadence, and cadence costs -- each tick is
   // process invocations against the device, which `LiveUpdate::tick_cost`
   // reports.
+  // What the platform reported about a launch this collector performed.
+  //
+  // Durations stay absent unless a launch actually happened: a platform that
+  // prints a zero because nothing was started must not hand back a
+  // zero-millisecond startup (see `parse_am_start_w`).
+  struct LaunchReport {
+    bool supported = false;
+    bool started = false;
+    std::string error;
+    // The platform's own classification of the launch, e.g. COLD. Never
+    // inferred from how long it took.
+    std::string launch_class;
+    std::optional<model::TimeNs> total_time_ns;
+    std::optional<model::TimeNs> wait_time_ns;
+    std::optional<model::TimeNs> displayed_ns;
+    std::vector<model::Capability> source_results;
+    std::vector<std::string> notes;
+  };
+
+  // Launches the target and records what the platform reported about the
+  // startup into `out`. The default is an honest refusal: a collector that
+  // cannot launch says so rather than pretending the app was already there.
+  virtual LaunchReport launch(const model::DeviceRef& /*device*/,
+                              const std::string& /*app_identifier*/,
+                              const CaptureConfig& /*config*/,
+                              model::NormalizedTrace& /*out*/) {
+    LaunchReport r;
+    r.supported = false;
+    r.error = "this collector cannot launch an app; start it on the device and "
+              "record without --launch";
+    return r;
+  }
+
   virtual bool supports_streaming() const { return false; }
 
   virtual CaptureResult begin(const model::DeviceRef& /*device*/,
