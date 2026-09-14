@@ -1,0 +1,189 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "list",
+      "devices",
+      "--json-output",
+      "/tmp/dcj.json"
+    ],
+    "commandType" : "devicectl.list.devices",
+    "environment" : {
+
+    },
+    "jsonVersion" : 3,
+    "outcome" : "success",
+    "version" : "518.33"
+  },
+  "result" : {
+    "devices" : [
+      {
+        "capabilities" : [
+          {
+            "featureIdentifier" : "com.apple.coredevice.feature.tags",
+            "name" : "Modify Tags"
+          },
+          {
+            "featureIdentifier" : "com.apple.coredevice.feature.default.user.credentials",
+            "name" : "Modify credentials for default users for a device"
+          },
+          {
+            "featureIdentifier" : "com.apple.coredevice.feature.unpairdevice",
+            "name" : "Unpair Device"
+          }
+        ],
+        "connectionProperties" : {
+          "authenticationType" : "manualPairing",
+          "isMobileDeviceOnly" : false,
+          "lastConnectionDate" : "2025-09-11T10:10:27.063Z",
+          "pairingState" : "paired",
+          "potentialHostnames" : [
+            "QuocBaos-iPhone.coredevice.local",
+            "3FF46431-775C-59BB-AD26-D316DFAFA5A6.coredevice.local",
+            "00008101-000978CA11A1001E.coredevice.local"
+          ],
+          "tunnelState" : "unavailable"
+        },
+        "deviceProperties" : {
+          "bootedFromSnapshot" : true,
+          "bootedSnapshotName" : "com.apple.os.update-51F707CF19B41521BAE64A40BD23E2C869F6073FC63EABA8D96B9A039A346F07",
+          "ddiServicesAvailable" : false,
+          "developerModeStatus" : "enabled",
+          "hasInternalOSBuild" : false,
+          "name" : "QuocBao's iPhone",
+          "osBuildUpdate" : "23A340",
+          "osVersionNumber" : "26.0",
+          "rootFileSystemIsWritable" : false
+        },
+        "hardwareProperties" : {
+          "cpuType" : {
+            "name" : "arm64e",
+            "subType" : 2,
+            "type" : 16777228
+          },
+          "deviceType" : "iPhone",
+          "ecid" : 2666084064886814,
+          "hardwareModel" : "D54pAP",
+          "internalStorageCapacity" : 128000000000,
+          "isProductionFused" : true,
+          "marketingName" : "iPhone 12 Pro Max",
+          "platform" : "iOS",
+          "productType" : "iPhone13,4",
+          "reality" : "physical",
+          "serialNumber" : "F2LFCAP20D42",
+          "supportedCPUTypes" : [
+            {
+              "name" : "arm64e",
+              "subType" : 2,
+              "type" : 16777228
+            },
+            {
+              "name" : "arm64",
+              "subType" : 0,
+              "type" : 16777228
+            }
+          ],
+          "supportedDeviceFamilies" : [
+            1
+          ],
+          "thinningProductType" : "iPhone13,4",
+          "udid" : "00008101-000978CA11A1001E"
+        },
+        "identifier" : "3FF46431-775C-59BB-AD26-D316DFAFA5A6",
+        "tags" : [
+
+        ],
+        "visibilityClass" : "default"
+      },
+      {
+        "capabilities" : [
+          {
+            "featureIdentifier" : "com.apple.coredevice.feature.tags",
+            "name" : "Modify Tags"
+          },
+          {
+            "featureIdentifier" : "com.apple.coredevice.feature.default.user.credentials",
+            "name" : "Modify credentials for default users for a device"
+          },
+          {
+            "featureIdentifier" : "com.apple.coredevice.feature.unpairdevice",
+            "name" : "Unpair Device"
+          }
+        ],
+        "connectionProperties" : {
+          "authenticationType" : "manualPairing",
+          "isMobileDeviceOnly" : false,
+          "lastConnectionDate" : "2025-06-25T06:23:11.534Z",
+          "pairingState" : "paired",
+          "potentialHostnames" : [
+            "iPad-Air-Pizza-Hut.coredevice.local",
+            "6769FAD1-FC2F-5EDD-878B-AEC7BB056048.coredevice.local",
+            "00008103-000244683EFA201E.coredevice.local"
+          ],
+          "tunnelState" : "unavailable"
+        },
+        "deviceProperties" : {
+          "bootedFromSnapshot" : true,
+          "bootedSnapshotName" : "com.apple.os.update-95AD7FF8C41072400A782DEE3749A174DF76FDBBD4EB205CE3146612B4E803A1",
+          "ddiServicesAvailable" : false,
+          "developerModeStatus" : "enabled",
+          "hasInternalOSBuild" : false,
+          "name" : "iPad Air (Pizza Hut)",
+          "osBuildUpdate" : "22F76",
+          "osVersionNumber" : "18.5",
+          "rootFileSystemIsWritable" : false
+        },
+        "hardwareProperties" : {
+          "cpuType" : {
+            "name" : "arm64e",
+            "subType" : 2,
+            "type" : 16777228
+          },
+          "deviceType" : "iPad",
+          "ecid" : 638164477288478,
+          "hardwareModel" : "J407AP",
+          "internalStorageCapacity" : 64000000000,
+          "isProductionFused" : true,
+          "marketingName" : "iPad Air (5th generation)",
+          "platform" : "iOS",
+          "productType" : "iPad13,16",
+          "reality" : "physical",
+          "serialNumber" : "LD6G403VC3",
+          "supportedCPUTypes" : [
+            {
+              "name" : "arm64e",
+              "subType" : 2,
+              "type" : 16777228
+            },
+            {
+              "name" : "arm64",
+              "subType" : 0,
+              "type" : 16777228
+            },
+            {
+              "name" : "arm64",
+              "subType" : 1,
+              "type" : 16777228
+            },
+            {
+              "name" : "arm64_32",
+              "subType" : 1,
+              "type" : 33554444
+            }
+          ],
+          "supportedDeviceFamilies" : [
+            1,
+            2
+          ],
+          "thinningProductType" : "iPad13,16",
+          "udid" : "00008103-000244683EFA201E"
+        },
+        "identifier" : "6769FAD1-FC2F-5EDD-878B-AEC7BB056048",
+        "tags" : [
+
+        ],
+        "visibilityClass" : "default"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+# compiler: R8
+# compiler_version: 8.2.47
+# min_api: 24
+# pg_map_id: 7f3a91c
+# pg_map_hash: SHA-256 abc123
+com.example.perf.render.TextShaper -> a.b.c:
+    1:12:void shape(java.lang.String) -> d
+    20:31:int measure() -> e
+com.example.perf.MainActivity -> a.b.M:
+    100:140:void onDraw(android.graphics.Canvas) -> a

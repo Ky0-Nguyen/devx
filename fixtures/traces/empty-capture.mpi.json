@@ -1,0 +1,90 @@
+{
+ "schema_version": "2.0",
+ "session_id": "fix-empty-001",
+ "synthetic": true,
+ "synthetic_note": "Valid but empty capture. Synthetic.",
+ "device": {
+  "platform": "android",
+  "device_id": "serialX",
+  "display_name": "synthetic-device",
+  "model": "SYNTHETIC-1",
+  "os_version": "14",
+  "form": "physical",
+  "trust": "authorized",
+  "provider": "fixture",
+  "boot_id": "boot-fixture-1"
+ },
+ "target": {
+  "application_key": {
+   "platform": "android",
+   "device_id": "serialX",
+   "app_identifier": "com.example.perf",
+   "identifier_kind": "package_name"
+  },
+  "runtime_state": "running",
+  "discovery_scope": "complete_for_provider",
+  "process_instances": [
+   {
+    "pid": 4242,
+    "process_start_time": "918273",
+    "process_name": "com.example.perf",
+    "uid": 10234,
+    "is_primary": true,
+    "ownership_evidence": "uid_and_process_name",
+    "ownership_note": "fixture: uid matches package uid"
+   }
+  ]
+ },
+ "requested_measurement_mode": "diagnostic",
+ "primary_clock_domain": "android.boottime",
+ "clock_domains": [
+  {
+   "id": "android.boottime",
+   "base": "monotonic",
+   "provider": "fixture",
+   "monotonic": true
+  }
+ ],
+ "clock_mappings": [],
+ "threads": [
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4242,
+   "name": "main",
+   "is_main_ui_thread": true,
+   "is_js_thread": false
+  },
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4301",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4301,
+   "name": "mqt_js",
+   "is_main_ui_thread": false,
+   "is_js_thread": true
+  },
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4399",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4399,
+   "name": "worker-1",
+   "is_main_ui_thread": false,
+   "is_js_thread": false
+  }
+ ],
+ "events": [],
+ "frames": [],
+ "js_tasks": [],
+ "markers": [],
+ "cpu_samples": [],
+ "counters": [],
+ "refresh_intervals": [],
+ "coverage": [],
+ "dropped_events_by_collector": {},
+ "build": {
+  "facts": [],
+  "symbol_bindings": []
+ },
+ "window_start_ns": 0,
+ "window_end_ns": 0
+}

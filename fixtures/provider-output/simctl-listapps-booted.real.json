@@ -1,0 +1,479 @@
+{
+  "com.apple.Bridge" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Bridge.app\/",
+    "CFBundleDisplayName" : "Watch",
+    "CFBundleExecutable" : "Bridge",
+    "CFBundleIdentifier" : "com.apple.Bridge",
+    "CFBundleName" : "Watch",
+    "CFBundleVersion" : "1.0",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/0562813F-2106-4C86-AE32-B35421DFCC3E\/",
+    "GroupContainers" : {
+      "243LU875E5.groups.com.apple.podcasts" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/3AFBFF32-3037-4203-BC08-A79522E9D0AC\/",
+      "group.com.apple.bridge" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/E7F1AF5E-B672-47AA-889C-0BC61B3A0A70\/",
+      "group.com.apple.iBooks" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/8BC98BB2-19B1-4DDA-BE9A-BE1629276FF7\/",
+      "group.com.apple.mail" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/0B029101-5D48-49F4-8F83-A3BAF844B8AD\/",
+      "group.com.apple.stocks" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/9CCD5FF3-6F47-4995-9696-D7205AE989CA\/",
+      "group.com.apple.weather" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/A07E707E-EE68-4567-AB94-D53DEE1A569F\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Bridge.app",
+    "SBAppTags" : [
+      "watch-companion"
+    ]
+  },
+  "com.apple.DocumentsApp" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Files.app\/",
+    "CFBundleDisplayName" : "Files",
+    "CFBundleExecutable" : "Files",
+    "CFBundleIdentifier" : "com.apple.DocumentsApp",
+    "CFBundleName" : "Files",
+    "CFBundleVersion" : "367.5.1",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/04E75755-F81F-4D47-9112-98D8877F1055\/",
+    "GroupContainers" : {
+      "group.com.apple.DocumentManager" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/4212B73A-7258-445A-BEB9-7AE36DE0A19A\/",
+      "group.com.apple.FileProvider.LocalStorage" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/946752B3-8054-44F2-B8C5-3BC3E087096B\/",
+      "group.com.apple.tipsnext" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/779EDC84-0AB3-435C-B161-11ED33354A8A\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Files.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.EmojiPoster" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/EmojiPoster.app\/",
+    "CFBundleDisplayName" : "Emoji",
+    "CFBundleExecutable" : "EmojiPoster",
+    "CFBundleIdentifier" : "com.apple.EmojiPoster",
+    "CFBundleName" : "EmojiPoster",
+    "CFBundleVersion" : "1",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/EmojiPoster.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Fitness" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Fitness.app\/",
+    "CFBundleDisplayName" : "Fitness",
+    "CFBundleExecutable" : "Fitness",
+    "CFBundleIdentifier" : "com.apple.Fitness",
+    "CFBundleName" : "Fitness",
+    "CFBundleVersion" : "1.0",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/685166FB-35E8-47C8-93DA-7892CF6ACA99\/",
+    "GroupContainers" : {
+      "group.com.apple.Fitness" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/C22BBB7A-7F2F-4C04-B3FD-2FDDAB7FE6CC\/",
+      "group.com.apple.weather" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/A07E707E-EE68-4567-AB94-D53DEE1A569F\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Fitness.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.GradientPoster" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/GradientPoster.app\/",
+    "CFBundleDisplayName" : "Color",
+    "CFBundleExecutable" : "GradientPoster",
+    "CFBundleIdentifier" : "com.apple.GradientPoster",
+    "CFBundleName" : "GradientPoster",
+    "CFBundleVersion" : "1",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/GradientPoster.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Health" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Health.app\/",
+    "CFBundleDisplayName" : "Health",
+    "CFBundleExecutable" : "Health",
+    "CFBundleIdentifier" : "com.apple.Health",
+    "CFBundleName" : "Health",
+    "CFBundleVersion" : "6200.6.8.2.1",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/CE035181-BBCD-4219-9D33-7AC5642F3B7E\/",
+    "GroupContainers" : {
+      "group.com.apple.Health" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/E79AFA40-F912-4396-9916-97B2B6D840A2\/",
+      "group.com.apple.ip.redirects" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/2F706A88-FE45-41CA-AF6E-6A4AE342A217\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Health.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Maps" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Maps.app\/",
+    "CFBundleDisplayName" : "Maps",
+    "CFBundleExecutable" : "Maps",
+    "CFBundleIdentifier" : "com.apple.Maps",
+    "CFBundleName" : "Maps",
+    "CFBundleVersion" : "2921.35.2.9.29",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/963507F9-E5F3-4E62-A334-DE0632F1EFC9\/",
+    "GroupContainers" : {
+      "group.com.apple.Maps" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/3653BD28-3E97-4DC5-8CA3-3E20D71AB44C\/",
+      "group.com.apple.weather.internal" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/94C8EE8A-5646-4E4D-9D14-AC6B56ABF705\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Maps.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.MobileAddressBook" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Contacts.app\/",
+    "CFBundleDisplayName" : "Contacts",
+    "CFBundleExecutable" : "Contacts",
+    "CFBundleIdentifier" : "com.apple.MobileAddressBook",
+    "CFBundleName" : "Contacts",
+    "CFBundleVersion" : "1.0",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/FE56112D-A702-40D5-880B-9F43F8657590\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Contacts.app",
+    "SBAppTags" : [
+      "stand-alone-contacts"
+    ]
+  },
+  "com.apple.mobilecal" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/MobileCal.app\/",
+    "CFBundleDisplayName" : "Calendar",
+    "CFBundleExecutable" : "MobileCal",
+    "CFBundleIdentifier" : "com.apple.mobilecal",
+    "CFBundleName" : "MobileCal",
+    "CFBundleVersion" : "1",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/DEF44E86-801C-433C-8C9E-BEE92F8C151C\/",
+    "GroupContainers" : {
+      "group.com.apple.reminders" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/619AB291-81CC-4A97-BBE1-88F704B64F0A\/",
+      "group.com.apple.tipsnext" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/779EDC84-0AB3-435C-B161-11ED33354A8A\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/MobileCal.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.mobilesafari" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/MobileSafari.app\/",
+    "CFBundleDisplayName" : "Safari",
+    "CFBundleExecutable" : "MobileSafari",
+    "CFBundleIdentifier" : "com.apple.mobilesafari",
+    "CFBundleName" : "MobileSafari",
+    "CFBundleVersion" : "8624.2.5.10.4",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/C1178BE3-B7A0-4129-81DC-19EBF1034B76\/",
+    "GroupContainers" : {
+      "group.com.apple.BrowserKit" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/99055FCB-7AE7-4787-B167-A60A11E5284F\/",
+      "group.com.apple.sports" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/64F6D269-6515-4213-B81B-28E92B8A9749\/",
+      "group.com.apple.tipsnext" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/779EDC84-0AB3-435C-B161-11ED33354A8A\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/MobileSafari.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.mobileslideshow" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Photos.app\/",
+    "CFBundleDisplayName" : "Photos",
+    "CFBundleExecutable" : "Photos",
+    "CFBundleIdentifier" : "com.apple.mobileslideshow",
+    "CFBundleName" : "Photos",
+    "CFBundleVersion" : "852.0.102",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Photos.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.MobileSMS" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/MobileSMS.app\/",
+    "CFBundleDisplayName" : "Messages",
+    "CFBundleExecutable" : "MobileSMS",
+    "CFBundleIdentifier" : "com.apple.MobileSMS",
+    "CFBundleName" : "MobileSMS",
+    "CFBundleVersion" : "1450.600.61.2.7",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/D86FCE57-2D77-4EC0-BB69-6BA3100E5F37\/",
+    "GroupContainers" : {
+      "group.com.apple.hashtagImages" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/FB3E026F-F164-4460-8A77-8C4639C3D869\/",
+      "group.com.apple.mobileslideshow.PhotosFileProvider" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/DF163675-8668-4E82-B11B-1F1C16F08D76\/",
+      "group.com.apple.PegasusConfiguration" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/AA318A40-ED4D-44B9-B9C3-2C6948D79D93\/",
+      "group.com.apple.safari" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/3C49DAE2-D221-49DF-A095-024F56E761E4\/",
+      "group.com.apple.tipsnext" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/779EDC84-0AB3-435C-B161-11ED33354A8A\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/MobileSMS.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.news" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/News.app\/",
+    "CFBundleDisplayName" : "News",
+    "CFBundleExecutable" : "News",
+    "CFBundleIdentifier" : "com.apple.news",
+    "CFBundleName" : "News",
+    "CFBundleVersion" : "5883",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/B5EE3553-E692-45BA-9166-23D4F8CC2EC3\/",
+    "GroupContainers" : {
+      "group.com.apple.news" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/35C98BB3-D001-42AB-9788-6E6BD5403B54\/",
+      "group.com.apple.newsd" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/C6C9C000-3305-406B-A62F-12EC3E1B084F\/",
+      "group.com.apple.stocks-news" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/575939B0-7417-4F2B-9E13-1660B3D7A772\/",
+      "group.com.apple.weather" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/A07E707E-EE68-4567-AB94-D53DEE1A569F\/",
+      "group.tvappservices.container" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/47AA9734-ED4D-4ED4-9004-8B1F31BFF603\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/News.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Passbook" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Passbook.app\/",
+    "CFBundleDisplayName" : "Wallet",
+    "CFBundleExecutable" : "Passbook",
+    "CFBundleIdentifier" : "com.apple.Passbook",
+    "CFBundleName" : "Wallet",
+    "CFBundleVersion" : "1642.6.5",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/C5142608-01C4-4BC1-B57D-25A01C7D8A60\/",
+    "GroupContainers" : {
+      "com.apple.CoreODI" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/855E9DD1-E304-41B3-85F1-FEB509C563E3\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Passbook.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Passwords" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Passwords.app\/",
+    "CFBundleDisplayName" : "Passwords",
+    "CFBundleExecutable" : "Passwords",
+    "CFBundleIdentifier" : "com.apple.Passwords",
+    "CFBundleName" : "Passwords",
+    "CFBundleVersion" : "8624.2.5.10.4",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/659BB313-2B65-40E5-9F7E-D65940CF23AC\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Passwords.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Posters.KaleidoscopePosterApp" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/KaleidoscopePosterApp.app\/",
+    "CFBundleDisplayName" : "Kaleidoscope",
+    "CFBundleExecutable" : "KaleidoscopePosterApp",
+    "CFBundleIdentifier" : "com.apple.Posters.KaleidoscopePosterApp",
+    "CFBundleName" : "KaleidoscopePosterApp",
+    "CFBundleVersion" : "1",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/KaleidoscopePosterApp.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Posters.UnityPosterApp" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/UnityPosterApp.app\/",
+    "CFBundleDisplayName" : "Unity",
+    "CFBundleExecutable" : "UnityPosterApp",
+    "CFBundleIdentifier" : "com.apple.Posters.UnityPosterApp",
+    "CFBundleName" : "UnityPosterApp",
+    "CFBundleVersion" : "1",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/UnityPosterApp.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Posters.WeatherPosterApp" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/WeatherPosterApp.app\/",
+    "CFBundleDisplayName" : "Weather Wallpaper",
+    "CFBundleExecutable" : "WeatherPosterApp",
+    "CFBundleIdentifier" : "com.apple.Posters.WeatherPosterApp",
+    "CFBundleName" : "Weather Wallpaper",
+    "CFBundleVersion" : "1318",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/WeatherPosterApp.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Preferences" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Preferences.app\/",
+    "CFBundleDisplayName" : "Settings",
+    "CFBundleExecutable" : "Preferences",
+    "CFBundleIdentifier" : "com.apple.Preferences",
+    "CFBundleName" : "Settings",
+    "CFBundleVersion" : "1353.5.5",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Preferences.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.Preview" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Preview.app\/",
+    "CFBundleDisplayName" : "Preview",
+    "CFBundleExecutable" : "Preview",
+    "CFBundleIdentifier" : "com.apple.Preview",
+    "CFBundleName" : "Preview",
+    "CFBundleVersion" : "1016.206.3",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/B2B4A6DA-6823-49F0-B535-3A7DA2416A30\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Preview.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.PreviewShell" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/PreviewShell.app\/",
+    "CFBundleDisplayName" : "Xcode Previews",
+    "CFBundleExecutable" : "PreviewShell",
+    "CFBundleIdentifier" : "com.apple.PreviewShell",
+    "CFBundleName" : "Xcode Previews",
+    "CFBundleVersion" : "23.50.7",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/FE902EB9-D902-4801-9406-404615964800\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/PreviewShell.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.PridePoster" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/PridePosterApp.app\/",
+    "CFBundleDisplayName" : "Pride",
+    "CFBundleExecutable" : "PridePosterApp",
+    "CFBundleIdentifier" : "com.apple.PridePoster",
+    "CFBundleName" : "PridePosterApp",
+    "CFBundleVersion" : "1",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/PridePosterApp.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.reminders" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Reminders.app\/",
+    "CFBundleDisplayName" : "Reminders",
+    "CFBundleExecutable" : "Reminders",
+    "CFBundleIdentifier" : "com.apple.reminders",
+    "CFBundleName" : "Reminders",
+    "CFBundleVersion" : "3976",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/406A9CBB-8DC9-4837-B7CA-FAB59E3A4760\/",
+    "GroupContainers" : {
+      "group.com.apple.reminders" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/619AB291-81CC-4A97-BBE1-88F704B64F0A\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Reminders.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.shortcuts" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Shortcuts.app\/",
+    "CFBundleDisplayName" : "Shortcuts",
+    "CFBundleExecutable" : "Shortcuts",
+    "CFBundleIdentifier" : "com.apple.shortcuts",
+    "CFBundleName" : "Shortcuts",
+    "CFBundleVersion" : "4610",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/AF553E1A-3596-428D-B693-99146663325E\/",
+    "GroupContainers" : {
+      "group.com.apple.shortcuts" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/A225A532-FF9D-492C-AE7D-1E06C48B39BC\/",
+      "group.com.apple.tipsnext" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/779EDC84-0AB3-435C-B161-11ED33354A8A\/",
+      "group.is.workflow.my.app" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/CBEAB36A-21C0-4140-A7BF-C2E586455CC6\/",
+      "group.is.workflow.shortcuts" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Shared\/AppGroup\/75B45137-8E9B-4FD6-B4C9-ABE6C5009EA1\/"
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Shortcuts.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.apple.webapp" : {
+    "ApplicationType" : "System",
+    "Bundle" : "file:\/\/\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS%2026.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Web.app\/",
+    "CFBundleDisplayName" : "Web",
+    "CFBundleExecutable" : "Web",
+    "CFBundleIdentifier" : "com.apple.webapp",
+    "CFBundleName" : "Web",
+    "CFBundleVersion" : "8624.2.5.10.4",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/69BF0BB6-02B4-4D6C-88CC-826D98EC366D\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Library\/Developer\/CoreSimulator\/Volumes\/iOS_23F77\/Library\/Developer\/CoreSimulator\/Profiles\/Runtimes\/iOS 26.5.simruntime\/Contents\/Resources\/RuntimeRoot\/Applications\/Web.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "com.simcam.camprobe" : {
+    "ApplicationType" : "User",
+    "Bundle" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/8E904D3D-687A-418F-8888-5C3B1E50757C\/CamProbe.app\/",
+    "BundleContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/8E904D3D-687A-418F-8888-5C3B1E50757C\/",
+    "CFBundleDisplayName" : "CamProbe",
+    "CFBundleExecutable" : "CamProbe",
+    "CFBundleIdentifier" : "com.simcam.camprobe",
+    "CFBundleName" : "CamProbe",
+    "CFBundleVersion" : "1",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/27F7CCC4-52B3-4AE6-9625-9A839000D8F9\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/8E904D3D-687A-418F-8888-5C3B1E50757C\/CamProbe.app",
+    "SBAppTags" : [
+
+    ]
+  },
+  "io.pizzahut.hutbot.debug" : {
+    "ApplicationType" : "User",
+    "Bundle" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/HutBot.app\/",
+    "BundleContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/",
+    "CFBundleDisplayName" : "HutBot Debug",
+    "CFBundleExecutable" : "HutBot",
+    "CFBundleIdentifier" : "io.pizzahut.hutbot.debug",
+    "CFBundleName" : "HutBot Debug",
+    "CFBundleVersion" : "1",
+    "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/599773E2-35DB-4D66-A9C4-EF1B4905DBB7\/",
+    "GroupContainers" : {
+
+    },
+    "Path" : "\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/HutBot.app",
+    "SBAppTags" : [
+
+    ]
+  }
+}

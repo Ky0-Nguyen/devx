@@ -1,0 +1,757 @@
+{
+ "schema_version": "2.0",
+ "session_id": "fix-incomplete-001",
+ "synthetic": true,
+ "synthetic_note": "Hand-built incomplete-evidence fixture: proxy frame source, an unmapped JS clock, a sample population below threshold, provider drops, and a partial capture. Synthetic.",
+ "device": {
+  "platform": "android",
+  "device_id": "serialX",
+  "display_name": "synthetic-device",
+  "model": "SYNTHETIC-1",
+  "os_version": "14",
+  "form": "physical",
+  "trust": "authorized",
+  "provider": "fixture",
+  "boot_id": "boot-fixture-1"
+ },
+ "target": {
+  "application_key": {
+   "platform": "android",
+   "device_id": "serialX",
+   "app_identifier": "com.example.perf",
+   "identifier_kind": "package_name"
+  },
+  "runtime_state": "running",
+  "discovery_scope": "complete_for_provider",
+  "process_instances": [
+   {
+    "pid": 4242,
+    "process_start_time": "918273",
+    "process_name": "com.example.perf",
+    "uid": 10234,
+    "is_primary": true,
+    "ownership_evidence": "uid_and_process_name",
+    "ownership_note": "fixture: uid matches package uid"
+   }
+  ]
+ },
+ "requested_measurement_mode": "diagnostic",
+ "primary_clock_domain": "android.boottime",
+ "clock_domains": [
+  {
+   "id": "android.boottime",
+   "base": "monotonic",
+   "provider": "fixture",
+   "monotonic": true
+  },
+  {
+   "id": "js.hermes",
+   "base": "unknown",
+   "provider": "fixture",
+   "monotonic": false
+  }
+ ],
+ "clock_mappings": [
+  {
+   "from_domain": "js.hermes",
+   "to_domain": "android.boottime",
+   "offset_ns": 12345,
+   "uncertainty_ns": null,
+   "method": "assumed",
+   "measured": false
+  }
+ ],
+ "threads": [
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4242,
+   "name": "main",
+   "is_main_ui_thread": true,
+   "is_js_thread": false
+  },
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4301",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4301,
+   "name": "mqt_js",
+   "is_main_ui_thread": false,
+   "is_js_thread": true
+  },
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4399",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4399,
+   "name": "worker-1",
+   "is_main_ui_thread": false,
+   "is_js_thread": false
+  }
+ ],
+ "events": [
+  {
+   "event_id": "iev-0",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 0,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-1",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 40000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-2",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 80000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-3",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 120000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-4",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 160000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-5",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 200000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-6",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 240000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-7",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 280000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-8",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 320000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-9",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 360000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-10",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 400000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  },
+  {
+   "event_id": "iev-11",
+   "provider": "fixture.sampler",
+   "clock_domain": "android.boottime",
+   "timestamp_ns": 440000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "category": "cpu_sample",
+   "name": "com.example.perf.Mystery.work"
+  }
+ ],
+ "frames": [
+  {
+   "event_id": "frame-MainActivity-0",
+   "start_ns": 0,
+   "presented_ns": 7333333,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-1",
+   "start_ns": 8333333,
+   "presented_ns": 15666666,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-2",
+   "start_ns": 16666666,
+   "presented_ns": 23999999,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-3",
+   "start_ns": 24999999,
+   "presented_ns": 32333332,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-4",
+   "start_ns": 33333332,
+   "presented_ns": 40666665,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-5",
+   "start_ns": 41666665,
+   "presented_ns": 48999998,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-6",
+   "start_ns": 49999998,
+   "presented_ns": 57333331,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-7",
+   "start_ns": 58333331,
+   "presented_ns": 65666664,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-8",
+   "start_ns": 66666664,
+   "presented_ns": 73999997,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-9",
+   "start_ns": 74999997,
+   "presented_ns": 82333330,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-10",
+   "start_ns": 83333330,
+   "presented_ns": 106666663,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-11",
+   "start_ns": 91666663,
+   "presented_ns": 114999996,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-12",
+   "start_ns": 99999996,
+   "presented_ns": 123333329,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-13",
+   "start_ns": 108333329,
+   "presented_ns": 131666662,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-14",
+   "start_ns": 116666662,
+   "presented_ns": 139999995,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-15",
+   "start_ns": 124999995,
+   "presented_ns": 148333328,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-16",
+   "start_ns": 133333328,
+   "presented_ns": 156666661,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-17",
+   "start_ns": 141666661,
+   "presented_ns": 164999994,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-18",
+   "start_ns": 149999994,
+   "presented_ns": 173333327,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-19",
+   "start_ns": 158333327,
+   "presented_ns": 181666660,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-20",
+   "start_ns": 166666660,
+   "presented_ns": 189999993,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-21",
+   "start_ns": 174999993,
+   "presented_ns": 198333326,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-22",
+   "start_ns": 183333326,
+   "presented_ns": 190666659,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-23",
+   "start_ns": 191666659,
+   "presented_ns": 198999992,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-24",
+   "start_ns": 199999992,
+   "presented_ns": 207333325,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-25",
+   "start_ns": 208333325,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-26",
+   "start_ns": 216666658,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-27",
+   "start_ns": 224999991,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-28",
+   "start_ns": 233333324,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-29",
+   "start_ns": 241666657,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-30",
+   "start_ns": 249999990,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-31",
+   "start_ns": 258333323,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-32",
+   "start_ns": 266666656,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-33",
+   "start_ns": 274999989,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-34",
+   "start_ns": 283333322,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-35",
+   "start_ns": 291666655,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-36",
+   "start_ns": 299999988,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-37",
+   "start_ns": 308333321,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-38",
+   "start_ns": 316666654,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-39",
+   "start_ns": 324999987,
+   "presented_ns": null,
+   "deadline_ns": 8333333,
+   "source": "display_callback_proxy",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  }
+ ],
+ "js_tasks": [
+  {
+   "event_id": "js-unmapped",
+   "start_ns": 400000000,
+   "duration_ns": 320000000,
+   "name": "hydrateStore",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4301",
+   "clock_domain": "js.hermes",
+   "clock_mapped_to_ui": false
+  },
+  {
+   "event_id": "js-no-duration",
+   "start_ns": 800000000,
+   "duration_ns": null,
+   "name": "neverFinished",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4301",
+   "clock_domain": "js.hermes",
+   "clock_mapped_to_ui": false,
+   "quality_flags": [
+    "incomplete_span"
+   ]
+  }
+ ],
+ "markers": [],
+ "cpu_samples": [
+  {
+   "timestamp_ns": 0,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 40000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 80000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 120000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 160000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 200000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 240000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 280000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 320000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 360000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 400000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  },
+  {
+   "timestamp_ns": 440000000,
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "frames": [
+    "com.example.perf.Mystery.work"
+   ],
+   "provider": "fixture.sampler"
+  }
+ ],
+ "counters": [],
+ "refresh_intervals": [
+  {
+   "start_ns": 0,
+   "end_ns": 2000000000,
+   "hz": 120.0,
+   "variable": true,
+   "provider": "fixture"
+  }
+ ],
+ "coverage": [
+  {
+   "collector": "fixture.sampler",
+   "window_start_ns": 0,
+   "window_end_ns": 2000000000,
+   "event_count": 12,
+   "gaps": [
+    {
+     "start_ns": 1200000000,
+     "end_ns": 2000000000,
+     "reason": "collector_crash",
+     "dropped_event_count": 5120
+    }
+   ]
+  }
+ ],
+ "dropped_events_by_collector": {
+  "fixture.sampler": 5120
+ },
+ "build": {
+  "facts": [
+   {
+    "key": "device.form",
+    "source": "device_provider",
+    "observed_at": "2026-09-14T00:00:00Z",
+    "basis": "synthetic fixture",
+    "value": "physical"
+   }
+  ],
+  "symbol_bindings": []
+ },
+ "window_start_ns": 0,
+ "window_end_ns": 2000000000,
+ "partial": true,
+ "partial_reasons": [
+  "collector crashed 1.2 s into the capture"
+ ]
+}
