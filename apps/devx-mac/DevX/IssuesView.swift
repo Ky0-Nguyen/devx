@@ -40,8 +40,18 @@ struct IssuesView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 provenanceBanners
+                if state.reanalyzed {
+                    Banner(kind: .info, title: "Re-analysed",
+                           message: "These findings come from re-running the "
+                                  + "detectors over this session's stored "
+                                  + "trace with the current suppression list. "
+                                  + "The session on disk is unchanged -- the "
+                                  + "raw trace is immutable and this is a view "
+                                  + "of it.")
+                }
                 contextPanel
                 issueList
+                suppressionsPanel
                 detectorTable
             }
             .padding(14)
@@ -227,6 +237,75 @@ struct IssuesView: View {
         }
     }
 
+    /// The project's suppression list (spec section 13: auditable, and
+    /// retained in the export).
+    ///
+    /// Shown next to the findings rather than hidden in a settings pane,
+    /// because the list is the reason some findings are not in the list above
+    /// -- and it lives in a file the CLI reads too, so a suppression is a
+    /// project decision rather than one operator's preference.
+    private var suppressionsPanel: some View {
+        let entries = state.suppressionEntries
+        let rejected = state.suppressionsDoc["rejected"].array
+            .compactMap { $0.string }
+        return Panel(title: "Suppressions (\(entries.count))",
+                     subtitle: "shared with `mpi analyze --suppressions`; a "
+                             + "suppressed finding stays in the export") {
+            VStack(alignment: .leading, spacing: 8) {
+                if entries.isEmpty {
+                    Text("Nothing is suppressed in this project.")
+                        .font(Term.font(11)).foregroundStyle(Term.dim)
+                }
+                ForEach(Array(entries.enumerated()), id: \.offset) { _, e in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 8) {
+                            Chip(text: e["rule_id"].display(), tone: .caution)
+                            if e["fingerprint"].text.isEmpty {
+                                // A much larger claim than one finding, so it
+                                // is labelled as one.
+                                Chip(text: "every finding from this rule",
+                                     tone: .bad)
+                            }
+                            Spacer(minLength: 0)
+                            Button("remove") { state.removeSuppression(e) }
+                                .buttonStyle(TermButtonStyle())
+                        }
+                        Text(e["reason"].display("(no reason)"))
+                            .font(Term.font(11)).foregroundStyle(Term.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 10) {
+                            Text(e["expiry"].text.isEmpty
+                                 ? "no expiry — applies until removed"
+                                 : "expires " + e["expiry"].text)
+                                .font(Term.font(10))
+                                .foregroundStyle(e["expiry"].text.isEmpty
+                                                 ? Term.amber : Term.dim)
+                            if !e["author"].text.isEmpty {
+                                Text("by " + e["author"].text)
+                                    .font(Term.font(10))
+                                    .foregroundStyle(Term.dim)
+                            }
+                            if !e["reference"].text.isEmpty {
+                                Text(e["reference"].text)
+                                    .font(Term.font(10))
+                                    .foregroundStyle(Term.dim)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+                ForEach(rejected, id: \.self) { r in
+                    // An entry the file contained and the core refused. Said
+                    // out loud: one that vanished quietly would look like a
+                    // finding that was never suppressed.
+                    Text("refused: " + r)
+                        .font(Term.font(10)).foregroundStyle(Term.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
     private var detectorTable: some View {
         let runs = state.ruleRuns
         let ran = runs.filter { $0["outcome"].text != "skipped" }.count
@@ -340,6 +419,8 @@ private struct IssueDetail: View {
                              + (issue["suppression"]["expiry"].string.map {
                                  " (expires \($0))" } ?? ""))
                 }
+
+                SuppressControl(issue: issue)
 
                 Panel(title: "Classification") {
                     VStack(alignment: .leading, spacing: 6) {
@@ -565,5 +646,89 @@ private struct StackView: View {
         }
         .padding(9)
         .termCard()
+    }
+}
+
+/// Suppressing one finding, with the reason the list cannot be written
+/// without.
+///
+/// The reason field is not optional and the button stays disabled until it is
+/// filled: the core refuses an entry without one, and a UI that let someone
+/// try and then failed would be teaching them the rule the hard way.
+private struct SuppressControl: View {
+    @EnvironmentObject var state: AppState
+    let issue: JSON
+    @State private var expanded = false
+
+    var body: some View {
+        Panel(title: "Suppress this finding") {
+            VStack(alignment: .leading, spacing: 7) {
+                if issue["suppression"]["suppressed"].bool == true {
+                    Text("Already suppressed: "
+                         + issue["suppression"]["reason"].display("(no reason)"))
+                        .font(Term.font(11)).foregroundStyle(Term.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("The suppression list above is where it is removed.")
+                        .font(Term.font(10)).foregroundStyle(Term.dim)
+                } else if !expanded {
+                    Button("Suppress…") { expanded = true }
+                        .buttonStyle(TermButtonStyle())
+                } else {
+                    Field(label: "reason") {
+                        TextField("why this finding is accepted",
+                                  text: $state.suppressReason)
+                            .textFieldStyle(TermFieldStyle())
+                    }
+                    Field(label: "expiry") {
+                        VStack(alignment: .leading, spacing: 2) {
+                            TextField("YYYY-MM-DD (optional)",
+                                      text: $state.suppressExpiry)
+                                .textFieldStyle(TermFieldStyle())
+                            Text("An expiry is honoured: once it passes the "
+                                 + "finding comes back and the report says "
+                                 + "which suppression lapsed. Leave it empty "
+                                 + "to accept the finding until someone "
+                                 + "removes the entry.")
+                                .font(Term.font(10)).foregroundStyle(Term.dim)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Field(label: "reference") {
+                        TextField("ticket or review (optional)",
+                                  text: $state.suppressReference)
+                            .textFieldStyle(TermFieldStyle())
+                    }
+                    HStack(spacing: 10) {
+                        Button("Suppress this finding") {
+                            state.suppressSelectedIssue(allFindings: false)
+                            expanded = false
+                        }
+                        .buttonStyle(TermButtonStyle())
+                        .disabled(state.suppressReason
+                                    .trimmingCharacters(in: .whitespaces)
+                                    .isEmpty)
+                        // Suppressing a whole rule is a much larger claim, so
+                        // it is a separate button rather than a checkbox next
+                        // to the first one.
+                        Button("Suppress every \(issue["rule_id"].text) finding") {
+                            state.suppressSelectedIssue(allFindings: true)
+                            expanded = false
+                        }
+                        .buttonStyle(TermButtonStyle())
+                        .disabled(state.suppressReason
+                                    .trimmingCharacters(in: .whitespaces)
+                                    .isEmpty)
+                        Button("cancel") { expanded = false }
+                            .buttonStyle(TermButtonStyle())
+                        Spacer(minLength: 0)
+                    }
+                    Text("Written to the project's suppressions.json, which "
+                         + "`mpi analyze --suppressions` reads too. The "
+                         + "session on disk is not modified.")
+                        .font(Term.font(10)).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
     }
 }

@@ -1041,3 +1041,123 @@ MPI_TEST(a_trace_carrying_instructions_is_data_and_stays_data, {"J09", "J10"}) {
   MPI_CHECK_MSG(!r.issues.empty(),
                 "a trace that asks for no issues still gets its issues");
 }
+
+MPI_TEST(an_expired_suppression_is_not_applied_and_says_so, {"H10", "H14"}) {
+  // An expiry that never expires is worse than no expiry: it creates the
+  // belief that suppressions lapse. The engine recorded the date and never
+  // checked it, so a suppression written in 2024 with a 2024 expiry was still
+  // hiding findings.
+  auto trace = load("traces/positive-frames-js-cpu.mpi.json");
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.evaluated_at = "2026-09-15T00:00:00Z";
+  rules::EngineOptions::Suppression s;
+  s.rule_id = "DET-01";
+  s.reason = "known third-party surface";
+  s.expiry = "2026-01-31";
+  s.author = "someone";
+  opts.suppressions.push_back(s);
+
+  const auto r = rules::analyze(trace, symbols, opts);
+  bool saw_det01 = false;
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-01") continue;
+    saw_det01 = true;
+    MPI_CHECK_MSG(!i.suppressed,
+                  "a suppression whose expiry has passed does not suppress");
+  }
+  MPI_CHECK_MSG(saw_det01, "the fixture produces a DET-01 finding to suppress");
+  // And the lapse is named: silently un-suppressing leaves someone wondering
+  // why a finding came back.
+  bool announced = false;
+  for (const auto& n : r.data_quality_notes) {
+    if (n.find("NOT applied because it had expired") != std::string::npos &&
+        n.find("DET-01") != std::string::npos &&
+        n.find("2026-01-31") != std::string::npos) {
+      announced = true;
+    }
+  }
+  MPI_CHECK(announced);
+}
+
+MPI_TEST(a_suppression_inside_its_expiry_still_applies, {"H10", "H14"}) {
+  auto trace = load("traces/positive-frames-js-cpu.mpi.json");
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.evaluated_at = "2026-09-15T00:00:00Z";
+  rules::EngineOptions::Suppression s;
+  s.rule_id = "DET-01";
+  s.reason = "tracked in TICKET-42";
+  s.expiry = "2026-12-31";
+  s.author = "someone";
+  opts.suppressions.push_back(s);
+
+  const auto r = rules::analyze(trace, symbols, opts);
+  bool suppressed = false;
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-01") continue;
+    if (!i.suppressed) continue;
+    suppressed = true;
+    // Retained, not dropped: reason, expiry and author travel into the
+    // export so the suppression is auditable by whoever reads it later.
+    MPI_CHECK_EQ(i.suppression_reason, std::string("tracked in TICKET-42"));
+    MPI_CHECK_EQ(i.suppression_expiry, std::string("2026-12-31"));
+    MPI_CHECK_EQ(i.suppression_author, std::string("someone"));
+  }
+  MPI_CHECK(suppressed);
+  for (const auto& n : r.data_quality_notes) {
+    MPI_CHECK_MSG(n.find("had expired") == std::string::npos,
+                  "nothing is reported as expired when nothing has");
+  }
+}
+
+MPI_TEST(a_suppression_with_no_expiry_applies_forever, {"H10"}) {
+  // No expiry is a valid choice -- a permanently accepted finding -- and must
+  // not be read as an expiry of zero.
+  auto trace = load("traces/positive-frames-js-cpu.mpi.json");
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.evaluated_at = "2099-01-01T00:00:00Z";
+  rules::EngineOptions::Suppression s;
+  s.rule_id = "DET-01";
+  s.reason = "accepted permanently";
+  opts.suppressions.push_back(s);
+  const auto r = rules::analyze(trace, symbols, opts);
+  bool suppressed = false;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-01" && i.suppressed) suppressed = true;
+  }
+  MPI_CHECK(suppressed);
+}
+
+MPI_TEST(an_unreadable_expiry_keeps_the_suppression_and_reports_it, {"H10"}) {
+  // Treating an unparseable expiry as expired would silently un-suppress on
+  // a typo; treating it as valid without saying so would hide the typo. It
+  // keeps the suppression and names it.
+  auto trace = load("traces/positive-frames-js-cpu.mpi.json");
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.evaluated_at = "2026-09-15T00:00:00Z";
+  rules::EngineOptions::Suppression s;
+  s.rule_id = "DET-01";
+  s.reason = "typo in the date";
+  s.expiry = "next quarter";
+  opts.suppressions.push_back(s);
+  const auto r = rules::analyze(trace, symbols, opts);
+  bool suppressed = false;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-01" && i.suppressed) suppressed = true;
+  }
+  MPI_CHECK(suppressed);
+  bool announced = false;
+  for (const auto& n : r.data_quality_notes) {
+    if (n.find("could not be read as a date") != std::string::npos) {
+      announced = true;
+    }
+  }
+  MPI_CHECK(announced);
+}

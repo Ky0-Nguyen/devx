@@ -26,6 +26,7 @@
 #include "core/session/live_capture.hpp"
 #include "core/session/compare.hpp"
 #include "core/session/session_store.hpp"
+#include "core/session/suppressions.hpp"
 #include "core/timeline/timeline.hpp"
 #include "core/util/time.hpp"
 
@@ -691,6 +692,193 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
                             static_cast<std::int64_t>(trace.counters.size())));
     out.set("issues", json::Value::integer(
                           static_cast<std::int64_t>(analysis.issues.size())));
+    return out;
+  });
+}
+
+char* mpi_suppressions_json(const char* path) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    session::SuppressionFile file;
+    const auto read = session::read_suppressions(safe(path), file);
+    if (!read.ok) {
+      out.set("error", json::Value::string(read.error));
+      return out;
+    }
+    out = file.to_json();
+    json::Value rejected = json::Value::array();
+    for (const auto& r : read.rejected) rejected.push_back(json::Value::string(r));
+    out.set("rejected", std::move(rejected));
+    out.set("path", json::Value::string(safe(path)));
+    return out;
+  });
+}
+
+char* mpi_add_suppression_json(const char* path, const char* rule_id,
+                               const char* fingerprint, const char* reason,
+                               const char* expiry, const char* author,
+                               const char* reference) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    session::SuppressionEntry entry;
+    entry.rule_id = safe(rule_id);
+    entry.fingerprint = safe(fingerprint);
+    entry.reason = safe(reason);
+    entry.expiry = safe(expiry);
+    entry.author = safe(author);
+    entry.reference = safe(reference);
+    entry.created_at = time_util::now_iso8601_utc();
+    if (entry.rule_id.empty()) {
+      out.set("error", json::Value::string("a rule id is required"));
+      return out;
+    }
+    if (entry.reason.empty()) {
+      out.set("error",
+              json::Value::string("a reason is required: a suppression nobody "
+                                  "can review is permanent by accident"));
+      return out;
+    }
+
+    session::SuppressionFile file;
+    const auto read = session::read_suppressions(safe(path), file);
+    if (!read.ok) {
+      out.set("error", json::Value::string(read.error));
+      return out;
+    }
+    // Replacing an entry for the same rule and fingerprint rather than
+    // stacking a second one, so the list cannot hold two reasons for the same
+    // finding and leave a reader guessing which applied.
+    for (auto it = file.entries.begin(); it != file.entries.end();) {
+      if (it->rule_id == entry.rule_id && it->fingerprint == entry.fingerprint) {
+        it = file.entries.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    file.entries.push_back(std::move(entry));
+    const auto wrote = session::write_suppressions(safe(path), file);
+    if (!wrote.ok) {
+      out.set("error", json::Value::string(wrote.error));
+      return out;
+    }
+    out = file.to_json();
+    out.set("path", json::Value::string(safe(path)));
+    return out;
+  });
+}
+
+char* mpi_remove_suppression_json(const char* path, const char* rule_id,
+                                  const char* fingerprint) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    session::SuppressionFile file;
+    const auto read = session::read_suppressions(safe(path), file);
+    if (!read.ok) {
+      out.set("error", json::Value::string(read.error));
+      return out;
+    }
+    const std::size_t before = file.entries.size();
+    for (auto it = file.entries.begin(); it != file.entries.end();) {
+      if (it->rule_id == safe(rule_id) && it->fingerprint == safe(fingerprint)) {
+        it = file.entries.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    if (file.entries.size() == before) {
+      out.set("error", json::Value::string("no suppression matches that rule "
+                                           "and fingerprint"));
+      return out;
+    }
+    const auto wrote = session::write_suppressions(safe(path), file);
+    if (!wrote.ok) {
+      out.set("error", json::Value::string(wrote.error));
+      return out;
+    }
+    out = file.to_json();
+    out.set("path", json::Value::string(safe(path)));
+    return out;
+  });
+}
+
+char* mpi_reanalyze_session_json(const char* sessions_dir,
+                                 const char* session_id,
+                                 const char* suppressions_path) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    const std::string id = safe(session_id);
+    if (!session_id_is_safe(id)) {
+      out.set("error", json::Value::string("invalid session id"));
+      return out;
+    }
+    const std::string dir = safe(sessions_dir) + "/" + id;
+    const auto loaded = session::load_package(dir);
+    if (!loaded.ok) {
+      out.set("error", json::Value::string(loaded.error));
+      return out;
+    }
+    model::NormalizedTrace trace;
+    ingest::ReadDiagnostics diag;
+    ingest::ReadOptions ropts;
+    ropts.cancel = cancel_registry().token();
+    const auto reader = ingest::read_any(loaded.trace_path, ropts, trace, diag);
+    if (!reader.has_value()) {
+      out.set("error",
+              json::Value::string("the session's trace could not be read"));
+      return out;
+    }
+    ingest::normalize(trace, ropts.cancel);
+
+    symbols::SymbolService symbols;
+    rules::EngineOptions eopts;
+    eopts.mode = trace.requested_mode;
+    eopts.cancel = ropts.cancel;
+    session::SuppressionFile file;
+    json::Value rejected = json::Value::array();
+    if (std::string(safe(suppressions_path)).size() > 0) {
+      const auto read = session::read_suppressions(safe(suppressions_path), file);
+      if (!read.ok) {
+        out.set("error", json::Value::string(read.error));
+        return out;
+      }
+      for (const auto& r : read.rejected) {
+        rejected.push_back(json::Value::string(r));
+      }
+      eopts.suppressions = file.to_engine();
+    }
+
+    // A stored heap dump is used, so a re-analysis does not quietly lose
+    // DET-06's evidence and report it as missing.
+    heap::HeapGraph heap_graph;
+    if (!loaded.heap_path.empty()) {
+      android::HprofLimits hlimits;
+      const auto hr = android::read_hprof(loaded.heap_path, hlimits,
+                                          ropts.cancel, heap_graph);
+      if (hr.ok && !heap_graph.objects().empty()) {
+        heap_graph.gc_requested_before_dump = true;
+        eopts.heap_graph = &heap_graph;
+      }
+    }
+
+    const auto analysis = rules::analyze(trace, symbols, eopts);
+    report::ReportOptions rep;
+    // Suppressed findings stay in the document: that is what makes a
+    // suppression auditable rather than a deletion.
+    rep.include_suppressed = true;
+    json::ParseError perr;
+    auto doc = json::parse(report::to_json(trace, analysis, rep),
+                           json::Limits{}, &perr);
+    if (!doc) {
+      out.set("error", json::Value::string("the re-analysis could not be "
+                                           "rendered: " + perr.message));
+      return out;
+    }
+    out = *doc;
+    out.set("reanalyzed", json::Value::boolean(true));
+    out.set("suppressions_applied",
+            json::Value::integer(
+                static_cast<std::int64_t>(eopts.suppressions.size())));
+    out.set("suppressions_rejected", std::move(rejected));
     return out;
   });
 }

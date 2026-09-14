@@ -57,6 +57,10 @@ RECORD OPTIONS (Android)
                                 Disable an individual collector source.
   --no-frame-reset              Keep the frame history the platform already
                                 holds instead of resetting it first.
+  --suppressions <file>         (analyze) A project's suppression list, shared
+                                with the desktop app. An entry with no reason
+                                is refused, and an expired one is reported and
+                                NOT applied.
   --heap-dump <file>            (analyze) Read reference paths from an HPROF
                                 heap dump, for DET-06.
   --heap                        (record) Take a heap dump after the capture, for
@@ -129,6 +133,7 @@ bool needs_value(const std::string& flag) {
       "--source-revision",
       "--source-root",
       "--suppress",
+      "--suppressions",
       "--suppress-expiry",
       "--suppress-reason",
       "--threshold",

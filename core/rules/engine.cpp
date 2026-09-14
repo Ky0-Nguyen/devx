@@ -1,11 +1,44 @@
 #include "core/rules/engine.hpp"
 
 #include <algorithm>
+#include <set>
 
 #include "core/rules/rule_registry.hpp"
 #include "core/util/time.hpp"
 
 namespace mpi::rules {
+
+namespace {
+
+// Whether `expiry` is in the past relative to `now`, both ISO-8601 UTC.
+//
+// Compared on the date prefix only. An expiry is a project decision recorded
+// by a person, and "2026-09-30" is the form people write; demanding a full
+// timestamp would make a perfectly clear expiry unparseable, and treating an
+// unparseable one as expired would silently un-suppress. So: unparseable
+// means "no expiry I can judge", which keeps the suppression and is reported.
+enum class ExpiryState { kNone, kUnparseable, kActive, kExpired };
+
+ExpiryState classify_expiry(const std::string& expiry, const std::string& now) {
+  if (expiry.empty()) return ExpiryState::kNone;
+  const auto date_of = [](const std::string& s) -> std::string {
+    if (s.size() < 10) return {};
+    for (std::size_t i = 0; i < 10; ++i) {
+      const char c = s[i];
+      const bool ok = (i == 4 || i == 7) ? (c == '-') : (c >= '0' && c <= '9');
+      if (!ok) return {};
+    }
+    return s.substr(0, 10);
+  };
+  const std::string a = date_of(expiry);
+  const std::string b = date_of(now);
+  if (a.empty() || b.empty()) return ExpiryState::kUnparseable;
+  // Zero-padded ISO dates compare correctly as strings.
+  return a < b ? ExpiryState::kExpired : ExpiryState::kActive;
+}
+
+}  // namespace
+
 
 std::string engine_version() { return "0.1.0"; }
 
@@ -74,6 +107,14 @@ model::AnalysisResult analyze(const model::NormalizedTrace& trace,
   ctx.cancel = opts.cancel;
   ctx.threshold_overrides = opts.threshold_overrides;
 
+  // Judged once for the whole analysis, so two issues from the same run
+  // cannot disagree about whether a suppression had lapsed.
+  const std::string now = opts.evaluated_at.empty()
+                              ? time_util::now_iso8601_utc()
+                              : opts.evaluated_at;
+  std::set<std::string> expired_suppressions;
+  std::set<std::string> unparseable_expiries;
+
   for (const auto& rule : all_rules()) {
     if (opts.cancel.cancelled()) {
       model::RuleRunRecord rec;
@@ -91,16 +132,42 @@ model::AnalysisResult analyze(const model::NormalizedTrace& trace,
       for (const auto& s : opts.suppressions) {
         if (s.rule_id != issue.rule_id) continue;
         if (!s.fingerprint.empty() && s.fingerprint != issue.fingerprint) continue;
+        const auto state = classify_expiry(s.expiry, now);
+        if (state == ExpiryState::kExpired) {
+          // An expiry that never expires is worse than no expiry: it creates
+          // the belief that suppressions lapse. So the issue is reported, and
+          // the lapsed suppression is named -- silently un-suppressing would
+          // leave someone wondering why a finding came back.
+          expired_suppressions.insert(
+              s.rule_id + " (expired " + s.expiry + ", reason: " + s.reason +
+              ")");
+          continue;
+        }
         issue.suppressed = true;
         issue.suppression_reason = s.reason;
         issue.suppression_expiry = s.expiry;
         issue.suppression_author = s.author;
+        if (state == ExpiryState::kUnparseable) {
+          unparseable_expiries.insert(s.rule_id + " (expiry '" + s.expiry +
+                                      "' is not an ISO-8601 date)");
+        }
         break;
       }
       result.issues.push_back(std::move(issue));
     }
     for (auto& a : out.attribution) result.attribution.push_back(std::move(a));
     result.rule_runs.push_back(std::move(out.record));
+  }
+
+  for (const auto& e : expired_suppressions) {
+    result.data_quality_notes.push_back(
+        "a suppression was NOT applied because it had expired: " + e +
+        ". The finding it covered is reported above");
+  }
+  for (const auto& u : unparseable_expiries) {
+    result.data_quality_notes.push_back(
+        "a suppression's expiry could not be read as a date, so it was "
+        "treated as having none and the suppression still applies: " + u);
   }
 
   // Impact order for display; ties broken by fingerprint so the order is

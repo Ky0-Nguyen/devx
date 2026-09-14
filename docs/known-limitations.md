@@ -324,6 +324,16 @@ Still open, and all inherently UI behaviours:
 - **A16** selection and keyboard focus preserved across a list refresh. The
   selected *device* is preserved (and never silently switched); focus is not
   managed.
+- Suppressions are now a project file both front ends read
+  (`suppressions.json` beside the sessions directory), with a mandatory
+  reason, an author, an optional reference and an expiry that is honoured.
+  Building it found a defect worth naming: **the engine recorded a
+  suppression's expiry and never checked it**, so a suppression written with a
+  2024 expiry was still hiding findings in 2026. An expiry that never expires
+  is worse than no expiry, because it creates the belief that suppressions
+  lapse. An expired one is now reported and not applied, and an unparseable
+  one keeps the suppression while saying the date could not be read -- the
+  other way round would silently un-suppress on a typo.
 - **A23** favourites and recents.
 - **A25** responsiveness with a very large app list. The emulator's 266 apps
   render fine; nothing larger has been tried.
@@ -458,7 +468,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **157 of 198** checklist items have at least one automated test
-(420 test cases in 19 binaries, plus 166 Swift). The remaining 41 are enumerated with a stated
+(429 test cases in 19 binaries, plus 166 Swift). The remaining 41 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
