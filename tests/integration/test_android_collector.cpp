@@ -10,6 +10,8 @@
 #include <sstream>
 
 #include "adapters/android/adb_collector.hpp"
+#include "adapters/android/atrace_parser.hpp"
+#include "core/rules/engine.hpp"
 #include "core/session/live_capture.hpp"
 #include "tests/unit/test_framework.hpp"
 
@@ -497,4 +499,293 @@ MPI_TEST(resolve_activity_reads_the_component_not_the_details, {"A21"}) {
                std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
   // A package with no launchable activity is a real answer, not an error.
   MPI_CHECK(android::parse_resolved_activity("No activity found\n").empty());
+}
+
+
+// --- atrace, mapped into the model, then read by DET-03 and DET-09 ----------
+//
+// Driven from the committed ftrace text rather than a recorded session: the
+// same six-second capture as a normalized trace is three megabytes, and the
+// text is the real provider output anyway.
+
+namespace {
+
+// The app's threads as /proc/<pid>/task reported them during the capture the
+// fixture came from.
+std::vector<android::AppThread> fixture_threads() {
+  return {
+      {3378, "ut.hutbot.debug"},   // tid == pid: the UI main thread
+      {3440, "SharedPreferenc"},   // the thread that blocked on a page read
+      {3452, "ScionFrontendAp"},
+      {3454, "Firebase Backgr"},
+      {3457, "WM.task-1"},
+  };
+}
+
+model::NormalizedTrace mapped_fixture() {
+  const auto parsed = android::parse_atrace(
+      read_fixture("provider-output/android-atrace-cold-start.real.txt"));
+  model::NormalizedTrace out;
+  out.session_id = "atrace-fixture";
+  out.primary_clock_domain = "android.boottime.ns";
+  android::map_atrace_to_trace(parsed, fixture_threads(), 3378,
+                               "android|emulator|io.pizzahut.hutbot.debug|pid=3378",
+                               out);
+  return out;
+}
+
+const model::RuleRunRecord* record_for_rule(const model::AnalysisResult& r,
+                                            const std::string& id) {
+  for (const auto& rec : r.rule_runs) {
+    if (rec.rule_id == id) return &rec;
+  }
+  return nullptr;
+}
+
+bool has_text(const std::vector<std::string>& v, const std::string& needle) {
+  for (const auto& s : v) {
+    if (s.find(needle) != std::string::npos) return true;
+  }
+  return false;
+}
+
+}  // namespace
+
+MPI_TEST(atrace_mapping_attributes_only_the_apps_threads, {"B01", "E17", "F11"}) {
+  const auto trace = mapped_fixture();
+
+  // The trace is system-wide. Every event kept must belong to a thread this
+  // app owns; anything else is out of scope, not the app being idle.
+  MPI_CHECK(!trace.events.empty());
+  const auto threads = fixture_threads();
+  for (const auto& e : trace.events) {
+    bool owned = false;
+    for (const auto& t : threads) {
+      if (e.thread_instance_id == "tid=" + std::to_string(t.tid)) owned = true;
+    }
+    MPI_CHECK_MSG(owned, "event attributed to a thread the app does not own: " +
+                             e.thread_instance_id);
+  }
+
+  // Thread identity, including which one is the main thread -- from the
+  // platform's convention (tid == pid), not from the name.
+  const model::ThreadInfo* main = nullptr;
+  for (const auto& t : trace.threads) {
+    if (t.is_main_ui_thread) main = &t;
+  }
+  MPI_CHECK(main != nullptr);
+  if (main != nullptr) {
+    MPI_CHECK_EQ(main->tid, 3378);
+    MPI_CHECK_EQ(main->name, std::string("ut.hutbot.debug"));
+  }
+}
+
+MPI_TEST(atrace_mapping_keeps_states_apart_and_only_calls_iowait_io,
+         {"E10", "DET-03", "C18"}) {
+  const auto trace = mapped_fixture();
+  std::size_t io_events = 0;
+  std::size_t uninterruptible = 0;
+  std::size_t runnable = 0;
+  for (const auto& e : trace.events) {
+    if (e.category == model::EventCategory::kIo) {
+      ++io_events;
+      // An I/O event exists only where the kernel said iowait=1.
+      const auto* flag = e.payload.find("iowait");
+      MPI_CHECK(flag != nullptr && flag->is_bool() && flag->as_bool());
+      // And it carries where the kernel blocked, which is the only location
+      // this provider gives.
+      const auto* caller = e.payload.find("kernel_caller");
+      MPI_CHECK(caller != nullptr && !caller->as_string().empty());
+    }
+    if (e.category != model::EventCategory::kSchedule) continue;
+    if (e.name == "uninterruptible") ++uninterruptible;
+    if (e.name == "runnable") ++runnable;
+  }
+  MPI_CHECK_MSG(io_events > 0, "the fixture contains real iowait blocks");
+  MPI_CHECK_MSG(uninterruptible > 0, "and uninterruptible intervals");
+  // Runnable-but-not-running is kept as its own state, not folded into a
+  // wait: it is CPU contention and has a different cause (E10).
+  MPI_CHECK_MSG(runnable > 0, "and preempted-while-runnable intervals");
+}
+
+MPI_TEST(det03_leaves_a_background_threads_io_in_the_background,
+         {"DET-03", "J14"}) {
+  // In this real capture every kernel-confirmed I/O wait is on `WM.task-1`,
+  // a WorkManager thread. That is what a background thread is for, so the
+  // rule reports nothing -- and says which thread it passed over rather than
+  // going quiet.
+  auto trace = mapped_fixture();
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-03.min_block_ms", 0.1});
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  for (const auto& i : r.issues) {
+    MPI_CHECK_MSG(i.rule_id != "DET-03",
+                  "a background thread's I/O must not be reported");
+  }
+  const auto* rec = record_for_rule(r, "DET-03");
+  MPI_CHECK(rec != nullptr);
+  if (rec == nullptr) return;
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundNothing);
+  MPI_CHECK(has_text(rec->skipped_reasons, "WM.task-1"));
+  MPI_CHECK(has_text(rec->skipped_reasons,
+                     "what a background thread is for"));
+}
+
+MPI_TEST(det03_reports_a_main_thread_block_with_its_slice,
+         {"DET-03", "H01"}) {
+  // Hand-written ftrace, in the real format: the main thread enters a
+  // SharedPreferences read, the kernel reports iowait, and it stays
+  // uninterruptible for 40 ms. The committed capture has no main-thread I/O
+  // wait in it, so the positive path is exercised here rather than by
+  // doctoring the real trace.
+  const auto parsed = android::parse_atrace(
+      "# tracer: nop\n"
+      "# entries-in-buffer/entries-written: 12/12   #P:4\n"
+      " ut.hutbot.debug-3378 (   3378) [001] ..... 100.000000: "
+      "tracing_mark_write: B|3378|SharedPreferencesImpl#loadFromDisk\n"
+      " ut.hutbot.debug-3378 (   3378) [001] d..2. 100.001000: "
+      "sched_blocked_reason: pid=3378 iowait=1 "
+      "caller=folio_wait_bit_common+0x2b0/0x408\n"
+      " ut.hutbot.debug-3378 (   3378) [001] d..2. 100.001000: sched_switch: "
+      "prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=D ==> "
+      "next_comm=swapper/1 next_pid=0 next_prio=120\n"
+      " <idle>-0 (-------) [001] d..2. 100.041000: sched_switch: "
+      "prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> "
+      "next_comm=ut.hutbot.debug next_pid=3378 next_prio=110\n"
+      " ut.hutbot.debug-3378 (   3378) [001] ..... 100.045000: "
+      "tracing_mark_write: E|3378\n");
+
+  model::NormalizedTrace trace;
+  trace.session_id = "det03-main-thread";
+  trace.primary_clock_domain = "android.boottime.ns";
+  android::map_atrace_to_trace(parsed, {{3378, "ut.hutbot.debug"}}, 3378,
+                               "proc", trace);
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  const model::Issue* found = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-03") { found = &i; break; }
+  }
+  MPI_CHECK(found != nullptr);
+  if (found == nullptr) return;
+
+  // 40 ms of uninterruptible sleep on the UI thread, with the kernel's own
+  // reason: measured, and severity high at that length.
+  MPI_CHECK(found->detection_status == model::DetectionStatus::kObserved);
+  MPI_CHECK(found->cause_status == model::CauseStatus::kUnknown);
+  MPI_CHECK(found->severity == model::Severity::kMedium);
+  MPI_CHECK(found->title.find("the UI main thread") != std::string::npos);
+  // The app's own slice is the closest thing to a location this provider
+  // gives, and it is used when present.
+  MPI_CHECK(found->title.find("SharedPreferencesImpl#loadFromDisk") !=
+            std::string::npos);
+  MPI_CHECK(has_text(found->missing_evidence, "app's own call stack"));
+  MPI_CHECK(has_text(found->missing_evidence, "folio_wait_bit_common"));
+  MPI_CHECK(has_text(found->proposed_remediation, "off the UI thread"));
+  MPI_CHECK_EQ(found->evidence.size(), std::size_t{3});
+  MPI_CHECK(!found->metrics.empty());
+  if (!found->metrics.empty()) {
+    MPI_CHECK_EQ(found->metrics.front().value.value_or(0.0), 40000000.0);
+  }
+}
+
+MPI_TEST(det03_will_not_promote_a_bare_uninterruptible_state, {"DET-03", "C18"}) {
+  // Same trace with the kernel's iowait evidence removed: the `D` states
+  // remain, and the rule must refuse to call them I/O.
+  auto trace = mapped_fixture();
+  std::vector<model::Event> without_io;
+  for (const auto& e : trace.events) {
+    if (e.category == model::EventCategory::kIo) continue;
+    without_io.push_back(e);
+  }
+  trace.events = std::move(without_io);
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(trace, symbols, opts);
+  const auto* rec = record_for_rule(r, "DET-03");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(has_text(rec->skipped_reasons, "not promoted to an I/O claim"));
+  // And it says the collector *did* run, which is not the same as absent.
+  MPI_CHECK(has_text(rec->skipped_reasons, "scheduling evidence was collected"));
+}
+
+MPI_TEST(det09_reports_waits_on_visible_threads_and_excludes_the_rest,
+         {"DET-09", "E06"}) {
+  auto trace = mapped_fixture();
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-09.min_wait_ms", 1.0});
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  std::size_t findings = 0;
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-09") continue;
+    ++findings;
+    // The wait is measured; its cause is always qualified.
+    MPI_CHECK(i.detection_status == model::DetectionStatus::kObserved);
+    MPI_CHECK(i.cause_status == model::CauseStatus::kCandidate ||
+              i.cause_status == model::CauseStatus::kUnknown);
+    // Never above medium: a qualified finding must not outrank a measured one.
+    MPI_CHECK(i.severity != model::Severity::kHigh);
+    MPI_CHECK(i.severity_rationale.find("its cause is not") != std::string::npos);
+    // Two metrics, and the states are never summed together.
+    MPI_CHECK(i.metrics.size() == 2);
+    if (!i.metrics.empty()) {
+      MPI_CHECK(has_text(i.metrics.front().limitations, "never added to another"));
+    }
+  }
+  MPI_CHECK_MSG(findings > 0, "the main thread does wait in this fixture");
+
+  const auto* rec = record_for_rule(r, "DET-09");
+  MPI_CHECK(rec != nullptr);
+  // Background threads are excluded with the reason stated, not dropped.
+  MPI_CHECK(has_text(rec->skipped_reasons, "not a thread the user waits on"));
+}
+
+MPI_TEST(det09_never_names_a_lock_owner, {"DET-09"}) {
+  auto trace = mapped_fixture();
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-09.min_wait_ms", 1.0});
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-09") continue;
+    // The strongest claim allowed is about the thread that *unblocked* it.
+    // Naming a holder would be a fabricated cause.
+    MPI_CHECK(i.confidence_basis.find("held") == std::string::npos ||
+              i.confidence_basis.find("not necessarily the thread that held") !=
+                  std::string::npos);
+    if (i.cause_status == model::CauseStatus::kCandidate) {
+      MPI_CHECK(has_text(i.missing_evidence, "a lock's owner is a different claim"));
+    } else {
+      MPI_CHECK(has_text(i.missing_evidence, "not even a candidate can be named"));
+    }
+  }
+}
+
+MPI_TEST(det09_leaves_an_io_wait_to_det03, {"DET-09", "DET-03", "H08"}) {
+  // The same block must not be reported twice under two names.
+  auto trace = mapped_fixture();
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-09.min_wait_ms", 0.1});
+  const auto r = rules::analyze(trace, symbols, opts);
+  const auto* rec = record_for_rule(r, "DET-09");
+  MPI_CHECK(rec != nullptr);
+  if (rec == nullptr) return;
+  MPI_CHECK(has_text(rec->skipped_reasons, "DET-03 reports"));
 }

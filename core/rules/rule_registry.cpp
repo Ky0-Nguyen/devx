@@ -10,9 +10,11 @@ namespace mpi::rules {
 RulePtr make_det01_frame_deadlines();
 RulePtr make_det02_long_js();
 RulePtr make_det04_cpu_hotspot();
+RulePtr make_det03_main_thread_io();
 RulePtr make_det05_memory_growth();
 RulePtr make_det07_startup_budget();
 RulePtr make_det08_regression();
+RulePtr make_det09_wait_contention();
 RulePtr make_det10_react_renders();
 RulePtr make_det11_network_delay();
 RulePtr make_det12_tooling_activity();
@@ -29,9 +31,11 @@ std::vector<RulePtr> all_rules() {
   rules.push_back(make_det01_frame_deadlines());
   rules.push_back(make_det02_long_js());
   rules.push_back(make_det04_cpu_hotspot());
+  rules.push_back(make_det03_main_thread_io());
   rules.push_back(make_det05_memory_growth());
   rules.push_back(make_det07_startup_budget());
   rules.push_back(make_det08_regression());
+  rules.push_back(make_det09_wait_contention());
   rules.push_back(make_det10_react_renders());
   rules.push_back(make_det11_network_delay());
   rules.push_back(make_det12_tooling_activity());

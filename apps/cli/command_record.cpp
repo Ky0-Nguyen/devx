@@ -187,6 +187,18 @@ ExitCode cmd_record(const Invocation& inv) {
       // against a target that does not exist yet.
       cfg.wait_for_app = std::chrono::milliseconds(10000);
     }
+    if (inv.has_flag("scheduling")) {
+      cfg.scheduling = true;
+      // Spec section 13 asks for the overhead to be explained before a
+      // heavier collector is enabled. This one traces the whole device.
+      std::cerr << "note: --scheduling runs `atrace` on the device for the "
+                   "capture's duration. It traces the *whole device*, not just "
+                   "this app, and costs a "
+                << (cfg.scheduling_buffer_kb / 1024)
+                << " MiB kernel buffer per CPU. Only this app's threads are "
+                   "attributed to it; everything else is recorded as out of "
+                   "scope.\n";
+    }
     if (inv.has_flag("no-frames")) cfg.frames = false;
     if (inv.has_flag("no-cpu")) cfg.cpu_samples = false;
     if (inv.has_flag("no-memory")) cfg.memory = false;

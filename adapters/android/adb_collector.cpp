@@ -1,5 +1,7 @@
 #include "adapters/android/adb_collector.hpp"
 
+#include "adapters/android/atrace_parser.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -884,6 +886,120 @@ std::int64_t AdbCollector::drain_cpu_samples(model::NormalizedTrace& out) {
 // Launch and startup measurement
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Scheduling and I/O (atrace)
+// ---------------------------------------------------------------------------
+
+std::int64_t AdbCollector::collect_scheduling(
+    const model::DeviceRef& device, const session::CaptureConfig& config,
+    std::int32_t pid, model::NormalizedTrace& out,
+    model::Capability& capability) {
+  proc::Options po;
+  po.cancel = config.cancel;
+
+  // The app's own threads. atrace is system-wide, so without this list there
+  // is nothing to attribute: every other line in the file belongs to another
+  // process and must stay out of the app's totals.
+  const std::string pid_text = std::to_string(pid);
+  std::vector<AppThread> threads;
+  {
+    po.timeout = std::chrono::milliseconds(15000);
+    const auto listing = proc::run(
+        shell_argv(device.device_id,
+                   {"ls", "/proc/" + pid_text + "/task"}),
+        po);
+    if (!listing.ok()) {
+      capability.status = model::CapabilityStatus::kUnsupported;
+      capability.evidence =
+          "the target's thread list could not be read (/proc/" + pid_text +
+          "/task): a system-wide trace cannot be attributed to the app "
+          "without it, and attributing it anyway would credit other "
+          "processes' work to this one";
+      return 0;
+    }
+    std::istringstream tids(listing.out);
+    std::string tid_line;
+    while (std::getline(tids, tid_line)) {
+      const auto tid = to_i64(trim(tid_line), 0);
+      if (tid <= 0) continue;
+      AppThread thread;
+      thread.tid = static_cast<std::int32_t>(tid);
+      const auto comm = proc::run(
+          shell_argv(device.device_id,
+                     {"cat", "/proc/" + pid_text + "/task/" +
+                                 std::to_string(tid) + "/comm"}),
+          po);
+      if (comm.ok()) thread.name = trim(comm.out);
+      threads.push_back(std::move(thread));
+    }
+  }
+  if (threads.empty()) {
+    capability.status = model::CapabilityStatus::kLimited;
+    capability.evidence = "the target reported no threads, so nothing in a "
+                          "system-wide trace could be attributed to it";
+    return 0;
+  }
+
+  const auto seconds = std::max<std::int64_t>(
+      1, std::chrono::duration_cast<std::chrono::seconds>(config.duration)
+             .count());
+  po.timeout = std::chrono::milliseconds((seconds + 30) * 1000);
+  const auto traced = proc::run(
+      shell_argv(device.device_id,
+                 {"atrace", "-t", std::to_string(seconds), "-b",
+                  std::to_string(config.scheduling_buffer_kb), "sched", "disk",
+                  "am", "view"}),
+      po);
+  if (!traced.ok()) {
+    capability.status = model::CapabilityStatus::kUnsupported;
+    capability.evidence =
+        "`atrace` failed: " +
+        (traced.spawned ? trim(traced.err) : traced.spawn_error);
+    return 0;
+  }
+
+  const auto trace = parse_atrace(traced.out);
+  for (const auto& w : trace.warnings) capability.limitations.push_back(w);
+
+  const std::string process_key =
+      stream_.process_key.empty()
+          ? (out.target.processes.empty() ? std::string()
+                                         : out.target.processes.front().canonical())
+          : stream_.process_key;
+
+  const auto mapping =
+      map_atrace_to_trace(trace, threads, pid, process_key, out);
+  const std::int64_t emitted = mapping.events_emitted;
+  const std::int64_t foreign_lines = mapping.foreign_events;
+
+  if (trace.dropped_events > 0) {
+    out.dropped_events_by_collector["atrace"] += trace.dropped_events;
+  }
+
+  capability.status = emitted > 0 ? model::CapabilityStatus::kAvailable
+                                  : model::CapabilityStatus::kLimited;
+  capability.evidence =
+      "atrace read " + std::to_string(trace.lines_read) + " line(s) and " +
+      std::to_string(emitted) + " event(s) were attributed to " +
+      std::to_string(threads.size()) + " thread(s) of pid " + pid_text;
+  capability.limitations.push_back(
+      "the trace is system-wide: " + std::to_string(foreign_lines) +
+      " line(s) belonged to other processes and are out of scope for this "
+      "app rather than counted as its idle time");
+  capability.limitations.push_back(
+      "a `D` state means uninterruptible sleep, which is usually disk but is "
+      "only I/O when the kernel also reported iowait=1");
+  capability.limitations.push_back(
+      "no block-device events were requested or parsed, so an I/O wait is "
+      "located by its kernel caller and not by file or size");
+  if (trace.lines_unrecognised > 0) {
+    capability.limitations.push_back(
+        std::to_string(trace.lines_unrecognised) +
+        " line(s) could not be parsed and were counted rather than guessed at");
+  }
+  return emitted;
+}
+
 std::optional<session::Collector::DeviceClock> AdbCollector::device_clock_at(
     std::chrono::steady_clock::time_point host_instant) const {
   if (!stream_.clock_anchored) return std::nullopt;
@@ -1662,6 +1778,29 @@ session::CaptureResult AdbCollector::capture(
       std::this_thread::sleep_for(slice);
       remaining -= slice;
     }
+  }
+
+  // ---- scheduling and I/O -------------------------------------------------
+  // Opt-in, because atrace traces the whole device. It runs for the capture's
+  // own duration, so it describes the same window as everything else.
+  if (config.scheduling) {
+    auto c = make_source("android.capture.scheduling",
+                         "Thread scheduling and I/O waits",
+                         model::CapabilityStatus::kUnknown, "atrace");
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    const std::int32_t pid =
+        processes.empty() ? 0 : (primary != nullptr ? primary->pid
+                                                    : processes.front().pid);
+    if (pid <= 0) {
+      c.status = model::CapabilityStatus::kUnknown;
+      c.evidence = "no pid was resolved, so a system-wide trace could not be "
+                   "attributed to the app";
+    } else if (collect_scheduling(device, config, pid, out, c) > 0) {
+      result.any_data = true;
+    }
+    result.source_results.push_back(std::move(c));
   }
 
   // ---- memory counters ----------------------------------------------------

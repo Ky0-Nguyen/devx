@@ -129,4 +129,29 @@ struct AtraceTrace {
 // Parses ftrace text. Unrecognised lines are counted, never guessed at.
 AtraceTrace parse_atrace(const std::string& text);
 
+// One of the target's threads, as read from /proc/<pid>/task.
+struct AppThread {
+  std::int32_t tid = 0;
+  std::string name;
+};
+
+// Turns a parsed trace into model events for one process.
+//
+// Separate from the collector on purpose. The collector's job is to talk to
+// the device -- list the app's threads, run atrace -- and this is the part
+// that decides what the trace *means*, which is where the attribution rules
+// live. Keeping it pure means it can be driven from a recorded trace in a
+// test instead of needing a device.
+struct AtraceMapping {
+  std::int64_t events_emitted = 0;
+  // Lines belonging to other processes. A system-wide trace is mostly other
+  // processes, and they are out of scope rather than the app being idle.
+  std::int64_t foreign_events = 0;
+};
+AtraceMapping map_atrace_to_trace(const AtraceTrace& trace,
+                                  const std::vector<AppThread>& threads,
+                                  std::int32_t pid,
+                                  const std::string& process_instance_id,
+                                  model::NormalizedTrace& out);
+
 }  // namespace mpi::android

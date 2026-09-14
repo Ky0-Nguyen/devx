@@ -143,8 +143,8 @@ bool is_boolean_flag(const std::string& flag) {
       "--live",
       "--no-cpu",       "--no-frame-reset", "--no-frames",
       "--no-memory",    "--no-simulators",  "--profileable",
-      "--quiet",        "--running",        "--source-dirty",
-      "--sdk",
+      "--quiet",        "--running",        "--scheduling",
+      "--sdk",          "--source-dirty",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
