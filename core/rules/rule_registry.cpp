@@ -10,6 +10,7 @@ namespace mpi::rules {
 RulePtr make_det01_frame_deadlines();
 RulePtr make_det02_long_js();
 RulePtr make_det04_cpu_hotspot();
+RulePtr make_det08_regression();
 RulePtr make_det12_tooling_activity();
 std::vector<RulePtr> make_deferred_rules();
 
@@ -24,6 +25,7 @@ std::vector<RulePtr> all_rules() {
   rules.push_back(make_det01_frame_deadlines());
   rules.push_back(make_det02_long_js());
   rules.push_back(make_det04_cpu_hotspot());
+  rules.push_back(make_det08_regression());
   rules.push_back(make_det12_tooling_activity());
   for (auto& r : make_deferred_rules()) rules.push_back(std::move(r));
   std::sort(rules.begin(), rules.end(),

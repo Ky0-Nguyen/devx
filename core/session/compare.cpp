@@ -422,4 +422,40 @@ ComparisonResult compare(RunSet baseline_in, RunSet candidate_in,
   return res;
 }
 
+rules::RegressionInput to_regression_input(const ComparisonResult& result) {
+  rules::RegressionInput in;
+  // Conditions are validated as a pair, so either side's scenario identity
+  // describes the comparison once `incompatibilities` is empty.
+  in.scenario_id = result.candidate.conditions.scenario_id;
+  in.scenario_version = result.candidate.conditions.scenario_version;
+  in.baseline_label = result.baseline.label;
+  in.candidate_label = result.candidate.label;
+  in.incompatibilities = result.incompatibilities;
+  in.cross_platform = result.cross_platform;
+  in.min_valid_runs = result.thresholds.min_valid_runs;
+  in.min_relative_delta = result.thresholds.min_relative_delta;
+  in.min_absolute_delta = result.thresholds.min_absolute_delta;
+  in.max_relative_spread = result.thresholds.max_relative_spread;
+
+  for (const auto& m : result.metrics) {
+    rules::RegressionMetric out;
+    out.metric_name = m.metric_name;
+    out.unit = m.unit;
+    out.verdict = to_string(m.verdict);
+    out.reasons = m.reasons;
+    out.baseline_median = m.baseline_median;
+    out.candidate_median = m.candidate_median;
+    out.absolute_delta = m.absolute_delta;
+    out.relative_delta = m.relative_delta;
+    out.baseline_spread = m.baseline_spread;
+    out.candidate_spread = m.candidate_spread;
+    out.baseline_valid_runs = m.baseline_valid_runs;
+    out.candidate_valid_runs = m.candidate_valid_runs;
+    out.excluded_runs = m.excluded_runs;
+    out.certified = m.certified;
+    in.metrics.push_back(std::move(out));
+  }
+  return in;
+}
+
 }  // namespace mpi::session

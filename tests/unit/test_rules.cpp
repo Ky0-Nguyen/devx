@@ -91,7 +91,7 @@ MPI_TEST(every_rule_declares_prerequisites_and_a_phase, {"section-10.3"}) {
 
 MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
-  for (const char* id : {"DET-03", "DET-05", "DET-06", "DET-07", "DET-08",
+  for (const char* id : {"DET-03", "DET-05", "DET-06", "DET-07",
                          "DET-09", "DET-10", "DET-11"}) {
     const auto* rec = record_for(r, id);
     MPI_CHECK_MSG(rec != nullptr, std::string("no run record for ") + id);
@@ -102,6 +102,18 @@ MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
     MPI_CHECK_MSG(contains(rec->skipped_reasons, "not implemented"),
                   std::string(id) + " must state that it is unimplemented");
   }
+}
+
+MPI_TEST(det08_over_a_capture_says_it_needs_two_run_sets, {"H05", "DET-08"}) {
+  // DET-08 is implemented, so it must no longer claim to be unimplemented --
+  // but a single capture is still not the evidence it takes, and the skip has
+  // to say which evidence is missing rather than which milestone is pending.
+  const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
+  const auto* rec = record_for(r, "DET-08");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(!contains(rec->skipped_reasons, "not implemented"));
+  MPI_CHECK(contains(rec->skipped_reasons, "no baseline/candidate pair"));
 }
 
 MPI_TEST(healthy_capture_runs_detectors_and_finds_nothing, {"H02", "H11"}) {

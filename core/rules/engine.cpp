@@ -114,4 +114,85 @@ model::AnalysisResult analyze(const model::NormalizedTrace& trace,
   return result;
 }
 
+model::AnalysisResult analyze_comparison(const RegressionInput& comparison,
+                                         const EngineOptions& opts) {
+  model::AnalysisResult result;
+  result.engine_version = engine_version();
+  result.ruleset_version = ruleset_version();
+  result.analyzed_at = time_util::now_iso8601_utc();
+  result.mode = opts.mode;
+
+  // A comparison's eligibility is a property of its two run sets, which the
+  // comparison engine has already judged per metric. Nothing is recomputed
+  // from a build profile here, because there is no single build.
+  bool any_uncertified = false;
+  for (const auto& m : comparison.metrics) {
+    if (!m.certified) any_uncertified = true;
+  }
+  if (any_uncertified) {
+    result.data_quality_notes.push_back(
+        "at least one metric in this comparison is not a certified benchmark "
+        "pair: it measures a real difference between these two "
+        "configurations and certifies nothing about release performance");
+  }
+  for (const auto& reason : comparison.incompatibilities) {
+    result.data_quality_notes.push_back(
+        "run conditions are not comparable: " + reason);
+  }
+  if (comparison.cross_platform) {
+    result.data_quality_notes.push_back(
+        "this pair spans two platforms; it may be displayed side by side but "
+        "cannot drive a regression gate");
+  }
+
+  // An empty trace rather than a null one: a rule reaching for a capture
+  // finds nothing there instead of dereferencing nothing at all.
+  const model::NormalizedTrace empty_trace;
+  const symbols::SymbolService no_symbols;
+
+  RuleContext ctx;
+  ctx.trace = &empty_trace;
+  ctx.symbol_service = &no_symbols;
+  ctx.regression = &comparison;
+  ctx.mode = opts.mode;
+  ctx.cancel = opts.cancel;
+  ctx.threshold_overrides = opts.threshold_overrides;
+
+  for (const auto& rule : all_rules()) {
+    if (!rule->uses_comparison_input()) continue;
+    if (opts.cancel.cancelled()) {
+      model::RuleRunRecord rec;
+      rec.rule_id = rule->id();
+      rec.rule_version = rule->version();
+      rec.outcome = model::RuleOutcome::kSkipped;
+      rec.skipped_reasons.push_back("analysis cancelled before this rule ran");
+      result.rule_runs.push_back(std::move(rec));
+      continue;
+    }
+    RuleOutput out = rule->run(ctx);
+    for (auto& issue : out.issues) {
+      for (const auto& s : opts.suppressions) {
+        if (s.rule_id != issue.rule_id) continue;
+        if (!s.fingerprint.empty() && s.fingerprint != issue.fingerprint) continue;
+        issue.suppressed = true;
+        issue.suppression_reason = s.reason;
+        issue.suppression_expiry = s.expiry;
+        issue.suppression_author = s.author;
+        break;
+      }
+      result.issues.push_back(std::move(issue));
+    }
+    result.rule_runs.push_back(std::move(out.record));
+  }
+
+  std::stable_sort(result.issues.begin(), result.issues.end(),
+                   [](const model::Issue& a, const model::Issue& b) {
+                     if (a.severity != b.severity) {
+                       return static_cast<int>(a.severity) > static_cast<int>(b.severity);
+                     }
+                     return a.fingerprint < b.fingerprint;
+                   });
+  return result;
+}
+
 }  // namespace mpi::rules

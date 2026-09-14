@@ -95,18 +95,6 @@ std::vector<RulePtr> make_deferred_rules() {
       "never a fast one"));
 
   r.push_back(std::make_shared<DeferredRule>(
-      "DET-08", "regression", "Performance regression", "M4",
-      std::vector<Prerequisite>{
-          {"paired_runs",
-           "repeated comparable baseline and candidate runs on matching "
-           "device/OS/collector configuration"},
-          {"benchmark_eligibility",
-           "both sides eligible, or the comparison marked exploratory"}},
-      "supported regression, or inconclusive when variance is too high",
-      "the comparison engine exists (see `mpi compare`), but the repeated-run "
-      "scenario workflow that makes a regression verdict defensible is M4"));
-
-  r.push_back(std::make_shared<DeferredRule>(
       "DET-09", "scheduling", "Wait / lock contention", "M5",
       std::vector<Prerequisite>{
           {"scheduling_evidence",

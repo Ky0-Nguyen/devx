@@ -64,11 +64,13 @@ std::string to_json(const model::NormalizedTrace& trace,
   return root.dump(2) + "\n";
 }
 
-std::string comparison_to_json(const session::ComparisonResult& cmp) {
+std::string comparison_to_json(const session::ComparisonResult& cmp,
+                               const model::AnalysisResult* det) {
   json::Value root = json::Value::object();
   root.set("schema_version", json::Value::string("2.0"));
   root.set("report_kind", json::Value::string("comparison"));
   root.set("comparison", cmp.to_json());
+  if (det != nullptr) root.set("analysis", det->to_json());
   return root.dump(2) + "\n";
 }
 
