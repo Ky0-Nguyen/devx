@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 145 of 198 checklist items have at
-least one automated test.** The remaining 53 are listed below with a stated
+**Coverage of specification section 18: 157 of 198 checklist items have at
+least one automated test.** The remaining 41 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (145 items, 522 test-case links)
+## Covered (157 items, 540 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -164,6 +164,11 @@ Two cautions on reading this:
 | C20 | `test_android_parsers` | `parses_device_states_and_forms` |
 | C20 | `test_android_parsers` | `probe_never_claims_physical_verification_from_an_emulator` |
 | C20 | `test_identity` | `simulator_form_survives_serialization` |
+| D01 | `test_session_lifecycle` | `a_capture_starts_ticks_and_stops` |
+| D01 | `test_session_lifecycle` | `a_collector_that_refuses_to_begin_writes_nothing` |
+| D01 | `test_session_lifecycle` | `a_snapshot_before_the_close_is_preliminary` |
+| D02 | `test_session_lifecycle` | `stopping_during_startup_leaves_no_half_state` |
+| D03 | `test_session_lifecycle` | `stopping_twice_is_idempotent` |
 | D04 | `test_android_parsers` | `atrace_reports_a_dropped_buffer_rather_than_absorbing_it` |
 | D04 | `test_json` | `stream_parser_can_abandon_an_array_midway` |
 | D04 | `test_process` | `process_honours_cancellation` |
@@ -176,6 +181,7 @@ Two cautions on reading this:
 | D05 | `test_heap` | `an_incomplete_chain_is_counted_not_ignored` |
 | D05 | `test_heap` | `an_unknown_field_type_abandons_the_rest_of_its_segment` |
 | D05 | `test_heap` | `an_unsupported_identifier_size_is_refused_not_guessed` |
+| D06 | `test_session_lifecycle` | `a_missing_artifact_fails_the_write_rather_than_the_manifest` |
 | D07 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | D08 | `test_heap` | `a_truncated_dump_reports_what_it_got` |
 | D08 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
@@ -210,6 +216,7 @@ Two cautions on reading this:
 | D12 | `test_timeline` | `js_tasks_on_an_unmapped_clock_are_not_placed` |
 | D12 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
 | D13 | `test_android_parsers` | `atrace_timestamps_keep_their_precision` |
+| D14 | `test_compare` | `a_duration_is_never_derived_from_the_wall_clock` |
 | D16 | `test_android_collector` | `framestats_handles_empty_and_headerless_blocks` |
 | D16 | `test_android_collector` | `simpleperf_handles_empty_input` |
 | D16 | `test_android_parsers` | `ps_parser_handles_empty_input` |
@@ -238,6 +245,8 @@ Two cautions on reading this:
 | D19 | `test_rules` | `partial_capture_is_surfaced_and_never_a_clean_pass` |
 | D19 | `test_sdk` | `sdk_rejects_malformed_and_unknown_markers` |
 | D19 | `test_xml` | `xml_reports_malformed_documents_instead_of_guessing` |
+| D21 | `test_session_lifecycle` | `a_second_capture_on_a_running_session_is_refused` |
+| D22 | `test_session_lifecycle` | `delete_refuses_a_directory_that_is_not_the_named_session` |
 | E01 | `test_android_collector` | `framestats_parses_real_emulator_output` |
 | E01 | `test_android_collector` | `framestats_yields_the_refresh_rate_from_the_platform` |
 | E01 | `test_rules` | `det01_skips_when_refresh_rate_unobserved` |
@@ -353,6 +362,7 @@ Two cautions on reading this:
 | H01 | `test_heap` | `det06_qualifies_a_dump_taken_without_a_collection` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
+| H01 | `test_session_lifecycle` | `a_collector_that_refuses_to_begin_writes_nothing` |
 | H01 | `test_timeline` | `a_capture_with_no_window_yields_no_axis` |
 | H01 | `test_timeline` | `a_covered_bin_without_a_sample_is_not_a_zero` |
 | H01 | `test_timeline` | `a_covered_empty_bin_is_a_measured_zero` |
@@ -408,6 +418,9 @@ Two cautions on reading this:
 | H12 | `test_report` | `comparison_report_renders_in_both_formats` |
 | H12 | `test_report` | `json_report_is_valid_and_carries_the_schema_version` |
 | H12 | `test_report` | `markdown_and_json_agree_on_issue_count` |
+| H13 | `test_session_lifecycle` | `a_missing_artifact_fails_the_write_rather_than_the_manifest` |
+| H13 | `test_session_lifecycle` | `a_stored_artifact_is_checksummed_and_found_again` |
+| H13 | `test_session_lifecycle` | `a_written_package_reopens_with_no_device` |
 | H14 | `test_timeline` | `a_suppressed_issue_is_not_drawn` |
 | H15 | `test_ingestion` | `mark_synthetic_option_forces_the_label` |
 | H15 | `test_ingestion` | `reads_native_trace_and_keeps_synthetic_label` |
@@ -454,6 +467,7 @@ Two cautions on reading this:
 | I17 | `test_android_collector` | `capture_config_records_its_preset_and_sources` |
 | I17 | `test_android_collector` | `capture_config_records_the_streaming_cadence` |
 | I17 | `test_compare` | `collector_sample_rate_mismatch_blocks_a_verdict` |
+| I18 | `test_compare` | `a_percentile_is_never_reported_from_too_few_runs` |
 | I19 | `test_compare` | `cross_platform_pair_cannot_gate` |
 | I19 | `test_compare` | `det08_refuses_a_cross_platform_pair` |
 | I19 | `test_compare` | `unknown_platform_blocks_equivalence` |
@@ -507,6 +521,10 @@ Two cautions on reading this:
 | J07 | `test_sdk` | `sdk_does_not_store_a_retried_batch_twice` |
 | J07 | `test_sdk` | `sdk_records_a_lost_batch_as_a_gap_not_as_silence` |
 | J07 | `test_sdk` | `sdk_refuses_a_batch_over_the_limit` |
+| J07 | `test_session_lifecycle` | `a_written_package_reopens_with_no_device` |
+| J08 | `test_session_lifecycle` | `delete_refuses_a_directory_that_is_not_the_named_session` |
+| J09 | `test_rules` | `a_trace_carrying_instructions_is_data_and_stays_data` |
+| J10 | `test_rules` | `a_trace_carrying_instructions_is_data_and_stays_data` |
 | J11 | `test_android_collector` | `live_session_start_stop_is_safe_without_a_collector` |
 | J11 | `test_identity` | `a_cancelled_wait_stops_and_reports_the_cancellation` |
 | J11 | `test_json` | `json_accessors_do_not_throw_on_type_mismatch` |
@@ -544,7 +562,7 @@ Two cautions on reading this:
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
-## Additional coverage keyed to specification sections and detector ids (26)
+## Additional coverage keyed to specification sections and detector ids (27)
 
 | Reference | Test binary | Test case |
 |---|---|---|
@@ -586,6 +604,7 @@ Two cautions on reading this:
 | DET-06 | `test_heap` | `det06_without_a_dump_refuses_the_substitute` |
 | DET-06 | `test_heap` | `instances_of_a_base_class_are_found_through_subclasses` |
 | DET-06 | `test_rules` | `det06_without_a_heap_dump_says_what_is_missing` |
+| DET-06 | `test_session_lifecycle` | `a_stored_artifact_is_checksummed_and_found_again` |
 | DET-07 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
 | DET-07 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | DET-07 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
@@ -611,6 +630,7 @@ Two cautions on reading this:
 | DET-11 | `test_rules` | `det11_does_not_report_a_request_that_merely_overlapped_a_little` |
 | DET-11 | `test_rules` | `det11_observes_the_delay_and_blames_nobody` |
 | DET-11 | `test_rules` | `det11_says_it_cannot_observe_the_network_itself` |
+| H18 | `test_session_lifecycle` | `a_snapshot_before_the_close_is_preliminary` |
 | M0 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
 | M0 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
 | section-0.6 | `test_report` | `synthetic_data_is_announced_in_both_formats` |
@@ -666,7 +686,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (53)
+## Not yet covered (41)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -683,15 +703,8 @@ Two cautions on reading this:
 | B14 | profileable-vs-visible independence is modelled; asserting it needs a device |
 | C02 | needs a built app with native debug and JS dev off |
 | C12 | needs an iOS build with a debug entitlement and optimized code |
-| D01 | start/stop needs a collector (M2) |
-| D02 | stop-during-startup needs a collector (M2) |
-| D03 | double-stop idempotency needs a collector (M2) |
-| D06 | host crash recovery needs fault injection; the .partial directory path is implemented |
-| D14 | durations never use the wall clock by construction; a timezone-change test needs host manipulation |
 | D15 | device sleep/resume needs hardware |
 | D20 | disconnect/reconnect needs hardware |
-| D21 | conflicting collector detection needs a collector (M2) |
-| D22 | cleanup scoping is implemented (delete_package refuses non-session dirs); full test needs a collector |
 | E05 | asserted in DET-04's alternative explanations; a real capture would confirm |
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
@@ -712,13 +725,8 @@ Two cautions on reading this:
 | G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
 | G12 | Expo prerequisites are documentation (M3) |
 | G13 | the architecture matrix needs RN builds (M3) |
-| H13 | offline reopen is implemented in session_store; end-to-end needs record (M2) |
 | I06 | background workload needs a device |
-| I18 | the code reports median and IQR only and never a p95; a dedicated absence test would assert it |
 | I20 | overhead measurement needs paired controlled runs on hardware (M4) |
-| J08 | delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated |
-| J09 | there is no AI layer, so the core trivially works without one |
-| J10 | there is no AI layer yet; trace text is never executed |
 | J12 | desktop signing and packaging need the desktop app (M2) |
 | J13 | session migration needs more than one schema version |
 | J17 | App Store app depth needs a reachable device with such an app |
@@ -726,7 +734,7 @@ Two cautions on reading this:
 
 ## Totals
 
-- test binaries: 18
-- test cases declaring at least one id: 407
-- checklist-item links: 522
-- section-18 coverage: 145/198 (73%)
+- test binaries: 19
+- test cases declaring at least one id: 420
+- checklist-item links: 540
+- section-18 coverage: 157/198 (79%)
