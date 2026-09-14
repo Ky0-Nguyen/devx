@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 157 of 198 checklist items have at
-least one automated test.** The remaining 41 are listed below with a stated
+**Coverage of specification section 18: 158 of 198 checklist items have at
+least one automated test.** The remaining 40 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (157 items, 554 test-case links)
+## Covered (158 items, 559 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -228,7 +228,9 @@ Two cautions on reading this:
 | D18 | `test_android_collector` | `displayed_log_reads_each_unit_rather_than_assuming_a_shape` |
 | D18 | `test_android_collector` | `framestats_reads_the_header_rather_than_fixed_columns` |
 | D18 | `test_android_collector` | `framestats_refuses_a_header_missing_required_columns` |
+| D18 | `test_android_parsers` | `a_short_or_non_numeric_proc_stat_yields_nothing` |
 | D18 | `test_android_parsers` | `atrace_reads_userspace_slices_and_tolerates_a_nameless_one` |
+| D18 | `test_android_parsers` | `proc_stat_cpu_time_survives_a_comm_with_spaces_and_parens` |
 | D18 | `test_ingestion` | `unsupported_schema_version_is_reported_not_guessed` |
 | D18 | `test_ios_parsers` | `devicectl_parsers_tolerate_unexpected_shapes` |
 | D18 | `test_json` | `json_bom_is_tolerated` |
@@ -266,6 +268,9 @@ Two cautions on reading this:
 | E10 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
 | E10 | `test_timeline` | `a_covered_empty_bin_is_a_measured_zero` |
 | E10 | `test_timeline` | `an_interval_is_spread_not_spiked` |
+| E11 | `test_android_parsers` | `a_short_or_non_numeric_proc_stat_yields_nothing` |
+| E11 | `test_android_parsers` | `proc_stat_cpu_time_is_read_from_the_right_fields` |
+| E11 | `test_android_parsers` | `proc_stat_cpu_time_survives_a_comm_with_spaces_and_parens` |
 | E12 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | E12 | `test_trace_model` | `cpu_percentage_declares_its_normalization` |
 | E13 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
@@ -700,7 +705,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (41)
+## Not yet covered (40)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -723,7 +728,6 @@ Two cautions on reading this:
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
 | E09 | GPU evidence is not collected (M5) |
-| E11 | CPU-time vs wall-time needs a CPU-time counter (M2) |
 | E16 | DET-02 sums siblings only and says so; a nested fixture would strengthen this |
 | E18 | recorder overhead needs paired controlled runs (M4) |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
@@ -749,6 +753,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 19
-- test cases declaring at least one id: 429
-- checklist-item links: 554
-- section-18 coverage: 157/198 (79%)
+- test cases declaring at least one id: 432
+- checklist-item links: 559
+- section-18 coverage: 158/198 (80%)

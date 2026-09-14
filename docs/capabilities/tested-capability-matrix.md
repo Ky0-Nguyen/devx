@@ -51,6 +51,7 @@ against `com.android.settings`:
 | `android.capture.frames` (`dumpsys gfxinfo framestats`) | `available` -- 78 frames at a platform-reported 60 Hz | `available`; the source does not depend on debuggability |
 | `android.capture.cpu_samples` (`simpleperf`) | `available` -- 42 symbolised samples incl. React Native's `mqt_v_js` thread | `permission_denied`, with the manifest change that would fix it |
 | `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available`; the reading is excluded from app-scoped totals when ownership is ambiguous, which is what a shared-uid system app produces |
+| `android.capture.cpu_time` (`/proc/<pid>/stat`) | `available` -- 18 points over 6 ticks at CLK_TCK 100 | `available`; `/proc/<pid>/stat` is world-readable |
 | `android.capture.streaming` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
 | `android.capture.scheduling` (`atrace sched disk am view`) | `available`, **opt-in only** -- 4082 events over 64 threads in a 10 s capture | `available`; ftrace is system-wide and does not depend on the target's debuggability |
 | `android.capture.heap_dump` (`am dumpheap`) | `available`, **opt-in only** -- 49 MB, 580,140 objects, read in 1.7 s | `permission_denied`: `am dumpheap` needs a debuggable target or a userdebug build |
@@ -66,6 +67,25 @@ Both verified on `emulator-5554` (Pixel 9 Pro image, API 37):
 
 Neither row is a claim about phone hardware: an emulator's GPU is emulated and
 its scheduler is the host's. Physical-device live capture is unverified.
+
+### CPU time against wall time, measured on the same emulator
+
+The distinction spec E11 asks for, and the one every CPU finding is read as
+though it already answered. A five-second live capture of
+`io.pizzahut.hutbot.debug`: **790 ms of process CPU time over 5,107 ms of wall
+time -- 15.5% of one core**, with user and system time reported separately
+(272 s and 79 s cumulative since the process started).
+
+`CLK_TCK` is read from the device rather than assumed. It is 100 on every
+device seen, which is exactly what makes assuming it dangerous: on one where
+it is not, every figure would be wrong by a constant factor and look
+plausible. When it cannot be read the counter is not collected and the source
+says so.
+
+What the counter cannot say: it is whole-process, so it never identifies which
+thread used the CPU; and the kernel counts in 10 ms ticks, so a difference
+taken over a short interval is quantised to that and a busy millisecond can
+read as zero.
 
 ### Heap evidence, measured on the same emulator
 
