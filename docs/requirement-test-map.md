@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 117 of 198 checklist items have at
-least one automated test.** The remaining 81 are listed below with a stated
+**Coverage of specification section 18: 118 of 198 checklist items have at
+least one automated test.** The remaining 80 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (117 items, 362 test-case links)
+## Covered (118 items, 381 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -116,6 +116,7 @@ Two cautions on reading this:
 | C10 | `test_eligibility` | `stronger_source_wins_but_conflict_is_kept` |
 | C11 | `test_android_collector` | `simpleperf_meta_info_yields_real_build_facts` |
 | C11 | `test_android_parsers` | `dumpsys_flags_parse_debuggable_and_version` |
+| C11 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | C13 | `test_eligibility` | `sanitizers_invalidate_benchmark` |
 | C14 | `test_rules` | `obfuscated_frames_resolve_only_with_a_bound_mapping` |
 | C14 | `test_symbols` | `missing_file_is_an_error_not_a_silent_empty_map` |
@@ -133,9 +134,11 @@ Two cautions on reading this:
 | C18 | `test_eligibility` | `missing_fact_returns_unknown_not_false` |
 | C18 | `test_eligibility` | `unknown_fact_yields_insufficient_evidence_not_a_pass` |
 | C18 | `test_identity` | `installed_is_null_when_never_observed` |
+| C18 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | C18 | `test_json` | `json_null_is_distinct_from_absent` |
 | C18 | `test_report` | `unknown_values_are_shown_as_unknown_not_omitted` |
 | C18 | `test_symbols` | `absent_expected_bundle_id_downgrades_to_partial` |
+| C18 | `test_xml` | `xml_absent_attribute_differs_from_an_empty_one` |
 | C19 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
 | C19 | `test_compare` | `ineligible_side_blocks_certification` |
 | C19 | `test_eligibility` | `eligibility_reports_every_reason_not_just_the_first` |
@@ -183,8 +186,14 @@ Two cautions on reading this:
 | D18 | `test_json` | `stream_parser_skips_without_materialising` |
 | D18 | `test_json` | `stream_parser_tolerates_a_bom` |
 | D18 | `test_symbols` | `source_map_rejects_wrong_version` |
+| D18 | `test_xml` | `xml_reads_cdata_as_text` |
+| D18 | `test_xml` | `xml_reads_elements_attributes_and_text` |
+| D18 | `test_xml` | `xml_skip_element_walks_past_a_subtree` |
+| D18 | `test_xml` | `xml_skips_the_declaration_and_comments` |
+| D19 | `test_ingestion` | `xctrace_export_refuses_a_malformed_document` |
 | D19 | `test_report` | `partial_capture_is_announced` |
 | D19 | `test_rules` | `partial_capture_is_surfaced_and_never_a_clean_pass` |
+| D19 | `test_xml` | `xml_reports_malformed_documents_instead_of_guessing` |
 | E01 | `test_android_collector` | `framestats_parses_real_emulator_output` |
 | E01 | `test_android_collector` | `framestats_yields_the_refresh_rate_from_the_platform` |
 | E01 | `test_rules` | `det01_skips_when_refresh_rate_unobserved` |
@@ -208,6 +217,7 @@ Two cautions on reading this:
 | E14 | `test_rules` | `det04_skips_below_minimum_sample_population` |
 | E15 | `test_android_collector` | `simpleperf_stacks_are_outermost_first` |
 | E15 | `test_ingestion` | `hermes_reader_unwinds_stacks_outermost_first` |
+| E15 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | E20 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
 | E21 | `test_rules` | `det01_excludes_unjudgeable_frames_from_the_denominator` |
 | E21 | `test_rules` | `det01_observed_requires_presentation_truth` |
@@ -333,18 +343,25 @@ Two cautions on reading this:
 | J02 | `test_android_parsers` | `proc_stat_malformed_returns_nothing_not_a_fake_value` |
 | J02 | `test_ingestion` | `hermes_reader_survives_cyclic_parent_chain` |
 | J02 | `test_ingestion` | `rejects_malformed_traces_without_crashing` |
+| J02 | `test_ingestion` | `xctrace_export_refuses_a_malformed_document` |
 | J02 | `test_ios_parsers` | `devicectl_parsers_tolerate_unexpected_shapes` |
 | J02 | `test_json` | `json_control_characters_must_be_escaped` |
 | J02 | `test_json` | `json_rejects_malformed` |
 | J02 | `test_json` | `json_unicode_surrogate_pairs` |
 | J02 | `test_json` | `stream_parser_reports_malformed_input` |
 | J02 | `test_symbols` | `source_map_rejects_malformed_vlq` |
+| J02 | `test_xml` | `xml_decodes_the_entities_xctrace_actually_emits` |
+| J02 | `test_xml` | `xml_refuses_a_document_type_declaration` |
+| J02 | `test_xml` | `xml_refuses_an_unknown_entity_rather_than_passing_it_through` |
+| J02 | `test_xml` | `xml_reports_malformed_documents_instead_of_guessing` |
 | J03 | `test_json` | `json_rejects_container_element_bomb` |
 | J03 | `test_json` | `json_rejects_depth_bomb` |
 | J03 | `test_json` | `json_rejects_oversized_input` |
 | J03 | `test_json` | `stream_parser_enforces_depth_inside_a_skip` |
 | J03 | `test_json` | `stream_parser_enforces_the_byte_limit` |
 | J03 | `test_process` | `process_bounds_output_size` |
+| J03 | `test_xml` | `xml_enforces_its_limits` |
+| J03 | `test_xml` | `xml_refuses_a_document_type_declaration` |
 | J04 | `test_symbols` | `path_root_containment_check` |
 | J04 | `test_symbols` | `path_traversal_in_a_source_map_is_rejected` |
 | J05 | `test_android_collector` | `collector_refuses_an_option_like_identifier` |
@@ -369,6 +386,7 @@ Two cautions on reading this:
 | J14 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | J14 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
 | J14 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
+| J15 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J15 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
 | J15 | `test_ios_parsers` | `parses_real_devicectl_device_listing` |
 | J15 | `test_ios_parsers` | `readiness_reports_ddi_services_state` |
@@ -383,6 +401,7 @@ Two cautions on reading this:
 | J18 | `test_ios_parsers` | `adapter_lists_real_devices_including_simulators` |
 | J18 | `test_ios_parsers` | `parses_real_simctl_device_listing` |
 | J18 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
+| J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 
 ## Additional coverage keyed to specification sections and detector ids (20)
 
@@ -394,6 +413,7 @@ Two cautions on reading this:
 | DET-02 | `test_rules` | `det02_refuses_sampling_only_input` |
 | DET-02 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
 | DET-04 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
+| DET-04 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | DET-04 | `test_rules` | `det04_refuses_to_name_a_function_without_symbols` |
 | DET-04 | `test_rules` | `obfuscated_frames_resolve_only_with_a_bound_mapping` |
 | DET-07 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
@@ -444,6 +464,7 @@ Two cautions on reading this:
 | section-15 | `test_report` | `hostile_identifiers_cannot_break_the_markdown_table` |
 | section-15 | `test_report` | `markdown_escapes_table_breaking_and_html_characters` |
 | section-15 | `test_rules` | `fingerprints_are_stable_across_reanalysis` |
+| section-15 | `test_xml` | `xml_enforces_its_limits` |
 | section-2.2 | `test_android_collector` | `live_snapshot_states_that_it_is_preliminary` |
 | section-6 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
 | section-7.3 | `test_eligibility` | `eligibility_never_implies_zero_overhead` |
@@ -455,7 +476,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (81)
+## Not yet covered (80)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -539,11 +560,10 @@ Two cautions on reading this:
 | J13 | session migration needs more than one schema version |
 | J17 | App Store app depth needs a reachable device with such an app |
 | J19 | native-without-JS evidence needs a real mixed capture |
-| J20 | a schema_version mismatch is reported; a versioned corpus is M3 |
 
 ## Totals
 
-- test binaries: 14
-- test cases declaring at least one id: 294
-- checklist-item links: 362
-- section-18 coverage: 117/198 (59%)
+- test binaries: 15
+- test cases declaring at least one id: 307
+- checklist-item links: 381
+- section-18 coverage: 118/198 (60%)

@@ -1,5 +1,6 @@
 add_library(mpi_core STATIC
   util/json.cpp
+  util/xml.cpp
   util/process.cpp
   util/time.cpp
   model/capability.cpp
@@ -12,6 +13,7 @@ add_library(mpi_core STATIC
   ingestion/mpi_trace_reader.cpp
   ingestion/chrome_trace_reader.cpp
   ingestion/hermes_profile_reader.cpp
+  ingestion/xctrace_export_reader.cpp
   ingestion/normalize.cpp
   symbols/symbol_service.cpp
   rules/rule_registry.cpp

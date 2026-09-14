@@ -80,6 +80,18 @@ class HermesProfileReader final : public Reader {
             model::NormalizedTrace& out, ReadDiagnostics& diag) override;
 };
 
+// `xcrun xctrace export` output: either the run's table of contents
+// (`--toc`) or the rows of one data table (`--xpath`). The `.trace` bundle
+// itself is an undocumented package, so the export is the supported machine
+// interface to an Instruments recording.
+class XctraceExportReader final : public Reader {
+ public:
+  std::string id() const override { return "ios.xctrace.export"; }
+  bool can_read(const std::string& path) const override;
+  bool read(const std::string& path, const ReadOptions& opts,
+            model::NormalizedTrace& out, ReadDiagnostics& diag) override;
+};
+
 // Picks a reader by sniffing, then reads. Returns the reader id used.
 std::optional<std::string> read_any(const std::string& path,
                                     const ReadOptions& opts,
