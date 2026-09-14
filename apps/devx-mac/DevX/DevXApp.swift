@@ -169,6 +169,7 @@ struct RootView: View {
                 case .issues: IssuesView()
                 case .timeline: TimelineView()
                 case .compare: CompareView()
+                case .settings: SettingsView()
                 case .detectors: DetectorsView()
                 }
 

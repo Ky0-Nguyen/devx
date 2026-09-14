@@ -59,7 +59,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
 ```
 
-Run the tests (433 C++ cases in 19 binaries, plus 196 Swift cases):
+Run the tests (433 C++ cases in 19 binaries, plus 210 Swift cases):
 
 ```bash
 cd build && ctest --output-on-failure

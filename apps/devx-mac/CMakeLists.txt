@@ -45,6 +45,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/SettingsView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LaunchOptions.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DevXApp.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/main.swift

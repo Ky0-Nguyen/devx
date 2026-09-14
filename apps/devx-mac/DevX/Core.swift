@@ -137,6 +137,11 @@ enum Core {
         sessionsDir + "/suppressions.json"
     }
 
+    static func exportSession(dir: String, id: String, format: String,
+                              outPath: String) -> JSON {
+        call { mpi_export_session_json(dir, id, format, outPath) }
+    }
+
     static func suppressions(path: String) -> JSON {
         call { mpi_suppressions_json(path) }
     }
