@@ -38,7 +38,9 @@ HEADER = """# Requirement -> test mapping
 
 Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
-`--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
+`--list-requirements`. Both harnesses do -- the C++ one and DevX's Swift one --
+so a UI behaviour that is tested appears here. Regenerate with
+`python3 tools/gen-requirement-map.py`.
 
 **Coverage of specification section 18: {covered} of {total} checklist items \
 have at
@@ -111,6 +113,12 @@ def main():
     binaries = sorted(glob.glob("build/bin/test_*"))
     if not binaries:
         sys.exit("no test binaries found; run `cmake --build build` first")
+    # The Swift harness declares requirements the same way. Leaving it out
+    # made every UI behaviour that IS tested read as untested in the map,
+    # which is the map lying in the safe direction rather than being right.
+    swift = "build/bin/devx_swift_tests"
+    if os.path.exists(swift):
+        binaries.append(swift)
 
     mapping = collections.defaultdict(list)
     for binary in binaries:

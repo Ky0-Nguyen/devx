@@ -2,10 +2,12 @@
 
 Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
-`--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
+`--list-requirements`. Both harnesses do -- the C++ one and DevX's Swift one --
+so a UI behaviour that is tested appears here. Regenerate with
+`python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 158 of 198 checklist items have at
-least one automated test.** The remaining 40 are listed below with a stated
+**Coverage of specification section 18: 162 of 198 checklist items have at
+least one automated test.** The remaining 36 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (158 items, 559 test-case links)
+## Covered (162 items, 578 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -85,7 +87,14 @@ Two cautions on reading this:
 | A22 | `test_identity` | `a_launched_app_is_waited_for_until_its_process_appears` |
 | A22 | `test_identity` | `a_wait_that_times_out_says_so_rather_than_reporting_no_processes` |
 | A22 | `test_identity` | `a_zero_budget_still_gets_one_look` |
+| A23 | `devx_swift_tests` | `an app not enumerated is not in the listing` |
+| A23 | `devx_swift_tests` | `never labelled 'not running': a listing that could not see an app and an app that is gone are different facts` |
+| A23 | `devx_swift_tests` | `no enumeration means nothing can be said` |
+| A23 | `devx_swift_tests` | `the favourite survived 40 later targets: someone marked it on purpose and dropping it would look like it was never marked` |
 | A24 | `test_ios_parsers` | `readiness_for_an_unknown_identifier_is_absent` |
+| A25 | `devx_swift_tests` | `a field nothing records offers no options, so a filter cannot be set to something that matches nothing` |
+| A25 | `devx_swift_tests` | `an issue with no screen does not match a screen filter` |
+| A25 | `devx_swift_tests` | `the suppressed issue is counted as hidden` |
 | B01 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | B02 | `test_android_parsers` | `proc_stat_handles_a_comm_name_containing_spaces` |
 | B02 | `test_android_parsers` | `proc_stat_malformed_returns_nothing_not_a_fake_value` |
@@ -289,6 +298,7 @@ Two cautions on reading this:
 | E15 | `test_android_collector` | `simpleperf_stacks_are_outermost_first` |
 | E15 | `test_ingestion` | `hermes_reader_unwinds_stacks_outermost_first` |
 | E15 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
+| E16 | `test_rules` | `nested_js_spans_are_not_double_counted` |
 | E17 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | E20 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
 | E20 | `test_rules` | `det11_observes_the_delay_and_blames_nobody` |
@@ -322,6 +332,7 @@ Two cautions on reading this:
 | F10 | `test_heap` | `det06_says_when_only_the_runtime_holds_the_object` |
 | F11 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | F11 | `test_process` | `process_separates_stdout_and_stderr` |
+| F13 | `test_rules` | `det12_excludes_name_only_matches_from_attribution` |
 | F14 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | F14 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
 | F14 | `test_report` | `attribution_section_forbids_subtraction_in_prose` |
@@ -357,6 +368,10 @@ Two cautions on reading this:
 | G18 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
 | G19 | `test_symbols` | `path_traversal_in_a_source_map_is_rejected` |
 | G19 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
+| H01 | `devx_swift_tests` | `an issue with no screen does not match a screen filter` |
+| H01 | `devx_swift_tests` | `an unmeasured bin stays flat even with a value attached` |
+| H01 | `devx_swift_tests` | `an unrecognised state claims nothing rather than guessing` |
+| H01 | `devx_swift_tests` | `never labelled 'not running': a listing that could not see an app and an app that is gone are different facts` |
 | H01 | `test_android_collector` | `det03_reports_a_main_thread_block_with_its_slice` |
 | H01 | `test_compare` | `a_run_with_no_value_keeps_its_place` |
 | H01 | `test_compare` | `an_unstated_eligibility_is_insufficient_evidence` |
@@ -407,6 +422,9 @@ Two cautions on reading this:
 | H10 | `test_rules` | `suppression_retains_reason_and_expiry` |
 | H10 | `test_session_lifecycle` | `a_suppression_list_round_trips_with_everything_that_audits_it` |
 | H10 | `test_session_lifecycle` | `a_suppression_with_no_reason_is_refused_on_read_and_write` |
+| H11 | `devx_swift_tests` | `an unrecognised state claims nothing rather than guessing` |
+| H11 | `devx_swift_tests` | `inconclusive is a caution, never a pass` |
+| H11 | `devx_swift_tests` | `inconclusive says it is not 'no change': got no verdict could be reached. This is not 'no change': it means the evidence does not support any conclusion, and each metric says why` |
 | H11 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
 | H11 | `test_heap` | `det06_says_nothing_about_a_live_object` |
 | H11 | `test_json` | `json_null_is_distinct_from_absent` |
@@ -433,6 +451,7 @@ Two cautions on reading this:
 | H13 | `test_session_lifecycle` | `a_missing_artifact_fails_the_write_rather_than_the_manifest` |
 | H13 | `test_session_lifecycle` | `a_stored_artifact_is_checksummed_and_found_again` |
 | H13 | `test_session_lifecycle` | `a_written_package_reopens_with_no_device` |
+| H14 | `devx_swift_tests` | `the suppressed issue is counted as hidden` |
 | H14 | `test_rules` | `a_suppression_inside_its_expiry_still_applies` |
 | H14 | `test_rules` | `an_expired_suppression_is_not_applied_and_says_so` |
 | H14 | `test_session_lifecycle` | `a_malformed_suppression_file_is_an_error_not_an_empty_list` |
@@ -448,6 +467,8 @@ Two cautions on reading this:
 | H16 | `test_rules` | `no_issue_carries_an_uncalibrated_numeric_confidence` |
 | H17 | `test_rules` | `every_candidate_cause_lists_missing_evidence` |
 | I01 | `test_compare` | `clear_regression_is_detected` |
+| I02 | `devx_swift_tests` | `inconclusive is a caution, never a pass` |
+| I02 | `devx_swift_tests` | `inconclusive says it is not 'no change': got no verdict could be reached. This is not 'no change': it means the evidence does not support any conclusion, and each metric says why` |
 | I02 | `test_compare` | `an_unstated_eligibility_is_insufficient_evidence` |
 | I02 | `test_compare` | `det08_skips_when_conditions_are_not_comparable` |
 | I02 | `test_compare` | `device_model_mismatch_blocks_a_verdict` |
@@ -705,7 +726,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (40)
+## Not yet covered (36)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -715,8 +736,6 @@ Two cautions on reading this:
 | A14 | duplicate display names need a device with two such apps installed |
 | A16 | selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested |
 | A17 | needs a live app that exits between listing and record (M2) |
-| A23 | favourites/recents is a UI concept (M2) |
-| A25 | large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested |
 | B05 | secondary-service inclusion needs Android hardware |
 | B11 | reinstall revalidation needs a device and an install cycle |
 | B14 | profileable-vs-visible independence is modelled; asserting it needs a device |
@@ -728,31 +747,29 @@ Two cautions on reading this:
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
 | E09 | GPU evidence is not collected (M5) |
-| E16 | DET-02 sums siblings only and says so; a nested fixture would strengthen this |
 | E18 | recorder overhead needs paired controlled runs (M4) |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
 | F06 | image and GPU allocation accounting has no provider on either platform |
 | F09 | shared-page accounting across processes needs a multi-process app on hardware |
 | F12 | in-process tooling stays in the process total by construction; a real capture would confirm |
-| F13 | ambiguous overhead is kept unknown and IS tested via the name-only match case |
 | F15 | endpoint/library ambiguity needs more attribution rules |
 | G02 | the Hermes reader refuses unexpected shapes; a versioned corpus is M3 |
 | G03 | non-Hermes runtime needs such a build (M3) |
 | G05 | Fast Refresh needs a live RN app (M3) |
 | G06 | multiple runtimes needs a live RN app (M3) |
 | G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
-| G12 | Expo prerequisites are documentation (M3) |
+| G12 | Expo's prerequisite is documented in samples/react-native/README.md: this SDK needs no native module, so it loads in Expo Go, and a native SDK would need a development build |
 | G13 | the architecture matrix needs RN builds (M3) |
 | I06 | background workload needs a device |
 | I20 | overhead measurement needs paired controlled runs on hardware (M4) |
-| J12 | desktop signing and packaging need the desktop app (M2) |
+| J12 | signing, packaging and the (empty) license inventory are documentation, in docs/packaging-and-signing.md; no test binary can assert a Developer ID this environment does not have |
 | J13 | session migration needs more than one schema version |
 | J17 | App Store app depth needs a reachable device with such an app |
 | J19 | native-without-JS evidence needs a real mixed capture |
 
 ## Totals
 
-- test binaries: 19
-- test cases declaring at least one id: 432
-- checklist-item links: 559
-- section-18 coverage: 158/198 (80%)
+- test binaries: 20
+- test cases declaring at least one id: 444
+- checklist-item links: 578
+- section-18 coverage: 162/198 (82%)

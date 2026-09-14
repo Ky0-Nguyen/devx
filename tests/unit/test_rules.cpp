@@ -335,7 +335,8 @@ MPI_TEST(det04_reports_self_share_as_disjoint_and_states_its_scope, {"E12", "F17
   MPI_CHECK(contains(m->limitations, "median sampling interval"));
 }
 
-MPI_TEST(det12_excludes_name_only_matches_from_attribution, {"section-9"}) {
+MPI_TEST(det12_excludes_name_only_matches_from_attribution,
+         {"section-9", "F13"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
   const auto* i = first(r, "DET-12");
   MPI_CHECK(i != nullptr);
@@ -1160,4 +1161,87 @@ MPI_TEST(an_unreadable_expiry_keeps_the_suppression_and_reports_it, {"H10"}) {
     }
   }
   MPI_CHECK(announced);
+}
+
+MPI_TEST(nested_js_spans_are_not_double_counted, {"E16"}) {
+  // DET-02's total says "nested spans are not included, so this is not a
+  // share of wall time". This checks the claim: a parent task with children
+  // inside it must contribute its own duration once, not its duration plus
+  // its children's. Double-counting here is how 100 ms of work becomes a
+  // report of 180 ms, and a total that exceeds the window it is drawn from
+  // is the giveaway.
+  model::NormalizedTrace t;
+  t.session_id = "nested";
+  t.primary_clock_domain = "android.boottime.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  model::ThreadInfo thread;
+  thread.thread_instance_id = "js-1";
+  thread.name = "mqt_js";
+  thread.is_js_thread = true;
+  t.threads.push_back(thread);
+
+  const auto add = [&](const char* id, model::TimeNs start,
+                       model::TimeNs duration) {
+    model::JsTask task;
+    task.event_id = id;
+    task.start_ns = start;
+    task.duration_ns = duration;
+    task.name = id;
+    task.thread_instance_id = "js-1";
+    task.clock_domain = t.primary_clock_domain;
+    task.clock_mapped_to_ui = true;
+    t.js_tasks.push_back(task);
+  };
+  // One name, so these land in a single group -- which is the only way the
+  // sum can double-count. A 100 ms parent with a 60 ms child nested inside
+  // it, plus a 70 ms sibling later. The honest total is 170 ms: 100 for the
+  // parent's stretch (the child is inside it) and 70 for the sibling. A sum
+  // of durations would say 230 ms, which is more work than the wall time it
+  // covers.
+  add("render", 0, 100'000'000);
+  add("render", 10'000'000, 60'000'000);
+  add("render", 200'000'000, 70'000'000);
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-02.long_task_ms", 50});
+  const auto r = rules::analyze(t, symbols, opts);
+
+  const model::Issue* issue = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-02") { issue = &i; break; }
+  }
+  MPI_CHECK(issue != nullptr);
+  if (issue == nullptr) return;
+
+  const model::Metric* total = nullptr;
+  for (const auto& m : issue->metrics) {
+    if (m.name == "js.task_duration_total_ns") total = &m;
+  }
+  MPI_CHECK(total != nullptr);
+  if (total == nullptr) return;
+  const double ms = total->value.value_or(0.0) / 1e6;
+  MPI_CHECK_MSG(ms > 169.0 && ms < 171.0,
+                "the total counts each stretch of time once: expected 170 ms, "
+                "got " + std::to_string(ms) + " ms");
+  MPI_CHECK_MSG(total->aggregation.find("union") != std::string::npos,
+                "and says it is a union, not a sum: got " +
+                    total->aggregation);
+  // And it can never exceed the window it was measured in, which is the
+  // check that catches double-counting however it arises.
+  MPI_CHECK_MSG(total->value.value_or(0.0) <=
+                    static_cast<double>(t.window_end_ns - t.window_start_ns),
+                "a busy total larger than the window is arithmetic, not "
+                "measurement");
+  bool says_so = false;
+  for (const auto& l : total->limitations) {
+    if (l.find("nested") != std::string::npos) says_so = true;
+  }
+  MPI_CHECK(says_so);
+
+  // Three spans were grouped, and the evidence keeps all three: the union is
+  // about not double-counting time, not about hiding occurrences.
+  MPI_CHECK_EQ(issue->occurrence_count, std::int64_t{3});
 }

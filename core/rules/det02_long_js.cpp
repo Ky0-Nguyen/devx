@@ -153,8 +153,45 @@ void Det02::evaluate(const RuleContext& ctx, RuleOutput& out) const {
         });
     const model::TimeNs worst_ns = worst->duration_ns.value_or(0);
 
+    // The union of the group's intervals, not the sum of their durations.
+    //
+    // A plain sum double-counts a span nested inside another of the same
+    // name: a 100 ms `render` containing a 60 ms `render` came out as 160 ms
+    // of work in 100 ms of wall time, while this metric's own limitation
+    // claimed nested spans were excluded. A union counts each stretch of time
+    // once, cannot exceed the window, and is what a reader means by "time in
+    // this task" (spec E16).
     model::TimeNs total_ns = 0;
-    for (const auto* x : g.tasks) total_ns += x->duration_ns.value_or(0);
+    {
+      std::vector<std::pair<model::TimeNs, model::TimeNs>> spans;
+      spans.reserve(g.tasks.size());
+      for (const auto* x : g.tasks) {
+        const auto d = x->duration_ns.value_or(0);
+        if (d <= 0) continue;
+        spans.emplace_back(x->start_ns, x->start_ns + d);
+      }
+      std::sort(spans.begin(), spans.end());
+      model::TimeNs open_start = 0;
+      model::TimeNs open_end = 0;
+      bool open = false;
+      for (const auto& [from, to] : spans) {
+        if (!open) {
+          open_start = from;
+          open_end = to;
+          open = true;
+          continue;
+        }
+        if (from <= open_end) {
+          // Overlapping or nested: extend rather than add.
+          open_end = std::max(open_end, to);
+        } else {
+          total_ns += open_end - open_start;
+          open_start = from;
+          open_end = to;
+        }
+      }
+      if (open) total_ns += open_end - open_start;
+    }
 
     model::Issue issue;
     issue.rule_id = id();
@@ -294,10 +331,14 @@ void Det02::evaluate(const RuleContext& ctx, RuleOutput& out) const {
     total_m.window_start_ns = t.window_start_ns;
     total_m.window_end_ns = t.window_end_ns;
     total_m.method = model::MetricMethod::kMeasured;
-    total_m.aggregation = "sum_over_occurrences";
+    total_m.aggregation = "union_of_occurrence_intervals";
     total_m.limitations.push_back(
-        "sum of sibling task durations; nested spans are not included, so this "
-        "is not a share of wall time");
+        "the union of these tasks' intervals, so a nested or overlapping span "
+        "counts once. It is time this name was on the stack, not a sum of "
+        "durations -- a sum would exceed the window whenever spans nest");
+    total_m.limitations.push_back(
+        "still not a share of wall time: other work ran in the same window, "
+        "and this says nothing about what the user was waiting for");
     issue.metrics.push_back(std::move(total_m));
 
     for (const auto* x : g.tasks) {
