@@ -31,11 +31,11 @@ struct CaptureConfig {
   std::chrono::milliseconds duration{5000};
   int sample_frequency_hz = 200;
   bool frames = true;
-  // `dumpsys gfxinfo PKG framestats` drains the platform's frame buffer on
-  // each read, and the collector resets it at capture start so the window
-  // contains only this capture's frames. Clearing this flag keeps whatever the
-  // platform has already accumulated, which is what you want when the frames
-  // of interest were produced before the capture began.
+  // `dumpsys gfxinfo PKG framestats` is a ring buffer of roughly the last 120
+  // frames and does NOT drain when read, so the collector clears it at capture
+  // start to keep the window to this capture's frames. Clearing this flag
+  // keeps whatever the platform has already accumulated, which is what you
+  // want when the frames of interest were produced before the capture began.
   bool reset_frame_history = true;
   bool cpu_samples = true;
   bool memory = true;
