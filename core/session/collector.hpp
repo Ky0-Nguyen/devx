@@ -46,6 +46,15 @@ struct CaptureConfig {
   // operator who wants it (spec section 13: explain overhead before enabling
   // a heavier collector).
   bool scheduling = false;
+  // Take a heap dump at the end of the capture. Off by default and expensive
+  // in a way the operator should choose: `am dumpheap` pauses the app while
+  // it walks the whole heap, and the file it writes is tens of megabytes --
+  // 49 MB for the app this was built against.
+  bool heap_dump = false;
+  // Where a collector may write a large side-artifact it cannot hold in
+  // memory -- a heap dump is tens of megabytes. The session writer moves what
+  // it finds here into the package.
+  std::string artifact_dir;
   // Kernel buffer per CPU, in kilobytes. Too small and the kernel drops
   // events, which is reported as a gap rather than absorbed.
   int scheduling_buffer_kb = 16384;
@@ -94,6 +103,10 @@ struct CaptureResult {
   std::vector<model::Capability> source_results;
   // Measured wall time of the capture itself, for overhead accounting.
   std::chrono::milliseconds elapsed{0};
+  // Large artifacts written to `CaptureConfig::artifact_dir`, as
+  // {name inside the package's raw/, absolute path on disk}. Kept out of the
+  // trace because a heap dump does not belong in a JSON document.
+  std::vector<std::pair<std::string, std::string>> artifacts;
 
   bool ok() const { return started && any_data && error.empty(); }
 };

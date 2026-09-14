@@ -223,12 +223,13 @@ core/
   discovery/         provider interface + reconciliation across adapters
   ingestion/         readers (native, Chrome trace-event, Hermes profile) + normalization
   symbols/           source maps, R8 mappings, path-traversal defence
-  rules/             detector contract, registry, DET-01..05 and 07..12; DET-06 deferred
+  rules/             detector contract, registry, all twelve detectors
   report/            JSON and Markdown writers
   session/           session package on disk, collector contract, comparison
   timeline/          binned tracks whose bins carry a state, not a bare number
+  heap/              object graph from a heap dump + reference-path search
   util/              JSON, process execution, cancellation, time
-adapters/android/    adb adapter, live capture collector, atrace/ftrace parser
+adapters/android/    adb adapter, live capture collector, atrace and HPROF parsers
 adapters/ios/        devicectl / simctl / xctrace adapter
 fixtures/
   traces/            labelled synthetic traces (positive, negative, incomplete, malformed)

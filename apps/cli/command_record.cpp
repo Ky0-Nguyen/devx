@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <functional>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -24,6 +25,7 @@
 #include "adapters/android/adb_collector.hpp"
 #include "adapters/ios/xctrace_collector.hpp"
 
+#include "adapters/android/hprof_parser.hpp"
 #include "apps/cli/cli.hpp"
 #include "core/ingestion/normalize.hpp"
 #include "core/ingestion/reader.hpp"
@@ -159,6 +161,20 @@ ExitCode cmd_record(const Invocation& inv) {
   if (collector) {
     session::CaptureConfig cfg;
     cfg.cancel = inv.global.cancel;
+    // Somewhere for a collector to put a file too big to hold in memory. It
+    // sits beside the session it will become part of, so a failed run leaves
+    // the evidence next to the thing that failed rather than in /tmp.
+    cfg.artifact_dir = inv.global.sessions_dir + "/" + manifest.session_id +
+                       ".artifacts";
+    if (inv.has_flag("heap")) {
+      std::error_code ec;
+      std::filesystem::create_directories(cfg.artifact_dir, ec);
+      if (ec) {
+        std::cerr << "error: cannot create " << cfg.artifact_dir << ": "
+                  << ec.message() << "\n";
+        return ExitCode::kCollectionError;
+      }
+    }
     cfg.preset = inv.flag("preset", "lightweight");
     if (inv.has_flag("duration-s")) {
       const int secs = std::atoi(inv.flag("duration-s").c_str());
@@ -198,6 +214,16 @@ ExitCode cmd_record(const Invocation& inv) {
                 << " MiB kernel buffer per CPU. Only this app's threads are "
                    "attributed to it; everything else is recorded as out of "
                    "scope.\n";
+    }
+    if (inv.has_flag("heap")) {
+      cfg.heap_dump = true;
+      // The same rule as --scheduling: say what it costs before enabling it.
+      std::cerr << "note: --heap runs `am dumpheap` after the capture. It "
+                   "pauses the app while the runtime walks the whole heap, "
+                   "and writes tens of megabytes into the session (49 MB for "
+                   "a React Native app on the emulator this was built "
+                   "against). It is taken after every other source so the "
+                   "pause is outside the measured window.\n";
     }
     if (inv.has_flag("no-frames")) cfg.frames = false;
     if (inv.has_flag("no-cpu")) cfg.cpu_samples = false;
@@ -496,7 +522,37 @@ ExitCode cmd_record(const Invocation& inv) {
     rules::EngineOptions eopts;
     eopts.mode = manifest.requested_mode;
     eopts.cancel = inv.global.cancel;
+
+    // The heap dump this capture just took, parsed so DET-06 can run over the
+    // same session rather than needing a second command. A dump that will not
+    // parse is reported as a data-quality note: the capture itself succeeded,
+    // and saying nothing would leave DET-06 skipping for want of evidence
+    // that is sitting on disk.
+    heap::HeapGraph heap_graph;
+    std::string heap_note;
+    for (const auto& [name, path] : capture.artifacts) {
+      if (name != "heap.hprof") continue;
+      android::HprofLimits hlimits;
+      const auto hr =
+          android::read_hprof(path, hlimits, inv.global.cancel, heap_graph);
+      if (hr.ok && !heap_graph.objects().empty()) {
+        // `am dumpheap` asks the runtime to collect before it walks the heap,
+        // which is what makes presence here mean something.
+        heap_graph.gc_requested_before_dump = true;
+        eopts.heap_graph = &heap_graph;
+        heap_note = "heap dump parsed: " +
+                    std::to_string(heap_graph.objects().size()) +
+                    " object(s), " + std::to_string(heap_graph.roots().size()) +
+                    " root(s)";
+      } else {
+        heap_note = "the heap dump was captured but could not be read (" +
+                    (hr.error.empty() ? std::string("no objects found")
+                                      : hr.error) +
+                    "), so no reference paths are available from it";
+      }
+    }
     auto analysis = rules::analyze(trace, symbol_service, eopts);
+    if (!heap_note.empty()) analysis.data_quality_notes.push_back(heap_note);
 
     report::ReportOptions rep_opts;
     const std::string md = report::to_markdown(trace, analysis, rep_opts);
@@ -512,7 +568,15 @@ ExitCode cmd_record(const Invocation& inv) {
     manifest.partial_reasons = trace.partial_reasons;
 
     const auto written = session::write_package(
-        inv.global.sessions_dir, manifest, trace, analysis, snap, md, js);
+        inv.global.sessions_dir, manifest, trace, analysis, snap, md, js,
+        capture.artifacts);
+    // The scratch directory has served its purpose once the package holds a
+    // checksummed copy. Removed only on success: a failed write leaves the
+    // dump on disk rather than discarding the one expensive thing in the run.
+    if (written.ok && !cfg.artifact_dir.empty()) {
+      std::error_code ec;
+      std::filesystem::remove_all(cfg.artifact_dir, ec);
+    }
     if (!written.ok) {
       std::cerr << "error: " << written.error << "\n";
       return ExitCode::kCollectionError;

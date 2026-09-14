@@ -57,6 +57,12 @@ RECORD OPTIONS (Android)
                                 Disable an individual collector source.
   --no-frame-reset              Keep the frame history the platform already
                                 holds instead of resetting it first.
+  --heap-dump <file>            (analyze) Read reference paths from an HPROF
+                                heap dump, for DET-06.
+  --heap                        (record) Take a heap dump after the capture, for
+                                DET-06's reference paths. Pauses the app and
+                                writes tens of megabytes; the note it prints
+                                says so before it runs.
   --live                        Stream the capture: print counts as they
                                 arrive instead of reporting only at the end.
                                 Live findings are always preliminary.
@@ -93,6 +99,7 @@ bool needs_value(const std::string& flag) {
   static const char* kWithValue[] = {
       "--app",
       "--bins",
+      "--heap-dump",
       "--bundle-id",
       "--device",
       "--duration-s",
@@ -144,6 +151,7 @@ bool is_boolean_flag(const std::string& flag) {
       "--ci",           "--include-events", "--include-source-paths",
       "--installed",    "--json",           "--launch",
       "--live",
+      "--heap",
       "--no-cpu",       "--no-frame-reset", "--no-frames",
       "--no-memory",    "--no-simulators",  "--profileable",
       "--quiet",        "--running",        "--scheduling",

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "adapters/android/hprof_parser.hpp"
 #include "apps/cli/cli.hpp"
 #include "core/ingestion/normalize.hpp"
 #include "core/ingestion/reader.hpp"
@@ -145,6 +146,7 @@ ExitCode cmd_analyze(const Invocation& inv) {
 
   // Resolve the trace: either a session package or a bare trace file.
   std::string trace_path = input;
+  std::string heap_path = inv.flag("heap-dump");
   std::vector<std::string> notes;
   if (is_directory(input)) {
     const auto loaded = session::load_package(input);
@@ -157,6 +159,10 @@ ExitCode cmd_analyze(const Invocation& inv) {
       notes.push_back("checksum: " + f);
       warn("session package checksum problem: " + f);
     }
+    // A dump stored in the package is used unless the operator named
+    // another. Not using it would leave DET-06 reporting missing evidence
+    // that the session is carrying.
+    if (heap_path.empty()) heap_path = loaded.heap_path;
     if (loaded.manifest.state != session::SessionState::kCompleted) {
       notes.push_back("session state is '" +
                       std::string(session::to_string(loaded.manifest.state)) +
@@ -197,6 +203,30 @@ ExitCode cmd_analyze(const Invocation& inv) {
     trace.partial_reasons.push_back("ingestion cancelled by the operator");
   }
 
+  heap::HeapGraph heap_graph;
+  if (!heap_path.empty()) {
+    android::HprofLimits hlimits;
+    const auto hr =
+        android::read_hprof(heap_path, hlimits, inv.global.cancel, heap_graph);
+    if (hr.ok && !heap_graph.objects().empty()) {
+      // A dump taken by this tool's own `--heap` had a collection requested
+      // first; one handed over by an operator may not have, and that changes
+      // what presence in it means. The flag is set only for the path this
+      // tool wrote.
+      heap_graph.gc_requested_before_dump = inv.flag("heap-dump").empty();
+      notes.push_back("heap dump read from " + heap_path + ": " +
+                      std::to_string(heap_graph.objects().size()) +
+                      " object(s), " +
+                      std::to_string(heap_graph.roots().size()) + " root(s)");
+    } else {
+      notes.push_back(
+          "the heap dump at " + heap_path + " could not be read (" +
+          (hr.error.empty() ? std::string("no objects found") : hr.error) +
+          "), so no reference paths are available");
+      heap_graph = heap::HeapGraph{};
+    }
+  }
+
   const auto norm = ingest::normalize(trace, inv.global.cancel);
   for (const auto& n : norm.notes) trace.ingestion_warnings.push_back(n);
   if (norm.duplicates_flagged > 0) {
@@ -220,6 +250,7 @@ ExitCode cmd_analyze(const Invocation& inv) {
     trace.build.symbol_bindings.push_back(b);
   }
 
+  if (!heap_graph.objects().empty()) engine_opts.heap_graph = &heap_graph;
   auto analysis = rules::analyze(trace, symbol_service, engine_opts);
   for (const auto& n : notes) analysis.data_quality_notes.push_back(n);
 

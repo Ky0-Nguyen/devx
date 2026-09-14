@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 143 of 198 checklist items have at
-least one automated test.** The remaining 55 are listed below with a stated
+**Coverage of specification section 18: 145 of 198 checklist items have at
+least one automated test.** The remaining 53 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (143 items, 494 test-case links)
+## Covered (145 items, 522 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -57,6 +57,7 @@ Two cautions on reading this:
 | A12 | `test_android_parsers` | `ps_parser_refuses_to_guess_at_an_unknown_header` |
 | A12 | `test_android_parsers` | `real_adb_with_no_device_yields_an_empty_list_not_an_error` |
 | A12 | `test_compare` | `a_missing_file_is_an_error_not_an_empty_set` |
+| A12 | `test_heap` | `a_non_hprof_file_is_refused` |
 | A12 | `test_identity` | `empty_list_differs_from_enumeration_failure` |
 | A12 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
 | A12 | `test_ios_parsers` | `adapter_reports_unreachable_device_as_enumeration_failure` |
@@ -96,6 +97,7 @@ Two cautions on reading this:
 | B06 | `test_identity` | `ambiguous_ownership_is_excluded_from_app_totals` |
 | B06 | `test_rules` | `ambiguous_ownership_is_surfaced_as_a_data_quality_note` |
 | B07 | `test_android_parsers` | `isolated_process_identity_is_recognised` |
+| B07 | `test_heap` | `objects_are_attributed_to_their_heap` |
 | B07 | `test_identity` | `ambiguous_ownership_is_excluded_from_app_totals` |
 | B07 | `test_ingestion` | `chrome_reader_marks_ownership_as_unestablished` |
 | B07 | `test_rules` | `ambiguous_ownership_is_surfaced_as_a_data_quality_note` |
@@ -166,7 +168,16 @@ Two cautions on reading this:
 | D04 | `test_json` | `stream_parser_can_abandon_an_array_midway` |
 | D04 | `test_process` | `process_honours_cancellation` |
 | D04 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
+| D05 | `test_heap` | `a_cyclic_superclass_chain_does_not_hang` |
+| D05 | `test_heap` | `a_non_hprof_file_is_refused` |
+| D05 | `test_heap` | `a_primitive_array_is_named_from_its_element_type` |
+| D05 | `test_heap` | `a_superclass_described_after_its_instance_is_still_read` |
+| D05 | `test_heap` | `a_truncated_dump_reports_what_it_got` |
+| D05 | `test_heap` | `an_incomplete_chain_is_counted_not_ignored` |
+| D05 | `test_heap` | `an_unknown_field_type_abandons_the_rest_of_its_segment` |
+| D05 | `test_heap` | `an_unsupported_identifier_size_is_refused_not_guessed` |
 | D07 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
+| D08 | `test_heap` | `a_truncated_dump_reports_what_it_got` |
 | D08 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
 | D08 | `test_ingestion` | `rejects_malformed_traces_without_crashing` |
 | D08 | `test_json` | `json_rejects_malformed` |
@@ -279,6 +290,8 @@ Two cautions on reading this:
 | F03 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
 | F04 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
 | F05 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
+| F07 | `test_heap` | `a_primitive_array_is_named_from_its_element_type` |
+| F07 | `test_heap` | `objects_are_attributed_to_their_heap` |
 | F07 | `test_timeline` | `a_counter_bin_holds_a_reading_not_a_sum` |
 | F07 | `test_timeline` | `a_covered_bin_without_a_sample_is_not_a_zero` |
 | F07 | `test_timeline` | `a_reading_at_the_windows_last_instant_is_inside_it` |
@@ -286,6 +299,12 @@ Two cautions on reading this:
 | F08 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | F08 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
 | F08 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
+| F10 | `test_heap` | `a_reference_chain_is_read_from_the_dump` |
+| F10 | `test_heap` | `a_static_field_is_an_edge_a_path_can_run_through` |
+| F10 | `test_heap` | `an_app_root_is_preferred_over_vm_bookkeeping` |
+| F10 | `test_heap` | `an_array_element_path_names_its_index` |
+| F10 | `test_heap` | `det06_reports_a_destroyed_object_that_is_still_held` |
+| F10 | `test_heap` | `det06_says_when_only_the_runtime_holds_the_object` |
 | F11 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | F11 | `test_process` | `process_separates_stdout_and_stderr` |
 | F14 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
@@ -327,6 +346,11 @@ Two cautions on reading this:
 | H01 | `test_compare` | `a_run_with_no_value_keeps_its_place` |
 | H01 | `test_compare` | `an_unstated_eligibility_is_insufficient_evidence` |
 | H01 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
+| H01 | `test_heap` | `an_incomplete_chain_is_counted_not_ignored` |
+| H01 | `test_heap` | `an_object_not_in_the_dump_yields_no_claim` |
+| H01 | `test_heap` | `an_unreachable_object_is_garbage_not_retention` |
+| H01 | `test_heap` | `det06_calls_an_unrooted_destroyed_object_garbage` |
+| H01 | `test_heap` | `det06_qualifies_a_dump_taken_without_a_collection` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
 | H01 | `test_timeline` | `a_capture_with_no_window_yields_no_axis` |
@@ -342,14 +366,16 @@ Two cautions on reading this:
 | H03 | `test_rules` | `det01_skips_when_no_frame_collector_ran` |
 | H03 | `test_rules` | `det04_skips_below_minimum_sample_population` |
 | H04 | `test_rules` | `threshold_override_changes_the_verdict` |
+| H05 | `test_heap` | `det06_without_a_dump_refuses_the_substitute` |
 | H05 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
 | H05 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
+| H05 | `test_rules` | `det06_without_a_heap_dump_says_what_is_missing` |
 | H05 | `test_rules` | `det07_says_a_capture_without_a_launch_has_no_startup` |
 | H05 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
 | H05 | `test_rules` | `det10_will_not_accept_cpu_samples_as_render_data` |
 | H05 | `test_rules` | `det11_says_it_cannot_observe_the_network_itself` |
 | H05 | `test_rules` | `every_catalog_detector_is_registered` |
-| H05 | `test_rules` | `unimplemented_detectors_are_skipped_with_reasons` |
+| H05 | `test_rules` | `no_detector_is_unimplemented_any_more` |
 | H05 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
 | H06 | `test_rules` | `severity_is_independent_of_causal_confidence` |
 | H07 | `test_rules` | `every_evidence_reference_resolves_to_captured_data` |
@@ -360,6 +386,7 @@ Two cautions on reading this:
 | H10 | `test_report` | `suppressed_issues_can_be_omitted_or_kept_with_their_reason` |
 | H10 | `test_rules` | `suppression_retains_reason_and_expiry` |
 | H11 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
+| H11 | `test_heap` | `det06_says_nothing_about_a_live_object` |
 | H11 | `test_json` | `json_null_is_distinct_from_absent` |
 | H11 | `test_report` | `no_findings_is_distinguished_from_no_analysis` |
 | H11 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
@@ -368,6 +395,7 @@ Two cautions on reading this:
 | H11 | `test_rules` | `det07_under_budget_runs_and_says_what_it_measured` |
 | H11 | `test_rules` | `every_catalog_detector_is_registered` |
 | H11 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
+| H11 | `test_rules` | `no_detector_is_unimplemented_any_more` |
 | H11 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
 | H11 | `test_timeline` | `a_collector_that_never_reported_coverage_measures_nothing` |
 | H11 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
@@ -516,7 +544,7 @@ Two cautions on reading this:
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
-## Additional coverage keyed to specification sections and detector ids (25)
+## Additional coverage keyed to specification sections and detector ids (26)
 
 | Reference | Test binary | Test case |
 |---|---|---|
@@ -545,6 +573,19 @@ Two cautions on reading this:
 | DET-05 | `test_rules` | `det05_refuses_to_compare_two_unmapped_clocks` |
 | DET-05 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
 | DET-05 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
+| DET-06 | `test_heap` | `a_reference_chain_is_read_from_the_dump` |
+| DET-06 | `test_heap` | `a_static_field_is_an_edge_a_path_can_run_through` |
+| DET-06 | `test_heap` | `a_superclass_described_after_its_instance_is_still_read` |
+| DET-06 | `test_heap` | `an_app_root_is_preferred_over_vm_bookkeeping` |
+| DET-06 | `test_heap` | `an_unreachable_object_is_garbage_not_retention` |
+| DET-06 | `test_heap` | `det06_calls_an_unrooted_destroyed_object_garbage` |
+| DET-06 | `test_heap` | `det06_qualifies_a_dump_taken_without_a_collection` |
+| DET-06 | `test_heap` | `det06_reports_a_destroyed_object_that_is_still_held` |
+| DET-06 | `test_heap` | `det06_says_nothing_about_a_live_object` |
+| DET-06 | `test_heap` | `det06_says_when_only_the_runtime_holds_the_object` |
+| DET-06 | `test_heap` | `det06_without_a_dump_refuses_the_substitute` |
+| DET-06 | `test_heap` | `instances_of_a_base_class_are_found_through_subclasses` |
+| DET-06 | `test_rules` | `det06_without_a_heap_dump_says_what_is_missing` |
 | DET-07 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
 | DET-07 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | DET-07 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
@@ -625,7 +666,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (55)
+## Not yet covered (53)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -645,7 +686,6 @@ Two cautions on reading this:
 | D01 | start/stop needs a collector (M2) |
 | D02 | stop-during-startup needs a collector (M2) |
 | D03 | double-stop idempotency needs a collector (M2) |
-| D05 | disk-full is handled in the write path; triggering it needs a constrained filesystem |
 | D06 | host crash recovery needs fault injection; the .partial directory path is implemented |
 | D14 | durations never use the wall clock by construction; a timezone-change test needs host manipulation |
 | D15 | device sleep/resume needs hardware |
@@ -662,7 +702,6 @@ Two cautions on reading this:
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
 | F06 | image and GPU allocation accounting has no provider on either platform |
 | F09 | shared-page accounting across processes needs a multi-process app on hardware |
-| F10 | owned buffer allocations need a graphics/allocator provider |
 | F12 | in-process tooling stays in the process total by construction; a real capture would confirm |
 | F13 | ambiguous overhead is kept unknown and IS tested via the name-only match case |
 | F15 | endpoint/library ambiguity needs more attribution rules |
@@ -687,7 +726,7 @@ Two cautions on reading this:
 
 ## Totals
 
-- test binaries: 17
-- test cases declaring at least one id: 384
-- checklist-item links: 494
-- section-18 coverage: 143/198 (72%)
+- test binaries: 18
+- test cases declaring at least one id: 407
+- checklist-item links: 522
+- section-18 coverage: 145/198 (73%)

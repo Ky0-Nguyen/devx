@@ -12,6 +12,7 @@ RulePtr make_det02_long_js();
 RulePtr make_det04_cpu_hotspot();
 RulePtr make_det03_main_thread_io();
 RulePtr make_det05_memory_growth();
+RulePtr make_det06_retention();
 RulePtr make_det07_startup_budget();
 RulePtr make_det08_regression();
 RulePtr make_det09_wait_contention();
@@ -33,6 +34,7 @@ std::vector<RulePtr> all_rules() {
   rules.push_back(make_det04_cpu_hotspot());
   rules.push_back(make_det03_main_thread_io());
   rules.push_back(make_det05_memory_growth());
+  rules.push_back(make_det06_retention());
   rules.push_back(make_det07_startup_budget());
   rules.push_back(make_det08_regression());
   rules.push_back(make_det09_wait_contention());
@@ -51,6 +53,7 @@ const char* to_string(ThresholdOrigin o) {
     case ThresholdOrigin::kPlatformDeadlineObserved:
       return "platform_deadline_observed";
     case ThresholdOrigin::kEmpiricalBaseline: return "empirical_baseline";
+    case ThresholdOrigin::kPlatformContract: return "platform_contract";
     case ThresholdOrigin::kConfigurableHeuristic: return "configurable_heuristic";
   }
   return "configurable_heuristic";

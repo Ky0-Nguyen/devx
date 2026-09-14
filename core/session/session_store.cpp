@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <iterator>
 #include <random>
 
 #include "core/report/report.hpp"
@@ -170,7 +171,9 @@ WriteResult write_package(const std::string& parent_dir,
                           const model::AnalysisResult& analysis,
                           const model::DiscoverySnapshot& discovery,
                           const std::string& report_markdown,
-                          const std::string& report_json) {
+                          const std::string& report_json,
+                          const std::vector<std::pair<std::string, std::string>>&
+                              extra_raw_files) {
   WriteResult res;
   if (manifest_in.session_id.empty()) {
     res.error = "refusing to write a package with an empty session id";
@@ -219,6 +222,20 @@ WriteResult write_package(const std::string& parent_dir,
   entries.push_back({"issues.json", analysis.to_json().dump(2) + "\n"});
   entries.push_back({"report.md", report_markdown});
   entries.push_back({"report.json", report_json});
+
+  // Side-artifacts are read from disk rather than held in memory: a 49 MB
+  // heap dump has no business passing through a string alongside the report.
+  for (const auto& [name, source] : extra_raw_files) {
+    std::ifstream in(source, std::ios::binary);
+    if (!in) {
+      res.error = "cannot read the artifact to store: " + source;
+      remove_recursive(temp_dir, nullptr);
+      return res;
+    }
+    std::string content((std::istreambuf_iterator<char>(in)),
+                        std::istreambuf_iterator<char>());
+    entries.push_back({"raw/" + name, std::move(content)});
+  }
 
   for (const auto& e : entries) {
     std::string err;
@@ -348,6 +365,14 @@ LoadResult load_package(const std::string& package_dir) {
   }
 
   res.trace_path = package_dir + "/raw/trace.mpi.json";
+  // A heap dump is set only when the manifest actually lists one: an absent
+  // path must mean "this capture has none", never "it was not looked for".
+  for (const auto& rel : res.manifest.files) {
+    if (rel.rfind("raw/heap", 0) == 0) {
+      res.heap_path = package_dir + "/" + rel;
+      break;
+    }
+  }
   res.ok = true;
   return res;
 }

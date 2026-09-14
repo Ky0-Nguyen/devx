@@ -2,6 +2,7 @@ add_library(mpi_adapters STATIC
   android/adb_adapter.cpp
   android/adb_collector.cpp
   android/atrace_parser.cpp
+  android/hprof_parser.cpp
   ios/ios_adapter.cpp
   ios/xctrace_collector.cpp
 )
