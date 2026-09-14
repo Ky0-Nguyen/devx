@@ -1,0 +1,1 @@
+simpleperf E environment.cpp:854] Package com.android.settings doesn't exist or isn't debuggable/profileable.

@@ -1,0 +1,1846 @@
+meta_info:
+  trace_offcpu: false
+  event_type: cpu-clock
+  app_package_name: io.pizzahut.hutbot.debug
+  app_type: debuggable
+  android_sdk_version: 37
+  android_build_type: user
+sample:
+  event_type: cpu-clock
+  time: 1578053566919
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: e1e88
+  file: /apex/com.android.runtime/lib64/bionic/libc.so
+  symbol: __epoll_pwait
+  callchain:
+    vaddr_in_file: 1bba8
+    file: /system/lib64/libutils.so
+    symbol: android::Looper::pollOnce(int, int*, int*, void**)
+    vaddr_in_file: 234464
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int) (.__uniq.190462215528616872930035678816392364378)
+    vaddr_in_file: 500e40fc
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 15d5dbc
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.nextLegacy
+    vaddr_in_file: 15d5c28
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.next
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1578306710710
+  event_count: 5000000
+  thread_id: 8058
+  thread_name: mqt_v_js
+  vaddr_in_file: 188ef0
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+  symbol: *libhermesvm.so[+188ef0]
+  callchain:
+    vaddr_in_file: 186a94
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+186a94]
+    vaddr_in_file: 16689c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+16689c]
+    vaddr_in_file: d2688
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+d2688]
+    vaddr_in_file: 9fe380
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jsi::Function::call(facebook::jsi::Runtime&, facebook::jsi::Value const*, unsigned long) const
+    vaddr_in_file: a17960
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::TimerCallback::invoke(facebook::jsi::Runtime&)
+    vaddr_in_file: a1fb44
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fb44]
+    vaddr_in_file: a1fa88
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fa88]
+    vaddr_in_file: a1fa38
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fa38]
+    vaddr_in_file: a1fa0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fa0c]
+    vaddr_in_file: a1eae4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1eae4]
+    vaddr_in_file: 9e7044
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e7044]
+    vaddr_in_file: 9e6ef0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6ef0]
+    vaddr_in_file: f14670
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::Task::execute(facebook::jsi::Runtime&, bool)
+    vaddr_in_file: f0d250
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const
+    vaddr_in_file: f0dbd4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)
+    vaddr_in_file: f0d950
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)
+    vaddr_in_file: f13fc4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13fc4]
+    vaddr_in_file: f13f94
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f94]
+    vaddr_in_file: f13f44
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f44]
+    vaddr_in_file: f13f18
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f18]
+    vaddr_in_file: f13008
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13008]
+    vaddr_in_file: 9e7044
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e7044]
+    vaddr_in_file: 9e6ef0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6ef0]
+    vaddr_in_file: 9e6c34
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6c34]
+    vaddr_in_file: 9e6b9c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b9c]
+    vaddr_in_file: 9e6b54
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b54]
+    vaddr_in_file: 9e6b30
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b30]
+    vaddr_in_file: 9e5bc8
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e5bc8]
+    vaddr_in_file: b5be0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+b5be0c]
+    vaddr_in_file: b5bdd0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+b5bdd0]
+    vaddr_in_file: ff832c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff832c]
+    vaddr_in_file: ff82cc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff82cc]
+    vaddr_in_file: ff8284
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff8284]
+    vaddr_in_file: ff8260
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff8260]
+    vaddr_in_file: ff73cc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff73cc]
+    vaddr_in_file: 17dd0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)
+    vaddr_in_file: 17d10
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: f70480
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: f70744
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$0
+    vaddr_in_file: f706fc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$YYXYCFexeoKtAeDpeNYkxZZlpbA
+    vaddr_in_file: f70520
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run
+    vaddr_in_file: 11e6bc
+    file: /apex/com.android.art/javalib/core-oj.jar
+    symbol: java.lang.Thread.run
+    vaddr_in_file: 8f804
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __pthread_start(void*) (.__uniq.67847048707805468364044055584648682506)
+    vaddr_in_file: 80f0c
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __start_thread
+sample:
+  event_type: cpu-clock
+  time: 1578457420169
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 70bb8
+  file: /apex/com.android.runtime/lib64/bionic/libc.so
+  symbol: __strlen_aarch64
+  callchain:
+    vaddr_in_file: 328068
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::ScopedCheck::CheckFieldAccess(art::ScopedObjectAccess&, _jobject*, _jfieldID*, bool, art::Primitive::Type) (.__uniq.99033978352804627313491551960229047428)
+    vaddr_in_file: 424df0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::CheckJNI::GetField(char const*, _JNIEnv*, _jobject*, _jfieldID*, bool, art::Primitive::Type) (.__uniq.99033978352804627313491551960229047428)
+    vaddr_in_file: 21fa8
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::HybridDestructor::getNativePointer() const
+    vaddr_in_file: ac4af8
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::BaseHybridClass* facebook::jni::detail::getNativePointer<facebook::jni::JObject>(facebook::jni::JObject const*)
+    vaddr_in_file: ac44e4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::getHybridDataFromField(facebook::jni::JObject const*, facebook::jni::JField<facebook::jni::detail::JTypeFor<facebook::jni::detail::HybridData, facebook::jni::JObject, void>::_javaobject*> const&)
+    vaddr_in_file: afba40
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart::cthis() const
+    vaddr_in_file: afce90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::FabricUIManagerBinding::*)(), &facebook::react::FabricUIManagerBinding::drainPreallocateViewsQueue(), facebook::react::FabricUIManagerBinding, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>)
+    vaddr_in_file: afac04
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::CallWithJniConversions<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>), void, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>::call(facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>))
+    vaddr_in_file: afab14
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>))
+    vaddr_in_file: ae7fdc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::FabricUIManagerBinding::*)(), &facebook::react::FabricUIManagerBinding::drainPreallocateViewsQueue(), facebook::react::FabricUIManagerBinding, void>::call(_JNIEnv*, _jobject*)
+    vaddr_in_file: f83a90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded
+    vaddr_in_file: fb5114
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.uimanager.GuardedFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1578823107002
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: dfe48
+  file: /apex/com.android.runtime/lib64/bionic/libc.so
+  symbol: __ioctl
+  callchain:
+    vaddr_in_file: 8a848
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: ioctl
+    vaddr_in_file: 60d94
+    file: /system/lib64/libbinder.so
+    symbol: android::IPCThreadState::transact(int, unsigned int, android::Parcel const&, android::Parcel*, unsigned int)
+    vaddr_in_file: 8c1e8
+    file: /system/lib64/libbinder.so
+    symbol: android::BpBinder::transact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int)
+    vaddr_in_file: 1a9fc0
+    file: /system/lib64/libgui.so
+    symbol: android::gui::BpDisplayEventConnection::requestNextVsync()
+    vaddr_in_file: 109944
+    file: /system/lib64/libgui.so
+    symbol: android::DisplayEventDispatcher::scheduleVsync()
+    vaddr_in_file: 181bc0
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::nativeScheduleVsync(_JNIEnv*, _jclass*, long) (.__uniq.90440561212854663225003719316179048247)
+    vaddr_in_file: 50610520
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 1e22c24
+    file: /system/framework/framework.jar
+    symbol: android.view.DisplayEventReceiver.scheduleVsync
+    vaddr_in_file: 1e1be9c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.scheduleVsyncLocked
+    vaddr_in_file: 1e1bdec
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.scheduleFrameLocked
+    vaddr_in_file: 1e1bb20
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.postCallbackDelayedInternal
+    vaddr_in_file: 1e1bbb8
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.postFrameCallbackDelayed
+    vaddr_in_file: 1e1bb9c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.postFrameCallback
+    vaddr_in_file: f8c478
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.internal.AndroidChoreographerProvider$AndroidChoreographer.postFrameCallback
+    vaddr_in_file: f97860
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.postFrameCallbackOnChoreographer
+    vaddr_in_file: f977a4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.postFrameCallback
+    vaddr_in_file: f83c0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.schedule
+    vaddr_in_file: f83a90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded
+    vaddr_in_file: fb5114
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.uimanager.GuardedFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1578988336586
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: df808
+  file: /apex/com.android.runtime/lib64/bionic/libc.so
+  symbol: read
+  callchain:
+    vaddr_in_file: 1bc40
+    file: /system/lib64/libutils.so
+    symbol: android::Looper::pollOnce(int, int*, int*, void**)
+    vaddr_in_file: 234464
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int) (.__uniq.190462215528616872930035678816392364378)
+    vaddr_in_file: 500e40fc
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 15d5dbc
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.nextLegacy
+    vaddr_in_file: 15d5c28
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.next
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1579153057836
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 1e198bc
+  file: /system/framework/framework.jar
+  symbol: android.view.Choreographer$CallbackQueue.extractDueCallbacksLocked
+  callchain:
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1579321283628
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 1045c50
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+  symbol: facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart::cthis() const
+  callchain:
+    vaddr_in_file: 1045914
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::JJSTimerExecutor::*)(facebook::react::WritableNativeArray*), &facebook::react::JJSTimerExecutor::callTimers(facebook::react::WritableNativeArray*), facebook::react::JJSTimerExecutor, void, facebook::react::WritableNativeArray*>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>, facebook::react::WritableNativeArray*&&)
+    vaddr_in_file: 1045a28
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::CallWithJniConversions<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>, facebook::react::WritableNativeArray*&&), void, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, facebook::react::WritableNativeArray*>::call(facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::WritableNativeArray, facebook::react::ReadableNativeArray>::JavaPart, facebook::jni::HybridClass<facebook::react::ReadableNativeArray, facebook::react::NativeArray>::JavaPart, void>::_javaobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>, facebook::react::WritableNativeArray*&&))
+    vaddr_in_file: 1045838
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>, facebook::react::WritableNativeArray*&&), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void, facebook::react::WritableNativeArray*>::call(_JNIEnv*, _jobject*, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::WritableNativeArray, facebook::react::ReadableNativeArray>::JavaPart, facebook::jni::HybridClass<facebook::react::ReadableNativeArray, facebook::react::NativeArray>::JavaPart, void>::_javaobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::JJSTimerExecutor, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>, facebook::react::WritableNativeArray*&&))
+    vaddr_in_file: 1044e10
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::JJSTimerExecutor::*)(facebook::react::WritableNativeArray*), &facebook::react::JJSTimerExecutor::callTimers(facebook::react::WritableNativeArray*), facebook::react::JJSTimerExecutor, void, facebook::react::WritableNativeArray*>::call(_JNIEnv*, _jobject*, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::WritableNativeArray, facebook::react::ReadableNativeArray>::JavaPart, facebook::jni::HybridClass<facebook::react::ReadableNativeArray, facebook::react::NativeArray>::JavaPart, void>::_javaobject*)
+    vaddr_in_file: fa5a1c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.runtime.JSTimerExecutor.callTimers
+    vaddr_in_file: f967a8
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.JavaTimerManager$TimerFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1579571874086
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 1e19bc0
+  file: /system/framework/framework.jar
+  symbol: android.view.Choreographer$FrameData.update
+  callchain:
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1579821814586
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: ac44a4
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+  symbol: facebook::jni::getHybridDataFromField(facebook::jni::JObject const*, facebook::jni::JField<facebook::jni::detail::JTypeFor<facebook::jni::detail::HybridData, facebook::jni::JObject, void>::_javaobject*> const&)
+  callchain:
+    vaddr_in_file: afba40
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart::cthis() const
+    vaddr_in_file: afce90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::FabricUIManagerBinding::*)(), &facebook::react::FabricUIManagerBinding::drainPreallocateViewsQueue(), facebook::react::FabricUIManagerBinding, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>)
+    vaddr_in_file: afac04
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::CallWithJniConversions<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>), void, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>::call(facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>))
+    vaddr_in_file: afab14
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>))
+    vaddr_in_file: ae7fdc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::FabricUIManagerBinding::*)(), &facebook::react::FabricUIManagerBinding::drainPreallocateViewsQueue(), facebook::react::FabricUIManagerBinding, void>::call(_JNIEnv*, _jobject*)
+    vaddr_in_file: f83a90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded
+    vaddr_in_file: fb5114
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.uimanager.GuardedFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1579953250044
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: a3049c
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+  symbol: facebook::jni::basic_strong_ref<facebook::jni::detail::JTypeFor<facebook::jni::detail::HybridDestructor, facebook::jni::JObject, void>::_javaobject*, facebook::jni::LocalReferenceAllocator>::operator->()
+  callchain:
+    vaddr_in_file: ac4af4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::BaseHybridClass* facebook::jni::detail::getNativePointer<facebook::jni::JObject>(facebook::jni::JObject const*)
+    vaddr_in_file: ac44e4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::getHybridDataFromField(facebook::jni::JObject const*, facebook::jni::JField<facebook::jni::detail::JTypeFor<facebook::jni::detail::HybridData, facebook::jni::JObject, void>::_javaobject*> const&)
+    vaddr_in_file: afba40
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart::cthis() const
+    vaddr_in_file: afce90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::FabricUIManagerBinding::*)(), &facebook::react::FabricUIManagerBinding::drainPreallocateViewsQueue(), facebook::react::FabricUIManagerBinding, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>)
+    vaddr_in_file: afac04
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::CallWithJniConversions<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>), void, facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>::call(facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>))
+    vaddr_in_file: afab14
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::react::FabricUIManagerBinding, facebook::jni::detail::BaseHybridClass>::JavaPart, facebook::jni::JObject, void>::_javaobject*>))
+    vaddr_in_file: ae7fdc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::react::FabricUIManagerBinding::*)(), &facebook::react::FabricUIManagerBinding::drainPreallocateViewsQueue(), facebook::react::FabricUIManagerBinding, void>::call(_JNIEnv*, _jobject*)
+    vaddr_in_file: f83a90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded
+    vaddr_in_file: fb5114
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.uimanager.GuardedFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1580119489545
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: dfe48
+  file: /apex/com.android.runtime/lib64/bionic/libc.so
+  symbol: __ioctl
+  callchain:
+    vaddr_in_file: 8a848
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: ioctl
+    vaddr_in_file: 60d94
+    file: /system/lib64/libbinder.so
+    symbol: android::IPCThreadState::transact(int, unsigned int, android::Parcel const&, android::Parcel*, unsigned int)
+    vaddr_in_file: 8c1e8
+    file: /system/lib64/libbinder.so
+    symbol: android::BpBinder::transact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int)
+    vaddr_in_file: 1a9fc0
+    file: /system/lib64/libgui.so
+    symbol: android::gui::BpDisplayEventConnection::requestNextVsync()
+    vaddr_in_file: 109944
+    file: /system/lib64/libgui.so
+    symbol: android::DisplayEventDispatcher::scheduleVsync()
+    vaddr_in_file: 181bc0
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::nativeScheduleVsync(_JNIEnv*, _jclass*, long) (.__uniq.90440561212854663225003719316179048247)
+    vaddr_in_file: 50610520
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 1e22c24
+    file: /system/framework/framework.jar
+    symbol: android.view.DisplayEventReceiver.scheduleVsync
+    vaddr_in_file: 1e1be9c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.scheduleVsyncLocked
+    vaddr_in_file: 1e1bdec
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.scheduleFrameLocked
+    vaddr_in_file: 1e1bb20
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.postCallbackDelayedInternal
+    vaddr_in_file: 1e1bbb8
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.postFrameCallbackDelayed
+    vaddr_in_file: 1e1bb9c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.postFrameCallback
+    vaddr_in_file: f8c478
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.internal.AndroidChoreographerProvider$AndroidChoreographer.postFrameCallback
+    vaddr_in_file: f97860
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.postFrameCallbackOnChoreographer
+    vaddr_in_file: f977a4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.postFrameCallback
+    vaddr_in_file: f83c0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.schedule
+    vaddr_in_file: f83a90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded
+    vaddr_in_file: fb5114
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.uimanager.GuardedFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1580337051586
+  event_count: 5000000
+  thread_id: 8058
+  thread_name: mqt_v_js
+  vaddr_in_file: 1c776c
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+  symbol: *libhermesvm.so[+1c776c]
+  callchain:
+    vaddr_in_file: 259720
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+259720]
+    vaddr_in_file: 25d844
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+25d844]
+    vaddr_in_file: 188f8c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+188f8c]
+    vaddr_in_file: 186a94
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+186a94]
+    vaddr_in_file: 16689c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+16689c]
+    vaddr_in_file: d2688
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libhermesvm.so
+    symbol: *libhermesvm.so[+d2688]
+    vaddr_in_file: 9fe380
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::jsi::Function::call(facebook::jsi::Runtime&, facebook::jsi::Value const*, unsigned long) const
+    vaddr_in_file: a17960
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::TimerCallback::invoke(facebook::jsi::Runtime&)
+    vaddr_in_file: a1fb44
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fb44]
+    vaddr_in_file: a1fa88
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fa88]
+    vaddr_in_file: a1fa38
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fa38]
+    vaddr_in_file: a1fa0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1fa0c]
+    vaddr_in_file: a1eae4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+a1eae4]
+    vaddr_in_file: 9e7044
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e7044]
+    vaddr_in_file: 9e6ef0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6ef0]
+    vaddr_in_file: f14670
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::Task::execute(facebook::jsi::Runtime&, bool)
+    vaddr_in_file: f0d250
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const
+    vaddr_in_file: f0dbd4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)
+    vaddr_in_file: f0d950
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)
+    vaddr_in_file: f13fc4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13fc4]
+    vaddr_in_file: f13f94
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f94]
+    vaddr_in_file: f13f44
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f44]
+    vaddr_in_file: f13f18
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f18]
+    vaddr_in_file: f13008
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13008]
+    vaddr_in_file: 9e7044
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e7044]
+    vaddr_in_file: 9e6ef0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6ef0]
+    vaddr_in_file: 9e6c34
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6c34]
+    vaddr_in_file: 9e6b9c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b9c]
+    vaddr_in_file: 9e6b54
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b54]
+    vaddr_in_file: 9e6b30
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b30]
+    vaddr_in_file: 9e5bc8
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e5bc8]
+    vaddr_in_file: b5be0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+b5be0c]
+    vaddr_in_file: b5bdd0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+b5bdd0]
+    vaddr_in_file: ff832c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff832c]
+    vaddr_in_file: ff82cc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff82cc]
+    vaddr_in_file: ff8284
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff8284]
+    vaddr_in_file: ff8260
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff8260]
+    vaddr_in_file: ff73cc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff73cc]
+    vaddr_in_file: 17dd0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)
+    vaddr_in_file: 17d10
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: f70480
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: f70744
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$0
+    vaddr_in_file: f706fc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$YYXYCFexeoKtAeDpeNYkxZZlpbA
+    vaddr_in_file: f70520
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run
+    vaddr_in_file: 11e6bc
+    file: /apex/com.android.art/javalib/core-oj.jar
+    symbol: java.lang.Thread.run
+    vaddr_in_file: 8f804
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __pthread_start(void*) (.__uniq.67847048707805468364044055584648682506)
+    vaddr_in_file: 80f0c
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __start_thread
+sample:
+  event_type: cpu-clock
+  time: 1580342055545
+  event_count: 5000000
+  thread_id: 8058
+  thread_name: mqt_v_js
+  vaddr_in_file: eead30
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+  symbol: *libreactnative.so[+eead30]
+  callchain:
+    vaddr_in_file: eea660
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+eea660]
+    vaddr_in_file: fcad6c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+fcad6c]
+    vaddr_in_file: fc9078
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+fc9078]
+    vaddr_in_file: fc900c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::LazyShadowTreeRevisionConsistencyManager::unlockRevisions()
+    vaddr_in_file: f04210
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f04210]
+    vaddr_in_file: f0dc5c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)
+    vaddr_in_file: f0d950
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)
+    vaddr_in_file: f13fc4
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13fc4]
+    vaddr_in_file: f13f94
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f94]
+    vaddr_in_file: f13f44
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f44]
+    vaddr_in_file: f13f18
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13f18]
+    vaddr_in_file: f13008
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+f13008]
+    vaddr_in_file: 9e7044
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e7044]
+    vaddr_in_file: 9e6ef0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6ef0]
+    vaddr_in_file: 9e6c34
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6c34]
+    vaddr_in_file: 9e6b9c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b9c]
+    vaddr_in_file: 9e6b54
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b54]
+    vaddr_in_file: 9e6b30
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e6b30]
+    vaddr_in_file: 9e5bc8
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+9e5bc8]
+    vaddr_in_file: b5be0c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+b5be0c]
+    vaddr_in_file: b5bdd0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+b5bdd0]
+    vaddr_in_file: ff832c
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff832c]
+    vaddr_in_file: ff82cc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff82cc]
+    vaddr_in_file: ff8284
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff8284]
+    vaddr_in_file: ff8260
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff8260]
+    vaddr_in_file: ff73cc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libreactnative.so
+    symbol: *libreactnative.so[+ff73cc]
+    vaddr_in_file: 17dd0
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)
+    vaddr_in_file: 17d10
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/lib/arm64/libfbjni.so
+    symbol: facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: f70480
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: f70744
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$0
+    vaddr_in_file: f706fc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$YYXYCFexeoKtAeDpeNYkxZZlpbA
+    vaddr_in_file: f70520
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run
+    vaddr_in_file: 11e6bc
+    file: /apex/com.android.art/javalib/core-oj.jar
+    symbol: java.lang.Thread.run
+    vaddr_in_file: 8f804
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __pthread_start(void*) (.__uniq.67847048707805468364044055584648682506)
+    vaddr_in_file: 80f0c
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __start_thread
+sample:
+  event_type: cpu-clock
+  time: 1580390047086
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 428bd0
+  file: /apex/com.android.art/lib64/libart.so
+  symbol: art::(anonymous namespace)::ScopedCheck::CheckVarArgs(art::ScopedObjectAccess&, art::(anonymous namespace)::VarArgs const*) (.__uniq.99033978352804627313491551960229047428)
+  callchain:
+    vaddr_in_file: 42704c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::ScopedCheck::Check(art::ScopedObjectAccess&, bool, char const*, art::(anonymous namespace)::JniValueType*) (.__uniq.99033978352804627313491551960229047428)
+    vaddr_in_file: 4213c4
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::CheckJNI::CallMethodV(char const*, _JNIEnv*, _jobject*, _jclass*, _jmethodID*, std::__va_list, art::Primitive::Type, art::InvokeType) (.__uniq.99033978352804627313491551960229047428)
+    vaddr_in_file: 5f2408
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::CheckJNI::CallObjectMethodV(_JNIEnv*, _jobject*, _jmethodID*, std::__va_list) (.__uniq.99033978352804627313491551960229047428.llvm.9490697397214158730)
+    vaddr_in_file: 124b44
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallObjectMethod(_jobject*, _jmethodID*, ...)
+    vaddr_in_file: 18222c
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::NativeDisplayEventReceiver::dispatchVsync(long, android::PhysicalDisplayId, unsigned int, android::gui::VsyncEventData)
+    vaddr_in_file: 155644
+    file: /system/lib64/libgui.so
+    symbol: android::DisplayEventDispatcher::handleEvent(int, int, void*)
+    vaddr_in_file: 1befc
+    file: /system/lib64/libutils.so
+    symbol: android::Looper::pollOnce(int, int*, int*, void**)
+    vaddr_in_file: 234464
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int) (.__uniq.190462215528616872930035678816392364378)
+    vaddr_in_file: 500e40fc
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 15d5dbc
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.nextLegacy
+    vaddr_in_file: 15d5c28
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.next
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1580806458337
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 15d6420
+  file: /system/framework/framework.jar
+  symbol: android.os.MessageQueue.enqueueMessageLegacy
+  callchain:
+    vaddr_in_file: 15d6384
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.enqueueMessage
+    vaddr_in_file: 15ab7b8
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.enqueueMessage
+    vaddr_in_file: 15abb44
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.sendMessageAtTime
+    vaddr_in_file: 1e19ed0
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.onVsync
+    vaddr_in_file: 1e22b50
+    file: /system/framework/framework.jar
+    symbol: android.view.DisplayEventReceiver.dispatchVsync
+    vaddr_in_file: 124734
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallVoidMethod(_jobject*, _jmethodID*, ...)
+    vaddr_in_file: 1823b8
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::NativeDisplayEventReceiver::dispatchVsync(long, android::PhysicalDisplayId, unsigned int, android::gui::VsyncEventData)
+    vaddr_in_file: 155644
+    file: /system/lib64/libgui.so
+    symbol: android::DisplayEventDispatcher::handleEvent(int, int, void*)
+    vaddr_in_file: 1befc
+    file: /system/lib64/libutils.so
+    symbol: android::Looper::pollOnce(int, int*, int*, void**)
+    vaddr_in_file: 234464
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int) (.__uniq.190462215528616872930035678816392364378)
+    vaddr_in_file: 500e40fc
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 15d5dbc
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.nextLegacy
+    vaddr_in_file: 15d5c28
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.next
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1580937200420
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: f5e2c8
+  file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+  symbol: com.facebook.react.animated.NativeAnimatedModule.didDispatchMountItems
+  callchain:
+    vaddr_in_file: f83ccc
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$MountItemDispatchListener.didDispatchMountItems
+    vaddr_in_file: f87434
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.mounting.MountItemDispatcher.tryDispatchMountItems
+    vaddr_in_file: f83a90
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded
+    vaddr_in_file: fb5114
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.uimanager.GuardedFrameCallback.doFrame
+    vaddr_in_file: f97698
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1
+    vaddr_in_file: f97570
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer.$r8$lambda$nSkFhrr5T7rop_XKwzlLov4NLLw
+    vaddr_in_file: f97278
+    file: /data/app/~~wWybFpP9kRfAKS-aEzqL5A==/io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==/base.apk
+    symbol: com.facebook.react.modules.core.ReactChoreographer$$ExternalSyntheticLambda0.doFrame
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e19a70
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$CallbackRecord.run
+    vaddr_in_file: 1e1ab38
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doCallbacks
+    vaddr_in_file: 1e1ac5c
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer.doFrame
+    vaddr_in_file: 1e19fb4
+    file: /system/framework/framework.jar
+    symbol: android.view.Choreographer$FrameDisplayEventReceiver.run
+    vaddr_in_file: 15ac118
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.handleCallback
+    vaddr_in_file: 15abf54
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessageImpl
+    vaddr_in_file: 15abf3c
+    file: /system/framework/framework.jar
+    symbol: android.os.Handler.dispatchMessage
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1581058659753
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: 428bd0
+  file: /apex/com.android.art/lib64/libart.so
+  symbol: art::(anonymous namespace)::ScopedCheck::CheckVarArgs(art::ScopedObjectAccess&, art::(anonymous namespace)::VarArgs const*) (.__uniq.99033978352804627313491551960229047428)
+  callchain:
+    vaddr_in_file: 42704c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::ScopedCheck::Check(art::ScopedObjectAccess&, bool, char const*, art::(anonymous namespace)::JniValueType*) (.__uniq.99033978352804627313491551960229047428)
+    vaddr_in_file: 4213c4
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::CheckJNI::CallMethodV(char const*, _JNIEnv*, _jobject*, _jclass*, _jmethodID*, std::__va_list, art::Primitive::Type, art::InvokeType) (.__uniq.99033978352804627313491551960229047428)
+    vaddr_in_file: 5f2408
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::(anonymous namespace)::CheckJNI::CallObjectMethodV(_JNIEnv*, _jobject*, _jmethodID*, std::__va_list) (.__uniq.99033978352804627313491551960229047428.llvm.9490697397214158730)
+    vaddr_in_file: 124b44
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallObjectMethod(_jobject*, _jmethodID*, ...)
+    vaddr_in_file: 181f00
+    file: /system/lib64/libandroid_runtime.so
+    symbol: (anonymous namespace)::Receiver::handleEvent(int, int, void*) (.__uniq.122597702633202772782433410876267305752)
+    vaddr_in_file: 1befc
+    file: /system/lib64/libutils.so
+    symbol: android::Looper::pollOnce(int, int*, int*, void**)
+    vaddr_in_file: 234464
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int) (.__uniq.190462215528616872930035678816392364378)
+    vaddr_in_file: 500e40fc
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 15d5dbc
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.nextLegacy
+    vaddr_in_file: 15d5c28
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.next
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+sample:
+  event_type: cpu-clock
+  time: 1581125722795
+  event_count: 5000000
+  thread_id: 7712
+  thread_name: io.pizzahut.hutbot.debug
+  vaddr_in_file: e1548
+  file: /apex/com.android.runtime/lib64/bionic/libc.so
+  symbol: recvfrom
+  callchain:
+    vaddr_in_file: 10514
+    file: /system/lib64/libsensor.so
+    symbol: android::BitTube::recvObjects(android::sp<android::BitTube> const&, void*, unsigned long, unsigned long)
+    vaddr_in_file: 14b8c
+    file: /system/lib64/libsensor.so
+    symbol: android::SensorEventQueue::read(ASensorEvent*, unsigned long)
+    vaddr_in_file: 181f18
+    file: /system/lib64/libandroid_runtime.so
+    symbol: (anonymous namespace)::Receiver::handleEvent(int, int, void*) (.__uniq.122597702633202772782433410876267305752)
+    vaddr_in_file: 1befc
+    file: /system/lib64/libutils.so
+    symbol: android::Looper::pollOnce(int, int*, int*, void**)
+    vaddr_in_file: 234464
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int) (.__uniq.190462215528616872930035678816392364378)
+    vaddr_in_file: 500e40fc
+    file: [JIT app cache]
+    symbol: art_jni_trampoline
+    vaddr_in_file: 15d5dbc
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.nextLegacy
+    vaddr_in_file: 15d5c28
+    file: /system/framework/framework.jar
+    symbol: android.os.MessageQueue.next
+    vaddr_in_file: 15d3a5c
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loopOnce
+    vaddr_in_file: 15d45f4
+    file: /system/framework/framework.jar
+    symbol: android.os.Looper.loop
+    vaddr_in_file: 1eb9fc
+    file: /system/framework/framework.jar
+    symbol: android.app.ActivityThread.main
+    vaddr_in_file: 5dc11c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::Method_invoke(_JNIEnv*, _jobject*, _jobject*, _jobjectArray*) (.__uniq.165753521025965369065708152063621506277)
+    vaddr_in_file: 2840978
+    file: /system/framework/framework.jar
+    symbol: com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run
+    vaddr_in_file: 795b6c
+    file: /system/framework/arm64/boot-framework.oat
+    symbol: com.android.internal.os.ZygoteInit.main
+    vaddr_in_file: 270fc0
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art_quick_invoke_static_stub
+    vaddr_in_file: 270024
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JValue art::InvokeWithVarArgs<_jmethodID*>(art::ScopedObjectAccessAlreadyRunnable const&, _jobject*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 649a9c
+    file: /apex/com.android.art/lib64/libart.so
+    symbol: art::JNI<true>::CallStaticVoidMethodV(_JNIEnv*, _jclass*, _jmethodID*, std::__va_list)
+    vaddr_in_file: 12ef80
+    file: /system/lib64/libandroid_runtime.so
+    symbol: _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+    vaddr_in_file: 1962a4
+    file: /system/lib64/libandroid_runtime.so
+    symbol: android::AndroidRuntime::start(char const*, android::Vector<android::String8> const&, bool)
+    vaddr_in_file: 4590
+    file: /system/bin/app_process64
+    symbol: main
+    vaddr_in_file: 6f8b8
+    file: /apex/com.android.runtime/lib64/bionic/libc.so
+    symbol: __libc_init
+lost_situation:
+  sample_count: 18
+  lost_count: 0

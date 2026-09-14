@@ -129,3 +129,167 @@ MPI_TEST(json_accessors_do_not_throw_on_type_mismatch, {"J11"}) {
   MPI_CHECK_EQ(v.as_bool(true), true);
   MPI_CHECK_EQ(json::Value::integer(5).as_string(), std::string(""));
 }
+
+// --- StreamParser -----------------------------------------------------------
+
+MPI_TEST(stream_parser_walks_members_in_order, {"section-15"}) {
+  json::StreamParser sp("{\"a\":1,\"b\":\"two\",\"c\":[1,2,3]}", json::Limits{});
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  json::Value v;
+
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("a"));
+  MPI_CHECK(sp.read_value(v));
+  MPI_CHECK_EQ(v.as_int(), static_cast<std::int64_t>(1));
+
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("b"));
+  MPI_CHECK(sp.read_value(v));
+  MPI_CHECK_EQ(v.as_string(), std::string("two"));
+
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("c"));
+  MPI_CHECK(sp.array_begin());
+  int sum = 0;
+  while (sp.next_array_element(v)) sum += static_cast<int>(v.as_int());
+  MPI_CHECK_EQ(sum, 6);
+
+  MPI_CHECK_MSG(!sp.next_member(key), "the object is exhausted");
+  MPI_CHECK(!sp.failed());
+}
+
+MPI_TEST(stream_parser_skips_without_materialising, {"section-15", "D18"}) {
+  // A nested structure the caller does not want must be skipped correctly,
+  // leaving the cursor on the following member.
+  json::StreamParser sp(
+      "{\"skip\":{\"deep\":[1,{\"x\":[[[]]]},\"str\"]},\"want\":42}",
+      json::Limits{});
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("skip"));
+  MPI_CHECK(sp.skip_value());
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("want"));
+  json::Value v;
+  MPI_CHECK(sp.read_value(v));
+  MPI_CHECK_EQ(v.as_int(), static_cast<std::int64_t>(42));
+}
+
+MPI_TEST(stream_parser_handles_empty_arrays_and_objects, {"D16"}) {
+  json::StreamParser sp("{\"e\":[],\"o\":{},\"n\":null}", json::Limits{});
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  json::Value v;
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK(sp.array_begin());
+  MPI_CHECK_MSG(!sp.next_array_element(v), "an empty array yields no elements");
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK(sp.read_value(v));
+  MPI_CHECK(v.is_object());
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK(sp.read_value(v));
+  MPI_CHECK(v.is_null());
+  MPI_CHECK(!sp.failed());
+}
+
+MPI_TEST(stream_parser_can_abandon_an_array_midway, {"D04"}) {
+  json::StreamParser sp("{\"a\":[1,2,3,4,5],\"b\":7}", json::Limits{});
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  json::Value v;
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK(sp.array_begin());
+  MPI_CHECK(sp.next_array_element(v));
+  MPI_CHECK(sp.next_array_element(v));
+  // A cancelled ingest stops mid-array; the parser must still be able to
+  // finish the document rather than being left wedged.
+  MPI_CHECK(sp.array_skip_rest());
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("b"));
+}
+
+MPI_TEST(stream_parser_reports_malformed_input, {"D08", "J02"}) {
+  const char* bad[] = {
+      "[1,2]",                  // not an object at top level
+      "{\"a\" 1}",              // missing colon
+      "{\"a\":1 \"b\":2}",      // missing comma
+      "{\"a\":[1 2]}",          // missing comma in array
+      "{\"a\":",                // truncated
+      "{\"a\":[1,",             // truncated array
+  };
+  for (const char* b : bad) {
+    json::StreamParser sp(b, json::Limits{});
+    std::string key;
+    json::Value v;
+    bool ok = sp.object_begin();
+    while (ok && sp.next_member(key)) {
+      if (!sp.read_value(v)) break;
+    }
+    MPI_CHECK_MSG(sp.failed(), std::string("should have failed: ") + b);
+    MPI_CHECK_MSG(!sp.error().message.empty(),
+                  std::string("a failure must carry a reason: ") + b);
+  }
+}
+
+MPI_TEST(stream_parser_enforces_the_byte_limit, {"J03"}) {
+  json::Limits limits;
+  limits.max_bytes = 4;
+  json::StreamParser sp("{\"a\":1,\"b\":2}", limits);
+  MPI_CHECK_MSG(!sp.object_begin(), "an oversized input must be refused");
+  MPI_CHECK(sp.failed());
+  MPI_CHECK(sp.error().message.find("max_bytes") != std::string::npos);
+}
+
+MPI_TEST(stream_parser_enforces_depth_inside_a_skip, {"J03"}) {
+  std::string deep = "{\"a\":";
+  for (int i = 0; i < 300; ++i) deep += "[";
+  for (int i = 0; i < 300; ++i) deep += "]";
+  deep += "}";
+  json::Limits limits;
+  limits.max_depth = 32;
+  json::StreamParser sp(deep, limits);
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_MSG(!sp.skip_value(),
+                "skipping must respect the depth limit, not recurse freely");
+  MPI_CHECK(sp.failed());
+}
+
+MPI_TEST(stream_parser_tolerates_a_bom, {"D18"}) {
+  json::StreamParser sp("\xEF\xBB\xBF{\"a\":1}", json::Limits{});
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  MPI_CHECK(sp.next_member(key));
+  MPI_CHECK_EQ(key, std::string("a"));
+}
+
+MPI_TEST(stream_parser_agrees_with_the_dom_parser, {"H12"}) {
+  // The two parsers must read the same document identically; a divergence
+  // would mean a streamed trace and a materialised one disagree.
+  const std::string doc =
+      "{\"s\":\"x\\ny\",\"i\":-42,\"d\":1.5e2,\"t\":true,\"n\":null,"
+      "\"arr\":[1,\"two\",{\"k\":3}],\"obj\":{\"nested\":[true,false]}}";
+  json::ParseError err;
+  auto dom = json::parse(doc, &err);
+  MPI_CHECK(dom.has_value());
+
+  json::StreamParser sp(doc, json::Limits{});
+  MPI_CHECK(sp.object_begin());
+  std::string key;
+  json::Value v;
+  std::size_t members = 0;
+  while (sp.next_member(key)) {
+    MPI_CHECK(sp.read_value(v));
+    ++members;
+    const json::Value* expected = dom->find(key);
+    MPI_CHECK_MSG(expected != nullptr, "streamed key absent from the DOM: " + key);
+    MPI_CHECK_MSG(v.dump() == expected->dump(),
+                  "value mismatch for '" + key + "': streamed " + v.dump() +
+                      " vs DOM " + expected->dump());
+  }
+  MPI_CHECK(!sp.failed());
+  MPI_CHECK_EQ(members, dom->members().size());
+}

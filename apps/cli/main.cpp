@@ -47,6 +47,15 @@ GLOBAL OPTIONS
   --timeout-ms <n>              Per-command device tooling timeout.
   --sessions-dir <path>         Where session packages live.
   --max-input-mib <n>           Cap on a single input file (default 2048).
+
+RECORD OPTIONS (Android)
+  --duration-s <n>              Capture duration in seconds (default 5).
+  --sample-hz <n>               CPU sampling frequency (default 200).
+  --no-frames / --no-cpu / --no-memory
+                                Disable an individual collector source.
+  --no-frame-reset              Keep the frame history the platform already
+                                holds instead of resetting it first.
+  --import <trace-file>         Build a session from an existing trace instead.
   --quiet                       Suppress warnings on stderr.
   -h, --help                    This text.
 
@@ -93,6 +102,7 @@ bool needs_value(const std::string& flag) {
       "--platform",
       "--preset",
       "--r8-map",
+      "--sample-hz",
       "--search",
       "--sessions-dir",
       "--source-map",

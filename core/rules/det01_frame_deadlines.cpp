@@ -150,15 +150,27 @@ void Det01::evaluate(const RuleContext& ctx, RuleOutput& out) const {
     std::size_t undeterminable = 0;
     bool any_proxy = false;
     bool any_presentation_truth = false;
+    bool any_deadline_report = false;
+    bool any_unknown_source = false;
     for (const auto* f : g.frames) {
       const auto deadline = effective_deadline(t, *f);
       if (!deadline.has_value() || !f->presented_ns.has_value()) {
         ++undeterminable;
         continue;
       }
-      if (f->source == model::FrameSource::kDisplayCallbackProxy) any_proxy = true;
-      if (f->source == model::FrameSource::kPresentationTimestamps) {
-        any_presentation_truth = true;
+      switch (f->source) {
+        case model::FrameSource::kPresentationTimestamps:
+          any_presentation_truth = true;
+          break;
+        case model::FrameSource::kFrameDeadlineReports:
+          any_deadline_report = true;
+          break;
+        case model::FrameSource::kDisplayCallbackProxy:
+          any_proxy = true;
+          break;
+        case model::FrameSource::kUnknown:
+          any_unknown_source = true;
+          break;
       }
       evaluable.push_back(f);
     }
@@ -225,12 +237,31 @@ void Det01::evaluate(const RuleContext& ctx, RuleOutput& out) const {
                   std::to_string(evaluable.size()) + " frames missed their deadline on " +
                   surface_label;
 
-    // Detection status hangs on the frame source, not on the numbers.
-    if (any_presentation_truth && !any_proxy) {
+    // Detection status hangs on the frame source, not on the numbers. There
+    // are three genuinely different qualities of evidence here and collapsing
+    // them would either overstate a proxy or understate a real platform
+    // measurement.
+    if (any_presentation_truth && !any_proxy && !any_unknown_source) {
       issue.detection_status = model::DetectionStatus::kObserved;
       issue.confidence_basis =
           "presentation timestamps and a per-frame deadline were both present, "
           "so lateness is measured rather than inferred";
+    } else if (any_deadline_report && !any_proxy && !any_unknown_source) {
+      // The platform reported both the deadline and when the frame finished.
+      // That is a measurement, so the miss is observed -- but finishing late
+      // is not the same event as presenting late, and the issue says so.
+      issue.detection_status = model::DetectionStatus::kObserved;
+      issue.confidence_basis =
+          "the platform supplied both the per-frame deadline and the frame's "
+          "completion time, so the overrun is measured; completion is not the "
+          "same instant as presentation, so this is a missed completion "
+          "deadline rather than a proven late frame on screen";
+      issue.alternative_explanations.push_back(
+          "the compositor may still have presented the frame on time despite "
+          "the app finishing it late");
+      issue.missing_evidence.push_back(
+          "actual presentation timestamps (the platform reported none for "
+          "these frames)");
     } else if (any_proxy) {
       issue.detection_status = model::DetectionStatus::kSuspected;
       issue.confidence_basis =
