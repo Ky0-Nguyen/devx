@@ -26,6 +26,7 @@ add_library(mpi_core STATIC
   session/session_store.cpp
   session/compare.cpp
   session/collector.cpp
+  session/live_capture.cpp
   discovery/discovery_service.cpp
 )
 target_link_libraries(mpi_core PUBLIC mpi_project_options)

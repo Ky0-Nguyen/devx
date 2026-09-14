@@ -55,6 +55,11 @@ RECORD OPTIONS (Android)
                                 Disable an individual collector source.
   --no-frame-reset              Keep the frame history the platform already
                                 holds instead of resetting it first.
+  --live                        Stream the capture: print counts as they
+                                arrive instead of reporting only at the end.
+                                Live findings are always preliminary.
+  --tick-ms <n>                 Streaming cadence (default 750). Shorter means
+                                fresher numbers and more collector overhead.
   --import <trace-file>         Build a session from an existing trace instead.
   --quiet                       Suppress warnings on stderr.
   -h, --help                    This text.
@@ -103,6 +108,7 @@ bool needs_value(const std::string& flag) {
       "--preset",
       "--r8-map",
       "--sample-hz",
+      "--tick-ms",
       "--search",
       "--sessions-dir",
       "--source-map",
@@ -114,6 +120,27 @@ bool needs_value(const std::string& flag) {
       "--threshold",
       "--timeout-ms"};
   for (const char* f : kWithValue) {
+    if (flag == f) return true;
+  }
+  return false;
+}
+
+// Flags that take no value.
+//
+// Together with `needs_value` this is the whole vocabulary: anything else is
+// refused. Silently ignoring an unknown flag let a typo change what was
+// measured without saying so -- `--duration 14` instead of `--duration-s 14`
+// recorded the default 5 s and reported success, which is precisely the kind
+// of quiet substitution this tool exists not to do.
+bool is_boolean_flag(const std::string& flag) {
+  static const char* kBoolean[] = {
+      "--ci",           "--include-events", "--include-source-paths",
+      "--installed",    "--json",           "--live",
+      "--no-cpu",       "--no-frame-reset", "--no-frames",
+      "--no-memory",    "--no-simulators",  "--profileable",
+      "--quiet",        "--running",        "--source-dirty",
+      "--synthetic",    "--help"};
+  for (const char* f : kBoolean) {
     if (flag == f) return true;
   }
   return false;
@@ -196,6 +223,12 @@ ParseResult parse(int argc, char** argv) {
     } else if (name == "--help") {
       r.inv.command = "help";
       r.ok = true;
+      return r;
+    } else if (!needs_value(name) && !is_boolean_flag(name)) {
+      r.error = "unknown flag '" + name +
+                "'. Run `mpi help` for the flags this command accepts; a "
+                "flag that was ignored would have changed what was measured "
+                "without saying so";
       return r;
     } else {
       r.inv.flags.emplace_back(name.substr(2), have_value ? value : "true");

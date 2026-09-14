@@ -144,6 +144,21 @@ enum Core {
         call { mpi_analyze_trace_json(tracePath) }
     }
 
+    // ---- live capture ----
+    static func liveStart(dir: String, device: String, app: String,
+                          sampleHz: Int, frames: Bool, cpu: Bool, memory: Bool,
+                          resetFrames: Bool, tickMs: Int, cpuWindowMs: Int) -> JSON {
+        call {
+            mpi_live_start(dir, device, app, Int32(sampleHz),
+                           frames ? 1 : 0, cpu ? 1 : 0, memory ? 1 : 0,
+                           resetFrames ? 1 : 0, Int32(tickMs),
+                           Int32(cpuWindowMs), 45000)
+        }
+    }
+    static func livePoll() -> JSON { call { mpi_live_poll_json() } }
+    static func liveStop() -> JSON { call { mpi_live_stop_json() } }
+    static var liveRunning: Bool { mpi_live_is_running() != 0 }
+
     static func cancel() { mpi_cancel_all() }
     static func resetCancel() { mpi_cancel_reset() }
 

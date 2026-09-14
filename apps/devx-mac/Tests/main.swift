@@ -130,6 +130,32 @@ do {
     let none = LaunchOptions.parse([])
     check(none.session == nil && none.tab == nil && none.sessionsDir == nil,
           "no arguments yields no options")
+
+    // Both spellings must give the same result. The joined form is what the
+    // docs recommend, because a space-separated value can survive as a bare
+    // argument that AppKit takes for a file to open.
+    let spaced = LaunchOptions.parse(
+        ["--device", "emulator-5554", "--app", "com.example.app",
+         "--start-live", "--live-seconds", "30"])
+    let joined = LaunchOptions.parse(
+        ["--device=emulator-5554", "--app=com.example.app",
+         "--start-live", "--live-seconds=30"])
+    for (label, o) in [("spaced", spaced), ("joined", joined)] {
+        check(o.device == "emulator-5554", "\(label) --device parses")
+        check(o.app == "com.example.app", "\(label) --app parses")
+        check(o.startLive, "\(label) --start-live parses")
+        check(o.liveSeconds == 30, "\(label) --live-seconds parses")
+    }
+
+    // A joined value must not also swallow the argument after it.
+    let noSwallow = LaunchOptions.parse(["--tab=live", "--session", "s-9"])
+    check(noSwallow.tab == DevXTab.live && noSwallow.session == "s-9",
+          "a joined value does not consume the following argument")
+
+    // Junk stays ignored rather than being guessed at.
+    let junk = LaunchOptions.parse(["--live-seconds=0", "--live-seconds=abc"])
+    check(junk.liveSeconds == nil,
+          "a non-positive or non-numeric --live-seconds is ignored")
 }
 
 print("")

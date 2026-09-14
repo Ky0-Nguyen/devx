@@ -10,6 +10,7 @@
 #include <sstream>
 
 #include "adapters/android/adb_collector.hpp"
+#include "core/session/live_capture.hpp"
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
@@ -276,4 +277,156 @@ MPI_TEST(capture_config_records_its_preset_and_sources, {"I17"}) {
   MPI_CHECK_EQ(j.find("memory")->as_bool(), false);
   MPI_CHECK_EQ(j.find("frames")->as_bool(), true);
   MPI_CHECK(j.find("reset_frame_history") != nullptr);
+}
+
+// --- streaming ---------------------------------------------------------------
+
+MPI_TEST(streaming_is_declared_and_batch_is_not_removed, {"section-13"}) {
+  AdbCollector collector;
+  MPI_CHECK(collector.supports_streaming());
+  MPI_CHECK_EQ(collector.id(), std::string("android.adb.text-sources"));
+}
+
+MPI_TEST(streaming_refuses_to_begin_without_a_process, {"B15"}) {
+  AdbCollector collector;
+  model::DeviceRef device;
+  device.device_id = "emulator-5554";
+  device.trust = model::TrustState::kAuthorized;
+  session::CaptureConfig cfg;
+  model::NormalizedTrace trace;
+  const auto r = collector.begin(device, {}, cfg, trace);
+  MPI_CHECK(!r.started);
+  MPI_CHECK(r.error.find("no process instance") != std::string::npos);
+}
+
+MPI_TEST(streaming_refuses_an_option_like_identifier, {"A20", "J05"}) {
+  AdbCollector collector;
+  model::DeviceRef device;
+  device.device_id = "emulator-5554";
+  device.trust = model::TrustState::kAuthorized;
+  model::ProcessInstance p;
+  p.app.app_identifier = "--all";
+  p.pid = 1;
+  p.is_primary = true;
+  session::CaptureConfig cfg;
+  model::NormalizedTrace trace;
+  const auto r = collector.begin(device, {p}, cfg, trace);
+  MPI_CHECK(!r.started);
+  MPI_CHECK(r.error.find("command-line option") != std::string::npos);
+}
+
+MPI_TEST(live_update_serialises_its_deltas_and_cost, {"section-13"}) {
+  session::LiveUpdate u;
+  u.at_ns = 1234;
+  u.new_frames = 7;
+  u.new_cpu_samples = 3;
+  u.new_counter_points = 5;
+  u.tick_cost = std::chrono::milliseconds(180);
+  u.notes.push_back("a note");
+  const auto j = u.to_json();
+  MPI_CHECK_EQ(j.find("new_frames")->as_int(), static_cast<std::int64_t>(7));
+  MPI_CHECK_EQ(j.find("new_cpu_samples")->as_int(), static_cast<std::int64_t>(3));
+  MPI_CHECK_EQ(j.find("new_counter_points")->as_int(), static_cast<std::int64_t>(5));
+  // The collector's own cost is reported, never folded into the app's numbers.
+  MPI_CHECK_EQ(j.find("tick_cost_ms")->as_int(), static_cast<std::int64_t>(180));
+  MPI_CHECK_EQ(j.find("notes")->size(), static_cast<std::size_t>(1));
+}
+
+MPI_TEST(capture_config_records_the_streaming_cadence, {"I17"}) {
+  session::CaptureConfig cfg;
+  cfg.tick_interval = std::chrono::milliseconds(250);
+  cfg.cpu_window = std::chrono::milliseconds(8000);
+  const auto j = cfg.to_json();
+  // Two runs are only comparable when they streamed at the same cadence, so
+  // the cadence is part of the recorded configuration.
+  MPI_CHECK_EQ(j.find("tick_interval_ms")->as_int(), static_cast<std::int64_t>(250));
+  MPI_CHECK_EQ(j.find("cpu_window_ms")->as_int(), static_cast<std::int64_t>(8000));
+}
+
+MPI_TEST(live_snapshot_states_that_it_is_preliminary, {"section-2.2", "section-13"}) {
+  session::LiveSnapshot snap;
+  snap.state = session::LiveState::kRunning;
+  snap.analysis_is_preliminary = true;
+  const auto j = snap.to_json();
+  MPI_CHECK_EQ(j.find("analysis_is_preliminary")->as_bool(), true);
+  // The caveat lives in the document, not in a UI label that could be lost in
+  // translation.
+  MPI_CHECK(j.find("analysis_caveat")->as_string().find("PRELIMINARY") !=
+            std::string::npos);
+  MPI_CHECK(j.find("analysis_caveat")->as_string().find("still open") !=
+            std::string::npos);
+
+  snap.analysis_is_preliminary = false;
+  const auto done = snap.to_json();
+  MPI_CHECK_EQ(done.find("analysis_is_preliminary")->as_bool(), false);
+  MPI_CHECK(done.find("analysis_caveat")->as_string().find("final") !=
+            std::string::npos);
+}
+
+MPI_TEST(live_session_refuses_a_non_streaming_collector, {"section-13"}) {
+  // A collector that does not stream must be refused rather than silently
+  // producing an empty live session.
+  class BatchOnly final : public session::Collector {
+   public:
+    std::string id() const override { return "test.batch-only"; }
+    model::Platform platform() const override { return model::Platform::kAndroid; }
+    session::CaptureResult capture(const model::DeviceRef&,
+                                   const std::vector<model::ProcessInstance>&,
+                                   const session::CaptureConfig&,
+                                   model::NormalizedTrace&) override {
+      return session::CaptureResult{};
+    }
+  };
+  session::LiveSession live;
+  model::DeviceRef device;
+  device.device_id = "d";
+  model::ProcessInstance p;
+  p.pid = 1;
+  const bool started = live.start(std::make_shared<BatchOnly>(), device, {p},
+                                 session::CaptureConfig{},
+                                 model::NormalizedTrace{});
+  MPI_CHECK(!started);
+  const auto snap = live.snapshot();
+  MPI_CHECK(snap.state == session::LiveState::kFailed);
+  MPI_CHECK(snap.error.find("does not support streaming") != std::string::npos);
+}
+
+MPI_TEST(live_session_start_stop_is_safe_without_a_collector, {"J11"}) {
+  session::LiveSession live;
+  model::DeviceRef device;
+  MPI_CHECK(!live.start(nullptr, device, {}, session::CaptureConfig{},
+                        model::NormalizedTrace{}));
+  MPI_CHECK(!live.running());
+  // stop() on a session that never ran must not hang or crash.
+  live.stop();
+  live.stop();
+  MPI_CHECK(!live.running());
+}
+
+MPI_TEST(uptime_is_read_or_refused_never_defaulted, {"E13", "section-8"}) {
+  // `dumpsys meminfo` reports no timestamp, so a memory point is placed by
+  // the host against one reading of the device's boot time. If that reading
+  // cannot be trusted the capture must say so rather than anchor to zero:
+  // the first version of this stamped the opening samples of every capture at
+  // 0, which put them before the capture window began.
+  double v = -1.0;
+  MPI_CHECK(android::parse_leading_double("7574.59 30298.12", v));
+  MPI_CHECK_EQ(v, 7574.59);
+
+  v = -1.0;
+  MPI_CHECK(android::parse_leading_double("  12.34\n", v));
+  MPI_CHECK_EQ(v, 12.34);
+
+  // Anything unreadable is refused outright, and leaves the output alone.
+  for (const char* junk : {"", "   ", "error: no such file", "abc 12.0"}) {
+    double untouched = -1.0;
+    MPI_CHECK(!android::parse_leading_double(junk, untouched));
+    MPI_CHECK_EQ(untouched, -1.0);
+  }
+
+  // A well-formed zero parses, and it is the caller that rejects it as a boot
+  // time -- the parser does not conflate "unreadable" with "zero".
+  double zero = -1.0;
+  MPI_CHECK(android::parse_leading_double("0.00 0.00", zero));
+  MPI_CHECK_EQ(zero, 0.0);
 }

@@ -49,6 +49,29 @@ class DiscoveryService {
                           const std::vector<model::ProcessInstance>& previous,
                           const ProviderOptions& opts) const;
 
+  // Resolves one device and one app without enumerating everything.
+  //
+  // `snapshot(include_apps=true)` lists every app on every usable device,
+  // which on a host with a booted simulator and an emulator is a few hundred
+  // entries and several seconds. That is the right cost for a picker and the
+  // wrong cost for starting a capture, where the target is already known. This
+  // walks devices (cheap) and then lists apps for the matched device only.
+  struct TargetResolution {
+    bool device_found = false;
+    bool device_ambiguous = false;
+    bool device_usable = false;
+    bool app_found = false;
+    bool app_ambiguous = false;
+    bool enumeration_failed = false;
+    model::DeviceRef device;
+    model::AppEntry app;
+    std::vector<model::DeviceRef> all_devices;
+    std::vector<std::string> errors;
+  };
+  TargetResolution resolve_target(const std::string& device_id,
+                                  const std::string& app_identifier,
+                                  const ProviderOptions& opts) const;
+
   // Filters for the picker. Unavailable entries are never hidden by the
   // "profileable" filter -- they are kept and marked (spec A25).
   struct Filter {
