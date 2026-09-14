@@ -48,9 +48,10 @@ struct DevicesView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Devices")
+        .navigationTitle("~/devices")
         .toolbar {
-            Toggle("Simulators", isOn: $state.includeSimulators)
+            Toggle("simulators", isOn: $state.includeSimulators)
+                .toggleStyle(.checkbox)
                 .onChange(of: state.includeSimulators) { _, _ in state.loadDevices() }
             Button { state.loadDevices() } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -95,11 +96,7 @@ private struct DeviceRow: View {
                 .foregroundStyle(.tint) }
         }
         .padding(11)
-        .background(selected ? Color.accentColor.opacity(0.10) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 9))
-        .overlay(RoundedRectangle(cornerRadius: 9)
-            .strokeBorder(selected ? Color.accentColor.opacity(0.4)
-                                   : Color.secondary.opacity(0.18)))
+        .termCard(selected: selected)
         .contentShape(Rectangle())
     }
 }
@@ -110,18 +107,25 @@ struct AppsView: View {
     @EnvironmentObject var state: AppState
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
-                Text("**running** does not mean foreground. **unknown** means the provider "
-                     + "could not observe the state — it does not mean not running. "
-                     + "Profiling availability is independent of runtime state, and entries "
-                     + "that cannot be profiled are kept and marked rather than hidden.")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 9) {
+                // `Text` parses markdown only from a string literal. These
+                // are joined with `+`, so the emphasis markers were printed
+                // verbatim -- "**running** does not mean foreground" -- until
+                // the result was wrapped back into a LocalizedStringKey.
+                Text(.init("**running** does not mean foreground. **unknown** means the "
+                     + "provider could not observe the state — it does not mean not "
+                     + "running. Profiling availability is independent of runtime state, "
+                     + "and entries that cannot be profiled are kept and marked rather "
+                     + "than hidden."))
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     TextField("filter by name or identifier", text: $state.appFilter)
-                        .textFieldStyle(.roundedBorder).frame(maxWidth: 280)
-                    Toggle("Running only", isOn: $state.runningOnly)
+                        .textFieldStyle(TermFieldStyle()).frame(maxWidth: 280)
+                    Toggle("running only", isOn: $state.runningOnly)
+                        .toggleStyle(.checkbox)
                     Spacer()
                     Text("\(state.filteredApps.count) of \(state.apps.count)")
                         .font(.caption).foregroundStyle(.secondary)
@@ -130,27 +134,31 @@ struct AppsView: View {
                     Banner(kind: .bad, title: "App enumeration failed for this device",
                            message: "That is not the same as the device having no apps.")
                 }
-            }
-            .padding(16)
+                }
+                Rectangle().fill(Term.line).frame(height: 1)
 
-            Divider()
-
-            if state.selectedDevice.isEmpty {
-                ContentUnavailableView("No device selected",
-                                       systemImage: "iphone.slash",
-                                       description: Text("Pick a usable device first."))
-            } else {
-                List {
-                    ForEach(Array(state.filteredApps.enumerated()), id: \.offset) { _, a in
-                        AppRow(app: a) {
-                            state.selectedApp = a["application_key"]["app_identifier"].text
+                if state.selectedDevice.isEmpty {
+                    TermEmpty(title: "no device selected",
+                              detail: "Pick a usable device first.",
+                              hint: "mpi devices")
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(Array(state.filteredApps.enumerated()), id: \.offset) { _, a in
+                            AppRow(app: a) {
+                                state.selectedApp = a["application_key"]["app_identifier"].text
+                            }
                         }
                     }
                 }
-                .listStyle(.inset)
             }
+            .padding(14)
         }
-        .navigationTitle("Apps")
+        // The ScrollView is the root of the pane, as in every other tab. When
+        // it was the last child of a VStack instead, it reported its content's
+        // height as the pane's -- 1975 points inside an 880-point window --
+        // which stretched the whole NavigationSplitView past the window and
+        // left both columns looking blank.
+        .navigationTitle("~/apps")
         .toolbar {
             Button { state.loadApps() } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -177,7 +185,7 @@ private struct AppRow: View {
                     Text(name).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Use", action: use).buttonStyle(.borderless).font(.caption)
+                Button("use", action: use).buttonStyle(TermButtonStyle())
             }
             HStack(spacing: 6) {
                 Chip(text: runtime, tone: StatusTone.runtime(runtime))
@@ -211,18 +219,18 @@ struct PreflightView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Every row is a probe result, not a plan. **unknown** and "
+                Text(.init("Every row is a probe result, not a plan. **unknown** and "
                      + "**not_tested** are distinct answers from **unsupported**, and none "
-                     + "of them means \"false\".")
+                     + "of them means \"false\"."))
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack {
                     TextField("package name or bundle id (optional)",
                               text: $state.selectedApp)
-                        .textFieldStyle(.roundedBorder).frame(maxWidth: 320)
+                        .textFieldStyle(TermFieldStyle()).frame(maxWidth: 320)
                     Button("Probe") { state.loadPreflight() }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(TermButtonStyle(filled: true))
                         .disabled(state.selectedDevice.isEmpty)
                 }
 
@@ -273,7 +281,7 @@ struct PreflightView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Preflight")
+        .navigationTitle("~/preflight")
     }
 }
 
@@ -315,8 +323,7 @@ private struct TargetPanel: View {
                         }
                     }
                     .padding(8)
-                    .background(.quaternary.opacity(0.3),
-                                in: RoundedRectangle(cornerRadius: 7))
+                    .termCard()
                 }
             }
         }
@@ -372,6 +379,6 @@ private struct CapabilityRow: View {
             }
         }
         .padding(9)
-        .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+        .termCard()
     }
 }

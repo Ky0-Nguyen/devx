@@ -13,17 +13,24 @@ struct IssuesView: View {
     var body: some View {
         Group {
             if state.sessionDoc.isNull {
-                ContentUnavailableView("No session open",
-                    systemImage: "exclamationmark.magnifyingglass",
-                    description: Text("Open one from Sessions, or record a new capture."))
+                TermEmpty(title: "no session open",
+                          detail: "Open one from Sessions, or record a new capture.",
+                          hint: "mpi analyze <session>")
             } else {
+                // Both columns must be told to fill: an HSplitView sizes to
+                // its children's ideal height, which collapsed the whole pane
+                // into a short band floating in the middle of the window and
+                // clipped the context panel mid-row.
                 HSplitView {
-                    leftColumn.frame(minWidth: 340, idealWidth: 430)
-                    detailColumn.frame(minWidth: 380)
+                    leftColumn
+                        .frame(minWidth: 340, idealWidth: 430,
+                               maxHeight: .infinity)
+                    detailColumn.frame(minWidth: 380, maxHeight: .infinity)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("Issues")
+        .navigationTitle("~/issues")
     }
 
     private var trace: JSON { state.sessionDoc["trace"] }
@@ -162,8 +169,7 @@ struct IssuesView: View {
                         }
                     }
                     .padding(7)
-                    .background(.quaternary.opacity(0.22),
-                                in: RoundedRectangle(cornerRadius: 7))
+                    .termCard()
                 }
             }
         }
@@ -173,8 +179,11 @@ struct IssuesView: View {
         if state.issues.indices.contains(state.selectedIssueIndex) {
             IssueDetail(issue: state.issues[state.selectedIssueIndex])
         } else {
-            ContentUnavailableView("Nothing selected", systemImage: "sidebar.right",
-                description: Text("This session produced no issue to inspect."))
+            TermEmpty(title: "nothing selected",
+                      detail: "This session produced no issue to inspect. "
+                            + "That is not the same as nothing being wrong: "
+                            + "the detector table says which detectors ran.")
+                .frame(maxHeight: .infinity)
         }
     }
 }
@@ -210,10 +219,7 @@ private struct IssueListRow: View {
             Spacer(minLength: 0)
         }
         .padding(8)
-        .background(selected ? Color.accentColor.opacity(0.12) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8)
-            .strokeBorder(selected ? Color.accentColor.opacity(0.35) : .clear))
+        .termCard(selected: selected)
         .contentShape(Rectangle())
     }
 }
@@ -457,6 +463,6 @@ private struct StackView: View {
             }
         }
         .padding(9)
-        .background(.quaternary.opacity(0.22), in: RoundedRectangle(cornerRadius: 8))
+        .termCard()
     }
 }

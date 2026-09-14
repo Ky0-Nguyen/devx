@@ -33,7 +33,7 @@ struct LiveView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Live")
+        .navigationTitle("~/live")
     }
 
     private var snap: JSON { state.liveSnapshot }
@@ -52,7 +52,7 @@ struct LiveView: View {
                 }
                 Field(label: "app") {
                     TextField("package name or bundle id", text: $state.selectedApp)
-                        .textFieldStyle(.roundedBorder).frame(maxWidth: 320)
+                        .textFieldStyle(TermFieldStyle()).frame(maxWidth: 320)
                         .disabled(state.liveRunning)
                 }
                 Field(label: "tick") {
@@ -78,26 +78,28 @@ struct LiveView: View {
                         Button {
                             state.stopLive()
                         } label: {
-                            Label("Stop and save", systemImage: "stop.circle.fill")
+                            Text("stop and save")
                         }
-                        .buttonStyle(.borderedProminent).tint(.red)
-                        ProgressView().controlSize(.small)
-                        Text("streaming…").font(.callout).foregroundStyle(.secondary)
+                        .buttonStyle(TermButtonStyle(tone: Term.red, filled: true))
+                        AsciiSpinner()
+                        Text("streaming").font(.callout)
+                            .foregroundStyle(Term.green)
+                        BlinkingCursor()
                     } else if state.liveStarting {
-                        ProgressView().controlSize(.small)
+                        AsciiSpinner(color: Term.amber)
                         Text("resolving the target…").font(.callout)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Term.dim)
                     } else if state.liveStopping {
-                        ProgressView().controlSize(.small)
+                        AsciiSpinner(color: Term.amber)
                         Text("stopping and saving…").font(.callout)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Term.dim)
                     } else {
                         Button {
                             state.startLive()
                         } label: {
-                            Label("Start live capture", systemImage: "dot.radiowaves.left.and.right")
+                            Text("start live capture")
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(TermButtonStyle(filled: true))
                         .disabled(state.selectedDevice.isEmpty || state.selectedApp.isEmpty)
                     }
                 }
@@ -183,8 +185,7 @@ struct LiveView: View {
                         }
                     }
                     .padding(8)
-                    .background(.quaternary.opacity(0.22),
-                                in: RoundedRectangle(cornerRadius: 7))
+                    .termCard()
                 }
                 let notes = snap["notes"].array.compactMap { $0.string }
                 if !notes.isEmpty { BulletList(title: "Notes", items: notes) }
@@ -234,8 +235,7 @@ struct LiveView: View {
                         Spacer(minLength: 0)
                     }
                     .padding(7)
-                    .background(.quaternary.opacity(0.2),
-                                in: RoundedRectangle(cornerRadius: 7))
+                    .termCard()
                 }
             }
         }
@@ -255,7 +255,7 @@ struct LiveView: View {
                     Button { state.openSession(id) } label: {
                         Label("Open in Issues", systemImage: "arrow.right.circle")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(TermButtonStyle(filled: true))
                 }
             } else if let err = stop["error"].string, !err.isEmpty {
                 Banner(kind: .bad, title: "No session was written", message: err)
@@ -289,7 +289,7 @@ private struct Sparkline: View {
                 // One point is not a trend, so nothing is drawn that might
                 // suggest one.
                 Text(values.isEmpty ? "" : "collecting…")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Term.dim.opacity(0.8))
                     .frame(width: w, height: h, alignment: .leading)
             } else {
                 let lo = values.min() ?? 0
@@ -306,11 +306,11 @@ private struct Sparkline: View {
                         else { p.addLine(to: CGPoint(x: x, y: y)) }
                     }
                 }
-                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 1.5,
+                .stroke(Term.green, style: StrokeStyle(lineWidth: 1.5,
                                                               lineJoin: .round))
                 .background(alignment: .bottomLeading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(.quaternary.opacity(0.25))
+                        .fill(Term.raised)
                 }
             }
         }

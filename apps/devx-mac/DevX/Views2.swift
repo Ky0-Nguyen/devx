@@ -26,7 +26,7 @@ struct RecordView: View {
                         Field(label: "app") {
                             TextField("package name or bundle id",
                                       text: $state.selectedApp)
-                                .textFieldStyle(.roundedBorder).frame(maxWidth: 320)
+                                .textFieldStyle(TermFieldStyle()).frame(maxWidth: 320)
                         }
                     }
                 }
@@ -60,9 +60,10 @@ struct RecordView: View {
 
                 if state.recordResetFrames {
                     Banner(kind: .info, title: nil,
-                           message: "framestats drains when read, so the history is reset "
-                                  + "at capture start and the window holds only this "
-                                  + "capture's frames. Turn the reset off to analyse "
+                           message: "framestats is a ring buffer of about the last 120 "
+                                  + "frames and does not drain when read, so the history "
+                                  + "is cleared at capture start to keep the window to "
+                                  + "this capture's frames. Turn the reset off to analyse "
                                   + "frames the app produced before you pressed Record.")
                 }
 
@@ -70,9 +71,9 @@ struct RecordView: View {
                     Button {
                         state.startRecord()
                     } label: {
-                        Label("Record", systemImage: "record.circle")
+                        Text("record")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(TermButtonStyle(filled: true))
                     .disabled(state.busy != nil || state.selectedDevice.isEmpty
                               || state.selectedApp.isEmpty)
 
@@ -86,7 +87,7 @@ struct RecordView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Record")
+        .navigationTitle("~/record")
     }
 }
 
@@ -143,8 +144,7 @@ private struct RecordResult: View {
                                 }
                             }
                             .padding(9)
-                            .background(.quaternary.opacity(0.25),
-                                        in: RoundedRectangle(cornerRadius: 8))
+                            .termCard()
                         }
                     }
                 }
@@ -154,7 +154,7 @@ private struct RecordResult: View {
                 Button { state.openSession(id) } label: {
                     Label("Open issues", systemImage: "arrow.right.circle")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(TermButtonStyle(filled: true))
             }
         }
     }
@@ -165,9 +165,49 @@ private struct RecordResult: View {
 struct SessionsView: View {
     @EnvironmentObject var state: AppState
 
+    @ViewBuilder private func sessionRow(_ s: JSON) -> some View {
+        let id = s["session_id"].text
+        let failures = s["checksum_failures"].array.count
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(id).font(.system(size: 12, design: .monospaced))
+                HStack(spacing: 6) {
+                    Chip(text: s["state"].text,
+                         tone: s["state"].text == "completed" ? .good : .caution)
+                    // A synthetic session must be visible as such in the list,
+                    // not only once it is opened.
+                    if s["synthetic"].bool == true {
+                        Chip(text: "synthetic", tone: .caution)
+                    } else if s["synthetic"].isNull {
+                        Chip(text: "kind unknown", tone: .caution)
+                    } else {
+                        Chip(text: "real capture", tone: .good)
+                    }
+                    Chip(text: failures == 0
+                         ? "checksums verified"
+                         : "\(failures) checksum mismatch",
+                         tone: failures == 0 ? .good : .bad)
+                }
+                if let created = s["created_at"].string, !created.isEmpty {
+                    Text(created).font(.caption).foregroundStyle(Term.dim)
+                }
+                if let err = s["error"].string, !err.isEmpty {
+                    Text(err).font(.caption).foregroundStyle(StatusTone.bad.color)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
+            Button("open") { state.openSession(id) }
+                .buttonStyle(TermButtonStyle())
+        }
+        .padding(11)
+        .termCard()
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 6) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
                 Text("Captures and imports on this machine. A session built from an "
                      + "import is labelled as one, and so is a session built from "
                      + "synthetic fixture data.")
@@ -175,60 +215,32 @@ struct SessionsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Text(state.sessionsDir)
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(16)
-            Divider()
+                    .foregroundStyle(Term.dim.opacity(0.8))
+                }
+                Rectangle().fill(Term.line).frame(height: 1)
 
-            if state.sessions.isEmpty {
-                ContentUnavailableView("No sessions yet", systemImage: "folder",
-                    description: Text("Record one, or import a trace with the CLI."))
-            } else {
-                List {
-                    ForEach(Array(state.sessions.enumerated()), id: \.offset) { _, s in
-                        let id = s["session_id"].text
-                        let failures = s["checksum_failures"].array.count
-                        HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(id).font(.system(size: 12, design: .monospaced))
-                                HStack(spacing: 6) {
-                                    Chip(text: s["state"].text,
-                                         tone: s["state"].text == "completed"
-                                               ? .good : .caution)
-                                    // A synthetic session must be visible as such
-                                    // in the list, not only once it is opened.
-                                    if s["synthetic"].bool == true {
-                                        Chip(text: "synthetic", tone: .caution)
-                                    } else if s["synthetic"].isNull {
-                                        Chip(text: "kind unknown", tone: .caution)
-                                    } else {
-                                        Chip(text: "real capture", tone: .good)
-                                    }
-                                    Chip(text: failures == 0
-                                         ? "checksums verified"
-                                         : "\(failures) checksum mismatch",
-                                         tone: failures == 0 ? .good : .bad)
-                                }
-                                if let created = s["created_at"].string, !created.isEmpty {
-                                    Text(created).font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let err = s["error"].string, !err.isEmpty {
-                                    Text(err).font(.caption)
-                                        .foregroundStyle(StatusTone.bad.color)
-                                }
-                            }
-                            Spacer()
-                            Button("Open") { state.openSession(id) }
-                                .buttonStyle(.bordered)
+                if state.sessions.isEmpty {
+                    TermEmpty(title: "no sessions yet",
+                              detail: "Record one, or import a trace with the CLI.",
+                              hint: "mpi record --device <id> --app <identifier>")
+                } else {
+                    // Cards rather than a `List`: a List here drew nothing at
+                    // all and took the sidebar down with it.
+                    VStack(spacing: 8) {
+                        ForEach(Array(state.sessions.enumerated()), id: \.offset) { _, s in
+                            sessionRow(s)
                         }
-                        .padding(.vertical, 3)
                     }
                 }
-                .listStyle(.inset)
             }
+            .padding(14)
         }
-        .navigationTitle("Sessions")
+        // The ScrollView is the root of the pane, as in every other tab. When
+        // it was the last child of a VStack instead, it reported its content's
+        // height as the pane's -- 1975 points inside an 880-point window --
+        // which stretched the whole NavigationSplitView past the window and
+        // left both columns looking blank.
+        .navigationTitle("~/sessions")
         .toolbar {
             Button { state.loadSessions() } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -259,7 +271,7 @@ struct DetectorsView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Detectors")
+        .navigationTitle("~/detectors")
         .onAppear { state.loadRules() }
     }
 }

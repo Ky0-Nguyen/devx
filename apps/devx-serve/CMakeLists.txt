@@ -5,6 +5,8 @@
 # SwiftUI: a Linux or Windows machine driving the Android workflow, or a
 # session reached over SSH.
 add_executable(devx-serve main.cpp http_server.cpp ui.cpp)
-target_link_libraries(devx-serve PRIVATE mpi_core mpi_adapters mpi_project_options)
+# mpi_adapters links mpi_core PUBLIC, so naming it here too put the archive
+# on the link line twice and ld warned about the duplicate.
+target_link_libraries(devx-serve PRIVATE mpi_adapters mpi_project_options)
 set_target_properties(devx-serve PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                       "${CMAKE_BINARY_DIR}/bin")
