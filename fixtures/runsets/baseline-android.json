@@ -1,0 +1,71 @@
+{
+ "conditions": {
+  "platform": "android",
+  "scenario_id": "checkout",
+  "scenario_version": "3",
+  "device_id": "serialX",
+  "device_model": "Pixel 8",
+  "device_form": "physical",
+  "os_version": "14",
+  "refresh_policy": "fixed-120",
+  "collector_preset": "lightweight",
+  "collector_sample_rate_hz": 1000,
+  "launch_class": "cold",
+  "thermal_state": "nominal",
+  "power_state": "battery",
+  "input_data_version": "seed-7",
+  "account_state": "logged-in-fixture",
+  "network_condition": "wifi-stable",
+  "cache_state": "warm"
+ },
+ "measurement_mode": "benchmark",
+ "benchmark_eligibility": {
+  "status": "eligible",
+  "reasons": []
+ },
+ "synthetic": true,
+ "runs": [
+  {
+   "session_id": "s0",
+   "metric_name": "startup.first_frame_ns",
+   "unit": "ns",
+   "value": 412000000.0,
+   "scenario_completed": true
+  },
+  {
+   "session_id": "s1",
+   "metric_name": "startup.first_frame_ns",
+   "unit": "ns",
+   "value": 415000000.0,
+   "scenario_completed": true
+  },
+  {
+   "session_id": "s2",
+   "metric_name": "startup.first_frame_ns",
+   "unit": "ns",
+   "value": 409000000.0,
+   "scenario_completed": true
+  },
+  {
+   "session_id": "s3",
+   "metric_name": "startup.first_frame_ns",
+   "unit": "ns",
+   "value": 413000000.0,
+   "scenario_completed": true
+  },
+  {
+   "session_id": "s4",
+   "metric_name": "startup.first_frame_ns",
+   "unit": "ns",
+   "value": 411000000.0,
+   "scenario_completed": true
+  },
+  {
+   "session_id": "s5",
+   "metric_name": "startup.first_frame_ns",
+   "unit": "ns",
+   "value": 414000000.0,
+   "scenario_completed": true
+  }
+ ]
+}

@@ -1,0 +1,639 @@
+{
+ "schema_version": "2.0",
+ "session_id": "fix-ambiguous-001",
+ "synthetic": true,
+ "synthetic_note": "Hand-built fixture where process ownership is not established, so its events must be excluded from app-scoped totals. Synthetic.",
+ "device": {
+  "platform": "android",
+  "device_id": "serialX",
+  "display_name": "synthetic-device",
+  "model": "SYNTHETIC-1",
+  "os_version": "14",
+  "form": "physical",
+  "trust": "authorized",
+  "provider": "fixture",
+  "boot_id": "boot-fixture-1"
+ },
+ "target": {
+  "application_key": {
+   "platform": "android",
+   "device_id": "serialX",
+   "app_identifier": "com.example.perf",
+   "identifier_kind": "package_name"
+  },
+  "runtime_state": "running",
+  "discovery_scope": "partial",
+  "process_instances": [
+   {
+    "pid": 4242,
+    "process_start_time": "918273",
+    "process_name": "com.example.perf",
+    "uid": 10234,
+    "is_primary": true,
+    "ownership_evidence": "ambiguous",
+    "ownership_note": "shared uid 10234 is used by three packages; the process name match alone does not establish ownership"
+   }
+  ]
+ },
+ "requested_measurement_mode": "diagnostic",
+ "primary_clock_domain": "android.boottime",
+ "clock_domains": [
+  {
+   "id": "android.boottime",
+   "base": "monotonic",
+   "provider": "fixture",
+   "monotonic": true
+  }
+ ],
+ "clock_mappings": [],
+ "threads": [
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4242",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4242,
+   "name": "main",
+   "is_main_ui_thread": true,
+   "is_js_thread": false
+  },
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4301",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4301,
+   "name": "mqt_js",
+   "is_main_ui_thread": false,
+   "is_js_thread": true
+  },
+  {
+   "thread_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273|tid=4399",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "tid": 4399,
+   "name": "worker-1",
+   "is_main_ui_thread": false,
+   "is_js_thread": false
+  }
+ ],
+ "events": [],
+ "frames": [
+  {
+   "event_id": "frame-MainActivity-0",
+   "start_ns": 0,
+   "presented_ns": 15666666,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-1",
+   "start_ns": 16666666,
+   "presented_ns": 32333332,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-2",
+   "start_ns": 33333332,
+   "presented_ns": 48999998,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-3",
+   "start_ns": 49999998,
+   "presented_ns": 65666664,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-4",
+   "start_ns": 66666664,
+   "presented_ns": 82333330,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-5",
+   "start_ns": 83333330,
+   "presented_ns": 119999996,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-6",
+   "start_ns": 99999996,
+   "presented_ns": 136666662,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-7",
+   "start_ns": 116666662,
+   "presented_ns": 153333328,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-8",
+   "start_ns": 133333328,
+   "presented_ns": 169999994,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-9",
+   "start_ns": 149999994,
+   "presented_ns": 186666660,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-10",
+   "start_ns": 166666660,
+   "presented_ns": 203333326,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-11",
+   "start_ns": 183333326,
+   "presented_ns": 219999992,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-12",
+   "start_ns": 199999992,
+   "presented_ns": 236666658,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-13",
+   "start_ns": 216666658,
+   "presented_ns": 253333324,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-14",
+   "start_ns": 233333324,
+   "presented_ns": 269999990,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-15",
+   "start_ns": 249999990,
+   "presented_ns": 286666656,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-16",
+   "start_ns": 266666656,
+   "presented_ns": 303333322,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-17",
+   "start_ns": 283333322,
+   "presented_ns": 319999988,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-18",
+   "start_ns": 299999988,
+   "presented_ns": 336666654,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-19",
+   "start_ns": 316666654,
+   "presented_ns": 353333320,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-20",
+   "start_ns": 333333320,
+   "presented_ns": 348999986,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-21",
+   "start_ns": 349999986,
+   "presented_ns": 365666652,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-22",
+   "start_ns": 366666652,
+   "presented_ns": 382333318,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-23",
+   "start_ns": 383333318,
+   "presented_ns": 398999984,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-24",
+   "start_ns": 399999984,
+   "presented_ns": 415666650,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-25",
+   "start_ns": 416666650,
+   "presented_ns": 432333316,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-26",
+   "start_ns": 433333316,
+   "presented_ns": 448999982,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-27",
+   "start_ns": 449999982,
+   "presented_ns": 465666648,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-28",
+   "start_ns": 466666648,
+   "presented_ns": 482333314,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-29",
+   "start_ns": 483333314,
+   "presented_ns": 498999980,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-30",
+   "start_ns": 499999980,
+   "presented_ns": 515666646,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-31",
+   "start_ns": 516666646,
+   "presented_ns": 532333312,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-32",
+   "start_ns": 533333312,
+   "presented_ns": 548999978,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-33",
+   "start_ns": 549999978,
+   "presented_ns": 565666644,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-34",
+   "start_ns": 566666644,
+   "presented_ns": 582333310,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-35",
+   "start_ns": 583333310,
+   "presented_ns": 598999976,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-36",
+   "start_ns": 599999976,
+   "presented_ns": 615666642,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-37",
+   "start_ns": 616666642,
+   "presented_ns": 632333308,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-38",
+   "start_ns": 633333308,
+   "presented_ns": 648999974,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-39",
+   "start_ns": 649999974,
+   "presented_ns": 665666640,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-40",
+   "start_ns": 666666640,
+   "presented_ns": 682333306,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-41",
+   "start_ns": 683333306,
+   "presented_ns": 698999972,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-42",
+   "start_ns": 699999972,
+   "presented_ns": 715666638,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-43",
+   "start_ns": 716666638,
+   "presented_ns": 732333304,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-44",
+   "start_ns": 733333304,
+   "presented_ns": 748999970,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-45",
+   "start_ns": 749999970,
+   "presented_ns": 765666636,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-46",
+   "start_ns": 766666636,
+   "presented_ns": 782333302,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-47",
+   "start_ns": 783333302,
+   "presented_ns": 798999968,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-48",
+   "start_ns": 799999968,
+   "presented_ns": 815666634,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-49",
+   "start_ns": 816666634,
+   "presented_ns": 832333300,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-50",
+   "start_ns": 833333300,
+   "presented_ns": 848999966,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-51",
+   "start_ns": 849999966,
+   "presented_ns": 865666632,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-52",
+   "start_ns": 866666632,
+   "presented_ns": 882333298,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-53",
+   "start_ns": 883333298,
+   "presented_ns": 898999964,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-54",
+   "start_ns": 899999964,
+   "presented_ns": 915666630,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-55",
+   "start_ns": 916666630,
+   "presented_ns": 932333296,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-56",
+   "start_ns": 933333296,
+   "presented_ns": 948999962,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-57",
+   "start_ns": 949999962,
+   "presented_ns": 965666628,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-58",
+   "start_ns": 966666628,
+   "presented_ns": 982333294,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  },
+  {
+   "event_id": "frame-MainActivity-59",
+   "start_ns": 983333294,
+   "presented_ns": 998999960,
+   "deadline_ns": 16666666,
+   "source": "presentation_timestamps",
+   "process_instance_id": "android|serialX|com.example.perf|pid=4242|start=918273",
+   "surface": "MainActivity"
+  }
+ ],
+ "js_tasks": [],
+ "markers": [],
+ "cpu_samples": [],
+ "counters": [],
+ "refresh_intervals": [
+  {
+   "start_ns": 0,
+   "end_ns": 1000000000,
+   "hz": 60.0,
+   "variable": false,
+   "provider": "fixture"
+  }
+ ],
+ "coverage": [],
+ "dropped_events_by_collector": {},
+ "build": {
+  "facts": [],
+  "symbol_bindings": []
+ },
+ "window_start_ns": 0,
+ "window_end_ns": 1000000000
+}

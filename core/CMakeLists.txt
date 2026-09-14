@@ -1,0 +1,30 @@
+add_library(mpi_core STATIC
+  util/json.cpp
+  util/process.cpp
+  util/time.cpp
+  model/capability.cpp
+  model/identity.cpp
+  model/event.cpp
+  model/build.cpp
+  model/metric.cpp
+  model/issue.cpp
+  model/trace.cpp
+  ingestion/mpi_trace_reader.cpp
+  ingestion/chrome_trace_reader.cpp
+  ingestion/hermes_profile_reader.cpp
+  ingestion/normalize.cpp
+  symbols/symbol_service.cpp
+  rules/rule_registry.cpp
+  rules/det01_frame_deadlines.cpp
+  rules/det02_long_js.cpp
+  rules/det04_cpu_hotspot.cpp
+  rules/det12_tooling_activity.cpp
+  rules/deferred_rules.cpp
+  rules/engine.cpp
+  report/json_report.cpp
+  report/markdown_report.cpp
+  session/session_store.cpp
+  session/compare.cpp
+  discovery/discovery_service.cpp
+)
+target_link_libraries(mpi_core PUBLIC mpi_project_options)

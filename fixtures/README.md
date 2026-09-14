@@ -1,0 +1,69 @@
+# Fixtures
+
+## Naming discipline
+
+The suffix is the provenance claim, and it is load-bearing:
+
+- **`*.real.*`** -- genuine output captured from this build host's tooling on
+  2026-09-14. Stored verbatim.
+- **`*.synthetic.*`** -- hand-written. No hardware produced it.
+- Everything in `traces/` is a synthetic trace whose JSON carries
+  `"synthetic": true` and a `synthetic_note`. The analysis engine propagates
+  that flag to every derived event, metric and evidence reference, and both
+  report formats announce it at the top.
+
+Specification section 0.6 requires fixtures and illustrative values to be
+labelled, and section 0.5 forbids presenting a dashboard over synthetic data as
+a working profiler. The naming is how that is enforced at a glance.
+
+## `traces/`
+
+| File | Purpose |
+|---|---|
+| `positive-frames-js-cpu.mpi.json` | Positive: exercises DET-01, DET-02, DET-04, DET-12 together. 120 Hz presentation timestamps with a 12-frame miss run, a 180 ms JS task on a *measured* clock mapping, a dominant CPU leaf, and both conclusive and name-only tooling matches. |
+| `negative-healthy.mpi.json` | Negative: 60 Hz with no misses, short JS tasks, and CPU spread across 14 leaves so no share approaches the hotspot threshold. All four implemented detectors must *run* and find nothing. |
+| `incomplete-evidence.mpi.json` | Incomplete: a display-callback proxy frame source, 15 frames with no presentation timestamp, a variable refresh rate, an *unmeasured* clock mapping, an unterminated JS span, 12 samples (below threshold), 5120 provider drops, and a partial capture. |
+| `ambiguous-ownership.mpi.json` | Process ownership is `ambiguous`, so its events must be excluded from app-scoped totals and the exclusion reported. |
+| `empty-capture.mpi.json` | Structurally valid, zero events. Must not crash and must not read as "nothing happened". |
+| `malformed-truncated.json` | Truncated mid-object. |
+| `malformed-not-json.bin` | 256 arbitrary bytes. |
+| `malformed-empty.json` | Zero bytes. |
+| `chrome-trace-event.json` | Real Chrome/Perfetto trace-event format, including a closing B/E pair, an unclosed B, an orphan E, an X with no `dur`, an out-of-order timestamp, an instant event and a counter. |
+| `hermes-profile.json` | Real Hermes sampling-profiler shape (`stackFrames` + `samples`), including a self-referential parent chain that must not hang the unwinder. |
+
+The 1 GiB stress fixture required by section 15 is **not committed**. Generate
+it with `python3 tools/gen-stress-fixture.py <path>`.
+
+## `provider-output/`
+
+| File | Provenance |
+|---|---|
+| `devicectl-list-devices.real.json` | real `xcrun devicectl list devices --json-output` |
+| `simctl-list-devices.real.json` | real `xcrun simctl list devices --json` |
+| `simctl-listapps-booted.real.json` | real `xcrun simctl listapps`, converted from its NeXTSTEP plist with `plutil` |
+| `simctl-launchctl-list.real.txt` | real `xcrun simctl spawn <udid> launchctl list` |
+| `adb-devices-l.real.txt` | real `adb devices -l` with **no device connected** -- the header-only case |
+| `adb-version.real.txt`, `xctrace-version.real.txt`, `devicectl-version.real.txt` | real version output |
+| `android-ps-A.synthetic.txt` | **hand-written.** No Android device was available. Covers a main process, two sub-processes, an isolated process, a shared-uid sibling, a same-name different-uid process, a work-profile instance and an unlisted process. |
+| `android-pm-list-packages-U.synthetic.txt` | **hand-written.** Includes two packages sharing uid 10234. |
+| `android-adb-devices-l.synthetic.txt` | **hand-written.** Authorized, emulator, wireless, unauthorized and offline devices. |
+| `android-proc-stat.synthetic.txt` | **hand-written** `/proc/<pid>/stat`. |
+
+## `symbols/`
+
+| File | Purpose |
+|---|---|
+| `matching.map.json` | v3 source map whose bundle id matches the expected build. Mappings are genuine VLQ. |
+| `mismatched.map.json` | Same map, different bundle id -- must be reported `mismatch` and never navigated. |
+| `traversal.map.json` | Names `../../../../../../etc/passwd` as a source -- must be rejected. |
+| `malformed.map.json` | Corrupt VLQ -- must be refused, not approximated. |
+| `wrong-version.map.json` | `version: 2` -- unsupported. |
+| `r8-mapping.txt` | Real ProGuard/R8 format with a `pg_map_id` header. |
+| `r8-mapping-other-build.txt` | Same classes, different build id -- `mismatch`. |
+| `checkout/` | A minimal local source tree so an exact match can resolve to a file that actually exists. |
+
+## `runsets/`
+
+Benchmark comparison inputs for `mpi compare`: an Android baseline, a clear
+regression, a no-change candidate, and an iOS candidate used to prove a
+cross-platform pair cannot drive a regression gate.

@@ -1,0 +1,464 @@
+// iOS provider-output parsers.
+//
+// Every fixture named `.real.` in this file is genuine output captured from
+// this host's Xcode toolchain (Xcode 26.6 / devicectl 518.33 / xctrace 16.0)
+// during M0. The two paired iPhones were `unavailable` at capture time and one
+// iOS simulator was booted, which is why the physical-device paths below are
+// asserted on real *offline* output while the simulator paths are asserted on
+// real *live* output.
+#include <algorithm>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+
+#include "adapters/ios/ios_adapter.hpp"
+#include "tests/unit/test_framework.hpp"
+
+using namespace mpi;
+using namespace mpi::ios;
+
+namespace {
+
+std::string read_fixture(const char* rel) {
+  const char* dir = std::getenv("MPI_FIXTURE_DIR");
+  const std::string path = std::string(dir ? dir : "fixtures") + "/" + rel;
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  return std::string((std::istreambuf_iterator<char>(f)),
+                     std::istreambuf_iterator<char>());
+}
+
+json::Value parse_fixture(const char* rel) {
+  json::ParseError err;
+  auto v = json::parse(read_fixture(rel), json::Limits{}, &err);
+  return v.value_or(json::Value::null());
+}
+
+const model::DeviceRef* find_device(const std::vector<model::DeviceRef>& v,
+                                    const std::string& id) {
+  for (const auto& d : v) {
+    if (d.device_id == id) return &d;
+  }
+  return nullptr;
+}
+
+const InstalledApp* find_app(const std::vector<InstalledApp>& v,
+                             const std::string& bundle_id) {
+  for (const auto& a : v) {
+    if (a.bundle_id == bundle_id) return &a;
+  }
+  return nullptr;
+}
+
+}  // namespace
+
+MPI_TEST(parses_real_devicectl_device_listing, {"A03", "J15"}) {
+  // REAL devicectl output from this host.
+  const auto doc = parse_fixture("provider-output/devicectl-list-devices.real.json");
+  MPI_CHECK_MSG(!doc.is_null(), "the real devicectl fixture must parse");
+  const auto devices = parse_devicectl_devices(doc, "518.33");
+  MPI_CHECK_MSG(devices.size() == 2,
+                "expected the two paired devices, got " +
+                    std::to_string(devices.size()));
+  for (const auto& d : devices) {
+    MPI_CHECK(d.platform == model::Platform::kIos);
+    MPI_CHECK_MSG(d.form == model::DeviceForm::kPhysical,
+                  "hardwareProperties.reality was 'physical'");
+    MPI_CHECK_MSG(!d.device_id.empty(), "the CoreDevice identifier is the handle");
+    MPI_CHECK_MSG(!d.os_version.empty(), "osVersionNumber must be read");
+    MPI_CHECK_MSG(!d.model.empty(), "marketingName must be read");
+  }
+}
+
+MPI_TEST(unreachable_paired_device_is_offline_not_authorized, {"A03", "J16"}) {
+  // REAL output: both devices had tunnelState "unavailable".
+  const auto doc = parse_fixture("provider-output/devicectl-list-devices.real.json");
+  const auto devices = parse_devicectl_devices(doc, "518.33");
+  for (const auto& d : devices) {
+    MPI_CHECK_MSG(d.trust == model::TrustState::kOffline,
+                  "a paired-but-unreachable device must read as offline, got " +
+                      std::string(model::to_string(d.trust)));
+    MPI_CHECK_MSG(!d.usable_for_capture(),
+                  "an unreachable device must not be offered for capture");
+  }
+}
+
+MPI_TEST(real_device_metadata_is_read_from_the_right_fields, {"A03"}) {
+  const auto doc = parse_fixture("provider-output/devicectl-list-devices.real.json");
+  const auto devices = parse_devicectl_devices(doc, "518.33");
+  const auto* iphone = find_device(devices, "3FF46431-775C-59BB-AD26-D316DFAFA5A6");
+  MPI_CHECK_MSG(iphone != nullptr, "the iPhone's CoreDevice identifier is the key");
+  MPI_CHECK_EQ(iphone->model, std::string("iPhone 12 Pro Max"));
+  MPI_CHECK(iphone->os_version.find("26.0") != std::string::npos);
+  MPI_CHECK(iphone->os_version.find("23A340") != std::string::npos);
+  MPI_CHECK_EQ(iphone->display_name, std::string("QuocBao's iPhone"));
+}
+
+MPI_TEST(readiness_reports_ddi_services_state, {"J15", "J16"}) {
+  // REAL output: ddiServicesAvailable was false on both offline devices. This
+  // is the gate for app and process enumeration on a physical device.
+  const auto doc = parse_fixture("provider-output/devicectl-list-devices.real.json");
+  const auto r = parse_devicectl_readiness(
+      doc, "3FF46431-775C-59BB-AD26-D316DFAFA5A6");
+  MPI_CHECK(r.has_value());
+  MPI_CHECK_MSG(r->ddi_services_available.has_value(),
+                "ddiServicesAvailable must be read, not assumed");
+  MPI_CHECK_EQ(*r->ddi_services_available, false);
+  MPI_CHECK_EQ(r->developer_mode_status, std::string("enabled"));
+  MPI_CHECK_EQ(r->tunnel_state, std::string("unavailable"));
+  MPI_CHECK_EQ(r->pairing_state, std::string("paired"));
+}
+
+MPI_TEST(readiness_for_an_unknown_identifier_is_absent, {"A24"}) {
+  const auto doc = parse_fixture("provider-output/devicectl-list-devices.real.json");
+  MPI_CHECK(!parse_devicectl_readiness(doc, "not-a-real-identifier").has_value());
+}
+
+MPI_TEST(devicectl_parsers_tolerate_unexpected_shapes, {"D18", "J02"}) {
+  // A malformed or unexpected document must yield nothing, never a crash and
+  // never a fabricated device.
+  for (const char* bad : {"{}", "[]", "null", "{\"result\":{}}",
+                          "{\"result\":{\"devices\":\"not-an-array\"}}",
+                          "{\"result\":{\"devices\":[{},{\"identifier\":1}]}}"}) {
+    json::ParseError err;
+    auto doc = json::parse(bad, &err);
+    MPI_CHECK(doc.has_value());
+    MPI_CHECK_MSG(parse_devicectl_devices(*doc, "").empty(),
+                  std::string("should yield no device: ") + bad);
+    MPI_CHECK(parse_devicectl_apps(*doc).empty());
+    MPI_CHECK(parse_devicectl_processes(*doc).empty());
+  }
+}
+
+MPI_TEST(devicectl_apps_parser_reads_bundle_identifiers, {"A13"}) {
+  // SYNTHETIC: no reachable device, so this shape is asserted directly against
+  // the documented field names rather than captured output.
+  json::ParseError err;
+  auto doc = json::parse(R"({"result":{"apps":[
+      {"bundleIdentifier":"com.example.app","name":"Example","version":"1.2.3",
+       "installationType":"User","debuggable":true},
+      {"bundleIdentifier":"com.apple.Preferences","name":"Settings",
+       "installationType":"System"},
+      {"name":"no bundle id, must be skipped"}
+  ]}})", &err);
+  MPI_CHECK(doc.has_value());
+  const auto apps = parse_devicectl_apps(*doc);
+  MPI_CHECK_EQ(apps.size(), static_cast<std::size_t>(2));
+  const auto* user_app = find_app(apps, "com.example.app");
+  MPI_CHECK(user_app != nullptr);
+  MPI_CHECK_EQ(user_app->name, std::string("Example"));
+  MPI_CHECK_EQ(user_app->app_type, std::string("User"));
+  MPI_CHECK(user_app->profileable_hint.has_value());
+  MPI_CHECK_EQ(*user_app->profileable_hint, true);
+  // An app with no debuggable field keeps the hint unset, not false.
+  const auto* system_app = find_app(apps, "com.apple.Preferences");
+  MPI_CHECK(system_app != nullptr);
+  MPI_CHECK_MSG(!system_app->profileable_hint.has_value(),
+                "an absent debuggable flag must stay unknown");
+}
+
+MPI_TEST(devicectl_processes_parser_reads_pid_and_path, {"B09"}) {
+  json::ParseError err;
+  auto doc = json::parse(R"({"result":{"runningProcesses":[
+      {"processIdentifier":412,"executable":"file:///private/var/containers/Bundle/Application/X/Example.app/Example"},
+      {"processIdentifier":99},
+      {"executable":"no pid"}
+  ]}})", &err);
+  MPI_CHECK(doc.has_value());
+  const auto procs = parse_devicectl_processes(*doc);
+  MPI_CHECK_EQ(procs.size(), static_cast<std::size_t>(2));
+  MPI_CHECK_EQ(procs[0].pid, 412);
+  MPI_CHECK(procs[0].executable_path.find("Example.app") != std::string::npos);
+  // A process with no executable path is kept but carries no path to match on.
+  MPI_CHECK_EQ(procs[1].pid, 99);
+  MPI_CHECK(procs[1].executable_path.empty());
+}
+
+MPI_TEST(parses_real_simctl_device_listing, {"A04", "J18"}) {
+  // REAL simctl output from this host.
+  const auto doc = parse_fixture("provider-output/simctl-list-devices.real.json");
+  MPI_CHECK(!doc.is_null());
+  const auto devices = parse_simctl_devices(doc, "");
+  MPI_CHECK_MSG(devices.size() > 10,
+                "this host has many simulators, got " +
+                    std::to_string(devices.size()));
+  for (const auto& d : devices) {
+    MPI_CHECK_MSG(d.form == model::DeviceForm::kSimulator,
+                  "every simctl device must be classified as a simulator");
+    MPI_CHECK(d.connection == model::ConnectionType::kLocal);
+    MPI_CHECK_MSG(!d.os_version.empty(), "the runtime key must yield an OS version");
+  }
+}
+
+MPI_TEST(only_a_booted_simulator_is_usable, {"A05"}) {
+  // REAL output: exactly one simulator was booted on this host.
+  const auto doc = parse_fixture("provider-output/simctl-list-devices.real.json");
+  const auto devices = parse_simctl_devices(doc, "");
+  std::size_t booted = 0;
+  for (const auto& d : devices) {
+    if (d.usable_for_capture()) ++booted;
+  }
+  MPI_CHECK_MSG(booted == 1,
+                "expected exactly one booted simulator, got " +
+                    std::to_string(booted));
+  const auto* sim = find_device(devices, "456FA0D8-48C1-4BEC-B087-50E8A046EA5D");
+  MPI_CHECK(sim != nullptr);
+  MPI_CHECK(sim->trust == model::TrustState::kAuthorized);
+  MPI_CHECK_EQ(sim->display_name, std::string("iPhone 17 Pro"));
+  MPI_CHECK_EQ(sim->os_version, std::string("26.5"));
+}
+
+MPI_TEST(simctl_runtime_key_yields_the_os_version, {"A04"}) {
+  json::ParseError err;
+  auto doc = json::parse(R"({"devices":{
+      "com.apple.CoreSimulator.SimRuntime.iOS-17-4":[
+        {"udid":"AAA","name":"iPhone X","state":"Shutdown","isAvailable":true}],
+      "com.apple.CoreSimulator.SimRuntime.watchOS-10-0":[
+        {"udid":"BBB","name":"Watch","state":"Booted","isAvailable":true}]
+  }})", &err);
+  MPI_CHECK(doc.has_value());
+  const auto devices = parse_simctl_devices(*doc, "");
+  // Only the iOS runtime is in scope for this adapter.
+  MPI_CHECK_EQ(devices.size(), static_cast<std::size_t>(1));
+  MPI_CHECK_EQ(devices[0].os_version, std::string("17.4"));
+}
+
+MPI_TEST(unavailable_simulator_runtimes_are_skipped, {"A04"}) {
+  json::ParseError err;
+  auto doc = json::parse(R"({"devices":{
+      "com.apple.CoreSimulator.SimRuntime.iOS-16-0":[
+        {"udid":"AAA","name":"Old","state":"Shutdown","isAvailable":false}]
+  }})", &err);
+  MPI_CHECK(doc.has_value());
+  MPI_CHECK(parse_simctl_devices(*doc, "").empty());
+}
+
+MPI_TEST(parses_real_simctl_listapps_output, {"A13"}) {
+  // REAL output: `simctl listapps` emits an old-style NeXTSTEP plist, which
+  // the adapter converts with plutil. This fixture is the converted JSON.
+  const auto doc = parse_fixture("provider-output/simctl-listapps-booted.real.json");
+  MPI_CHECK(!doc.is_null());
+  const auto apps = parse_simctl_listapps(doc);
+  MPI_CHECK_MSG(apps.size() > 20, "expected the simulator's app set, got " +
+                                      std::to_string(apps.size()));
+  const auto* calendar = find_app(apps, "com.apple.mobilecal");
+  MPI_CHECK(calendar != nullptr);
+  MPI_CHECK_EQ(calendar->name, std::string("Calendar"));
+  MPI_CHECK_EQ(calendar->app_type, std::string("System"));
+  // Results are sorted by bundle id, so the picker order is stable.
+  MPI_CHECK(std::is_sorted(apps.begin(), apps.end(),
+                           [](const InstalledApp& a, const InstalledApp& b) {
+                             return a.bundle_id < b.bundle_id;
+                           }));
+}
+
+MPI_TEST(parses_real_launchctl_list_and_extracts_bundle_ids, {"B09"}) {
+  // REAL output from `simctl spawn <udid> launchctl list`.
+  const auto text = read_fixture("provider-output/simctl-launchctl-list.real.txt");
+  MPI_CHECK(!text.empty());
+  const auto entries = parse_launchctl_list(text);
+  MPI_CHECK_MSG(entries.size() > 50, "expected many launchd jobs, got " +
+                                         std::to_string(entries.size()));
+
+  std::size_t with_bundle = 0;
+  std::size_t running = 0;
+  bool found_calendar = false;
+  for (const auto& e : entries) {
+    if (!e.bundle_id.empty()) ++with_bundle;
+    if (e.pid.has_value()) ++running;
+    if (e.bundle_id == "com.apple.mobilecal") {
+      found_calendar = true;
+      MPI_CHECK_MSG(e.pid.has_value(), "Calendar was running with a real pid");
+      // The label must be stripped of its instance hash.
+      MPI_CHECK(e.label.find("UIKitApplication:com.apple.mobilecal[") == 0);
+    }
+  }
+  MPI_CHECK_MSG(found_calendar,
+                "the real fixture contains UIKitApplication:com.apple.mobilecal");
+  MPI_CHECK_MSG(with_bundle >= 3, "at least three app jobs were present");
+  MPI_CHECK(running > 10);
+}
+
+MPI_TEST(launchctl_entries_without_a_pid_are_not_running, {"A08", "A11"}) {
+  const auto entries = parse_launchctl_list(
+      "PID\tStatus\tLabel\n"
+      "-\t0\tUIKitApplication:com.example.loaded[abcd][rb-legacy]\n"
+      "4242\t0\tUIKitApplication:com.example.running[efgh][rb-legacy]\n"
+      "-\t0\tcom.apple.somedaemon\n");
+  MPI_CHECK_EQ(entries.size(), static_cast<std::size_t>(3));
+  MPI_CHECK_MSG(!entries[0].pid.has_value(),
+                "a '-' pid means loaded but not running");
+  MPI_CHECK_EQ(entries[0].bundle_id, std::string("com.example.loaded"));
+  MPI_CHECK(entries[1].pid.has_value());
+  MPI_CHECK_EQ(*entries[1].pid, 4242);
+  // A non-UIKitApplication label yields no bundle id at all.
+  MPI_CHECK_MSG(entries[2].bundle_id.empty(),
+                "a daemon label must not be mistaken for an app bundle id");
+}
+
+MPI_TEST(launchctl_parser_handles_empty_and_header_only_input, {"A12", "D16"}) {
+  MPI_CHECK(parse_launchctl_list("").empty());
+  MPI_CHECK(parse_launchctl_list("PID\tStatus\tLabel\n").empty());
+  // Malformed rows are skipped rather than producing partial entries.
+  MPI_CHECK(parse_launchctl_list("PID\tStatus\tLabel\nonly-one-column\n").empty());
+}
+
+MPI_TEST(adapter_probe_runs_against_the_real_toolchain, {"J15", "M0"}) {
+  // This exercises the REAL installed toolchain on this host.
+  IosAdapter adapter;
+  model::CapabilityMatrix m;
+  discovery::ProviderOptions opts;
+  opts.command_timeout_ms = 45000;
+  adapter.probe(m, opts);
+
+  const auto* toolchain = m.find("ios.toolchain.xcrun");
+  MPI_CHECK_MSG(toolchain != nullptr, "the toolchain capability must be reported");
+  MPI_CHECK_MSG(toolchain->status == model::CapabilityStatus::kAvailable,
+                "xcrun is present on this host");
+  MPI_CHECK(toolchain->evidence.find("xcode-select") != std::string::npos);
+
+  const auto* devices = m.find("ios.discovery.devices");
+  MPI_CHECK(devices != nullptr);
+  MPI_CHECK(devices->status == model::CapabilityStatus::kAvailable);
+  MPI_CHECK_MSG(!devices->evidence.empty(),
+                "a capability claim must carry its probe evidence");
+
+  // The capability the specification insists must not be over-claimed.
+  const auto* attach = m.find("ios.capture.attach");
+  MPI_CHECK(attach != nullptr);
+  MPI_CHECK_MSG(attach->status == model::CapabilityStatus::kUnknown,
+                "deep attach cannot be established at the device level");
+  MPI_CHECK(attach->tested == model::TestedState::kNotTested);
+  bool mentions_no_bypass = false;
+  for (const auto& l : attach->limitations) {
+    if (l.find("no jailbreak") != std::string::npos) mentions_no_bypass = true;
+  }
+  MPI_CHECK(mentions_no_bypass);
+
+  // Live capture must be explicitly unverified, per spec section 0.15.
+  const auto* live = m.find("ios.capture.live_recording");
+  MPI_CHECK(live != nullptr);
+  MPI_CHECK_MSG(live->tested == model::TestedState::kNotTested,
+                "live physical capture was never demonstrated here");
+  bool says_unverified = false;
+  for (const auto& l : live->limitations) {
+    if (l.find("UNVERIFIED") != std::string::npos) says_unverified = true;
+  }
+  MPI_CHECK_MSG(says_unverified,
+                "the live-capture gap must be labelled UNVERIFIED, not omitted");
+}
+
+MPI_TEST(adapter_lists_real_devices_including_simulators, {"A04", "J18"}) {
+  IosAdapter adapter;
+  adapter.set_include_simulators(true);
+  std::vector<std::string> errors;
+  discovery::ProviderOptions opts;
+  opts.command_timeout_ms = 45000;
+  const auto with_sims = adapter.list_devices(opts, errors);
+  MPI_CHECK_MSG(!with_sims.empty(), "this host has paired devices and simulators");
+
+  adapter.set_include_simulators(false);
+  std::vector<std::string> errors2;
+  const auto without = adapter.list_devices(opts, errors2);
+  MPI_CHECK_MSG(without.size() < with_sims.size(),
+                "excluding simulators must shrink the list");
+  for (const auto& d : without) {
+    MPI_CHECK_MSG(d.form != model::DeviceForm::kSimulator,
+                  "no simulator may survive --no-simulators");
+  }
+}
+
+MPI_TEST(adapter_refuses_an_option_like_bundle_id, {"A20", "J05"}) {
+  IosAdapter adapter;
+  model::DeviceRef device;
+  device.device_id = "sim-udid";
+  device.form = model::DeviceForm::kSimulator;
+  device.trust = model::TrustState::kAuthorized;
+  model::ApplicationKey app;
+  app.app_identifier = "-rf";
+  std::vector<std::string> errors;
+  const auto procs = adapter.resolve_processes(device, app,
+                                               discovery::ProviderOptions{}, errors);
+  MPI_CHECK(procs.empty());
+  bool refused = false;
+  for (const auto& e : errors) {
+    if (e.find("command-line option") != std::string::npos) refused = true;
+  }
+  MPI_CHECK(refused);
+}
+
+MPI_TEST(adapter_reports_unreachable_device_as_enumeration_failure, {"A03", "A12"}) {
+  IosAdapter adapter;
+  model::DeviceRef device;
+  device.device_id = "3FF46431-775C-59BB-AD26-D316DFAFA5A6";
+  device.form = model::DeviceForm::kPhysical;
+  device.trust = model::TrustState::kOffline;
+  std::vector<std::string> errors;
+  bool failed = false;
+  const auto apps =
+      adapter.list_apps(device, discovery::ProviderOptions{}, errors, failed);
+  MPI_CHECK(apps.empty());
+  MPI_CHECK_MSG(failed,
+                "an unreachable device is an enumeration failure, not an app-less "
+                "device");
+  bool explained = false;
+  for (const auto& e : errors) {
+    if (e.find("not an empty app list") != std::string::npos) explained = true;
+  }
+  MPI_CHECK(explained);
+}
+
+MPI_TEST(simulator_apps_are_enumerated_from_the_real_booted_simulator,
+         {"J15", "J18", "M0"}) {
+  // This runs against the REAL booted simulator on this host. If none is
+  // booted the test records that rather than failing, because a missing device
+  // is not a code defect -- but it will then not have verified anything.
+  IosAdapter adapter;
+  std::vector<std::string> errors;
+  discovery::ProviderOptions opts;
+  opts.command_timeout_ms = 60000;
+  const auto devices = adapter.list_devices(opts, errors);
+  const model::DeviceRef* booted = nullptr;
+  for (const auto& d : devices) {
+    if (d.form == model::DeviceForm::kSimulator && d.usable_for_capture()) {
+      booted = &d;
+      break;
+    }
+  }
+  if (!booted) {
+    std::cout << "       (no booted simulator: this capability was NOT verified)\n";
+    return;
+  }
+
+  std::vector<std::string> app_errors;
+  bool failed = false;
+  const auto apps = adapter.list_apps(*booted, opts, app_errors, failed);
+  MPI_CHECK_MSG(!failed, "enumeration on a booted simulator should succeed");
+  MPI_CHECK_MSG(apps.size() > 10, "expected the simulator's apps, got " +
+                                      std::to_string(apps.size()));
+
+  std::size_t running = 0;
+  std::size_t provider_attributed = 0;
+  for (const auto& a : apps) {
+    MPI_CHECK_MSG(a.key.identifier_kind == model::IdentifierKind::kBundleId,
+                  "iOS targets are keyed by bundle id");
+    MPI_CHECK_MSG(a.runtime_state != model::RuntimeState::kSuspended,
+                  "iOS exposes no suspended signal, so it must never be claimed");
+    if (a.runtime_state == model::RuntimeState::kRunning) {
+      ++running;
+      for (const auto& p : a.processes) {
+        if (p.ownership == model::OwnershipEvidence::kProviderAttributed) {
+          ++provider_attributed;
+          MPI_CHECK(p.ownership_note.find("launchd") != std::string::npos);
+        }
+      }
+    }
+    // Nothing on a simulator may be presented as device-representative.
+    if (a.profiling == model::ProfilingAvailability::kLimited) {
+      MPI_CHECK(a.profiling_reason.find("simulator only") != std::string::npos);
+    }
+  }
+  MPI_CHECK_MSG(running > 0, "at least one app should be running on a booted sim");
+  MPI_CHECK_MSG(provider_attributed > 0,
+                "launchd labels give provider-attributed ownership");
+}

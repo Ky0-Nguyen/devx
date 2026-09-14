@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# End-to-end CLI checks that the unit tests cannot reach: argument parsing,
+# exit codes, and the session lifecycle on disk.
+#
+# Usage: tools/smoke-test.sh [path-to-mpi]
+set -uo pipefail
+
+MPI="${1:-build/bin/mpi}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if [ ! -x "$MPI" ]; then
+  echo "error: $MPI not found; run: cmake --build build" >&2
+  exit 1
+fi
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+pass=0
+fail=0
+
+check() { # check <description> <expected-exit> <command...>
+  local desc="$1" want="$2"; shift 2
+  "$@" >"$TMP/out" 2>"$TMP/err"
+  local got=$?
+  if [ "$got" = "$want" ]; then
+    printf '  ok   %s\n' "$desc"
+    pass=$((pass+1))
+  else
+    printf '  FAIL %s (expected exit %s, got %s)\n' "$desc" "$want" "$got"
+    sed 's/^/       /' "$TMP/err" | head -3
+    fail=$((fail+1))
+  fi
+}
+
+check_contains() { # check_contains <description> <needle> <command...>
+  local desc="$1" needle="$2"; shift 2
+  # The output is captured to a file rather than piped into grep. Under
+  # `pipefail`, `cmd | grep -q` reports failure whenever grep exits on its
+  # first match early enough to hand the producer a SIGPIPE -- which made this
+  # harness fail precisely when the needle appeared near the top of the output.
+  "$@" >"$TMP/contains" 2>&1
+  if grep -qF -- "$needle" "$TMP/contains"; then
+    printf '  ok   %s\n' "$desc"
+    pass=$((pass+1))
+  else
+    printf '  FAIL %s (output did not contain: %s)\n' "$desc" "$needle"
+    fail=$((fail+1))
+  fi
+}
+
+echo "== argument parsing =="
+check "no command is a usage error" 2 "$MPI"
+check "unknown command is a usage error" 2 "$MPI" not-a-command
+check "--help succeeds" 0 "$MPI" --help
+check "bad --platform is rejected" 2 "$MPI" devices --platform windows
+check "bad --timeout-ms is rejected" 2 "$MPI" devices --timeout-ms 0
+check "analyze with no argument is a usage error" 2 "$MPI" analyze
+check "compare with one argument is a usage error" 2 "$MPI" compare a.json
+check "bad --format is rejected" 2 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --format xml
+check "malformed --threshold is rejected" 2 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --threshold nope
+check "--suppress without a reason is refused" 2 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --suppress DET-01
+
+# Every flag a subcommand reads with inv.flag() must consume a value. A flag
+# missing from needs_value() would silently turn its value into a positional.
+echo "== value-taking flag list agrees with the subcommands =="
+declared="$(sed -n '/kWithValue\[\]/,/};/p' apps/cli/main.cpp \
+  | grep -oE '"--[a-z0-9-]+"' | tr -d '"' | sed 's/^--//' | sort -u)"
+used="$(grep -ohE 'inv\.flag\("[a-z0-9-]+"' apps/cli/*.cpp \
+  | sed 's/inv\.flag("//; s/"//' | sort -u)"
+missing="$(comm -13 <(echo "$declared") <(echo "$used"))"
+if [ -z "$missing" ]; then
+  printf '  ok   every inv.flag() name consumes a value\n'; pass=$((pass+1))
+else
+  printf '  FAIL these flags are read with a value but parsed as booleans: %s\n' "$(echo $missing)"
+  fail=$((fail+1))
+fi
+
+echo "== analysis exit codes =="
+check "healthy fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --format json --out "$TMP/a.json"
+check "positive fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --format json --out "$TMP/b.json"
+check "malformed trace is a collection error" 5 "$MPI" analyze fixtures/traces/malformed-truncated.json
+check "empty file is a collection error" 5 "$MPI" analyze fixtures/traces/malformed-empty.json
+check "binary garbage is a collection error" 5 "$MPI" analyze fixtures/traces/malformed-not-json.bin
+check "missing file is a collection error" 5 "$MPI" analyze "$TMP/does-not-exist.json"
+check "a tiny --max-input-mib refuses a large trace" 5 "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --max-input-mib 1
+
+echo "== honesty invariants in the rendered report =="
+check_contains "synthetic input is announced" "SYNTHETIC DATA" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json
+check_contains "a skip is not an all-clear" "found **nothing because it did not run**" \
+  "$MPI" analyze fixtures/traces/negative-healthy.mpi.json
+check_contains "detectors ran on the healthy fixture" "ran_found_nothing" \
+  "$MPI" analyze fixtures/traces/negative-healthy.mpi.json
+check_contains "a gap is not measured zero" "not measured zero activity" \
+  "$MPI" analyze fixtures/traces/incomplete-evidence.mpi.json
+check_contains "a partial capture is announced" "PARTIAL CAPTURE" \
+  "$MPI" analyze fixtures/traces/incomplete-evidence.mpi.json
+check_contains "a diagnostic session cannot certify release" "cannot certify release performance" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json
+check_contains "overhead must not be subtracted" "must not be subtracted" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json
+
+echo "== third-party trace formats =="
+check "hermes profile analyzes" 0 "$MPI" analyze fixtures/traces/hermes-profile.json --format json --out "$TMP/h.json"
+check "chrome trace analyzes" 0 "$MPI" analyze fixtures/traces/chrome-trace-event.json --format json --out "$TMP/c.json"
+check_contains "hermes samples are not turned into task durations" "no task boundaries" \
+  "$MPI" analyze fixtures/traces/hermes-profile.json
+
+echo "== comparison exit codes =="
+check "a real regression exits 3" 3 "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-android-regression.json --out "$TMP/cmp1.md"
+check "no significant change exits 0" 0 "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-android-nochange.json --out "$TMP/cmp2.md"
+check "a cross-platform pair exits 4, not 3" 4 "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-ios-crossplatform.json --out "$TMP/cmp3.md"
+check_contains "the cross-platform refusal is explained" "cannot be used as a gate" \
+  "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-ios-crossplatform.json
+
+echo "== rules catalog =="
+check "rules listing succeeds" 0 "$MPI" rules
+for det in DET-01 DET-02 DET-03 DET-04 DET-05 DET-06 DET-07 DET-08 DET-09 DET-10 DET-11 DET-12; do
+  check_contains "$det is registered" "$det" "$MPI" rules
+done
+
+echo "== record refuses rather than fabricating =="
+check "record without --app is a usage error" 2 "$MPI" record --sessions-dir "$TMP/s"
+if [ ! -d "$TMP/s" ]; then
+  printf '  ok   a refused record creates no session directory\n'; pass=$((pass+1))
+else
+  printf '  FAIL a refused record left a session directory behind\n'; fail=$((fail+1))
+fi
+
+echo "== session package lifecycle =="
+if "$MPI" record --app com.example.fixture --device no-such-device \
+     --import fixtures/traces/negative-healthy.mpi.json \
+     --sessions-dir "$TMP/sessions" >/dev/null 2>&1; then
+  printf '  FAIL record accepted a nonexistent device\n'; fail=$((fail+1))
+else
+  printf '  ok   record rejects a nonexistent device\n'; pass=$((pass+1))
+fi
+check "export of a missing session is an error" 5 "$MPI" export "$TMP/nope"
+
+echo
+echo "$pass passed, $fail failed"
+[ "$fail" -eq 0 ]

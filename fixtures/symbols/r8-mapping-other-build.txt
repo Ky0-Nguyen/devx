@@ -1,0 +1,4 @@
+# compiler: R8
+# pg_map_id: DIFFERENT
+com.example.perf.render.TextShaper -> a.b.c:
+    1:12:void shape(java.lang.String) -> d

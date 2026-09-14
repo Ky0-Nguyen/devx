@@ -1,0 +1,95 @@
+# Checklist items from specification section 18 with no automated test yet,
+# and why. Consumed by tools/gen-requirement-map.py.
+# Format: <checklist-id>\t<reason>
+A07	needs a real device and a measured refresh-interval budget (M2)
+A09	iOS exposes no suspended signal; the negative guarantee is tested, the positive path needs Android hardware
+A10	partial scope is asserted via iOS launchd-only entries; a dedicated Android case needs hardware
+A14	duplicate display names need a device with two such apps installed
+A16	selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested
+A17	needs a live app that exits between listing and record (M2)
+A19	the optional app SDK is not implemented (M3)
+A21	launch-and-record is not implemented (M2)
+A22	wait-for-app is not implemented (M2)
+A23	favourites/recents is a UI concept (M2)
+A25	large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested
+B01	multi-process grouping needs an Android device with a multi-process app
+B05	secondary-service inclusion needs Android hardware
+B11	reinstall revalidation needs a device and an install cycle
+B14	profileable-vs-visible independence is modelled; asserting it needs a device
+B15	a launch/exit discovery race needs a live device
+C02	needs a built app with native debug and JS dev off
+C05	custom configuration names need a build integration (M3)
+C12	needs an iOS build with a debug entitlement and optimized code
+C16	OTA identity change needs an OTA pipeline (M3)
+C20	classification is tested; end-to-end preservation through a capture needs M2
+D01	start/stop needs a collector (M2)
+D02	stop-during-startup needs a collector (M2)
+D03	double-stop idempotency needs a collector (M2)
+D05	disk-full is handled in the write path; triggering it needs a constrained filesystem
+D06	host crash recovery needs fault injection; the .partial directory path is implemented
+D07	collector crash needs a collector (M2)
+D13	clock drift over a long capture needs a long real capture (M2)
+D14	durations never use the wall clock by construction; a timezone-change test needs host manipulation
+D15	device sleep/resume needs hardware
+D17	long capture needs a collector; the 1 GiB ingest stress is measured separately
+D20	disconnect/reconnect needs hardware
+D21	conflicting collector detection needs a collector (M2)
+D22	cleanup scoping is implemented (delete_package refuses non-session dirs); full test needs a collector
+E03	idle-display handling needs a real idle capture
+E04	background-vs-foreground needs a device that reports surface state
+E05	asserted in DET-04's alternative explanations; a real capture would confirm
+E06	low CPU with blocked UI needs scheduling evidence (DET-09, M5)
+E07	needs a real React Native capture
+E08	needs a real React Native capture
+E09	GPU evidence is not collected (M5)
+E10	runnable-vs-running needs a scheduling provider (M5)
+E11	CPU-time vs wall-time needs a CPU-time counter (M2)
+E16	DET-02 sums siblings only and says so; a nested fixture would strengthen this
+E17	external contention needs a device
+E18	recorder overhead needs paired controlled runs (M4)
+E19	DET-01 groups by surface; a multi-surface real capture would confirm
+F01	memory detectors are M5
+F02	memory detectors are M5
+F03	memory detectors are M5
+F04	memory detectors are M5
+F05	memory detectors are M5
+F06	memory detectors are M5
+F07	memory detectors are M5
+F08	CounterSeries::family keeps families distinct; a real memory collector is M2/M5
+F09	needs a memory collector
+F10	needs a memory collector
+F12	in-process tooling stays in the process total by construction; a real capture would confirm
+F13	ambiguous overhead is kept unknown and IS tested via the name-only match case
+F15	endpoint/library ambiguity needs more attribution rules
+F16	memory-pressure kill needs hardware
+G02	the Hermes reader refuses unexpected shapes; a versioned corpus is M3
+G03	non-Hermes runtime needs such a build (M3)
+G04	JS reload needs a live RN app (M3)
+G05	Fast Refresh needs a live RN app (M3)
+G06	multiple runtimes needs a live RN app (M3)
+G07	cancelled navigation needs SDK markers (M3)
+G08	repeated mounts needs SDK markers (M3)
+G09	cross-runtime async needs SDK markers (M3)
+G10	React profiling data is DET-10 (M5); its absence is reported as a skip
+G12	Expo prerequisites are documentation (M3)
+G13	the architecture matrix needs RN builds (M3)
+G15	OTA/native pairing needs a build pipeline (M3)
+H08	occurrence_count is implemented; a cross-session duplicate fixture would strengthen it
+H13	offline reopen is implemented in session_store; end-to-end needs record (M2)
+H14	missing source does not block rendering; asserted indirectly
+I06	background workload needs a device
+I18	the code reports median and IQR only and never a p95; a dedicated absence test would assert it
+I20	overhead measurement needs paired controlled runs on hardware (M4)
+I21	UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured
+J06	the SDK transport is not implemented (M3)
+J07	transport backpressure needs the SDK transport (M3)
+J08	delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated
+J09	there is no AI layer, so the core trivially works without one
+J10	there is no AI layer yet; trace text is never executed
+J12	desktop signing and packaging need the desktop app (M2)
+J13	session migration needs more than one schema version
+J14	REAL Android app discovery and live capture: NOT VERIFIED, no Android device was reachable
+J15	REAL iOS live capture: NOT VERIFIED on a physical device, verified on a simulator only
+J17	App Store app depth needs a reachable device with such an app
+J19	native-without-JS evidence needs a real mixed capture
+J20	a schema_version mismatch is reported; a versioned corpus is M3

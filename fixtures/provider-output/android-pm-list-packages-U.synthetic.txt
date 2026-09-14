@@ -1,0 +1,4 @@
+package:com.example.perf uid:10234
+package:com.other.sharedapp uid:10234
+package:com.android.settings uid:1000
+package:com.example.notrunning uid:10555
