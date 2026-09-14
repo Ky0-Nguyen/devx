@@ -29,7 +29,7 @@ Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 >   token-gated loopback transport and a build handshake, so section 6's
 >   "`sdk/*` are empty directories" is true only of `sdk/ios` and
 >   `sdk/android`.
-> - **The test count is 355 cases in 16 binaries**, not 228 in 12.
+> - **The test count is 377 cases in 17 binaries**, not 228 in 12.
 >
 > **Still open**, unchanged from this report: no physical device has been
 > reached on either platform, and no iOS recording has ever completed. An

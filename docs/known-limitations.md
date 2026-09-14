@@ -309,11 +309,17 @@ Still open, and all inherently UI behaviours:
 - **I21** responsiveness under the 1 GiB stress fixture.
 - **J12** signing and packaging for distribution. The bundle is ad-hoc signed
   for local use only.
-- No timeline view. Spec section 13 lists one; issues currently carry their
-  interval numerically rather than on a rendered track.
+- **The timeline exists.** DevX has a Timeline tab over a binned view whose
+  bins carry a state rather than a bare number, so an unmeasured stretch
+  cannot be drawn as zero: four states, four visual treatments, and the
+  legend above the tracks rather than below them. `mpi timeline` renders the
+  same data in a terminal. An issue focuses its own interval at full
+  resolution, and `--issue=<id>` opens a link to one finding. Building it
+  found three defects in the capture path, listed in section 10.
 - No compare view. `mpi compare` is CLI-only.
 - The Live tab has no frame-timeline track either; it shows counts, source
-  status and memory series.
+  status and memory series. The Timeline tab reads a written session, so it
+  cannot be pointed at a capture still in progress.
 - Every label in the window is Menlo (or `--font=<family>`), except the window
   title in the title bar, which AppKit draws in the system face.
 
@@ -393,8 +399,8 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**139 of 198** checklist items have at least one automated test
-(355 test cases in 16 binaries). The remaining 59 are enumerated with a stated
+**143 of 198** checklist items have at least one automated test
+(377 test cases in 17 binaries, plus 104 Swift). The remaining 55 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
@@ -403,7 +409,35 @@ on hardware. The capability matrix is the authority on that.
 
 ---
 
-## 10. Things this tool deliberately does not do
+## 10. Sessions recorded before 2026-09-15 have two coverage defects
+
+Building the timeline meant reading coverage per source for the first time,
+and it surfaced two faults in captures written before that date. Both are
+fixed; both are still true of session packages already on disk.
+
+**A batch capture wrote coverage rows only for sources that failed.** The
+streaming path had per-source rows precisely because a source with no row is
+indistinguishable from a source that measured nothing (H11); the batch path
+never got them. So in an older batch session, frames and memory have no
+coverage row, and nothing downstream can tell "ran and measured nothing" from
+"never ran". The row builder is now one function called from both paths, and
+`mpi timeline` on such a session says "no collector recorded a coverage window
+for this source" rather than drawing zeroes.
+
+**A coverage row could declare a zero-length window.** In some older sessions
+the simpleperf row has `window_start == window_end` while its gaps carry
+absolute timestamps from the real window. A row like that establishes no
+coverage at all. The timeline reports it as a defect in the capture -- in those
+words -- rather than as a quiet period, because the two would otherwise look
+identical.
+
+Neither is repairable after the fact: the coverage a collector did not record
+cannot be reconstructed from the events it kept. Re-record if a session's
+coverage matters.
+
+---
+
+## 11. Things this tool deliberately does not do
 
 Not limitations to be fixed -- design positions taken from spec sections 2.3,
 0.12 and 0.26:

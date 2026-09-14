@@ -59,6 +59,15 @@ final class AppState: ObservableObject {
     @Published var preflightDoc: JSON = .null
     @Published var sessionsDoc: JSON = .null
     @Published var sessionDoc: JSON = .null
+    @Published var timelineDoc: JSON = .null
+    // How many bins the timeline is asked for. The capture's size does not
+    // enter into it: a ten-minute recording and a ten-second one both come
+    // back with this many, so the view's cost is fixed.
+    @Published var timelineBins: Int = 160
+    // The band the user asked to focus, as an index into the timeline's
+    // issue list. Clicking an issue focuses its evidence interval (spec
+    // section 13), so this is what carries that selection.
+    @Published var focusedBandId: String = ""
     @Published var rulesDoc: JSON = .null
     @Published var recordDoc: JSON = .null
 
@@ -216,14 +225,62 @@ final class AppState: ObservableObject {
         run("Reading sessions…", { Core.sessions(dir: dir) }) { self.sessionsDoc = $0 }
     }
 
-    func openSession(_ id: String) {
+    /// Opens a session and reveals it in `revealIn`.
+    ///
+    /// The destination is a parameter because a launch that asked for a tab
+    /// has already said where it wants to land: hard-coding Issues here meant
+    /// `--session X --tab timeline` opened X and then jumped away from the
+    /// tab that was requested.
+    func openSession(_ id: String, revealIn: DevXTab = .issues,
+                     focusIssueId: String? = nil) {
         let dir = sessionsDir
         selectedSession = id
         selectedIssueIndex = 0
+        timelineDoc = .null
+        focusedBandId = ""
         run("Opening \(id)…", { Core.session(dir: dir, id: id) }) {
             self.sessionDoc = $0
-            self.tab = .issues
+            self.tab = revealIn
+            if let wanted = focusIssueId {
+                // Selecting the issue as well as focusing it: a link that
+                // lands on a finding should also have that finding selected
+                // in the Issues tab, not just highlighted on the timeline.
+                self.focusedBandId = wanted
+                if let idx = self.issues.firstIndex(where: {
+                    $0["issue_id"].text == wanted
+                        || $0["fingerprint"].text == wanted }) {
+                    self.selectedIssueIndex = idx
+                } else {
+                    self.lastError = "No issue in this session has the id "
+                        + "'\(wanted)'. The session is open; nothing is focused."
+                    self.focusedBandId = ""
+                }
+            }
+            if revealIn == .timeline { self.loadTimeline() }
         }
+    }
+
+    /// Loads the open session's timeline. Separate from `openSession` because
+    /// it re-reads and re-analyzes the trace, which is work the Issues tab
+    /// does not need.
+    func loadTimeline(force: Bool = false) {
+        guard !selectedSession.isEmpty else { return }
+        guard force || timelineDoc.isNull else { return }
+        let dir = sessionsDir, id = selectedSession, bins = timelineBins
+        run("Binning \(id)…", { Core.timeline(dir: dir, id: id, bins: bins) }) {
+            self.timelineDoc = $0
+        }
+    }
+
+    /// Focuses an issue's own interval on the timeline. The band is found by
+    /// id rather than by position so a re-bin cannot move the focus onto a
+    /// different finding.
+    func focusIssue(_ issue: JSON) {
+        let id = issue["issue_id"].text.isEmpty ? issue["fingerprint"].text
+                                                : issue["issue_id"].text
+        focusedBandId = id
+        tab = .timeline
+        loadTimeline()
     }
 
     func startRecord() {

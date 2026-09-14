@@ -38,7 +38,10 @@ struct DevXApp: App {
         state.loadVersion()
         state.loadDevices()
         if state.tab != .sessions { state.loadSessions() }
-        if let id = launch.session { state.openSession(id) }
+        if let id = launch.session {
+            state.openSession(id, revealIn: launch.tab ?? .issues,
+                              focusIssueId: launch.issue)
+        }
 
         guard launch.startLive else { return }
         Task { @MainActor in
@@ -155,6 +158,7 @@ struct RootView: View {
                 case .record: RecordView()
                 case .sessions: SessionsView()
                 case .issues: IssuesView()
+                case .timeline: TimelineView()
                 case .detectors: DetectorsView()
                 }
 

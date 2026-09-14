@@ -23,6 +23,7 @@
 #include "core/rules/rule_registry.hpp"
 #include "core/session/live_capture.hpp"
 #include "core/session/session_store.hpp"
+#include "core/timeline/timeline.hpp"
 #include "core/util/time.hpp"
 
 namespace {
@@ -373,6 +374,64 @@ char* mpi_session_json(const char* sessions_dir, const char* session_id) {
     root.set("checksum_failures", std::move(checks));
     root.set("manifest_state",
              json::Value::string(session::to_string(loaded.manifest.state)));
+    return root;
+  });
+}
+
+char* mpi_session_timeline_json(const char* sessions_dir,
+                                const char* session_id, int bin_count) {
+  return guard([&] {
+    const std::string id = safe(session_id);
+    json::Value root = json::Value::object();
+    if (!session_id_is_safe(id)) {
+      root.set("error", json::Value::string("invalid session id"));
+      return root;
+    }
+    const std::string dir = safe(sessions_dir) + "/" + id;
+    const auto loaded = session::load_package(dir);
+    if (!loaded.ok) {
+      root.set("error", json::Value::string(loaded.error));
+      return root;
+    }
+    model::NormalizedTrace trace;
+    ingest::ReadDiagnostics diag;
+    ingest::ReadOptions opts;
+    opts.cancel = cancel_registry().token();
+    const auto reader = ingest::read_any(loaded.trace_path, opts, trace, diag);
+    if (!reader.has_value()) {
+      root.set("error",
+               json::Value::string("the session's trace could not be read"));
+      json::Value errs = json::Value::array();
+      for (const auto& e : diag.errors) errs.push_back(json::Value::string(e));
+      root.set("details", std::move(errs));
+      return root;
+    }
+    ingest::normalize(trace, opts.cancel);
+
+    // The bands come from running the current ruleset over the same trace, so
+    // a band can never point at an interval this build would not produce.
+    symbols::SymbolService symbols;
+    rules::EngineOptions engine_opts;
+    engine_opts.cancel = opts.cancel;
+    const auto analysis = rules::analyze(trace, symbols, engine_opts);
+
+    timeline::Options topts;
+    topts.bin_count = bin_count > 0 ? bin_count : 240;
+    topts.cancel = opts.cancel;
+    if (trace.window_end_ns > trace.window_start_ns) {
+      // Half a bin: the narrowest a band can be drawn and still be
+      // unambiguous about which bin it belongs to.
+      topts.min_band_ns = (trace.window_end_ns - trace.window_start_ns) /
+                          (static_cast<model::TimeNs>(topts.bin_count) * 2);
+    }
+    root = timeline::build(trace, analysis.issues, topts).to_json();
+    root.set("synthetic", json::Value::boolean(trace.synthetic));
+    root.set("partial", json::Value::boolean(trace.partial));
+    json::Value checks = json::Value::array();
+    for (const auto& f : loaded.checksum_failures) {
+      checks.push_back(json::Value::string(f));
+    }
+    root.set("checksum_failures", std::move(checks));
     return root;
   });
 }

@@ -10,6 +10,9 @@ import Foundation
 struct LaunchOptions {
     var sessionsDir: String?
     var session: String?
+    /// An issue id or fingerprint to open focused on, so a link can point at
+    /// one finding rather than at a session.
+    var issue: String?
     var tab: DevXTab?
     var device: String?
     var app: String?
@@ -46,6 +49,8 @@ struct LaunchOptions {
                 if let v = next { o.sessionsDir = (v as NSString).expandingTildeInPath; i += step }
             case "--session":
                 if let v = next { o.session = v; i += step }
+            case "--issue":
+                if let v = next { o.issue = v; i += step }
             case "--tab":
                 if let v = next { o.tab = DevXTab(rawValue: v); i += step }
             case "--device":
