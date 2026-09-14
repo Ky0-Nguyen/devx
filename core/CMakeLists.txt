@@ -19,6 +19,7 @@ add_library(mpi_core STATIC
   ingestion/xctrace_export_reader.cpp
   ingestion/normalize.cpp
   symbols/symbol_service.cpp
+  timeline/timeline.cpp
   rules/rule_registry.cpp
   rules/det01_frame_deadlines.cpp
   rules/det02_long_js.cpp
