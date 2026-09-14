@@ -434,7 +434,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **145 of 198** checklist items have at least one automated test
-(384 test cases in 17 binaries, plus 148 Swift). The remaining 53 are enumerated with a stated
+(407 test cases in 18 binaries, plus 148 Swift). The remaining 53 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

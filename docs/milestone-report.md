@@ -18,10 +18,10 @@ Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 >   the window open and show evidence as it arrives, with every pre-close
 >   snapshot marked preliminary.
 > - **The streaming ingest reader** named as step 1 of section 5 is done.
-> - **Eleven of the twelve detectors are implemented**, not seven. DET-03,
->   DET-05, DET-07, DET-08, DET-09, DET-10 and DET-11 have landed since;
->   DET-06 alone is still registered-and-skipped, for want of heap reference
->   paths. Section 4 of `known-limitations.md` is the current account.
+> - **All twelve detectors are implemented**, not seven. DET-03,
+>   DET-05, DET-06, DET-07, DET-08, DET-09, DET-10 and DET-11 have landed
+>   since, DET-06 over a real `am dumpheap` heap graph. Section 4 of
+>   `known-limitations.md` is the current account.
 > - **The desktop UI exists.** DevX is a SwiftUI/AppKit app, so the "not
 >   implemented (M2)" row in section 6 and ADR-0004's open framework question
 >   are both closed.
@@ -29,7 +29,7 @@ Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 >   token-gated loopback transport and a build handshake, so section 6's
 >   "`sdk/*` are empty directories" is true only of `sdk/ios` and
 >   `sdk/android`.
-> - **The test count is 377 cases in 17 binaries**, not 228 in 12.
+> - **The test count is 407 cases in 18 binaries**, not 228 in 12.
 >
 > **Still open**, unchanged from this report: no physical device has been
 > reached on either platform, and no iOS recording has ever completed. An
