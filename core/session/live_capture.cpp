@@ -182,6 +182,16 @@ std::shared_ptr<Collector> LiveSession::collector() const {
 
 void LiveSession::run_loop() {
   auto last_analysis = std::chrono::steady_clock::now() - analysis_interval_;
+  // Consecutive ticks where every enabled source failed.
+  //
+  // The loop used to ignore a tick's outcome entirely, so a device that went
+  // away mid-capture produced a session reporting `partial: false` with no
+  // reason -- two ticks of data over a fourteen-second window and nothing
+  // saying why. Killing the adb server four seconds into a ten-second live
+  // capture is how that was found. A capture that lost its device has to say
+  // so: absence of data after that point is not a quiet app (spec D20, H09).
+  int consecutive_dead_ticks = 0;
+  bool device_loss_recorded = false;
 
   while (!stop_requested_.load()) {
     LiveUpdate update;
@@ -191,6 +201,42 @@ void LiveSession::run_loop() {
       std::lock_guard<std::mutex> lock(mutex_);
       if (snapshot_.state != LiveState::kRunning) break;
       update = collector_->tick(device_, processes_, config_, trace_);
+    }
+
+    // A tick is "dead" when it collected nothing and every source it
+    // reported is in a failure state. One such tick is normal -- a device can
+    // be busy -- so it takes three in a row before the capture is called
+    // partial, and the count resets on any tick that produced something.
+    {
+      const bool collected = update.new_frames > 0 ||
+                             update.new_cpu_samples > 0 ||
+                             update.new_counter_points > 0;
+      bool any_source_ok = update.source_status.empty();
+      for (const auto& c : update.source_status) {
+        if (c.status == model::CapabilityStatus::kAvailable ||
+            c.status == model::CapabilityStatus::kLimited) {
+          any_source_ok = true;
+        }
+      }
+      if (collected || any_source_ok) {
+        consecutive_dead_ticks = 0;
+      } else {
+        ++consecutive_dead_ticks;
+      }
+      if (consecutive_dead_ticks >= 3 && !device_loss_recorded) {
+        device_loss_recorded = true;
+        std::lock_guard<std::mutex> lock(mutex_);
+        trace_.partial = true;
+        trace_.partial_reasons.push_back(
+            "the device stopped answering during the capture: " +
+            std::to_string(consecutive_dead_ticks) +
+            " consecutive collection attempts returned nothing from any "
+            "source. What was collected before that point is kept and is "
+            "real; the absence of data after it is a lost connection, not a "
+            "quiet app");
+        snapshot_.notes.push_back(
+            "the device stopped answering; the capture is marked partial");
+      }
     }
 
     const auto now = std::chrono::steady_clock::now();

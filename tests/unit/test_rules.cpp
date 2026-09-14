@@ -1245,3 +1245,200 @@ MPI_TEST(nested_js_spans_are_not_double_counted, {"E16"}) {
   // about not double-counting time, not about hiding occurrences.
   MPI_CHECK_EQ(issue->occurrence_count, std::int64_t{3});
 }
+
+MPI_TEST(native_evidence_without_js_evidence_invents_none, {"J19"}) {
+  // A native-only app -- or a React Native app whose JS never reported --
+  // produces CPU samples and no JS spans. The failure this guards is a
+  // report that fills the gap: a JS section derived from native stacks that
+  // happen to sit inside the runtime, or a "JS was idle" claim from the
+  // absence of spans. Absence of JS evidence is absence of evidence, not
+  // evidence of an idle runtime.
+  model::NormalizedTrace t;
+  t.session_id = "native-only";
+  t.primary_clock_domain = "android.boottime.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  model::ThreadInfo ui;
+  ui.thread_instance_id = "ui";
+  ui.name = "main";
+  ui.is_main_ui_thread = true;
+  t.threads.push_back(ui);
+  model::Coverage cov;
+  cov.collector = "simpleperf";
+  cov.window_start_ns = 0;
+  cov.window_end_ns = 1'000'000'000;
+  t.coverage.push_back(cov);
+  // Stacks that run *through* the JS runtime without any JS span being
+  // reported, which is exactly the shape that tempts a tool to synthesise
+  // one.
+  for (int i = 0; i < 200; ++i) {
+    model::CpuSample s;
+    s.timestamp_ns = static_cast<model::TimeNs>(i) * 5'000'000;
+    s.thread_instance_id = "ui";
+    s.provider = "simpleperf";
+    s.frames = {"libhermes.so!hermes::vm::Interpreter::interpretFunction",
+                "libreactnativejni.so!facebook::react::JSIExecutor::callFunction",
+                "libc.so!__epoll_pwait"};
+    t.cpu_samples.push_back(s);
+  }
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(t, symbols, opts);
+
+  // DET-02 is the JS rule. It must skip, and say the evidence is missing --
+  // not report an idle runtime and not derive spans from the samples.
+  const model::RuleRunRecord* js = nullptr;
+  for (const auto& rec : r.rule_runs) {
+    if (rec.rule_id == "DET-02") js = &rec;
+  }
+  MPI_CHECK(js != nullptr);
+  if (js == nullptr) return;
+  MPI_CHECK(js->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(!js->skipped_reasons.empty());
+  for (const auto& i : r.issues) {
+    MPI_CHECK_MSG(i.rule_id != "DET-02",
+                  "no JS finding is produced from native samples alone");
+  }
+  // And nothing anywhere claims the JS thread was idle: an unsampled or
+  // unreported runtime is unknown, and "idle" is a measurement nobody made.
+  const std::string text = r.to_json().dump();
+  MPI_CHECK_MSG(text.find("JS was idle") == std::string::npos, "no idle claim");
+  MPI_CHECK_MSG(text.find("js idle") == std::string::npos, "nor a lowercase one");
+  // The native side is still reported: refusing to invent JS evidence must
+  // not cost the evidence that does exist.
+  bool native_finding = false;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-04") native_finding = true;
+  }
+  MPI_CHECK_MSG(native_finding,
+                "the native evidence is still analysed and reported");
+}
+
+MPI_TEST(memory_families_are_never_summed_across_processes, {"F09"}) {
+  // PSS exists precisely because pages are shared: two processes of the same
+  // app each report their share, and adding those shares double-counts the
+  // pages they have in common. So the tool reports per-family, per-process
+  // series and never a cross-process total -- which is the only honest thing
+  // to do without a provider that attributes shared pages.
+  model::NormalizedTrace t;
+  t.session_id = "two-proc";
+  t.primary_clock_domain = "android.boottime.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  for (const char* proc : {"proc-main", "proc-remote"}) {
+    model::CounterSeries s;
+    s.name = std::string("memory.pss_total_bytes@") + proc;
+    s.family = "pss";
+    s.unit = "bytes";
+    s.provider = "dumpsys meminfo";
+    s.process_instance_id = proc;
+    s.points.push_back({1'000, 300.0 * 1024 * 1024});
+    t.counters.push_back(std::move(s));
+  }
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(t, symbols, opts);
+  const std::string text = r.to_json().dump();
+
+  // 600 MiB is what a sum would produce. Its absence is the assertion.
+  MPI_CHECK_MSG(text.find("629145600") == std::string::npos,
+                "no metric sums the two processes' PSS into 600 MiB");
+  // Each series keeps its own process, so a reader can see which process
+  // held what and add them up themselves if they accept the double-count.
+  MPI_CHECK_EQ(t.counters.size(), std::size_t{2});
+  MPI_CHECK(t.counters[0].process_instance_id != t.counters[1].process_instance_id);
+  for (const auto& m : r.issues) {
+    for (const auto& metric : m.metrics) {
+      MPI_CHECK_MSG(metric.aggregation.find("sum_across_processes") ==
+                        std::string::npos,
+                    "no aggregation sums across processes");
+    }
+  }
+}
+
+MPI_TEST(a_background_workload_is_never_attributed_to_the_app, {"I06"}) {
+  // A device is never doing only one thing. Whatever else is busy -- another
+  // app, a system service, a build running on the same emulator -- its work
+  // must not land in the app's numbers, or every measurement becomes a
+  // measurement of the machine.
+  //
+  // Verified on emulator-5554 with a CPU burner running in its own process
+  // through a twelve-second capture: 282 samples, all attributed to exactly
+  // one process, and the app's own CPU time read from its own
+  // /proc/<pid>/stat at 2,790 ms over 11,268 ms of wall time. This pins the
+  // attribution rule that made that true.
+  model::NormalizedTrace t;
+  t.session_id = "two-processes";
+  t.primary_clock_domain = "android.boottime.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  model::ThreadInfo mine;
+  mine.thread_instance_id = "app-ui";
+  mine.process_instance_id = "app-proc";
+  mine.name = "main";
+  mine.is_main_ui_thread = true;
+  t.threads.push_back(mine);
+  model::ThreadInfo theirs;
+  theirs.thread_instance_id = "other-ui";
+  theirs.process_instance_id = "other-proc";
+  theirs.name = "burner";
+  t.threads.push_back(theirs);
+  model::Coverage cov;
+  cov.collector = "simpleperf";
+  cov.window_start_ns = 0;
+  cov.window_end_ns = 1'000'000'000;
+  t.coverage.push_back(cov);
+
+  // The app does a little; the foreign process does a great deal.
+  for (int i = 0; i < 40; ++i) {
+    model::CpuSample s;
+    s.timestamp_ns = static_cast<model::TimeNs>(i) * 5'000'000;
+    s.process_instance_id = "app-proc";
+    s.thread_instance_id = "app-ui";
+    s.provider = "simpleperf";
+    s.frames = {"libapp.so!AppWork"};
+    t.cpu_samples.push_back(s);
+  }
+  for (int i = 0; i < 400; ++i) {
+    model::CpuSample s;
+    s.timestamp_ns = static_cast<model::TimeNs>(i) * 2'000'000;
+    s.process_instance_id = "other-proc";
+    s.thread_instance_id = "other-ui";
+    s.provider = "simpleperf";
+    s.frames = {"libburner.so!SpinForever"};
+    t.cpu_samples.push_back(s);
+  }
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(t, symbols, opts);
+
+  // Every finding names the process it belongs to, and no finding mixes the
+  // two: a share computed across both would be a share of the device.
+  for (const auto& i : r.issues) {
+    if (i.process_instance_id.empty()) continue;
+    for (const auto& m : i.metrics) {
+      if (m.process_instance_id.empty()) continue;
+      MPI_CHECK_MSG(m.process_instance_id == i.process_instance_id,
+                    "a finding's metrics stay within its own process: " +
+                        i.rule_id + " mixes " + i.process_instance_id +
+                        " and " + m.process_instance_id);
+    }
+  }
+  // The foreign process's frame must never appear in a finding about the
+  // app's process.
+  for (const auto& i : r.issues) {
+    if (i.process_instance_id != "app-proc") continue;
+    for (const auto& stack : i.candidate_stacks) {
+      for (const auto& f : stack.frames) {
+        MPI_CHECK_MSG(f.find("SpinForever") == std::string::npos,
+                      "the burner's stack is not in the app's finding");
+      }
+    }
+  }
+}

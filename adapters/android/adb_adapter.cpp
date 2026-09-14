@@ -302,12 +302,47 @@ PackageFlags parse_dumpsys_package_flags(const std::string& text) {
   PackageFlags f;
   for (const auto& line : split_lines(text)) {
     const std::string t = trim(line);
-    if (t.rfind("flags=", 0) == 0 || t.find(" flags=[") != std::string::npos) {
-      // The flag list contains DEBUGGABLE when android:debuggable is set.
-      f.debuggable = t.find("DEBUGGABLE") != std::string::npos;
+    // Only the package's own flags line, which is the one that *starts*
+    // with `flags=` once indentation is trimmed.
+    //
+    // Matching ` flags=[` anywhere caught every granted permission --
+    // `android.permission.CAMERA: granted=true, flags=[ USER_SENSITIVE... ]`
+    // -- and since each match overwrote the answer, a DEBUGGABLE app with any
+    // permission after its flags line came out as not debuggable. That
+    // feeds profileability and the benchmark-eligibility verdict, so it made
+    // the tool wrong about what it could measure.
+    if (t.rfind("flags=", 0) == 0) {
+      // Any package-flags line carrying DEBUGGABLE settles it; ordering
+      // between `flags=0x0` and the named list must not decide the answer.
+      if (t.find("DEBUGGABLE") != std::string::npos) {
+        f.debuggable = true;
+      } else if (!f.debuggable.has_value()) {
+        f.debuggable = false;
+      }
     }
     if (t.rfind("versionName=", 0) == 0) {
       f.version_name = t.substr(12);
+    }
+    if (t.rfind("codePath=", 0) == 0) {
+      f.code_path = t.substr(9);
+    }
+    if (t.rfind("firstInstallTime=", 0) == 0) {
+      f.first_install_time = trim(t.substr(17));
+    }
+    if (t.rfind("lastUpdateTime=", 0) == 0) {
+      f.last_update_time = trim(t.substr(15));
+    }
+    if (t.rfind("signatures=", 0) == 0) {
+      // The digest only, not the certificate: enough to notice the signer
+      // changed, and not something to store more of than that.
+      const auto open = t.find("signatures:[");
+      if (open != std::string::npos) {
+        const auto close = t.find(']', open);
+        if (close != std::string::npos) {
+          f.signature_digest =
+              t.substr(open + 12, close - (open + 12));
+        }
+      }
     }
     if (t.rfind("versionCode=", 0) == 0) {
       const auto toks = split_ws(t.substr(12));
@@ -318,6 +353,71 @@ PackageFlags parse_dumpsys_package_flags(const std::string& text) {
   }
   return f;
 }
+
+bool read_app_build_facts(const std::string& adb_path,
+                          const std::string& serial,
+                          const std::string& package,
+                          const proc::Options& opts, model::BuildProfile& out,
+                          std::string& error) {
+  if (!proc::is_safe_argument(package, /*reject_option_like=*/true)) {
+    error = "refusing to query '" + package +
+            "': it would be read as a command-line option";
+    return false;
+  }
+  const auto r = proc::run(
+      {adb_path, "-s", serial, "shell", "dumpsys", "package", package}, opts);
+  if (!r.ok()) {
+    error = "`dumpsys package " + package + "` failed: " +
+            (r.spawned ? trim(r.err) : r.spawn_error);
+    return false;
+  }
+  const auto flags = parse_dumpsys_package_flags(r.out);
+  const std::string observed = time_util::now_iso8601_utc();
+
+  const auto add = [&](const char* key, const std::string& value,
+                       const char* basis) {
+    if (value.empty()) return;  // absent stays absent
+    model::BuildFact f;
+    f.key = key;
+    f.value = value;
+    f.source = model::FactSource::kDeviceProvider;
+    f.observed_at = observed;
+    f.basis = basis;
+    out.upsert(std::move(f));
+  };
+
+  add("app.version_name", flags.version_name,
+      "versionName from `dumpsys package`");
+  if (flags.version_code.has_value()) {
+    add("app.version_code", std::to_string(*flags.version_code),
+        "versionCode from `dumpsys package`");
+  }
+  // The install directory's suffix is randomised per install, so this changes
+  // even when a rebuild keeps the same version -- which is what a developer
+  // iterating on one version does all day.
+  add("app.code_path", flags.code_path, "codePath from `dumpsys package`");
+  add("app.first_install_time", flags.first_install_time,
+      "firstInstallTime from `dumpsys package`");
+  add("app.last_update_time", flags.last_update_time,
+      "lastUpdateTime from `dumpsys package`: changes on every update, so two "
+      "captures either side of a reinstall are distinguishable");
+  add("app.signature_digest", flags.signature_digest,
+      "signature digest from `dumpsys package`; a changed signer means a "
+      "different build entirely");
+
+  if (flags.debuggable.has_value()) {
+    model::BuildFact f;
+    f.key = "app.debuggable";
+    f.boolean_value = *flags.debuggable ? model::Tri::kTrue : model::Tri::kFalse;
+    f.value = *flags.debuggable ? "true" : "false";
+    f.source = model::FactSource::kDeviceProvider;
+    f.observed_at = observed;
+    f.basis = "DEBUGGABLE in the flags from `dumpsys package`";
+    out.upsert(std::move(f));
+  }
+  return true;
+}
+
 
 AdbAdapter::AdbAdapter(std::string adb_path) : adb_path_(std::move(adb_path)) {}
 

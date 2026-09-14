@@ -52,6 +52,7 @@ against `com.android.settings`:
 | `android.capture.cpu_samples` (`simpleperf`) | `available` -- 42 symbolised samples incl. React Native's `mqt_v_js` thread | `permission_denied`, with the manifest change that would fix it |
 | `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available`; the reading is excluded from app-scoped totals when ownership is ambiguous, which is what a shared-uid system app produces |
 | `android.capture.cpu_time` (`/proc/<pid>/stat`) | `available` -- 18 points over 6 ticks at CLK_TCK 100 | `available`; `/proc/<pid>/stat` is world-readable |
+| `android.build.app_identity` (`dumpsys package`) | `available` -- version, install path, update time, signature digest, debuggable | `available`; the package's own flags line is read, not a permission's |
 | `android.capture.streaming` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
 | `android.capture.scheduling` (`atrace sched disk am view`) | `available`, **opt-in only** -- 4082 events over 64 threads in a 10 s capture | `available`; ftrace is system-wide and does not depend on the target's debuggability |
 | `android.capture.heap_dump` (`am dumpheap`) | `available`, **opt-in only** -- 49 MB, 580,140 objects, read in 1.7 s | `permission_denied`: `am dumpheap` needs a debuggable target or a userdebug build |
@@ -67,6 +68,36 @@ Both verified on `emulator-5554` (Pixel 9 Pro image, API 37):
 
 Neither row is a claim about phone hardware: an emulator's GPU is emulated and
 its scheduler is the host's. Physical-device live capture is unverified.
+
+### Capture behaviour under interference, measured on the same emulator
+
+Four experiments, each against `io.pizzahut.hutbot.debug` on `emulator-5554`,
+because a capture's honesty under interference cannot be argued from code:
+
+| What was done | What happened |
+|---|---|
+| **The app force-stopped between listing and Record** (A17) | Listed as `running` with one process, then `am force-stop`; `mpi record` refused with "no live process ... could be resolved" rather than capturing against a dead pid |
+| **The emulator killed 7 s into a 20 s live capture** (D20) | The session was written, `partial: true`, the reason naming the lost connection, and the 8 counter series collected before the loss kept. The window records 1.84 s -- what was actually measured, not the 20 s requested |
+| **A CPU burner run in its own process throughout a capture** (I06) | 282 samples, **all attributed to exactly one process**; the burner appears nowhere in the app's numbers, and the app's own CPU time came from its own `/proc/<pid>/stat` at 2,790 ms over 11,268 ms |
+| **`adb install -r` of the same APK** (B11) | The install path and `lastUpdateTime` changed while `versionName` and `versionCode` did not -- which is exactly what a developer rebuilding one version produces, and why build identity cannot rest on a version number |
+
+Two of these found defects rather than confirming behaviour. The device-loss
+case reported `partial: false` with no reason: the live loop ignored a tick's
+outcome entirely, so a lost device looked like an app that went quiet. And the
+reinstall case showed the Android build profile carried **no app build
+identity at all** -- two facts about the device and nothing about the app --
+so two captures either side of a reinstall were indistinguishable.
+
+A third experiment is worth recording for what it did *not* show.
+`adb kill-server` mid-capture changes nothing: the client respawns the server
+and reconnects, the ticks keep succeeding, and nothing is marked partial. It
+is not a disconnect, and an earlier attempt to test D20 with it proved
+nothing. Killing the emulator is a disconnect.
+
+And `KEYCODE_SLEEP` on an emulator turns the screen off without suspending the
+shell or the app: through a 6 s screen-off the tick cadence never moved from
+~710 ms and nothing was lost. That exercises a screen-off, not a suspend, so
+D15 stays open.
 
 ### CPU time against wall time, measured on the same emulator
 

@@ -318,6 +318,21 @@ LoadResult load_package(const std::string& package_dir) {
     return v && v->is_string() ? v->as_string() : std::string();
   };
   res.manifest.schema_version = str("schema_version");
+  // One schema version exists today, so there is nothing to migrate *to*.
+  // What matters is that a package from a different one is recognised rather
+  // than read as though its fields meant what this build expects.
+  if (res.manifest.schema_version.empty()) {
+    res.notes.push_back(
+        "this package's manifest states no schema version, so which format "
+        "it was written in is unknown; its fields are read as 2.0");
+  } else if (res.manifest.schema_version != "2.0") {
+    res.notes.push_back(
+        "this package was written against schema version '" +
+        res.manifest.schema_version +
+        "', and this build reads 2.0. There is no migration between them: "
+        "fields may be missing or mean something else, and nothing here has "
+        "been converted");
+  }
   res.manifest.session_id = str("session_id");
   res.manifest.created_at = str("created_at");
   res.manifest.finalized_at = str("finalized_at");

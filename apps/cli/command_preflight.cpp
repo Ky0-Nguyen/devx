@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include "adapters/android/adb_adapter.hpp"
 #include "apps/cli/cli.hpp"
 #include "core/model/build.hpp"
 
@@ -38,6 +39,23 @@ ExitCode cmd_preflight(const Invocation& inv) {
     os.source = model::FactSource::kDeviceProvider;
     os.observed_at = snap.taken_at;
     build.upsert(std::move(os));
+
+    // Which *build* of the app is about to be measured. Two facts about the
+    // device said nothing about that, so two captures either side of a
+    // reinstall were indistinguishable (spec B11).
+    if (!inv.global.app.empty() &&
+        device.platform == model::Platform::kAndroid) {
+      proc::Options build_po;
+      build_po.timeout = std::chrono::milliseconds(inv.global.timeout_ms);
+      build_po.cancel = inv.global.cancel;
+      std::string build_error;
+      if (!android::read_app_build_facts("adb", device.device_id,
+                                         inv.global.app, build_po, build,
+                                         build_error) &&
+          !build_error.empty()) {
+        warn(build_error);
+      }
+    }
   }
   const auto diag_eligibility =
       model::evaluate_eligibility(build, model::MeasurementMode::kDiagnostic);

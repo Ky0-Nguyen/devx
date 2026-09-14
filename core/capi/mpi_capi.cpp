@@ -286,6 +286,22 @@ char* mpi_preflight_json(const char* device_id, const char* app_identifier,
       ++matches;
       target = &a;
     }
+    // Which *build* of the app this is. Without it a preflight says the
+    // package can be profiled and nothing about what would be measured, so
+    // two captures either side of a reinstall are indistinguishable.
+    if (dev != nullptr && matches == 1 && !app.empty() &&
+        dev->platform == model::Platform::kAndroid) {
+      std::string build_error;
+      proc::Options po_build;
+      po_build.timeout = std::chrono::milliseconds(
+          timeout_ms > 0 ? timeout_ms : 15000);
+      po_build.cancel = cancel_registry().token();
+      if (!android::read_app_build_facts("adb", dev->device_id, app, po_build,
+                                         build, build_error) &&
+          !build_error.empty()) {
+        root.set("build_facts_error", json::Value::string(build_error));
+      }
+    }
     root.set("target", (matches == 1 && target != nullptr) ? target->to_json()
                                                            : json::Value::null());
     root.set("target_match_count",
