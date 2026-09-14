@@ -359,9 +359,6 @@ until the window closes.
 
 Still open, and all inherently UI behaviours:
 
-- **A16** selection and keyboard focus preserved across a list refresh. The
-  selected *device* is preserved (and never silently switched); focus is not
-  managed.
 - Suppressions are now a project file both front ends read
   (`suppressions.json` beside the sessions directory), with a mandatory
   reason, an author, an optional reference and an expiry that is honoured.
@@ -383,8 +380,17 @@ Still open, and all inherently UI behaviours:
   different facts. A third state covers having no listing to compare
   against.
 - **I21** responsiveness under the 1 GiB stress fixture.
-- **J12** signing and packaging for distribution. The bundle is ad-hoc signed
-  for local use only.
+- **J12** signing and packaging for distribution. Documented now in
+  `docs/packaging-and-signing.md`: the bundle is ad-hoc signed (`--sign -`,
+  a signature with nobody behind it), which runs where it was built and
+  nowhere else. The five steps a distributable build needs are listed; none
+  has been done, because there is no Developer ID in this environment. The
+  license inventory is empty and that is the state to preserve.
+- **A16** keyboard focus across a list refresh stays unverified, and the
+  reason is worth naming: driving keyboard focus needs macOS Accessibility
+  permission, which this environment does not grant to the automation, so a
+  fix could not be *checked* even if written. Selection is preserved and
+  tested; focus is not claimed.
 - **The timeline exists.** DevX has a Timeline tab over a binned view whose
   bins carry a state rather than a bare number, so an unmeasured stretch
   cannot be drawn as zero: four states, four visual treatments, and the

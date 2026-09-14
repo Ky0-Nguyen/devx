@@ -244,9 +244,10 @@ sdk/, samples/       empty — M3
 ## Documentation
 
 - [Known limitations](docs/known-limitations.md) — what is not true of this build
+- [Packaging, signing and licenses](docs/packaging-and-signing.md) — ad-hoc signed; what shipping would take
 - [Tested capability matrix](docs/capabilities/tested-capability-matrix.md) — measured probe results
 - [iOS toolchain probe record](docs/capabilities/ios-toolchain-probe.md) — the M0 schema validation
-- [Requirement → test map](docs/requirement-test-map.md) — 109/198 checklist items, with reasons for the rest
+- [Requirement → test map](docs/requirement-test-map.md) — 158/198 checklist items, with reasons for the rest
 - [Milestone report](docs/milestone-report.md) — M0/M1 in the format spec §21 asks for
 - [Third-party licenses](THIRD-PARTY-LICENSES.md) — empty, deliberately
 - ADRs: [core](docs/adr/0001-cplusplus-core-and-normalized-model.md) ·
