@@ -52,11 +52,20 @@ wants.
   or profileable package. On anything else the CPU source reports
   `permission_denied` with the manifest change that would fix it. Android's
   restriction is not worked around, per spec section 0.12.
-- `framestats` **drains on read**. The collector resets the history at capture
-  start so the window holds only this capture's frames, and `--no-frame-reset`
-  keeps what the platform already has. This cost real debugging time: an
-  instrumentation read during a capture consumed the frames the collector was
-  about to read, which looked exactly like a collector bug.
+- `framestats` **does not drain on read**. It is a ring buffer of roughly the
+  last 120 frames, returned in full on every read, so consecutive reads
+  overlap heavily. This ADR claimed the opposite until streaming proved
+  otherwise: appending each read's rows wholesale recorded 523 frames across 8
+  ticks where about 120 had actually rendered, a five-fold inflation. Frames
+  are now identified by `IntendedVsync`, which is unique and monotonic per
+  frame, so a read is idempotent. The collector still resets the history at
+  capture start so the window holds only this capture's frames, and
+  `--no-frame-reset` keeps what the platform already has.
+- A ring buffer also means frames can be **lost between reads**: if more than
+  its capacity rendered since the last tick, the oldest are gone. A read that
+  is entirely new rows and full to capacity says exactly that, so the stretch
+  it lost is recorded as a coverage gap -- missing evidence, not an idle app --
+  and the fix is a shorter `--tick-ms`.
 - No scheduling, I/O or network data. Those detectors stay registered and
   skipped rather than being approximated from these sources.
 

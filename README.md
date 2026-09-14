@@ -33,6 +33,7 @@ Three pieces:
 | Ownership evidence + PID-reuse safety | ✅ | ✅ |
 | Capability preflight | ✅ | ✅ |
 | **Live capture** | ✅ verified on emulator (frames, CPU, memory) | ❌ collector not wired up |
+| **Realtime streaming** (open window, updates as they arrive) | ✅ verified on emulator: 62 ticks, frames + memory per tick, CPU in background windows | ❌ needs the collector first |
 | Offline analysis, issues, evidence | ✅ | ✅ |
 | JSON / Markdown reports | ✅ | ✅ |
 | Benchmark comparison engine | ✅ | ✅ |
@@ -95,11 +96,22 @@ Only needed for live discovery, not for offline analysis.
 open build/bin/DevX.app
 
 # or open a specific session straight from the CLI
-open -a "$PWD/build/bin/DevX.app" --args --session <session-id>
+open -a "$PWD/build/bin/DevX.app" --args --session=<session-id>
+
+# or start streaming a live capture on launch
+open -a "$PWD/build/bin/DevX.app" --args \
+  --device=<id> --app=<identifier> --start-live
 ```
 
-Native sidebar over Devices · Apps · Preflight · Record · Sessions · Issues ·
-Detectors. It renders the engine's output and nothing more: the provenance
+Write launch options as `--flag=value`. The space-separated form works too,
+but AppKit pairs arguments differently than DevX does and can be left holding
+a bare one, which it treats as a file to open -- see
+[known limitations §5](docs/known-limitations.md).
+
+Native sidebar over Devices · Apps · **Live** · Preflight · Record · Sessions ·
+Issues · Detectors. The Live tab streams a capture alongside the running app --
+frame and sample counts, memory sparklines per family, per-source status, and a
+preliminary banner over all of it until the window closes. It renders the engine's output and nothing more: the provenance
 banners, the separate detection and cause columns, the severity rationale and
 the detector-execution table are all the model's own fields, so the UI cannot
 present a softer story than the analysis.
@@ -113,6 +125,8 @@ HTTP (127.0.0.1 only, token required per start).
 mpi devices                                    # discover Android + iOS devices
 mpi apps --device <id> --running                # enumerate apps on one device
 mpi preflight --device <id> --app <identifier>  # probe capabilities for a target
+mpi record --device <id> --app <identifier>     # record a capture
+mpi record --live --tick-ms 500                 # stream until Ctrl-C, one line per tick
 mpi analyze <session|trace>                     # analyze and report
 mpi compare <baseline.json> <candidate.json>    # compare two run sets
 mpi rules                                       # describe every detector
@@ -120,7 +134,15 @@ mpi export <session> --format json              # re-export a session
 ```
 
 Add `--json` for machine-readable output, `--ci` to forbid prompting and
-inferred targets.
+inferred targets. An unknown flag is a usage error rather than being ignored:
+a flag that was silently dropped would change what got measured without saying
+so.
+
+`--live` keeps the window open until stopped, printing a line per tick with
+its own cost. Frames and memory arrive on the tick; CPU arrives in background
+windows because `simpleperf` costs about 5.6 s per record-and-symbolise cycle,
+and the intervals between those windows are recorded as coverage gaps, not as
+measured idle time. Without `--live`, `--duration-s` records a fixed window.
 
 ### Exit codes
 
