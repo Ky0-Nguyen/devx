@@ -45,6 +45,10 @@ it with `python3 tools/gen-stress-fixture.py <path>`.
 | `simctl-launchctl-list.real.txt` | real `xcrun simctl spawn <udid> launchctl list` |
 | `adb-devices-l.real.txt` | real `adb devices -l` with **no device connected** -- the header-only case |
 | `adb-version.real.txt`, `xctrace-version.real.txt`, `devicectl-version.real.txt` | real version output |
+| `android-gfxinfo-framestats.real.txt` | real `dumpsys gfxinfo PKG framestats` from a booted Android emulator, 43 frame rows at a platform-reported 60 Hz |
+| `android-simpleperf-report-sample.real.txt` | real `simpleperf report-sample --show-callchain` from the superapp HutBot debug build, including the `meta_info` block that carries `app_type: debuggable` |
+| `android-simpleperf-not-debuggable.real.txt` | real simpleperf refusing a non-debuggable package -- the case the capability contract exists to report honestly |
+| `android-meminfo.real.txt` | real `dumpsys meminfo`, including the swap situation that makes PSS exceed RSS |
 | `android-ps-A.synthetic.txt` | **hand-written.** No Android device was available. Covers a main process, two sub-processes, an isolated process, a shared-uid sibling, a same-name different-uid process, a work-profile instance and an unlisted process. |
 | `android-pm-list-packages-U.synthetic.txt` | **hand-written.** Includes two packages sharing uid 10234. |
 | `android-adb-devices-l.synthetic.txt` | **hand-written.** Authorized, emulator, wireless, unauthorized and offline devices. |

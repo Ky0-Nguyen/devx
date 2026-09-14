@@ -2,13 +2,21 @@
 
 A cross-platform mobile performance profiler with a C++20 analysis core.
 
-Implements **M0 (both-platform feasibility)** and **M1 (C++ core and offline
-analysis)** of `MOBILE_PROFILER_IMPLEMENTATION_SPEC_EN.md` v2.0.
+Implements **M0**, **M1** and the Android half of **M2** of
+`MOBILE_PROFILER_IMPLEMENTATION_SPEC_EN.md` v2.0.
 
-> **Read this first.** Live on-device capture is **not implemented** in this
-> milestone, and no physical device was reachable during development, so the
-> live path is explicitly **unverified**. `mpi record` refuses to fabricate a
-> capture. What works, what does not, and what was measured are in
+Three pieces:
+
+- **`mpi`** — the headless CLI.
+- **`DevX.app`** — the native macOS desktop app (SwiftUI over a C ABI).
+- **`devx-serve`** — the same views over loopback HTTP, for a host without
+  SwiftUI.
+
+> **Read this first.** Android live capture works and is verified against a
+> real emulator. **iOS live capture is not implemented**, and no physical
+> device of either platform was reachable during development, so the
+> physical-device path is explicitly **unverified**. `mpi record` refuses to
+> fabricate a capture. What works, what does not, and what was measured:
 > [`docs/known-limitations.md`](docs/known-limitations.md) and
 > [`docs/capabilities/tested-capability-matrix.md`](docs/capabilities/tested-capability-matrix.md).
 
@@ -24,10 +32,11 @@ analysis)** of `MOBILE_PROFILER_IMPLEMENTATION_SPEC_EN.md` v2.0.
 | Selection by package name / bundle id | ✅ | ✅ |
 | Ownership evidence + PID-reuse safety | ✅ | ✅ |
 | Capability preflight | ✅ | ✅ |
-| Live capture | ❌ M2 | ❌ M2 |
+| **Live capture** | ✅ verified on emulator (frames, CPU, memory) | ❌ collector not wired up |
 | Offline analysis, issues, evidence | ✅ | ✅ |
 | JSON / Markdown reports | ✅ | ✅ |
 | Benchmark comparison engine | ✅ | ✅ |
+| Desktop app (DevX) | ✅ | ✅ |
 
 ✅ exercised against real tooling · ⚙️ implemented and unit-tested, awaiting hardware · ❌ not implemented
 
@@ -47,7 +56,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
 ```
 
-Run the tests (228 cases across 12 binaries):
+Run the tests (264 C++ cases in 14 binaries, plus 49 Swift cases):
 
 ```bash
 cd build && ctest --output-on-failure
@@ -61,8 +70,11 @@ cmake -S . -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=Debug -DMPI_ENABLE_SANITIZE
 cmake --build build-asan && (cd build-asan && ctest --output-on-failure)
 ```
 
-The binary lands at `build/bin/mpi`. Warnings are errors by default
-(`-DMPI_ENABLE_WARNINGS_AS_ERRORS=OFF` to relax).
+Artifacts land in `build/bin/`: `mpi`, `DevX.app`, `devx-serve`. Warnings are
+errors by default (`-DMPI_ENABLE_WARNINGS_AS_ERRORS=OFF` to relax).
+
+The SwiftUI app needs macOS with Swift and the macOS SDK; its build target
+self-skips when either is missing, so the repository still builds elsewhere.
 
 ### Platform prerequisites
 
@@ -76,6 +88,24 @@ Only needed for live discovery, not for offline analysis.
   `ddiServicesAvailable: false` when it has not).
 
 ---
+
+## DevX, the desktop app
+
+```bash
+open build/bin/DevX.app
+
+# or open a specific session straight from the CLI
+open -a "$PWD/build/bin/DevX.app" --args --session <session-id>
+```
+
+Native sidebar over Devices · Apps · Preflight · Record · Sessions · Issues ·
+Detectors. It renders the engine's output and nothing more: the provenance
+banners, the separate detection and cause columns, the severity rationale and
+the detector-execution table are all the model's own fields, so the UI cannot
+present a softer story than the analysis.
+
+On a host without SwiftUI, `devx-serve` serves the same views over loopback
+HTTP (127.0.0.1 only, token required per start).
 
 ## Use
 
@@ -134,6 +164,9 @@ Every fixture is labelled `synthetic` and every report says so at the top.
 
 ```
 apps/cli/            the `mpi` command-line interface
+apps/devx-mac/       DevX.app -- native SwiftUI desktop app
+apps/devx-serve/     the same views over loopback HTTP
+core/capi/           C ABI the SwiftUI app is built on
 core/
   model/             normalized trace, identity, capability, build, issue contracts
   discovery/         provider interface + reconciliation across adapters
@@ -141,9 +174,9 @@ core/
   symbols/           source maps, R8 mappings, path-traversal defence
   rules/             detector contract, registry, DET-01/02/04/12, deferred detectors
   report/            JSON and Markdown writers
-  session/           session package on disk, comparison engine
+  session/           session package on disk, collector contract, comparison
   util/              JSON, process execution, cancellation, time
-adapters/android/    adb adapter
+adapters/android/    adb adapter + live capture collector
 adapters/ios/        devicectl / simctl / xctrace adapter
 fixtures/
   traces/            labelled synthetic traces (positive, negative, incomplete, malformed)
@@ -166,8 +199,10 @@ sdk/, samples/       empty — M3
 - ADRs: [core](docs/adr/0001-cplusplus-core-and-normalized-model.md) ·
   [no deps](docs/adr/0002-zero-third-party-dependencies.md) ·
   [no shell](docs/adr/0003-no-shell-argv-only-process-execution.md) ·
-  [UI deferral](docs/adr/0004-defer-the-desktop-ui-and-fix-the-seam.md) ·
-  [honesty by types](docs/adr/0005-conservative-by-construction-model.md)
+  [UI seam](docs/adr/0004-defer-the-desktop-ui-and-fix-the-seam.md) ·
+  [honesty by types](docs/adr/0005-conservative-by-construction-model.md) ·
+  [Android text sources](docs/adr/0006-android-text-sources-not-perfetto.md) ·
+  [DevX in SwiftUI](docs/adr/0007-devx-is-a-native-swiftui-app.md)
 
 ## How to read a report
 

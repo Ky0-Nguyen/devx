@@ -302,3 +302,40 @@ MPI_TEST(adapter_refuses_to_enumerate_an_unauthorized_device, {"A02"}) {
   MPI_CHECK_MSG(failed, "this is an enumeration failure, not an empty device");
   MPI_CHECK(!errors.empty());
 }
+
+MPI_TEST(probe_never_claims_physical_verification_from_an_emulator, {"J18", "C20"}) {
+  // The whole point of the tested-state field is that it cannot over-claim.
+  // A capability exercised against an emulator must say so: an emulator's
+  // behaviour is not evidence about physical hardware.
+  AdbAdapter adapter;
+  model::CapabilityMatrix m;
+  discovery::ProviderOptions opts;
+  opts.command_timeout_ms = 30000;
+  adapter.probe(m, opts);
+
+  std::vector<std::string> errors;
+  const auto devices = adapter.list_devices(opts, errors);
+  bool any_physical = false;
+  bool any_emulator = false;
+  for (const auto& d : devices) {
+    if (!d.usable_for_capture()) continue;
+    if (d.form == model::DeviceForm::kPhysical) any_physical = true;
+    if (d.form == model::DeviceForm::kEmulator) any_emulator = true;
+  }
+  if (!any_emulator || any_physical) {
+    std::cout << "       (no emulator-only Android setup here: not verified)\n";
+    return;
+  }
+
+  for (const char* id : {"android.discovery.devices",
+                         "android.discovery.installed_apps",
+                         "android.discovery.running_processes",
+                         "android.discovery.process_mapping"}) {
+    const auto* c = m.find(id);
+    MPI_CHECK_MSG(c != nullptr, std::string("missing capability ") + id);
+    MPI_CHECK_MSG(c->tested != model::TestedState::kVerifiedOnPhysicalDevice,
+                  std::string(id) +
+                      " claims physical verification from an emulator-only "
+                      "probe");
+  }
+}

@@ -1,0 +1,7 @@
+// Exposes the C ABI to Swift as the `MPICore` module. A modulemap rather than
+// a bridging header, because a bridging header is an app-target concept and
+// this is built with swiftc directly.
+module MPICore {
+  header "mpi_capi.h"
+  export *
+}

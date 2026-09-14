@@ -23,7 +23,18 @@ These are required to build but no part of them ends up in the binary:
 | CMake >= 3.24 | build configuration | BSD-3-Clause |
 | Ninja (optional) | build execution | Apache-2.0 |
 | Apple Clang / libc++ | compiler and standard library | Apple/LLVM (Apache-2.0 with LLVM exceptions) |
+| Swift 6.3 compiler | builds DevX.app | Apache-2.0 with Runtime Library Exception |
 | Python 3 (optional) | fixture and documentation generation in `tools/` | PSF |
+
+## Apple frameworks linked by DevX.app (platform frameworks, not redistributed)
+
+DevX links SwiftUI and AppKit. These are macOS system frameworks: they are not
+bundled, not redistributed, and are covered by the OS licence on the machine
+that runs the app -- the same relationship as linking libc. They do not make
+this a third-party dependency in the sense the table above tracks.
+
+The bundle is **ad-hoc signed** for local use. Distributing it needs a real
+Developer ID identity and notarisation; that is checklist item J12 and is open.
 
 ## Platform tools invoked at runtime (not redistributed)
 
