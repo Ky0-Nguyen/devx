@@ -8,7 +8,24 @@ import Foundation
 var failures: [String] = []
 var passed = 0
 
-func check(_ condition: Bool, _ label: String, _ detail: String = "") {
+/// Whether we were asked to list what these checks cover rather than run them.
+///
+/// The C++ harness has the same mode, and `tools/gen-requirement-map.py` reads
+/// both: a UI behaviour that is tested here belongs in the requirement map, and
+/// leaving the Swift side out of the map made those items read as untested.
+let listingRequirements = CommandLine.arguments.contains("--list-requirements")
+
+/// One check, optionally declaring the specification checklist ids it covers.
+///
+/// `req` is empty for the many checks that pin an internal invariant rather
+/// than a checklist item -- tagging everything would make the map claim
+/// coverage it does not have.
+func check(_ condition: Bool, _ label: String, _ detail: String = "",
+           req: [String] = []) {
+    if listingRequirements {
+        for r in req { print("\(r)\t\(label)") }
+        return
+    }
     if condition {
         passed += 1
         print("  ok   \(label)")
@@ -180,7 +197,8 @@ do {
     // Even if a value were present, these two states must not draw it: the
     // state is the authority, not the presence of a number.
     check(barFraction(state: .unmeasured, value: 9, scale: 10) == 0,
-          "an unmeasured bin stays flat even with a value attached")
+          "an unmeasured bin stays flat even with a value attached",
+          req: ["H01"])
     check(barFraction(state: .noReading, value: 9, scale: 10) == 0,
           "an unsampled bin stays flat even with a value attached")
 
@@ -209,7 +227,8 @@ do {
     check(BinState("unmeasured") == .unmeasured, "unmeasured maps")
     check(BinState("") == .unmeasured, "an empty state claims nothing")
     check(BinState("whatever_comes_next") == .unmeasured,
-          "an unrecognised state claims nothing rather than guessing")
+          "an unrecognised state claims nothing rather than guessing",
+          req: ["H01", "H11"])
     check(BinState.allCases.count == 4, "four states, all in the legend")
     // Every state has to be nameable in the legend, or the reader meets a
     // pattern with no explanation.
@@ -295,7 +314,7 @@ do {
           "no significant change is neutral")
     // The one that matters: inconclusive must never be toned as a pass.
     check(CompareWording.tone("inconclusive") == .caution,
-          "inconclusive is a caution, never a pass")
+          "inconclusive is a caution, never a pass", req: ["I02", "H11"])
     check(CompareWording.tone("") == .caution,
           "an unknown verdict is a caution, never a pass")
     check(CompareWording.tone("something_new") == .caution,
@@ -304,7 +323,8 @@ do {
     // And it must say, in words, that it is not "no change".
     let inc = CompareWording.plainly("inconclusive")
     check(inc.contains("not 'no change'"),
-          "inconclusive says it is not 'no change': got \(inc)")
+          "inconclusive says it is not 'no change': got \(inc)",
+          req: ["I02", "H11"])
     let same = CompareWording.plainly("no_significant_change")
     check(same.contains("not proof"),
           "no-significant-change does not claim equivalence: got \(same)")
@@ -372,7 +392,8 @@ do {
     check(!f.isActive, "a blank filter is not active")
     var r = f.apply(issues)
     check(r.shown.count == 3, "got \(r.shown.count)")
-    check(r.hidden == 1, "the suppressed issue is counted as hidden")
+    check(r.hidden == 1, "the suppressed issue is counted as hidden",
+          req: ["H14", "A25"])
 
     f.includeSuppressed = true
     r = f.apply(issues)
@@ -395,7 +416,8 @@ do {
     r = f.apply(issues)
     check(r.shown.count == 1, "got \(r.shown.count)")
     check(r.shown.first?["issue_id"].text == "a",
-          "an issue with no screen does not match a screen filter")
+          "an issue with no screen does not match a screen filter",
+          req: ["A25", "H01"])
 
     // Dimensions compose, and a combination matching nothing yields an empty
     // list with every issue counted as hidden -- which is what lets the view
@@ -428,7 +450,7 @@ do {
     check(screens == ["Feed"], "a blank value is not an option: got \(screens)")
     check(IssueFilter.options("thread_instance_id", in: issues).isEmpty,
           "a field nothing records offers no options, so a filter cannot be "
-          + "set to something that matches nothing")
+          + "set to something that matches nothing", req: ["A25"])
 }
 
 
@@ -477,7 +499,8 @@ do {
     let favourites = r.entries.filter { $0.favourite }
     check(favourites.count == 1,
           "the favourite survived 40 later targets: someone marked it on "
-          + "purpose and dropping it would look like it was never marked")
+          + "purpose and dropping it would look like it was never marked",
+          req: ["A23"])
     check(r.entries.count <= RecentTargets.recentLimit + favourites.count,
           "non-favourites are capped: got \(r.entries.count)")
     check(r.ordered.first?.favourite == true, "favourites sort first")
@@ -500,18 +523,20 @@ do {
     // Absent from the listing is NOT "not running".
     let absent = presence(of: target, identifiers: ["io.other"],
                           didEnumerate: true)
-    check(absent == .notInListing, "an app not enumerated is not in the listing")
+    check(absent == .notInListing, "an app not enumerated is not in the listing",
+          req: ["A23"])
     check(absent.label.contains("not in the current listing"),
           "labelled as absent from the listing: got \(absent.label)")
     check(!absent.label.contains("not running"),
           "never labelled 'not running': a listing that could not see an app "
-          + "and an app that is gone are different facts")
+          + "and an app that is gone are different facts", req: ["A23", "H01"])
     check(absent.detail.contains("not the same as not running"),
           "and the detail says so outright")
 
     // No enumeration at all is a third state.
     let unknown = presence(of: target, identifiers: [], didEnumerate: false)
-    check(unknown == .noListing, "no enumeration means nothing can be said")
+    check(unknown == .noListing, "no enumeration means nothing can be said",
+          req: ["A23"])
     check(unknown.detail.contains("says nothing about the device now"),
           "and it says that")
 
@@ -555,5 +580,6 @@ do {
     check(empty.entries.isEmpty, "an incomplete target is not remembered")
 }
 
+if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

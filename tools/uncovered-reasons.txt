@@ -1,14 +1,13 @@
 # Checklist items from specification section 18 with no automated test yet,
-# and why. Consumed by tools/gen-requirement-map.py.
 # Format: <checklist-id>\t<reason>
+# and why. Consumed by tools/gen-requirement-map.py.
 A07	needs a real device and a measured refresh-interval budget (M2)
 A09	iOS exposes no suspended signal; the negative guarantee is tested, the positive path needs Android hardware
 A10	partial scope is asserted via iOS launchd-only entries; a dedicated Android case needs hardware
 A14	duplicate display names need a device with two such apps installed
 A16	selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested
 A17	needs a live app that exits between listing and record (M2)
-A23	favourites/recents is a UI concept (M2)
-A25	large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested
+A25	filtering is tested (a filter never means 'match nothing', and an unavailable entry is kept); rendering 265 apps is measured, nothing larger has been tried
 B01	multi-process grouping needs an Android device with a multi-process app
 B05	secondary-service inclusion needs Android hardware
 B11	reinstall revalidation needs a device and an install cycle
@@ -39,7 +38,6 @@ E08	needs a real React Native capture
 E09	GPU evidence is not collected (M5)
 E10	runnable-vs-running needs a scheduling provider (M5)
 E11	CPU-time vs wall-time needs a CPU-time counter (M2)
-E16	DET-02 sums siblings only and says so; a nested fixture would strengthen this
 E17	external contention needs a device
 E18	recorder overhead needs paired controlled runs (M4)
 E19	DET-01 groups by surface; a multi-surface real capture would confirm
@@ -48,7 +46,6 @@ F07	allocation volume versus retained size needs a heap provider (DET-06)
 F09	shared-page accounting across processes needs a multi-process app on hardware
 F10	owned buffer allocations need a graphics/allocator provider
 F12	in-process tooling stays in the process total by construction; a real capture would confirm
-F13	ambiguous overhead is kept unknown and IS tested via the name-only match case
 F15	endpoint/library ambiguity needs more attribution rules
 F16	memory-pressure kill needs hardware
 G02	the Hermes reader refuses unexpected shapes; a versioned corpus is M3
@@ -57,7 +54,7 @@ G04	JS reload needs a live RN app (M3)
 G05	Fast Refresh needs a live RN app (M3)
 G06	multiple runtimes needs a live RN app (M3)
 G09	the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them
-G12	Expo prerequisites are documentation (M3)
+G12	Expo's prerequisite is documented in samples/react-native/README.md: this SDK needs no native module, so it loads in Expo Go, and a native SDK would need a development build
 G13	the architecture matrix needs RN builds (M3)
 G15	OTA/native pairing needs a build pipeline (M3)
 H08	occurrence_count is implemented; a cross-session duplicate fixture would strengthen it
@@ -70,7 +67,7 @@ I21	UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured
 J08	delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated
 J09	there is no AI layer, so the core trivially works without one
 J10	there is no AI layer yet; trace text is never executed
-J12	desktop signing and packaging need the desktop app (M2)
+J12	signing, packaging and the (empty) license inventory are documentation, in docs/packaging-and-signing.md; no test binary can assert a Developer ID this environment does not have
 J13	session migration needs more than one schema version
 J14	REAL Android app discovery and live capture: NOT VERIFIED, no Android device was reachable
 J15	REAL iOS live capture: NOT VERIFIED on a physical device, verified on a simulator only
