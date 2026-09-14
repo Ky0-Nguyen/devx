@@ -82,6 +82,27 @@ bool LiveSession::start(std::shared_ptr<Collector> collector,
                         const model::DeviceRef& device,
                         std::vector<model::ProcessInstance> processes,
                         CaptureConfig config, model::NormalizedTrace seed) {
+  {
+    // A capture already in flight is not replaced. `stop()` used to run
+    // unconditionally here, so a second start silently ended the first: the
+    // operator lost a capture they were making, and the collector's
+    // device-side state -- a running sampler, an open trace buffer -- was
+    // torn down without anyone asking. Two collectors against one target is
+    // the conflict spec D21 asks to detect, so it is detected.
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (snapshot_.state == LiveState::kRunning ||
+        snapshot_.state == LiveState::kStarting) {
+      // The note goes on the *running* session's snapshot, so the refusal is
+      // visible where the operator is looking, and that snapshot is
+      // otherwise left exactly as it was.
+      snapshot_.notes.push_back(
+          "a second capture was requested and refused: this one is still "
+          "running. Stop it first -- two collectors against one target would "
+          "interleave their results into one trace.");
+      return false;
+    }
+  }
+  // Only a session that has finished, failed or never run is reset.
   stop();
 
   std::lock_guard<std::mutex> lock(mutex_);

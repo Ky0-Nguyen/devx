@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 
 #include <sstream>
@@ -622,4 +624,57 @@ MPI_TEST(a_warm_up_run_is_marked_as_one, {"I16"}) {
   MPI_CHECK_EQ(set.runs.size(), std::size_t{1});
   if (set.runs.empty()) return;
   MPI_CHECK(set.runs.front().warm_up);
+}
+
+MPI_TEST(a_percentile_is_never_reported_from_too_few_runs, {"I18"}) {
+  // The comparison engine reports a median and an interquartile spread and
+  // no percentile at all. That is the point: a p95 over six runs is the
+  // highest of six numbers wearing a statistic's name, and a reader who sees
+  // "p95" believes something about the tail that six runs cannot support.
+  // Asserted by absence, because absence is the guarantee.
+  const auto baseline = make_set("baseline", {400, 401, 402, 403, 404, 405});
+  const auto candidate = make_set("candidate", {500, 501, 502, 503, 504, 505});
+  const auto result = compare(baseline, candidate, default_thresholds());
+  const std::string text = result.to_json().dump();
+  MPI_CHECK_MSG(text.find("p95") == std::string::npos,
+                "no p95 anywhere in the comparison document");
+  MPI_CHECK_MSG(text.find("p99") == std::string::npos, "nor a p99");
+  MPI_CHECK_MSG(text.find("percentile") == std::string::npos,
+                "nor the word percentile");
+  // What it does report, and under a name that says which spread it is.
+  MPI_CHECK(text.find("median") != std::string::npos);
+  MPI_CHECK(text.find("spread_iqr") != std::string::npos);
+}
+
+MPI_TEST(a_duration_is_never_derived_from_the_wall_clock, {"D14"}) {
+  // A timezone or wall-clock change must not alter a measured duration. The
+  // guarantee is structural rather than tested by moving the host's clock: a
+  // duration is the difference of two monotonic device timestamps, and the
+  // wall clock appears in the model only as an ISO-8601 instant that nothing
+  // subtracts. This asserts the structure -- that a comparison's numbers come
+  // from the values it was given and nothing else.
+  const auto baseline =
+      make_set("baseline", {1000, 1000, 1000, 1000, 1000, 1000});
+  const auto candidate =
+      make_set("candidate", {1000, 1000, 1000, 1000, 1000, 1000});
+  const auto first = compare(baseline, candidate, default_thresholds());
+  // Re-run with the host's timezone changed underneath it.
+  const char* previous = std::getenv("TZ");
+  setenv("TZ", "Pacific/Kiritimati", 1);
+  tzset();
+  const auto second = compare(baseline, candidate, default_thresholds());
+  if (previous != nullptr) {
+    setenv("TZ", previous, 1);
+  } else {
+    unsetenv("TZ");
+  }
+  tzset();
+
+  MPI_CHECK_EQ(first.metrics.size(), second.metrics.size());
+  if (first.metrics.empty() || second.metrics.empty()) return;
+  MPI_CHECK_EQ(first.metrics.front().baseline_median.value_or(-1.0),
+               second.metrics.front().baseline_median.value_or(-2.0));
+  MPI_CHECK_EQ(first.metrics.front().absolute_delta.value_or(-1.0),
+               second.metrics.front().absolute_delta.value_or(-2.0));
+  MPI_CHECK(first.overall == second.overall);
 }

@@ -457,13 +457,24 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**145 of 198** checklist items have at least one automated test
-(407 test cases in 18 binaries, plus 148 Swift). The remaining 53 are enumerated with a stated
+**157 of 198** checklist items have at least one automated test
+(420 test cases in 19 binaries, plus 166 Swift). The remaining 41 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
 A checklist item having a test is not the same as the capability being verified
 on hardware. The capability matrix is the authority on that.
+
+Twelve items moved from uncovered to covered without any new capability being
+built, because their stated reason had gone stale: six said "needs a
+collector (M2)" when the collector had existed for some time. What they
+actually needed was a collector to *drive*, not a device -- so they are
+driven against a fake one, which is a test double rather than synthetic data
+dressed up as a measurement. One of them found a real defect: `LiveSession`
+silently stopped a running capture when a second `start()` arrived, losing
+the capture in flight and tearing down the device-side collectors without
+anyone asking. A second capture is refused now, with the refusal noted on the
+running session's own snapshot where the operator is looking.
 
 ---
 
