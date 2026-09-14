@@ -47,6 +47,14 @@ char* mpi_sessions_json(const char* sessions_dir);
 /* One session's stored report, plus its checksum verification result. */
 char* mpi_session_json(const char* sessions_dir, const char* session_id);
 
+/* One session's binned timeline: `bin_count` bins per track, each carrying a
+ * state and a nullable value. A bin's `value` is null whenever its `state` is
+ * not "measured" or "partial"; a caller that renders null as zero is drawing
+ * a measurement that was never taken. Bounded by `bin_count`, not by the
+ * capture's size. */
+char* mpi_session_timeline_json(const char* sessions_dir,
+                                const char* session_id, int bin_count);
+
 /* Runs a live capture. Blocks for `duration_s`. The result carries a
  * per-source status array whether or not a session was written; a capture
  * that measured nothing is reported, not saved. */

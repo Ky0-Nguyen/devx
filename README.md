@@ -38,6 +38,7 @@ Three pieces:
 | JSON / Markdown reports | ✅ | ✅ |
 | Benchmark comparison engine | ✅ | ✅ |
 | Desktop app (DevX) | ✅ | ✅ |
+| Timeline view (states, not bare numbers) | ✅ | ✅ |
 
 ✅ exercised against real tooling · ⚙️ implemented and unit-tested, awaiting hardware · ❌ not implemented
 
@@ -57,7 +58,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
 ```
 
-Run the tests (355 C++ cases in 16 binaries, plus 61 Swift cases):
+Run the tests (377 C++ cases in 17 binaries, plus 104 Swift cases):
 
 ```bash
 cd build && ctest --output-on-failure
@@ -224,6 +225,7 @@ core/
   rules/             detector contract, registry, DET-01..05 and 07..12; DET-06 deferred
   report/            JSON and Markdown writers
   session/           session package on disk, collector contract, comparison
+  timeline/          binned tracks whose bins carry a state, not a bare number
   util/              JSON, process execution, cancellation, time
 adapters/android/    adb adapter, live capture collector, atrace/ftrace parser
 adapters/ios/        devicectl / simctl / xctrace adapter

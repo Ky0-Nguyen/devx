@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 139 of 198 checklist items have at
-least one automated test.** The remaining 59 are listed below with a stated
+**Coverage of specification section 18: 143 of 198 checklist items have at
+least one automated test.** The remaining 55 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (139 items, 453 test-case links)
+## Covered (143 items, 485 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -151,6 +151,7 @@ Two cautions on reading this:
 | C18 | `test_json` | `json_null_is_distinct_from_absent` |
 | C18 | `test_report` | `unknown_values_are_shown_as_unknown_not_omitted` |
 | C18 | `test_symbols` | `absent_expected_bundle_id_downgrades_to_partial` |
+| C18 | `test_timeline` | `js_tasks_on_an_unmapped_clock_are_not_placed` |
 | C18 | `test_xml` | `xml_absent_attribute_differs_from_an_empty_one` |
 | C19 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
 | C19 | `test_compare` | `ineligible_side_blocks_certification` |
@@ -169,21 +170,32 @@ Two cautions on reading this:
 | D08 | `test_ingestion` | `rejects_malformed_traces_without_crashing` |
 | D08 | `test_json` | `json_rejects_malformed` |
 | D08 | `test_json` | `stream_parser_reports_malformed_input` |
+| D08 | `test_timeline` | `a_capture_with_no_window_yields_no_axis` |
+| D08 | `test_timeline` | `a_gap_makes_its_bin_partial_and_says_how_much` |
+| D08 | `test_timeline` | `an_uncovered_bin_has_no_value_at_all` |
+| D08 | `test_timeline` | `the_last_bin_stops_at_the_window` |
+| D08 | `test_timeline` | `the_peak_ignores_partial_bins` |
 | D09 | `test_ingestion` | `derived_coverage_detects_late_start_and_early_stop` |
 | D09 | `test_ingestion` | `normalize_turns_provider_drops_into_visible_notes` |
 | D09 | `test_report` | `coverage_gaps_are_reported_with_their_semantics` |
+| D09 | `test_timeline` | `a_gap_makes_its_bin_partial_and_says_how_much` |
 | D09 | `test_trace_model` | `coverage_clamps_gaps_to_the_window` |
 | D09 | `test_trace_model` | `coverage_gap_is_not_measured_zero` |
 | D10 | `test_ingestion` | `normalize_flags_duplicates_without_deleting_them` |
 | D10 | `test_ingestion` | `normalize_records_out_of_order_before_sorting` |
+| D10 | `test_timeline` | `a_reading_at_the_windows_last_instant_is_inside_it` |
+| D10 | `test_timeline` | `an_event_outside_the_window_is_counted_as_unplaced` |
 | D11 | `test_ingestion` | `chrome_reader_derives_js_tasks_only_from_complete_spans` |
 | D11 | `test_ingestion` | `chrome_reader_pairs_spans_and_flags_unpaired` |
 | D11 | `test_rules` | `det01_excludes_unjudgeable_frames_from_the_denominator` |
 | D11 | `test_rules` | `det02_ignores_spans_with_no_duration` |
+| D11 | `test_timeline` | `only_a_judgeable_frame_counts_as_missed` |
 | D11 | `test_trace_model` | `frame_without_presentation_cannot_be_judged` |
 | D12 | `test_ingestion` | `chrome_reader_refuses_to_claim_a_clock_base` |
 | D12 | `test_ingestion` | `normalize_flags_unmappable_clock_domains` |
 | D12 | `test_ingestion` | `unmeasured_clock_mapping_is_flagged_at_read_time` |
+| D12 | `test_timeline` | `a_measured_mapping_places_them` |
+| D12 | `test_timeline` | `js_tasks_on_an_unmapped_clock_are_not_placed` |
 | D12 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
 | D13 | `test_android_parsers` | `atrace_timestamps_keep_their_precision` |
 | D16 | `test_android_collector` | `framestats_handles_empty_and_headerless_blocks` |
@@ -192,6 +204,7 @@ Two cautions on reading this:
 | D16 | `test_ingestion` | `empty_capture_reads_but_produces_no_data` |
 | D16 | `test_ios_parsers` | `launchctl_parser_handles_empty_and_header_only_input` |
 | D16 | `test_json` | `stream_parser_handles_empty_arrays_and_objects` |
+| D16 | `test_timeline` | `a_counter_bin_holds_a_reading_not_a_sum` |
 | D17 | `test_process` | `process_times_out_and_says_so` |
 | D18 | `test_android_collector` | `displayed_log_reads_each_unit_rather_than_assuming_a_shape` |
 | D18 | `test_android_collector` | `framestats_reads_the_header_rather_than_fixed_columns` |
@@ -229,6 +242,8 @@ Two cautions on reading this:
 | E10 | `test_android_collector` | `atrace_mapping_keeps_states_apart_and_only_calls_iowait_io` |
 | E10 | `test_android_parsers` | `atrace_distinguishes_blocked_from_merely_preempted` |
 | E10 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
+| E10 | `test_timeline` | `a_covered_empty_bin_is_a_measured_zero` |
+| E10 | `test_timeline` | `an_interval_is_spread_not_spiked` |
 | E12 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | E12 | `test_trace_model` | `cpu_percentage_declares_its_normalization` |
 | E13 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
@@ -253,6 +268,7 @@ Two cautions on reading this:
 | E21 | `test_rules` | `det01_excludes_unjudgeable_frames_from_the_denominator` |
 | E21 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | E21 | `test_rules` | `det01_proxy_source_downgrades_to_suspected` |
+| E21 | `test_timeline` | `only_a_judgeable_frame_counts_as_missed` |
 | E21 | `test_trace_model` | `frame_without_presentation_cannot_be_judged` |
 | E21 | `test_trace_model` | `proxy_frame_source_is_not_presentation_truth` |
 | E22 | `test_compare` | `cross_platform_pair_cannot_gate` |
@@ -262,6 +278,10 @@ Two cautions on reading this:
 | F03 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
 | F04 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
 | F05 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
+| F07 | `test_timeline` | `a_counter_bin_holds_a_reading_not_a_sum` |
+| F07 | `test_timeline` | `a_covered_bin_without_a_sample_is_not_a_zero` |
+| F07 | `test_timeline` | `a_reading_at_the_windows_last_instant_is_inside_it` |
+| F07 | `test_timeline` | `memory_families_stay_separate_tracks` |
 | F08 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | F08 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
 | F08 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
@@ -273,6 +293,7 @@ Two cautions on reading this:
 | F14 | `test_rules` | `det12_forbids_release_estimation_by_subtraction` |
 | F14 | `test_rules` | `diagnostic_session_never_reports_a_certified_benchmark` |
 | F14 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
+| F16 | `test_timeline` | `json_writes_an_unmeasured_bin_as_null` |
 | F17 | `test_report` | `inclusive_stacks_are_labelled_in_the_markdown` |
 | F17 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | F17 | `test_trace_model` | `inclusive_share_is_not_summable_as_disjoint_cost` |
@@ -305,6 +326,13 @@ Two cautions on reading this:
 | H01 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
+| H01 | `test_timeline` | `a_capture_with_no_window_yields_no_axis` |
+| H01 | `test_timeline` | `a_covered_bin_without_a_sample_is_not_a_zero` |
+| H01 | `test_timeline` | `a_covered_empty_bin_is_a_measured_zero` |
+| H01 | `test_timeline` | `a_real_interval_is_never_widened` |
+| H01 | `test_timeline` | `an_instant_issue_band_is_widened_and_says_so` |
+| H01 | `test_timeline` | `an_uncovered_bin_has_no_value_at_all` |
+| H01 | `test_timeline` | `json_writes_an_unmeasured_bin_as_null` |
 | H02 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
 | H02 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
 | H03 | `test_rules` | `det01_proxy_source_downgrades_to_suspected` |
@@ -338,6 +366,7 @@ Two cautions on reading this:
 | H11 | `test_rules` | `every_catalog_detector_is_registered` |
 | H11 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
 | H11 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
+| H11 | `test_timeline` | `a_collector_that_never_reported_coverage_measures_nothing` |
 | H11 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
 | H12 | `test_devx_http` | `request_param_lookup` |
 | H12 | `test_devx_http` | `response_error_is_machine_readable` |
@@ -348,6 +377,7 @@ Two cautions on reading this:
 | H12 | `test_report` | `comparison_report_renders_in_both_formats` |
 | H12 | `test_report` | `json_report_is_valid_and_carries_the_schema_version` |
 | H12 | `test_report` | `markdown_and_json_agree_on_issue_count` |
+| H14 | `test_timeline` | `a_suppressed_issue_is_not_drawn` |
 | H15 | `test_ingestion` | `mark_synthetic_option_forces_the_label` |
 | H15 | `test_ingestion` | `reads_native_trace_and_keeps_synthetic_label` |
 | H15 | `test_report` | `synthetic_data_is_announced_in_both_formats` |
@@ -390,6 +420,7 @@ Two cautions on reading this:
 | I19 | `test_compare` | `cross_platform_pair_cannot_gate` |
 | I19 | `test_compare` | `det08_refuses_a_cross_platform_pair` |
 | I19 | `test_compare` | `unknown_platform_blocks_equivalence` |
+| I21 | `test_timeline` | `the_bin_count_does_not_follow_the_capture_size` |
 | J01 | `test_devx_http` | `html_escape_neutralises_markup` |
 | J01 | `test_json` | `json_escapes_on_output` |
 | J01 | `test_report` | `hostile_identifiers_cannot_break_the_markdown_table` |
@@ -444,6 +475,7 @@ Two cautions on reading this:
 | J11 | `test_json` | `json_accessors_do_not_throw_on_type_mismatch` |
 | J11 | `test_process` | `process_honours_cancellation` |
 | J11 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
+| J11 | `test_timeline` | `cancellation_stops_the_build` |
 | J14 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
 | J14 | `test_android_collector` | `det03_leaves_a_background_threads_io_in_the_background` |
 | J14 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
@@ -584,7 +616,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (59)
+## Not yet covered (55)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -620,13 +652,11 @@ Two cautions on reading this:
 | E18 | recorder overhead needs paired controlled runs (M4) |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
 | F06 | image and GPU allocation accounting has no provider on either platform |
-| F07 | allocation volume versus retained size needs a heap provider (DET-06) |
 | F09 | shared-page accounting across processes needs a multi-process app on hardware |
 | F10 | owned buffer allocations need a graphics/allocator provider |
 | F12 | in-process tooling stays in the process total by construction; a real capture would confirm |
 | F13 | ambiguous overhead is kept unknown and IS tested via the name-only match case |
 | F15 | endpoint/library ambiguity needs more attribution rules |
-| F16 | memory-pressure kill needs hardware |
 | G02 | the Hermes reader refuses unexpected shapes; a versioned corpus is M3 |
 | G03 | non-Hermes runtime needs such a build (M3) |
 | G05 | Fast Refresh needs a live RN app (M3) |
@@ -635,11 +665,9 @@ Two cautions on reading this:
 | G12 | Expo prerequisites are documentation (M3) |
 | G13 | the architecture matrix needs RN builds (M3) |
 | H13 | offline reopen is implemented in session_store; end-to-end needs record (M2) |
-| H14 | missing source does not block rendering; asserted indirectly |
 | I06 | background workload needs a device |
 | I18 | the code reports median and IQR only and never a p95; a dedicated absence test would assert it |
 | I20 | overhead measurement needs paired controlled runs on hardware (M4) |
-| I21 | UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured |
 | J08 | delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated |
 | J09 | there is no AI layer, so the core trivially works without one |
 | J10 | there is no AI layer yet; trace text is never executed |
@@ -650,7 +678,7 @@ Two cautions on reading this:
 
 ## Totals
 
-- test binaries: 16
-- test cases declaring at least one id: 355
-- checklist-item links: 453
-- section-18 coverage: 139/198 (70%)
+- test binaries: 17
+- test cases declaring at least one id: 377
+- checklist-item links: 485
+- section-18 coverage: 143/198 (72%)

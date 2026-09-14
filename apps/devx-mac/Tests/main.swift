@@ -164,5 +164,124 @@ do {
 }
 
 print("")
+
+// --- the timeline's pure layer ----------------------------------------------
+// A chart has to produce a number for every pixel, and absence has none. These
+// pin the two places that pressure shows up: turning a bin into a height, and
+// naming a state.
+do {
+    // The rule: a bin with no number produces no height, whatever is in
+    // `value`. Reading `value` first and defaulting to 0 would draw a capture
+    // full of confident zeroes.
+    check(barFraction(state: .unmeasured, value: nil, scale: 10) == 0,
+          "an unmeasured bin has no height")
+    check(barFraction(state: .noReading, value: nil, scale: 10) == 0,
+          "an unsampled bin has no height")
+    // Even if a value were present, these two states must not draw it: the
+    // state is the authority, not the presence of a number.
+    check(barFraction(state: .unmeasured, value: 9, scale: 10) == 0,
+          "an unmeasured bin stays flat even with a value attached")
+    check(barFraction(state: .noReading, value: 9, scale: 10) == 0,
+          "an unsampled bin stays flat even with a value attached")
+
+    check(barFraction(state: .measured, value: 0, scale: 10) == 0,
+          "a measured zero is zero height -- the view gives it a 1pt floor")
+    check(barFraction(state: .measured, value: 5, scale: 10) == 0.5,
+          "a measured value scales against the peak")
+    check(barFraction(state: .partial, value: 10, scale: 10) == 1,
+          "a partial bin still draws the number it has")
+    // A value above the scale cannot overflow the lane.
+    check(barFraction(state: .measured, value: 99, scale: 10) == 1,
+          "a bar is clamped to the lane")
+    // No peak means nothing to scale against, and no invented height.
+    check(barFraction(state: .measured, value: 5, scale: 0) == 0,
+          "with no measured peak there is no scale, so no bar")
+    check(barFraction(state: .measured, value: nil, scale: 10) == 0,
+          "a measured bin with no value still draws nothing")
+}
+
+do {
+    // The state names come off the wire, so an unknown one must fail safe:
+    // "unmeasured" claims nothing, any other default would claim something.
+    check(BinState("measured") == .measured, "measured maps")
+    check(BinState("no_reading") == .noReading, "no_reading maps")
+    check(BinState("partial") == .partial, "partial maps")
+    check(BinState("unmeasured") == .unmeasured, "unmeasured maps")
+    check(BinState("") == .unmeasured, "an empty state claims nothing")
+    check(BinState("whatever_comes_next") == .unmeasured,
+          "an unrecognised state claims nothing rather than guessing")
+    check(BinState.allCases.count == 4, "four states, all in the legend")
+    // Every state has to be nameable in the legend, or the reader meets a
+    // pattern with no explanation.
+    for s in BinState.allCases {
+        check(!s.label.isEmpty && !s.detail.isEmpty,
+              "state \(s.rawValue) is described")
+    }
+    check(BinState.unmeasured.label == "NOT MEASURED",
+          "the state that claims nothing says so loudest")
+}
+
+do {
+    // Pickets: one mark per bin at any bin width. Diagonal hatching failed
+    // here -- drawn per bin it overlapped into a solid slab.
+    let narrow = Picket(pitch: 5, inset: 1)
+        .path(in: CGRect(x: 0, y: 0, width: 6, height: 44))
+    check(!narrow.isEmpty, "a bin narrower than the pitch still gets a mark")
+    let wide = Picket(pitch: 5, inset: 1)
+        .path(in: CGRect(x: 0, y: 0, width: 40, height: 44))
+    check(wide.boundingRect.height <= 44,
+          "pickets stay inside the lane's height")
+    check(wide.boundingRect.width <= 40,
+          "pickets stay inside the bin's width: a diagonal hatch did not, "
+          + "which is how a lane became a slab")
+}
+
+do {
+    // Durations pick a unit; a negative one keeps its sign, because a gap
+    // that starts before the window is a real thing a capture can contain.
+    check(Fmt.duration(500) == "500 ns", "sub-microsecond stays in ns")
+    check(Fmt.duration(1_500) == "1.5 us", "got \(Fmt.duration(1_500))")
+    check(Fmt.duration(2_500_000) == "2.5 ms", "got \(Fmt.duration(2_500_000))")
+    check(Fmt.duration(12_770_000_000) == "12.77 s",
+          "got \(Fmt.duration(12_770_000_000))")
+    check(Fmt.duration(-5_000_000) == "-5.0 ms",
+          "a negative duration keeps its sign: got \(Fmt.duration(-5_000_000))")
+    check(Fmt.offset(900, 1_000).contains("before the window"),
+          "a band before the window says so rather than printing '+-'")
+    check(Fmt.offset(1_000_000_900, 900).hasPrefix("+"),
+          "an offset inside the window is signed positive")
+    check(Fmt.value(922_353_664, unit: "bytes") == "879.6 MiB",
+          "got \(Fmt.value(922_353_664, unit: "bytes"))")
+    check(Fmt.value(6, unit: "count") == "6 count",
+          "got \(Fmt.value(6, unit: "count"))")
+    check(Fmt.value(40_000_000, unit: "ns") == "40.0 ms",
+          "got \(Fmt.value(40_000_000, unit: "ns"))")
+}
+
+do {
+    // `stamp` is for fields the encoder always writes. It must not be what a
+    // bin's value goes through: a missing window bound is an encoder defect,
+    // a missing bin value is the data saying "not measured".
+    let d = parse(#"{"window_start_ns":12,"bins":[{"value":null}]}"#)
+    check(d["window_start_ns"].stamp == 12, "a written stamp reads back")
+    check(d["nope"].stamp == 0, "a missing stamp falls back to 0")
+    check(d["bins"][0]["value"].double == nil,
+          "a null bin value stays nil and never becomes 0")
+}
+
+do {
+    // The launch option that deep-links to one finding.
+    let o = LaunchOptions.parse(["--session", "s-1", "--tab", "timeline",
+                                 "--issue", "DET-04-abc"])
+    check(o.session == "s-1", "session parses")
+    check(o.tab == .timeline, "an explicit tab parses")
+    check(o.issue == "DET-04-abc", "an issue id parses")
+    let joined = LaunchOptions.parse(["--session=s-2", "--issue=DET-01-xyz",
+                                      "--tab=timeline"])
+    check(joined.session == "s-2" && joined.issue == "DET-01-xyz"
+          && joined.tab == .timeline, "the joined form parses too")
+    check(DevXTab(rawValue: "timeline") == .timeline, "the tab is addressable")
+}
+
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

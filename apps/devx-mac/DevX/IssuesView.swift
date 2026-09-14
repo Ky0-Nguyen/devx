@@ -225,6 +225,7 @@ private struct IssueListRow: View {
 }
 
 private struct IssueDetail: View {
+    @EnvironmentObject var state: AppState
     let issue: JSON
 
     var body: some View {
@@ -232,6 +233,20 @@ private struct IssueDetail: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(issue["title"].text).font(Term.font(15, .bold))
                     .fixedSize(horizontal: false, vertical: true)
+
+                // "Issue click focuses actual evidence interval" (spec
+                // section 13). The interval it focuses is the evidence's own,
+                // at full resolution -- not the bin it happens to fall in --
+                // and the timeline says so when the evidence is an instant
+                // that had to be widened to be clickable.
+                HStack(spacing: 8) {
+                    Button("Focus on timeline") { state.focusIssue(issue) }
+                        .buttonStyle(TermButtonStyle())
+                    if issue["start_ns"].int == issue["end_ns"].int {
+                        Chip(text: "evidence is an instant", tone: .caution)
+                    }
+                    Spacer(minLength: 0)
+                }
 
                 if issue["suppression"]["suppressed"].bool == true {
                     Banner(kind: .caution, title: "Suppressed",

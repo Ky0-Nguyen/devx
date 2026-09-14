@@ -130,6 +130,10 @@ enum Core {
         call { mpi_session_json(dir, id) }
     }
 
+    static func timeline(dir: String, id: String, bins: Int) -> JSON {
+        call { mpi_session_timeline_json(dir, id, Int32(bins)) }
+    }
+
     static func record(dir: String, device: String, app: String,
                        durationSeconds: Int, sampleHz: Int, frames: Bool,
                        cpu: Bool, memory: Bool, resetFrames: Bool) -> JSON {
