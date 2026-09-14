@@ -50,7 +50,20 @@ against `com.android.settings`:
 |---|---|---|
 | `android.capture.frames` (`dumpsys gfxinfo framestats`) | `available` -- 78 frames at a platform-reported 60 Hz | `available`; the source does not depend on debuggability |
 | `android.capture.cpu_samples` (`simpleperf`) | `available` -- 42 symbolised samples incl. React Native's `mqt_v_js` thread | `permission_denied`, with the manifest change that would fix it |
-| `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available` |
+| `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available`; the reading is excluded from app-scoped totals when ownership is ambiguous, which is what a shared-uid system app produces |
+| `android.capture.streaming` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
+
+### Measured live, against a real emulator
+
+Both verified on `emulator-5554` (Pixel 9 Pro image, API 37):
+
+| Target | Ticks | Frames | Memory points | CPU samples | CPU coverage |
+|---|---|---|---|---|---|
+| `io.pizzahut.hutbot.debug` (debuggable) | 10 | 0 -- the app sat on a static screen and the platform's own counter also reported 0 | 60 | 1458 | 60.2%, 3 gaps between sampling windows |
+| `com.android.settings` (not debuggable) | 62 | 53 while scrolling | 310 | 0 | 0%, gap reason `source_permission_denied` |
+
+Neither row is a claim about phone hardware: an emulator's GPU is emulated and
+its scheduler is the host's. Physical-device live capture is unverified.
 
 ## Evidence and limitations
 

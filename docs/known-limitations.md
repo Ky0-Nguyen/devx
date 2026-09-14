@@ -11,11 +11,12 @@ where one exists, a concrete remediation.
 
 ## 1. iOS live capture is not implemented; Android is
 
-**Android works.** `mpi record` and DevX capture for real, using the
-platform's text interfaces (ADR-0006): `dumpsys gfxinfo framestats` for frames
-with a platform-supplied deadline, `simpleperf` for symbolised stacks, `dumpsys
-meminfo` for memory. Verified against a booted emulator (API 37) on the
-superapp HutBot debug build.
+**Android works, batch and live.** `mpi record`, `mpi record --live` and
+DevX's Live tab all capture for real, using the platform's text interfaces
+(ADR-0006): `dumpsys gfxinfo framestats` for frames with a platform-supplied
+deadline, `simpleperf` for symbolised stacks, `dumpsys meminfo` for memory.
+Verified against a booted emulator (API 37) on the superapp HutBot debug
+build, and live against `com.android.settings` for the frame path.
 
 **iOS does not.** There is no `xctrace` collector wired to the session
 controller. `mpi record` and DevX both perform discovery, target pinning,
@@ -37,11 +38,50 @@ open; J14 is partially met.
 
 ### What the Android collector does not collect
 
-No scheduling states, no I/O, no network, and a single instantaneous memory
-reading rather than a series. DET-03, DET-05, DET-09 and DET-11 therefore stay
-registered and skipped rather than being approximated from what is available.
-Getting scheduling data means taking on Perfetto's protobuf; ADR-0006 says when
-that trade becomes the right one.
+No scheduling states, no I/O, no network. DET-03, DET-05, DET-09 and DET-11
+therefore stay registered and skipped rather than being approximated from what
+is available. Getting scheduling data means taking on Perfetto's protobuf;
+ADR-0006 says when that trade becomes the right one.
+
+A live capture does produce a memory *series* -- one reading per tick per
+family -- but each reading is still an instant, so nothing is observed between
+ticks. The per-source status says so on every capture, and the two limitations
+below say what else the series cannot promise.
+
+### What a live capture can and cannot claim
+
+**Memory points are placed by the host, not the device.** `dumpsys meminfo`
+reports no timestamp. The device's boot time is read once at capture start
+(`/proc/uptime`) and paired with the host's steady clock; every later point is
+that base plus host elapsed time, recorded as a clock mapping whose method and
+10 ms resolution travel with the trace. A point's position on the timeline is
+therefore accurate to about 10 ms plus drift, not exact. If the boot-time read
+fails, the memory samples are dropped and the source says why -- they are never
+stamped with a neighbouring event's time, and never with zero. An earlier
+version did exactly that, and the opening samples of every capture landed
+before the window began.
+
+**CPU lags the tick.** `simpleperf` costs about 5.6 s per record-and-symbolise
+cycle, so it runs on its own thread in windows while frames and memory stream
+at the tick. CPU numbers arrive in batches, and the intervals between windows
+are coverage gaps -- not measured idle time. A 25 s live capture typically
+shows CPU coverage around 60%.
+
+**Frames can be lost between ticks.** `framestats` is a ring buffer of about
+120 frames. A read that comes back full with nothing seen before means frames
+rendered and were never collected; that stretch is recorded as a coverage gap
+and a shorter `--tick-ms` is the fix.
+
+**An empty frame buffer is not a claim of zero jank.** `framestats` returning
+no rows cannot distinguish an app that drew nothing from a source that returned
+nothing, so the window is marked uncovered either way and the source status
+carries which. Verified: profiling an app parked on a static screen reported 0
+frames while the platform's own counter also said 0.
+
+**Preliminary means preliminary.** Every snapshot taken before the window
+closes is labelled: a detector that has found nothing may still fire, and a
+finding may change as more evidence arrives. Nothing in a live view is a final
+result.
 
 ---
 
@@ -143,7 +183,10 @@ exist yet.
 ## 5. DevX exists; some UI behaviours are still unbuilt
 
 `DevX.app` is a native SwiftUI application over the C ABI (ADR-0007), covering
-Devices, Apps, Preflight, Record, Sessions, Issues and Detectors.
+Devices, Apps, Live, Preflight, Record, Sessions, Issues and Detectors. The
+Live tab streams a capture alongside the running app: counters, memory
+sparklines, per-source status, and the preliminary banner over everything
+until the window closes.
 
 Still open, and all inherently UI behaviours:
 
@@ -159,6 +202,18 @@ Still open, and all inherently UI behaviours:
 - No timeline view. Spec section 13 lists one; issues currently carry their
   interval numerically rather than on a rendered track.
 - No compare view. `mpi compare` is CLI-only.
+- The Live tab has no frame-timeline track either; it shows counts, source
+  status and memory series.
+
+**Launching with arguments.** AppKit reads the process argument vector itself
+and treats anything it cannot pair with a `-flag` as a document to open. DevX
+has no document scene, so such a launch made SwiftUI skip creating the window
+altogether -- a live process with a healthy run loop, zero windows, and
+`onAppear` never firing. `DevX --start-live --live-seconds 30` triggered it,
+because AppKit reads `--live-seconds` as the value of `--start-live` and is
+left holding `30`. DevX now hands its options over in the environment and
+re-executes itself with a clean vector; `--flag=value` is accepted too and is
+the safer form to script.
 
 ---
 
@@ -182,7 +237,7 @@ an SDK:
 
 ---
 
-## 7. The clock-mapping path is implemented but has no real producer
+## 7. The clock-mapping path has one real producer, and it is coarse
 
 `ClockMapping` carries a measured offset and its uncertainty, and
 `NormalizedTrace::map_to_primary` **refuses to apply an unmeasured mapping**.
@@ -190,8 +245,15 @@ This is load-bearing: DET-02 can only reach `cause_status: candidate` when the
 JS and UI clocks are mapped, so without a mapping it correctly declines to say
 anything about UI impact.
 
-No collector currently produces a measured mapping. The fixtures include both
-cases (one measured, one deliberately unmeasured) and both are tested.
+A live Android capture now produces one measured mapping: the host steady
+clock against the device's boot time, read once from `/proc/uptime`, with a
+10 ms half-width and its method recorded. It exists to place `dumpsys meminfo`
+readings, which carry no timestamp of their own -- it is not precise enough to
+align a JS clock to a UI clock, and nothing uses it for that.
+
+No collector produces a mapping between two *event* clocks, which is what
+DET-02's UI-impact path needs. The fixtures include both cases (one measured,
+one deliberately unmeasured) and both are tested.
 
 ---
 

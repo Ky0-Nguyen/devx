@@ -7,6 +7,22 @@ step.
 
 Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 
+> **This report is the record of the M0/M1 gate and is left as it stood.**
+> Work has landed since, so three of its statements are no longer current:
+>
+> - **Android live capture is implemented and verified** on an emulator, batch
+>   and streaming, over the platform's text interfaces rather than Perfetto
+>   (ADR-0006). Sections 2 and 3 below still list it as not implemented.
+> - **Realtime streaming works**: `mpi record --live` and DevX's Live tab keep
+>   the window open and show evidence as it arrives, with every pre-close
+>   snapshot marked preliminary.
+> - **The streaming ingest reader** named as step 1 of section 5 is done.
+>
+> iOS live capture is still not implemented -- there is no `xctrace` collector
+> -- so the cross-platform claim in the gate assessment stands unchanged.
+> `docs/known-limitations.md` and
+> `docs/capabilities/tested-capability-matrix.md` are the current authorities.
+
 ---
 
 ## 1. What works, with real evidence
