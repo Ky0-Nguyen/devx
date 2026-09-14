@@ -58,6 +58,135 @@ std::string escape_markdown(const std::string& in) {
   return out;
 }
 
+// One issue, rendered the same way wherever it appears. The comparison
+// report shows DET-08 findings with exactly the fields a session report
+// shows, so a reader does not have to learn two layouts -- and a field
+// added to the contract cannot appear in one report and not the other.
+void write_issue(std::ostringstream& os, const model::Issue& i,
+                 bool include_source_paths) {
+  os << "### " << escape_markdown(i.title) << "\n\n";
+  if (i.suppressed) {
+    os << "> **Suppressed.** " << escape_markdown(i.suppression_reason);
+    if (!i.suppression_expiry.empty()) {
+      os << " (expires " << escape_markdown(i.suppression_expiry) << ")";
+    }
+    if (!i.suppression_author.empty()) {
+      os << " -- " << escape_markdown(i.suppression_author);
+    }
+    os << "\n\n";
+  }
+  os << "| | |\n|---|---|\n";
+  os << "| Detector | `" << escape_markdown(i.rule_id) << "` v"
+     << escape_markdown(i.rule_version) << " |\n";
+  os << "| Severity | **" << model::to_string(i.severity) << "** |\n";
+  os << "| Detection status | `" << model::to_string(i.detection_status)
+     << "` |\n";
+  os << "| Cause status | `" << model::to_string(i.cause_status) << "` |\n";
+  os << "| Interval | " << time_util::format_duration_ns(i.start_ns) << " -> "
+     << time_util::format_duration_ns(i.end_ns) << " ("
+     << time_util::format_duration_ns(i.end_ns - i.start_ns) << ") |\n";
+  os << "| Process | `" << escape_markdown(i.process_instance_id) << "` |\n";
+  if (!i.thread_instance_id.empty()) {
+    os << "| Thread | `" << escape_markdown(i.thread_instance_id) << "` |\n";
+  }
+  os << "| Screen | "
+     << (i.screen.empty() ? "*not observed*" : escape_markdown(i.screen))
+     << " |\n";
+  os << "| Occurrences | " << i.occurrence_count << " |\n";
+  os << "| Symbol status | `" << escape_markdown(i.symbol_status) << "` |\n";
+  os << "| Fingerprint | `" << escape_markdown(i.fingerprint) << "` |\n";
+  os << "\n";
+
+  os << "Severity means: " << escape_markdown(i.severity_rationale) << "\n\n";
+  if (!i.confidence_basis.empty()) {
+    os << "**What the evidence supports.** " << escape_markdown(i.confidence_basis)
+       << "\n\n";
+  }
+
+  if (!i.metrics.empty()) {
+    os << "**Metrics**\n\n";
+    os << "| Metric | Value | Method | Aggregation | Limitations |\n"
+          "|---|---|---|---|---|\n";
+    for (const auto& m : i.metrics) {
+      os << "| `" << escape_markdown(m.name) << "` | " << num(m.value, m.unit)
+         << " | " << model::to_string(m.method) << " | "
+         << escape_markdown(m.aggregation) << " | ";
+      if (m.limitations.empty()) {
+        os << "--";
+      } else {
+        bool first = true;
+        for (const auto& l : m.limitations) {
+          if (!first) os << "<br>";
+          first = false;
+          os << escape_markdown(l);
+        }
+      }
+      os << " |\n";
+    }
+    os << "\n";
+  }
+
+  if (!i.threshold_expression.empty()) {
+    os << "**Threshold.** `" << escape_markdown(i.threshold_expression)
+       << "` -- origin: " << escape_markdown(i.threshold_origin) << "\n\n";
+  }
+
+  bullets(os, "Missing evidence", i.missing_evidence);
+  bullets(os, "Alternative explanations", i.alternative_explanations);
+  bullets(os, "Suggested verification", i.suggested_verification);
+  bullets(os, "Proposed remediation", i.proposed_remediation);
+
+  if (!i.candidate_stacks.empty()) {
+    os << "**Candidate stacks**\n\n";
+    for (const auto& s : i.candidate_stacks) {
+      os << "- share ";
+      os << (s.sample_share.has_value() ? pct(*s.sample_share)
+                                        : std::string("*unknown*"));
+      os << (s.inclusive ? " (inclusive -- **not** summable as a disjoint cost)"
+                         : " (self)")
+         << "\n";
+      for (std::size_t fi = 0; fi < s.frames.size() && fi < 12; ++fi) {
+        os << "  " << std::string(2, ' ') << "- `"
+           << escape_markdown(s.frames[fi]) << "`";
+        if (fi < s.locations.size()) {
+          const auto& l = s.locations[fi];
+          if (include_source_paths && !l.file.empty()) {
+            os << " -> " << escape_markdown(l.file);
+            if (l.line.has_value()) os << ":" << *l.line;
+          }
+          os << " [" << escape_markdown(l.symbol_status) << "]";
+          if (!l.safe_to_open() && !l.note.empty()) {
+            os << " -- " << escape_markdown(l.note);
+          }
+        }
+        os << "\n";
+      }
+    }
+    os << "\n";
+  }
+
+  if (!i.evidence.empty()) {
+    os << "**Evidence** (" << i.evidence.size() << " reference(s))\n\n";
+    os << "| Kind | Id | Interval | Note |\n|---|---|---|---|\n";
+    for (const auto& e : i.evidence) {
+      os << "| " << escape_markdown(e.kind) << " | `"
+         << escape_markdown(e.id) << "` | ";
+      if (e.start_ns.has_value()) {
+        os << time_util::format_duration_ns(*e.start_ns);
+        if (e.end_ns.has_value()) {
+          os << " -> " << time_util::format_duration_ns(*e.end_ns);
+        }
+      } else {
+        os << "--";
+      }
+      os << " | " << escape_markdown(e.note) << (e.synthetic ? " *(synthetic)*" : "")
+         << " |\n";
+    }
+    os << "\n";
+  }
+  os << "---\n\n";
+}
+
 std::string to_markdown(const model::NormalizedTrace& trace,
                         const model::AnalysisResult& analysis,
                         const ReportOptions& opts) {
@@ -230,128 +359,7 @@ std::string to_markdown(const model::NormalizedTrace& trace,
   }
 
   for (const auto* ip : shown) {
-    const model::Issue& i = *ip;
-    os << "### " << escape_markdown(i.title) << "\n\n";
-    if (i.suppressed) {
-      os << "> **Suppressed.** " << escape_markdown(i.suppression_reason);
-      if (!i.suppression_expiry.empty()) {
-        os << " (expires " << escape_markdown(i.suppression_expiry) << ")";
-      }
-      if (!i.suppression_author.empty()) {
-        os << " -- " << escape_markdown(i.suppression_author);
-      }
-      os << "\n\n";
-    }
-    os << "| | |\n|---|---|\n";
-    os << "| Detector | `" << escape_markdown(i.rule_id) << "` v"
-       << escape_markdown(i.rule_version) << " |\n";
-    os << "| Severity | **" << model::to_string(i.severity) << "** |\n";
-    os << "| Detection status | `" << model::to_string(i.detection_status)
-       << "` |\n";
-    os << "| Cause status | `" << model::to_string(i.cause_status) << "` |\n";
-    os << "| Interval | " << time_util::format_duration_ns(i.start_ns) << " -> "
-       << time_util::format_duration_ns(i.end_ns) << " ("
-       << time_util::format_duration_ns(i.end_ns - i.start_ns) << ") |\n";
-    os << "| Process | `" << escape_markdown(i.process_instance_id) << "` |\n";
-    if (!i.thread_instance_id.empty()) {
-      os << "| Thread | `" << escape_markdown(i.thread_instance_id) << "` |\n";
-    }
-    os << "| Screen | "
-       << (i.screen.empty() ? "*not observed*" : escape_markdown(i.screen))
-       << " |\n";
-    os << "| Occurrences | " << i.occurrence_count << " |\n";
-    os << "| Symbol status | `" << escape_markdown(i.symbol_status) << "` |\n";
-    os << "| Fingerprint | `" << escape_markdown(i.fingerprint) << "` |\n";
-    os << "\n";
-
-    os << "Severity means: " << escape_markdown(i.severity_rationale) << "\n\n";
-    if (!i.confidence_basis.empty()) {
-      os << "**What the evidence supports.** " << escape_markdown(i.confidence_basis)
-         << "\n\n";
-    }
-
-    if (!i.metrics.empty()) {
-      os << "**Metrics**\n\n";
-      os << "| Metric | Value | Method | Aggregation | Limitations |\n"
-            "|---|---|---|---|---|\n";
-      for (const auto& m : i.metrics) {
-        os << "| `" << escape_markdown(m.name) << "` | " << num(m.value, m.unit)
-           << " | " << model::to_string(m.method) << " | "
-           << escape_markdown(m.aggregation) << " | ";
-        if (m.limitations.empty()) {
-          os << "--";
-        } else {
-          bool first = true;
-          for (const auto& l : m.limitations) {
-            if (!first) os << "<br>";
-            first = false;
-            os << escape_markdown(l);
-          }
-        }
-        os << " |\n";
-      }
-      os << "\n";
-    }
-
-    if (!i.threshold_expression.empty()) {
-      os << "**Threshold.** `" << escape_markdown(i.threshold_expression)
-         << "` -- origin: " << escape_markdown(i.threshold_origin) << "\n\n";
-    }
-
-    bullets(os, "Missing evidence", i.missing_evidence);
-    bullets(os, "Alternative explanations", i.alternative_explanations);
-    bullets(os, "Suggested verification", i.suggested_verification);
-    bullets(os, "Proposed remediation", i.proposed_remediation);
-
-    if (!i.candidate_stacks.empty()) {
-      os << "**Candidate stacks**\n\n";
-      for (const auto& s : i.candidate_stacks) {
-        os << "- share ";
-        os << (s.sample_share.has_value() ? pct(*s.sample_share)
-                                          : std::string("*unknown*"));
-        os << (s.inclusive ? " (inclusive -- **not** summable as a disjoint cost)"
-                           : " (self)")
-           << "\n";
-        for (std::size_t fi = 0; fi < s.frames.size() && fi < 12; ++fi) {
-          os << "  " << std::string(2, ' ') << "- `"
-             << escape_markdown(s.frames[fi]) << "`";
-          if (fi < s.locations.size()) {
-            const auto& l = s.locations[fi];
-            if (opts.include_source_paths && !l.file.empty()) {
-              os << " -> " << escape_markdown(l.file);
-              if (l.line.has_value()) os << ":" << *l.line;
-            }
-            os << " [" << escape_markdown(l.symbol_status) << "]";
-            if (!l.safe_to_open() && !l.note.empty()) {
-              os << " -- " << escape_markdown(l.note);
-            }
-          }
-          os << "\n";
-        }
-      }
-      os << "\n";
-    }
-
-    if (!i.evidence.empty()) {
-      os << "**Evidence** (" << i.evidence.size() << " reference(s))\n\n";
-      os << "| Kind | Id | Interval | Note |\n|---|---|---|---|\n";
-      for (const auto& e : i.evidence) {
-        os << "| " << escape_markdown(e.kind) << " | `"
-           << escape_markdown(e.id) << "` | ";
-        if (e.start_ns.has_value()) {
-          os << time_util::format_duration_ns(*e.start_ns);
-          if (e.end_ns.has_value()) {
-            os << " -> " << time_util::format_duration_ns(*e.end_ns);
-          }
-        } else {
-          os << "--";
-        }
-        os << " | " << escape_markdown(e.note) << (e.synthetic ? " *(synthetic)*" : "")
-           << " |\n";
-      }
-      os << "\n";
-    }
-    os << "---\n\n";
+    write_issue(os, *ip, opts.include_source_paths);
   }
 
   if (!analysis.attribution.empty()) {
@@ -389,7 +397,8 @@ std::string to_markdown(const model::NormalizedTrace& trace,
   return os.str();
 }
 
-std::string comparison_to_markdown(const session::ComparisonResult& cmp) {
+std::string comparison_to_markdown(const session::ComparisonResult& cmp,
+                                   const model::AnalysisResult* det) {
   std::ostringstream os;
   os << "# Comparison report\n\n";
   os << "**Overall verdict: `" << session::to_string(cmp.overall) << "`**\n\n";
@@ -468,6 +477,35 @@ std::string comparison_to_markdown(const session::ComparisonResult& cmp) {
   os << "A verdict requires **both** the absolute and the relative threshold to "
         "clear. A run that did not complete its scenario is excluded, never "
         "counted as a fast success.\n";
+
+  if (det != nullptr) {
+    os << "\n## Detector execution\n\n";
+    for (const auto& note : det->data_quality_notes) {
+      os << "- " << escape_markdown(note) << "\n";
+    }
+    if (!det->data_quality_notes.empty()) os << "\n";
+    os << "| Detector | Outcome | Issues | Notes |\n|---|---|---|---|\n";
+    for (const auto& run : det->rule_runs) {
+      std::string notes;
+      for (const auto& r : run.skipped_reasons) {
+        if (!notes.empty()) notes += "<br>";
+        notes += escape_markdown(r);
+      }
+      os << "| `" << run.rule_id << "` v" << run.rule_version << " | `"
+         << model::to_string(run.outcome) << "` | " << run.issues_emitted
+         << " | " << (notes.empty() ? "--" : notes) << " |\n";
+    }
+    os << "\n";
+    if (det->issues.empty()) {
+      os << "No detector that ran produced a finding over this comparison. "
+            "That is not the same as the comparison being clean: the table "
+            "above says which detectors ran.\n";
+    } else {
+      for (const auto& issue : det->issues) {
+        write_issue(os, issue, /*include_source_paths=*/false);
+      }
+    }
+  }
   return os.str();
 }
 

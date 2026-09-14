@@ -35,4 +35,11 @@ model::AnalysisResult analyze(const model::NormalizedTrace& trace,
                               const symbols::SymbolService& symbols,
                               const EngineOptions& opts);
 
+// Runs the rules whose evidence is a baseline/candidate pair. Only those: a
+// comparison carries no capture, so asking a frame rule to explain it would
+// produce a skip about missing frames that tells the reader nothing about the
+// comparison they asked for.
+model::AnalysisResult analyze_comparison(const RegressionInput& comparison,
+                                         const EngineOptions& opts);
+
 }  // namespace mpi::rules

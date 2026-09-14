@@ -31,8 +31,14 @@ std::string to_markdown(const model::NormalizedTrace& trace,
                         const ReportOptions& opts);
 
 // Comparison report.
-std::string comparison_to_json(const session::ComparisonResult& cmp);
-std::string comparison_to_markdown(const session::ComparisonResult& cmp);
+// `det` carries DET-08's findings over the same comparison. It is optional so
+// a caller that only wants the numbers can omit it, but `mpi compare` always
+// passes it: a verdict without the issue contract around it loses what the
+// difference does and does not establish.
+std::string comparison_to_json(const session::ComparisonResult& cmp,
+                               const model::AnalysisResult* det = nullptr);
+std::string comparison_to_markdown(const session::ComparisonResult& cmp,
+                                   const model::AnalysisResult* det = nullptr);
 
 // Escapes text for safe embedding in a Markdown table cell or body
 // (spec section 15: escape exported HTML/Markdown).

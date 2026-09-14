@@ -3,6 +3,7 @@
 
 #include "apps/cli/cli.hpp"
 #include "core/report/report.hpp"
+#include "core/rules/engine.hpp"
 
 namespace mpi::cli {
 namespace {
@@ -160,12 +161,21 @@ ExitCode cmd_compare(const Invocation& inv) {
   const auto result =
       session::compare(std::move(baseline), std::move(candidate), th);
 
+  // DET-08 turns the comparison into a finding with the issue contract around
+  // it: what was measured, what stays unknown, and how far the claim reaches.
+  // The verdict alone cannot say any of that.
+  rules::EngineOptions rule_opts;
+  rule_opts.mode = result.candidate.mode;
+  rule_opts.cancel = inv.global.cancel;
+  const auto detection = rules::analyze_comparison(
+      session::to_regression_input(result), rule_opts);
+
   const std::string format = inv.flag("format", inv.global.json ? "json" : "markdown");
   std::string rendered;
   if (format == "json") {
-    rendered = report::comparison_to_json(result);
+    rendered = report::comparison_to_json(result, &detection);
   } else if (format == "markdown" || format == "md") {
-    rendered = report::comparison_to_markdown(result);
+    rendered = report::comparison_to_markdown(result, &detection);
   } else {
     std::cerr << "error: --format must be json or markdown\n";
     return ExitCode::kUsage;

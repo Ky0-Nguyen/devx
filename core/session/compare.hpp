@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "core/model/trace.hpp"
+#include "core/rules/regression_input.hpp"
 #include "core/util/json.hpp"
 
 namespace mpi::session {
@@ -123,5 +124,10 @@ struct ComparisonResult {
 // are incompatible, runs are too few, or variance is too high.
 ComparisonResult compare(RunSet baseline, RunSet candidate,
                          const ComparisonThresholds& thresholds);
+
+// Hands the comparison's own conclusions to DET-08, which renders them as
+// issues. The translation lives here because this layer already depends on
+// the rules layer; the detector never recomputes significance.
+rules::RegressionInput to_regression_input(const ComparisonResult& result);
 
 }  // namespace mpi::session

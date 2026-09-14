@@ -1,5 +1,6 @@
 #include <sstream>
 
+#include "core/rules/engine.hpp"
 #include "core/session/compare.hpp"
 #include "tests/unit/test_framework.hpp"
 
@@ -334,4 +335,151 @@ MPI_TEST(median_and_spread_are_both_reported, {"section-12"}) {
   MPI_CHECK(r.metrics[0].baseline_spread.has_value());
   MPI_CHECK(r.metrics[0].candidate_spread.has_value());
   MPI_CHECK_NEAR(*r.metrics[0].baseline_median, 425e6, 1e6);
+}
+
+
+// --- DET-08, which renders a comparison as an issue --------------------------
+
+namespace {
+
+model::AnalysisResult detect(const ComparisonResult& cmp) {
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kBenchmark;
+  return rules::analyze_comparison(to_regression_input(cmp), opts);
+}
+
+const model::RuleRunRecord* det08_record(const model::AnalysisResult& r) {
+  for (const auto& rec : r.rule_runs) {
+    if (rec.rule_id == "DET-08") return &rec;
+  }
+  return nullptr;
+}
+
+}  // namespace
+
+MPI_TEST(det08_reports_a_regression_as_an_issue, {"DET-08", "I13", "H01"}) {
+  const auto cmp = compare(make_set("baseline", {100e6, 101e6, 99e6, 100e6, 102e6}),
+                           make_set("candidate", {130e6, 132e6, 129e6, 131e6, 130e6}),
+                           default_thresholds());
+  MPI_CHECK(cmp.overall == ComparisonVerdict::kRegression);
+
+  const auto analysis = detect(cmp);
+  MPI_CHECK_EQ(analysis.issues.size(), std::size_t{1});
+  const auto& issue = analysis.issues.front();
+  MPI_CHECK_EQ(issue.rule_id, std::string("DET-08"));
+  // The difference is measured, so detection is observed -- but a regression
+  // never explains itself, so the cause stays unknown.
+  MPI_CHECK(issue.detection_status == model::DetectionStatus::kObserved);
+  MPI_CHECK(issue.cause_status == model::CauseStatus::kUnknown);
+  MPI_CHECK(mentions(issue.missing_evidence, "no profile"));
+  MPI_CHECK(!issue.threshold_expression.empty());
+  MPI_CHECK(!issue.severity_rationale.empty());
+  // Both medians and the delta travel with the issue.
+  MPI_CHECK_EQ(issue.metrics.size(), std::size_t{3});
+  // Two run sets share no timeline, so no interval is invented.
+  MPI_CHECK_EQ(issue.start_ns, model::TimeNs{0});
+  MPI_CHECK_EQ(issue.end_ns, model::TimeNs{0});
+}
+
+MPI_TEST(det08_refuses_a_debug_versus_release_pair, {"DET-08", "I16"}) {
+  auto candidate = make_set("candidate", {130e6, 132e6, 129e6, 131e6, 130e6});
+  candidate.mode = model::MeasurementMode::kDiagnostic;
+  model::Eligibility ineligible;
+  ineligible.status = model::EligibilityStatus::kIneligible;
+  ineligible.reasons.push_back("mode_is_not_benchmark:diagnostic");
+  candidate.eligibility = ineligible;
+
+  const auto analysis = detect(compare(
+      make_set("baseline", {100e6, 101e6, 99e6, 100e6, 102e6}), std::move(candidate),
+      default_thresholds()));
+  // The comparison refuses the gate outright, so there is no regression issue
+  // to qualify -- and the reason names eligibility rather than the numbers.
+  MPI_CHECK(analysis.issues.empty());
+  const auto* rec = det08_record(analysis);
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(mentions(rec->skipped_reasons, "not benchmark-eligible"));
+}
+
+MPI_TEST(det08_says_a_forced_pair_certifies_nothing, {"DET-08", "I16", "C19"}) {
+  // A user-forced comparison is the one route to a regression verdict whose
+  // sides are not certified: the override is recorded, and it does not erase
+  // the invalidity. The issue has to carry that, or the number reads as a
+  // release regression.
+  model::Eligibility forced;
+  forced.status = model::EligibilityStatus::kEligible;
+  forced.user_override = true;
+  forced.user_override_note = "exploratory run, forced by the operator";
+
+  auto baseline = make_set("baseline", {100e6, 101e6, 99e6, 100e6, 102e6});
+  auto candidate = make_set("candidate", {130e6, 132e6, 129e6, 131e6, 130e6});
+  baseline.eligibility = forced;
+  candidate.eligibility = forced;
+
+  const auto cmp = compare(std::move(baseline), std::move(candidate),
+                           default_thresholds());
+  MPI_CHECK(cmp.metrics.size() == 1);
+  MPI_CHECK(!cmp.metrics.front().certified);
+
+  const auto analysis = detect(cmp);
+  MPI_CHECK_EQ(analysis.issues.size(), std::size_t{1});
+  if (analysis.issues.empty()) return;
+  MPI_CHECK(mentions(analysis.issues.front().missing_evidence,
+                     "certifies nothing about release performance"));
+  MPI_CHECK(mentions(analysis.data_quality_notes, "certified benchmark pair"));
+}
+
+MPI_TEST(det08_refuses_a_cross_platform_pair, {"DET-08", "I19"}) {
+  const auto cmp = compare(make_set("baseline", {100e6, 101e6, 99e6, 100e6, 102e6}, "android"),
+                           make_set("candidate", {130e6, 132e6, 129e6, 131e6, 130e6}, "ios"),
+                           default_thresholds());
+  const auto analysis = detect(cmp);
+  MPI_CHECK(analysis.issues.empty());
+  const auto* rec = det08_record(analysis);
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(mentions(rec->skipped_reasons, "two platforms"));
+}
+
+MPI_TEST(det08_skips_when_conditions_are_not_comparable, {"DET-08", "I02"}) {
+  auto candidate = make_set("candidate", {130e6, 132e6, 129e6, 131e6, 130e6});
+  candidate.conditions.device_model = "Pixel 6";
+  const auto analysis = detect(compare(
+      make_set("baseline", {100e6, 101e6, 99e6, 100e6, 102e6}), std::move(candidate),
+      default_thresholds()));
+  MPI_CHECK(analysis.issues.empty());
+  const auto* rec = det08_record(analysis);
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(mentions(rec->skipped_reasons, "not comparable"));
+}
+
+MPI_TEST(det08_records_an_undecided_metric_rather_than_passing_it,
+         {"DET-08", "I09", "I10", "H11"}) {
+  // Too few runs on each side: the comparison cannot decide, and the detector
+  // must say so instead of reporting a clean result.
+  const auto cmp = compare(make_set("baseline", {100e6, 101e6}),
+                           make_set("candidate", {160e6, 162e6}),
+                           default_thresholds());
+  MPI_CHECK(cmp.overall == ComparisonVerdict::kInconclusive);
+
+  const auto analysis = detect(cmp);
+  MPI_CHECK(analysis.issues.empty());
+  const auto* rec = det08_record(analysis);
+  MPI_CHECK(rec != nullptr);
+  // It ran: the metric was examined and came back undecided. That is a
+  // different statement from the rule not running at all.
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundNothing);
+  MPI_CHECK(mentions(rec->skipped_reasons, "inconclusive"));
+}
+
+MPI_TEST(det08_does_not_report_an_improvement_as_an_issue, {"DET-08"}) {
+  const auto analysis = detect(compare(
+      make_set("baseline", {130e6, 132e6, 129e6, 131e6, 130e6}),
+      make_set("candidate", {100e6, 101e6, 99e6, 100e6, 102e6}),
+      default_thresholds()));
+  MPI_CHECK(analysis.issues.empty());
+  const auto* rec = det08_record(analysis);
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundNothing);
+  MPI_CHECK(mentions(rec->skipped_reasons, "improvement"));
 }

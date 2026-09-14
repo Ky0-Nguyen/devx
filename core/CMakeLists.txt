@@ -18,6 +18,7 @@ add_library(mpi_core STATIC
   rules/det01_frame_deadlines.cpp
   rules/det02_long_js.cpp
   rules/det04_cpu_hotspot.cpp
+  rules/det08_regression.cpp
   rules/det12_tooling_activity.cpp
   rules/deferred_rules.cpp
   rules/engine.cpp

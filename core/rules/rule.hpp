@@ -12,6 +12,7 @@
 
 #include "core/model/issue.hpp"
 #include "core/model/trace.hpp"
+#include "core/rules/regression_input.hpp"
 #include "core/symbols/symbol_service.hpp"
 #include "core/util/cancel.hpp"
 
@@ -44,6 +45,10 @@ struct Prerequisite {
 
 struct RuleContext {
   const model::NormalizedTrace* trace = nullptr;
+  // Set only when the analysis is over a baseline/candidate pair. DET-08 is
+  // the one detector whose evidence is two run sets rather than one capture,
+  // and it skips -- saying so -- when this is absent.
+  const RegressionInput* regression = nullptr;
   const symbols::SymbolService* symbol_service = nullptr;
   model::MeasurementMode mode = model::MeasurementMode::kUnknownLimited;
   model::Eligibility eligibility;
@@ -78,6 +83,11 @@ class Rule {
   // Known false positives, surfaced in the report so a reader can discount
   // the finding themselves (spec section 10.3).
   virtual std::vector<std::string> known_false_positives() const { return {}; }
+
+  // True for the rules whose evidence is a baseline/candidate pair rather
+  // than a capture. They are the only ones `analyze_comparison` runs, because
+  // a comparison has no trace for the others to read.
+  virtual bool uses_comparison_input() const { return false; }
 
   // Returns the reasons this rule cannot run, or an empty vector when it can.
   virtual std::vector<std::string> unmet_prerequisites(
