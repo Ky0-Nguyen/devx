@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 132 of 198 checklist items have at
-least one automated test.** The remaining 66 are listed below with a stated
+**Coverage of specification section 18: 133 of 198 checklist items have at
+least one automated test.** The remaining 65 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (132 items, 427 test-case links)
+## Covered (133 items, 432 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -233,6 +233,7 @@ Two cautions on reading this:
 | E15 | `test_ingestion` | `hermes_reader_unwinds_stacks_outermost_first` |
 | E15 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | E20 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
+| E20 | `test_rules` | `det11_observes_the_delay_and_blames_nobody` |
 | E21 | `test_rules` | `det01_excludes_unjudgeable_frames_from_the_denominator` |
 | E21 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | E21 | `test_rules` | `det01_proxy_source_downgrades_to_suspected` |
@@ -264,6 +265,8 @@ Two cautions on reading this:
 | G04 | `test_sdk` | `sdk_notices_a_reload_onto_a_different_bundle` |
 | G07 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
 | G08 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
+| G10 | `test_rules` | `det10_reports_a_render_pattern_and_refuses_to_call_it_a_defect` |
+| G10 | `test_rules` | `det10_will_not_accept_cpu_samples_as_render_data` |
 | G11 | `test_eligibility` | `remote_js_execution_invalidates_benchmark` |
 | G14 | `test_symbols` | `exact_match_resolves_to_a_real_local_file` |
 | G14 | `test_symbols` | `matching_bundle_id_yields_exact_build_match` |
@@ -294,6 +297,8 @@ Two cautions on reading this:
 | H05 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
 | H05 | `test_rules` | `det07_says_a_capture_without_a_launch_has_no_startup` |
 | H05 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
+| H05 | `test_rules` | `det10_will_not_accept_cpu_samples_as_render_data` |
+| H05 | `test_rules` | `det11_says_it_cannot_observe_the_network_itself` |
 | H05 | `test_rules` | `every_catalog_detector_is_registered` |
 | H05 | `test_rules` | `unimplemented_detectors_are_skipped_with_reasons` |
 | H05 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
@@ -449,7 +454,7 @@ Two cautions on reading this:
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
-## Additional coverage keyed to specification sections and detector ids (21)
+## Additional coverage keyed to specification sections and detector ids (23)
 
 | Reference | Test binary | Test case |
 |---|---|---|
@@ -485,6 +490,11 @@ Two cautions on reading this:
 | DET-08 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
 | DET-08 | `test_compare` | `det08_skips_when_conditions_are_not_comparable` |
 | DET-08 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
+| DET-10 | `test_rules` | `det10_reports_a_render_pattern_and_refuses_to_call_it_a_defect` |
+| DET-10 | `test_rules` | `det10_will_not_accept_cpu_samples_as_render_data` |
+| DET-11 | `test_rules` | `det11_does_not_report_a_request_that_merely_overlapped_a_little` |
+| DET-11 | `test_rules` | `det11_observes_the_delay_and_blames_nobody` |
+| DET-11 | `test_rules` | `det11_says_it_cannot_observe_the_network_itself` |
 | M0 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
 | M0 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
 | section-0.6 | `test_report` | `synthetic_data_is_announced_in_both_formats` |
@@ -498,6 +508,7 @@ Two cautions on reading this:
 | section-11 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
 | section-11 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
 | section-11 | `test_rules` | `det05_refuses_to_compare_two_unmapped_clocks` |
+| section-11 | `test_rules` | `det10_reports_a_render_pattern_and_refuses_to_call_it_a_defect` |
 | section-11 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
 | section-11 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
 | section-11 | `test_trace_model` | `screen_is_null_when_not_observed` |
@@ -539,7 +550,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (66)
+## Not yet covered (65)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -592,7 +603,6 @@ Two cautions on reading this:
 | G05 | Fast Refresh needs a live RN app (M3) |
 | G06 | multiple runtimes needs a live RN app (M3) |
 | G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
-| G10 | React profiling data is DET-10 (M5); its absence is reported as a skip |
 | G12 | Expo prerequisites are documentation (M3) |
 | G13 | the architecture matrix needs RN builds (M3) |
 | H08 | occurrence_count is implemented; a cross-session duplicate fixture would strengthen it |
@@ -613,6 +623,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 16
-- test cases declaring at least one id: 334
-- checklist-item links: 427
-- section-18 coverage: 132/198 (67%)
+- test cases declaring at least one id: 339
+- checklist-item links: 432
+- section-18 coverage: 133/198 (67%)

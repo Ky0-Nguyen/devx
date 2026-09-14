@@ -57,7 +57,6 @@ G04	JS reload needs a live RN app (M3)
 G05	Fast Refresh needs a live RN app (M3)
 G06	multiple runtimes needs a live RN app (M3)
 G09	the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them
-G10	React profiling data is DET-10 (M5); its absence is reported as a skip
 G12	Expo prerequisites are documentation (M3)
 G13	the architecture matrix needs RN builds (M3)
 G15	OTA/native pairing needs a build pipeline (M3)

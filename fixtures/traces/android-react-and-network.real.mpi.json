@@ -1,0 +1,1478 @@
+{
+  "schema_version": "2.0",
+  "session_id": "s-20260914181938-aa515a75",
+  "synthetic": false,
+  "synthetic_note": null,
+  "device": {
+    "platform": "android",
+    "device_id": "emulator-5554",
+    "display_name": "sdk_gphone16k_arm64",
+    "model": "sdk_gphone16k_arm64",
+    "os_version": "17",
+    "form": "emulator",
+    "trust": "authorized",
+    "connection": "usb",
+    "provider": "adb 1.0.41 (build.type=user)",
+    "observed_at": "2026-09-14T18:19:40Z",
+    "boot_id": "9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+  },
+  "target": {
+    "application_key": {
+      "platform": "android",
+      "device_id": "emulator-5554",
+      "app_identifier": "io.pizzahut.hutbot.debug",
+      "identifier_kind": "package_name",
+      "android_user_id": null,
+      "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+    },
+    "process_instances": [
+      {
+        "application_key": {
+          "platform": "android",
+          "device_id": "emulator-5554",
+          "app_identifier": "io.pizzahut.hutbot.debug",
+          "identifier_kind": "package_name",
+          "android_user_id": null,
+          "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+        },
+        "pid": 25747,
+        "process_start_time": "1371104",
+        "process_name": "io.pizzahut.hutbot.debug",
+        "uid": 10229,
+        "is_primary": true,
+        "ownership_evidence": "uid_and_process_name",
+        "ownership_note": "uid 10229 matches the installed package uid and the process name is package-owned",
+        "counts_toward_app_totals": true,
+        "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+      }
+    ],
+    "runtime_state": "running",
+    "discovery_scope": "complete_for_provider"
+  },
+  "build": {
+    "schema_version": "2.0",
+    "facts": [
+      {
+        "key": "sdk.version",
+        "value": "0.1.0",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "app.version",
+        "value": "4.2.0",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "build.configuration",
+        "value": "Debug",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "js.engine",
+        "value": "hermes",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "js.bundle_id",
+        "value": "bundle-rn",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "js.__DEV__",
+        "value": "true",
+        "boolean_value": true,
+        "tri_state": "true",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      }
+    ],
+    "conflicts": [],
+    "symbol_bindings": []
+  },
+  "capabilities": {
+    "schema_version": "2.0",
+    "capabilities": [
+      {
+        "id": "android.toolchain.adb",
+        "human_name": "Android Platform Tools (adb)",
+        "status": "available",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:38Z",
+        "evidence": "`/Users/tan4194/Library/Android/sdk/platform-tools/adb --version` reported 1.0.41",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "probed_only"
+      },
+      {
+        "id": "android.discovery.devices",
+        "human_name": "Android device discovery",
+        "status": "available",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "`adb devices -l` returned 1 device line(s)",
+        "scope": "devices visible to this host's adb server; a device claimed by another adb server or an IDE may not appear",
+        "limitations": [
+          "every discovered Android device is an emulator; discovery is not verified against physical hardware"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.installed_apps",
+        "human_name": "Installed package enumeration",
+        "status": "available",
+        "provider": "adb shell pm",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "`pm list packages -U` returned 260 package(s)",
+        "scope": "packages visible to the shell user for the queried Android user",
+        "limitations": [
+          "installed does not mean running, and does not mean profileable"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.running_processes",
+        "human_name": "Running process enumeration",
+        "status": "available",
+        "provider": "adb shell ps",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "`ps -A -o PID,PPID,USER,NAME` returned 306 parsed row(s)",
+        "scope": "processes visible to the shell user; shell has broader visibility than an ordinary app SDK would",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.process_mapping",
+        "human_name": "Process start-time / identity resolution",
+        "status": "available",
+        "provider": "adb shell /proc",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "/proc/self/stat parsed; field 22 (starttime) is readable",
+        "scope": "start time lets a process instance be distinguished across PID reuse and device reboot",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.profileable",
+        "human_name": "Permission to profile a selected app",
+        "status": "unknown",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [
+          "the target APK declares <profileable android:shell=\"true\"/> or is debuggable, or the device runs a userdebug/eng build"
+        ],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "not determinable at the device level: it depends on the selected package's manifest (<profileable> / android:debuggable) and the device build type",
+        "scope": "must be re-probed per selected package during preflight",
+        "limitations": [],
+        "recovery_action": "add <profileable android:shell=\"true\"/> to the target's manifest and reinstall",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.toolchain.xcrun",
+        "human_name": "Xcode command-line tools",
+        "status": "available",
+        "provider": "xcrun",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "xcode-select -p => /Applications/Xcode.app/Contents/Developer; devicectl 518.33; xctrace version 16.0 (17F113)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "probed_only"
+      },
+      {
+        "id": "ios.discovery.devices",
+        "human_name": "iOS device discovery",
+        "status": "available",
+        "provider": "devicectl + simctl",
+        "provider_version": "518.33",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "`devicectl list devices --json-output` reported 2 physical device(s) (0 reachable); `simctl list devices --json` reported 23 available simulator(s) (1 booted)",
+        "scope": "devices paired with this host, plus local simulators. Simulators are reported separately and are never treated as physical devices.",
+        "limitations": [
+          "verified against simulators only: no physical iOS device was reachable at probe time",
+          "2 physical device(s) are paired but unreachable (tunnelState is not connected); they are reported as offline, not as absent"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "ios.discovery.installed_apps",
+        "human_name": "Installed app enumeration (physical device)",
+        "status": "unknown",
+        "provider": "devicectl device info apps",
+        "provider_version": "518.33",
+        "prerequisites": [
+          "a reachable, paired physical device with Developer Mode enabled",
+          "Developer Disk Image services mounted (ddiServicesAvailable = true)"
+        ],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "every paired physical device is unreachable (connectionProperties.tunnelState != connected)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "connect and unlock a trusted iPhone or iPad with Developer Mode enabled, then re-run discovery",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.discovery.running_processes",
+        "human_name": "Running process enumeration (physical device)",
+        "status": "unknown",
+        "provider": "devicectl device info processes",
+        "provider_version": "518.33",
+        "prerequisites": [
+          "a reachable physical device with DDI services"
+        ],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "no reachable physical iOS device; not probed",
+        "scope": "",
+        "limitations": [
+          "iOS does not expose a general foreground/suspended signal, so even when this works the runtime state of an app is reported as running or unknown -- never guessed as suspended"
+        ],
+        "recovery_action": "connect and unlock a trusted device",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.discovery.simulator_apps",
+        "human_name": "Installed and running app enumeration (simulator)",
+        "status": "available",
+        "provider": "simctl",
+        "provider_version": null,
+        "prerequisites": [
+          "a booted iOS simulator",
+          "`plutil` to convert simctl's NeXTSTEP plist output to JSON"
+        ],
+        "observed_at": "2026-09-14T18:19:39Z",
+        "evidence": "simulator 456FA0D8-48C1-4BEC-B087-50E8A046EA5D: 29 app(s) listed, 5 with a launchd-attributed running process",
+        "scope": "simulator only. Simulator timing is never comparable to a physical device and is kept in a separate baseline (spec J18).",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "ios.capture.attach",
+        "human_name": "Permission to attach a profiler to a selected app",
+        "status": "unknown",
+        "provider": "xctrace",
+        "provider_version": "xctrace version 16.0 (17F113)",
+        "prerequisites": [
+          "the app is signed with a development profile by this developer, or carries get-task-allow / the debugger entitlement",
+          "a reachable device with Developer Mode enabled"
+        ],
+        "observed_at": "2026-09-14T18:19:40Z",
+        "evidence": "not determinable at the device level: it depends on the selected app's code signature and entitlements. It is re-probed per app during preflight.",
+        "scope": "an app the developer builds and signs. A third-party App Store app generally cannot be deeply attached, and this tool does not attempt to bypass that.",
+        "limitations": [
+          "no jailbreak, private API, or entitlement bypass is used or offered"
+        ],
+        "recovery_action": "build and install the target from Xcode with a development signing identity, then retry",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.capture.live_recording",
+        "human_name": "Live trace capture from a physical iOS device",
+        "status": "unknown",
+        "provider": "xctrace",
+        "provider_version": "xctrace version 16.0 (17F113)",
+        "prerequisites": [
+          "a reachable physical device",
+          "an attachable, developer-signed app"
+        ],
+        "observed_at": "2026-09-14T18:19:40Z",
+        "evidence": "xctrace version 16.0 (17F113) is installed, but live capture has NOT been exercised against a physical device in this environment",
+        "scope": "",
+        "limitations": [
+          "UNVERIFIED: no physical iOS device was reachable during implementation, so the live capture path is implemented but not demonstrated. This blocks the M2 gate for iOS."
+        ],
+        "recovery_action": "connect a trusted physical iPhone or iPad and run `mpi preflight` to convert this from unknown to a measured result",
+        "tested": "not_tested"
+      },
+      {
+        "id": "android.capture.frames",
+        "human_name": "Frame timing",
+        "status": "limited",
+        "provider": "dumpsys gfxinfo",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:57Z",
+        "evidence": "streamed over 24 tick(s): 0 frame record(s)",
+        "scope": "collected in increments of 500 ms",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.memory",
+        "human_name": "Process memory counters",
+        "status": "available",
+        "provider": "dumpsys meminfo",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:57Z",
+        "evidence": "streamed over 24 tick(s): 120 counter point(s)",
+        "scope": "collected in increments of 500 ms",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.streaming_overhead",
+        "human_name": "Collector overhead while streaming",
+        "status": "available",
+        "provider": "mpi collector",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:19:57Z",
+        "evidence": "24 tick(s) costing 5589 ms of device interaction in total",
+        "scope": "",
+        "limitations": [
+          "each tick spawns processes on the device; a shorter tick interval means fresher numbers and more overhead",
+          "this is the collector's cost, not the app's, and must not be subtracted from the app's own measurements"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "app.sdk.markers",
+        "human_name": "In-app SDK markers",
+        "status": "available",
+        "provider": "mpi app SDK",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "",
+        "evidence": "SDK 0.1.0 sent 34 marker(s)",
+        "scope": "",
+        "limitations": [
+          "markers are the app's own account of itself, on the app's clock; they are not corroborated by the platform"
+        ],
+        "recovery_action": "",
+        "tested": "probed_only"
+      }
+    ]
+  },
+  "requested_measurement_mode": "diagnostic",
+  "clock_domains": [
+    {
+      "id": "android.boottime.ns",
+      "base": "monotonic",
+      "provider": "android.kernel.boottime",
+      "monotonic": true
+    },
+    {
+      "id": "app.performance.now.ns",
+      "base": "monotonic",
+      "provider": "app SDK",
+      "monotonic": true
+    }
+  ],
+  "clock_mappings": [
+    {
+      "from_domain": "host.steady.ns",
+      "to_domain": "android.boottime.ns",
+      "offset_ns": 17595000000000,
+      "uncertainty_ns": 10000000,
+      "method": "single read of /proc/uptime over adb, paired with the host steady clock; later instants are extrapolated from the host",
+      "measured": true
+    },
+    {
+      "from_domain": "app.performance.now.ns",
+      "to_domain": "android.boottime.ns",
+      "offset_ns": 17595949565708,
+      "uncertainty_ns": 11000000,
+      "method": "the app's clock reading in its handshake, paired with the device clock the collector anchored at capture start; the half-width covers the request latency and the anchor's own resolution",
+      "measured": true
+    }
+  ],
+  "primary_clock_domain": "android.boottime.ns",
+  "window_start_ns": 17595187482416,
+  "window_end_ns": 17607096667541,
+  "duration_ns": 11909185125,
+  "threads": [],
+  "counts": {
+    "events": 0,
+    "frames": 0,
+    "cpu_samples": 0,
+    "js_tasks": 0,
+    "markers": 34,
+    "counters": 5
+  },
+  "refresh_intervals": [],
+  "coverage": [
+    {
+      "collector": "dumpsys gfxinfo",
+      "window_start_ns": 17595187482416,
+      "window_end_ns": 17607096667541,
+      "event_count": 0,
+      "covered_ns": 0,
+      "covered_fraction": 0,
+      "gaps": [
+        {
+          "collector": "dumpsys gfxinfo",
+          "start_ns": 17595187482416,
+          "end_ns": 17607096667541,
+          "duration_ns": 11909185125,
+          "reason": "no_frames_were_reported",
+          "dropped_event_count": null
+        }
+      ]
+    },
+    {
+      "collector": "dumpsys meminfo",
+      "window_start_ns": 17595187482416,
+      "window_end_ns": 17607096667541,
+      "event_count": 120,
+      "covered_ns": 11909185125,
+      "covered_fraction": 1,
+      "gaps": []
+    }
+  ],
+  "dropped_events_by_collector": {},
+  "ingestion_warnings": [],
+  "partial": false,
+  "partial_reasons": [],
+  "events": [],
+  "frames": [],
+  "js_tasks": [],
+  "markers": [
+    {
+      "event_id": "sdk-0",
+      "timestamp_ns": 66094208,
+      "duration_ns": null,
+      "kind": "screen_mount",
+      "screen": "Checkout",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-1",
+      "timestamp_ns": 66103417,
+      "duration_ns": null,
+      "kind": "interaction_begin",
+      "screen": null,
+      "interaction": "tap-pay",
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-2",
+      "timestamp_ns": 66116125,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-3",
+      "timestamp_ns": 88489042,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-4",
+      "timestamp_ns": 110550542,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-5",
+      "timestamp_ns": 132649000,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-6",
+      "timestamp_ns": 154760542,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-7",
+      "timestamp_ns": 176063958,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-8",
+      "timestamp_ns": 196516667,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-9",
+      "timestamp_ns": 216986208,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-10",
+      "timestamp_ns": 237488000,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-11",
+      "timestamp_ns": 258359542,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-12",
+      "timestamp_ns": 280421458,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-13",
+      "timestamp_ns": 300667208,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-14",
+      "timestamp_ns": 321756208,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-15",
+      "timestamp_ns": 341910375,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-16",
+      "timestamp_ns": 362520417,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-17",
+      "timestamp_ns": 384203125,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-18",
+      "timestamp_ns": 405507375,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-19",
+      "timestamp_ns": 427274583,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-20",
+      "timestamp_ns": 449166375,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-21",
+      "timestamp_ns": 471269958,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-22",
+      "timestamp_ns": 491918500,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-23",
+      "timestamp_ns": 513254208,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-24",
+      "timestamp_ns": 534398708,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-25",
+      "timestamp_ns": 555781500,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-26",
+      "timestamp_ns": 577621042,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-27",
+      "timestamp_ns": 598227375,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-28",
+      "timestamp_ns": 618774250,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-29",
+      "timestamp_ns": 640715708,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-30",
+      "timestamp_ns": 662453167,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-31",
+      "timestamp_ns": 682672042,
+      "duration_ns": 900000,
+      "kind": "react_commit",
+      "screen": "Checkout",
+      "interaction": "CartTotal",
+      "process_instance_id": "",
+      "payload": {
+        "commit_count": 1,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-32",
+      "timestamp_ns": 703918083,
+      "duration_ns": 637519667,
+      "kind": "network_request",
+      "screen": "Checkout",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "url": "https://api.example.com/pay?<redacted>",
+        "method": "POST",
+        "status": 200,
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-33",
+      "timestamp_ns": 704002250,
+      "duration_ns": 657519667,
+      "kind": "interaction_end",
+      "screen": null,
+      "interaction": "tap-pay",
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    }
+  ],
+  "cpu_samples": [],
+  "counters": [
+    {
+      "name": "memory.rss_total_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "rss",
+      "points": [
+        [
+          17595187482416,
+          925138944
+        ],
+        [
+          17595689182750,
+          920567808
+        ],
+        [
+          17596196528708,
+          920338432
+        ],
+        [
+          17596709239625,
+          920387584
+        ],
+        [
+          17597230733416,
+          920403968
+        ],
+        [
+          17597802962833,
+          920322048
+        ],
+        [
+          17598340159875,
+          920354816
+        ],
+        [
+          17598809670833,
+          920469504
+        ],
+        [
+          17599338865916,
+          920338432
+        ],
+        [
+          17599852266750,
+          920403968
+        ],
+        [
+          17600344778458,
+          920354816
+        ],
+        [
+          17600873313916,
+          920420352
+        ],
+        [
+          17601505868875,
+          920436736
+        ],
+        [
+          17601924344375,
+          920338432
+        ],
+        [
+          17602460398125,
+          920354816
+        ],
+        [
+          17602954802500,
+          920338432
+        ],
+        [
+          17603502097958,
+          920420352
+        ],
+        [
+          17603984061041,
+          920338432
+        ],
+        [
+          17604524523125,
+          920403968
+        ],
+        [
+          17605007571791,
+          920338432
+        ],
+        [
+          17605562987416,
+          920453120
+        ],
+        [
+          17606056640083,
+          920354816
+        ],
+        [
+          17606596455416,
+          920403968
+        ],
+        [
+          17607096667541,
+          920354816
+        ]
+      ]
+    },
+    {
+      "name": "memory.pss_total_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "pss",
+      "points": [
+        [
+          17595187482416,
+          780430336
+        ],
+        [
+          17595689182750,
+          775859200
+        ],
+        [
+          17596196528708,
+          775628800
+        ],
+        [
+          17596709239625,
+          775677952
+        ],
+        [
+          17597230733416,
+          775695360
+        ],
+        [
+          17597802962833,
+          775613440
+        ],
+        [
+          17598340159875,
+          775646208
+        ],
+        [
+          17598809670833,
+          775759872
+        ],
+        [
+          17599338865916,
+          775628800
+        ],
+        [
+          17599852266750,
+          775695360
+        ],
+        [
+          17600344778458,
+          775638016
+        ],
+        [
+          17600873313916,
+          775711744
+        ],
+        [
+          17601505868875,
+          775727104
+        ],
+        [
+          17601924344375,
+          775629824
+        ],
+        [
+          17602460398125,
+          775645184
+        ],
+        [
+          17602954802500,
+          775628800
+        ],
+        [
+          17603502097958,
+          775710720
+        ],
+        [
+          17603984061041,
+          775629824
+        ],
+        [
+          17604524523125,
+          775695360
+        ],
+        [
+          17605007571791,
+          775628800
+        ],
+        [
+          17605562987416,
+          775744512
+        ],
+        [
+          17606056640083,
+          775646208
+        ],
+        [
+          17606596455416,
+          775694336
+        ],
+        [
+          17607096667541,
+          775645184
+        ]
+      ]
+    },
+    {
+      "name": "memory.private_dirty_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "private_dirty",
+      "points": [
+        [
+          17595187482416,
+          631406592
+        ],
+        [
+          17595689182750,
+          626835456
+        ],
+        [
+          17596196528708,
+          626606080
+        ],
+        [
+          17596709239625,
+          626655232
+        ],
+        [
+          17597230733416,
+          626671616
+        ],
+        [
+          17597802962833,
+          626589696
+        ],
+        [
+          17598340159875,
+          626622464
+        ],
+        [
+          17598809670833,
+          626737152
+        ],
+        [
+          17599338865916,
+          626606080
+        ],
+        [
+          17599852266750,
+          626671616
+        ],
+        [
+          17600344778458,
+          626606080
+        ],
+        [
+          17600873313916,
+          626671616
+        ],
+        [
+          17601505868875,
+          626688000
+        ],
+        [
+          17601924344375,
+          626589696
+        ],
+        [
+          17602460398125,
+          626606080
+        ],
+        [
+          17602954802500,
+          626589696
+        ],
+        [
+          17603502097958,
+          626671616
+        ],
+        [
+          17603984061041,
+          626589696
+        ],
+        [
+          17604524523125,
+          626655232
+        ],
+        [
+          17605007571791,
+          626589696
+        ],
+        [
+          17605562987416,
+          626688000
+        ],
+        [
+          17606056640083,
+          626606080
+        ],
+        [
+          17606596455416,
+          626655232
+        ],
+        [
+          17607096667541,
+          626606080
+        ]
+      ]
+    },
+    {
+      "name": "memory.native_heap_rss_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "native_heap",
+      "points": [
+        [
+          17595187482416,
+          474365952
+        ],
+        [
+          17595689182750,
+          474365952
+        ],
+        [
+          17596196528708,
+          474365952
+        ],
+        [
+          17596709239625,
+          474365952
+        ],
+        [
+          17597230733416,
+          474365952
+        ],
+        [
+          17597802962833,
+          474365952
+        ],
+        [
+          17598340159875,
+          474365952
+        ],
+        [
+          17598809670833,
+          474365952
+        ],
+        [
+          17599338865916,
+          474365952
+        ],
+        [
+          17599852266750,
+          474365952
+        ],
+        [
+          17600344778458,
+          474365952
+        ],
+        [
+          17600873313916,
+          474365952
+        ],
+        [
+          17601505868875,
+          474365952
+        ],
+        [
+          17601924344375,
+          474365952
+        ],
+        [
+          17602460398125,
+          474365952
+        ],
+        [
+          17602954802500,
+          474365952
+        ],
+        [
+          17603502097958,
+          474365952
+        ],
+        [
+          17603984061041,
+          474365952
+        ],
+        [
+          17604524523125,
+          474365952
+        ],
+        [
+          17605007571791,
+          474365952
+        ],
+        [
+          17605562987416,
+          474365952
+        ],
+        [
+          17606056640083,
+          474365952
+        ],
+        [
+          17606596455416,
+          474365952
+        ],
+        [
+          17607096667541,
+          474365952
+        ]
+      ]
+    },
+    {
+      "name": "memory.dalvik_heap_rss_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "dalvik_heap",
+      "points": [
+        [
+          17595187482416,
+          17989632
+        ],
+        [
+          17595689182750,
+          13402112
+        ],
+        [
+          17596196528708,
+          13172736
+        ],
+        [
+          17596709239625,
+          13221888
+        ],
+        [
+          17597230733416,
+          13238272
+        ],
+        [
+          17597802962833,
+          13156352
+        ],
+        [
+          17598340159875,
+          13189120
+        ],
+        [
+          17598809670833,
+          13303808
+        ],
+        [
+          17599338865916,
+          13172736
+        ],
+        [
+          17599852266750,
+          13238272
+        ],
+        [
+          17600344778458,
+          13189120
+        ],
+        [
+          17600873313916,
+          13238272
+        ],
+        [
+          17601505868875,
+          13254656
+        ],
+        [
+          17601924344375,
+          13156352
+        ],
+        [
+          17602460398125,
+          13172736
+        ],
+        [
+          17602954802500,
+          13156352
+        ],
+        [
+          17603502097958,
+          13238272
+        ],
+        [
+          17603984061041,
+          13156352
+        ],
+        [
+          17604524523125,
+          13221888
+        ],
+        [
+          17605007571791,
+          13156352
+        ],
+        [
+          17605562987416,
+          13271040
+        ],
+        [
+          17606056640083,
+          13172736
+        ],
+        [
+          17606596455416,
+          13221888
+        ],
+        [
+          17607096667541,
+          13172736
+        ]
+      ]
+    }
+  ]
+}

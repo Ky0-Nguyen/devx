@@ -83,26 +83,6 @@ std::vector<RulePtr> make_deferred_rules() {
       "no scheduling provider is wired up; naming a lock owner without proof "
       "would be a fabricated cause"));
 
-  r.push_back(std::make_shared<DeferredRule>(
-      "DET-10", "react", "Repeated React renders", "M5",
-      std::vector<Prerequisite>{
-          {"react_profiling_data",
-           "React profiler commit data -- Hermes CPU sampling is not a "
-           "substitute"}},
-      "a render pattern, which is not automatically a defect",
-      "requires the React profiling integration from M3+; deriving renders "
-      "from Hermes samples would misreport them"));
-
-  r.push_back(std::make_shared<DeferredRule>(
-      "DET-11", "network", "Network delay affecting an interaction", "M5",
-      std::vector<Prerequisite>{
-          {"request_spans", "request lifecycle spans"},
-          {"interaction_spans", "the interaction they are claimed to delay"},
-          {"dependency_evidence", "the async dependency between them"}},
-      "delay observed; no server-side cause is assumed from client timing",
-      "no validated network provider; request duration is not a server root "
-      "cause"));
-
   return r;
 }
 

@@ -91,8 +91,7 @@ MPI_TEST(every_rule_declares_prerequisites_and_a_phase, {"section-10.3"}) {
 
 MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
-  for (const char* id : {"DET-03", "DET-06",
-                         "DET-09", "DET-10", "DET-11"}) {
+  for (const char* id : {"DET-03", "DET-06", "DET-09"}) {
     const auto* rec = record_for(r, id);
     MPI_CHECK_MSG(rec != nullptr, std::string("no run record for ") + id);
     MPI_CHECK_MSG(rec->outcome == model::RuleOutcome::kSkipped,
@@ -857,4 +856,114 @@ MPI_TEST(det05_needs_cycles_from_the_app_and_says_where_they_come_from,
   MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
   MPI_CHECK(contains(rec->skipped_reasons, "no completed screen mount/unmount cycle"));
   MPI_CHECK(contains(rec->skipped_reasons, "--sdk"));
+}
+
+
+// --- DET-10 and DET-11, both from the app's own data ------------------------
+
+MPI_TEST(det10_reports_a_render_pattern_and_refuses_to_call_it_a_defect,
+         {"DET-10", "G10", "section-11"}) {
+  // A real capture: 30 commits of one component inside a 637 ms interaction.
+  const auto r = run(load("traces/android-react-and-network.real.mpi.json"));
+  const model::Issue* found = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-10") { found = &i; break; }
+  }
+  MPI_CHECK(found != nullptr);
+  if (found == nullptr) return;
+
+  // The count is measured, so the pattern is observed -- but the spec's
+  // conclusion is "pattern, not automatically defect", so severity is capped
+  // and the finding says so itself.
+  MPI_CHECK(found->detection_status == model::DetectionStatus::kObserved);
+  MPI_CHECK(found->cause_status == model::CauseStatus::kUnknown);
+  MPI_CHECK(found->severity == model::Severity::kLow);
+  MPI_CHECK(found->confidence_basis.find("Whether it is a defect is not") !=
+            std::string::npos);
+  MPI_CHECK(found->severity_rationale.find("not a demonstrated defect") !=
+            std::string::npos);
+  MPI_CHECK(contains(found->alternative_explanations, "by design"));
+  MPI_CHECK(contains(found->missing_evidence, "a frame record"));
+  // A count is not a cost, and the metric says so.
+  MPI_CHECK(!found->metrics.empty());
+  if (!found->metrics.empty()) {
+    MPI_CHECK(contains(found->metrics.front().limitations, "not a cost"));
+  }
+  // The interval is on the capture's timeline, not the app's clock: a capture
+  // that ran at 17596 s cannot have a finding at 66 ms.
+  MPI_CHECK(found->start_ns > 1000000000);
+}
+
+MPI_TEST(det10_will_not_accept_cpu_samples_as_render_data,
+         {"DET-10", "G10", "H05"}) {
+  // A capture full of CPU samples inside React would satisfy a naive rule.
+  // This one names the substitute it refuses.
+  const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
+  const auto* rec = record_for(r, "DET-10");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "are not a substitute"));
+  MPI_CHECK(contains(rec->skipped_reasons, "reactCommit"));
+}
+
+MPI_TEST(det11_observes_the_delay_and_blames_nobody, {"DET-11", "E20"}) {
+  const auto r = run(load("traces/android-react-and-network.real.mpi.json"));
+  const model::Issue* found = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-11") { found = &i; break; }
+  }
+  MPI_CHECK(found != nullptr);
+  if (found == nullptr) return;
+
+  // The timing is measured; the dependency is a temporal overlap, which the
+  // spec caps at a candidate cause.
+  MPI_CHECK(found->detection_status == model::DetectionStatus::kObserved);
+  MPI_CHECK(found->cause_status == model::CauseStatus::kCandidate);
+  MPI_CHECK(found->confidence_basis.find("not a demonstrated dependency") !=
+            std::string::npos);
+
+  // The whole point of this rule: no server claim, and every other candidate
+  // named.
+  MPI_CHECK(contains(found->missing_evidence, "no server claim is made"));
+  MPI_CHECK(contains(found->missing_evidence, "DNS"));
+  MPI_CHECK(contains(found->missing_evidence, "cold radio"));
+  MPI_CHECK(contains(found->missing_evidence, "queued behind other requests"));
+  MPI_CHECK(contains(found->alternative_explanations, "prefetching"));
+  MPI_CHECK(found->severity_rationale.find("not a claim about the network") !=
+            std::string::npos);
+
+  // The interaction and the screen came from markers, and the interval is on
+  // the capture's timeline.
+  MPI_CHECK_EQ(found->interaction, std::string("tap-pay"));
+  MPI_CHECK_EQ(found->screen, std::string("Checkout"));
+  MPI_CHECK(found->start_ns > 1000000000);
+  // Both spans travel as evidence.
+  MPI_CHECK_EQ(found->evidence.size(), std::size_t{2});
+}
+
+MPI_TEST(det11_does_not_report_a_request_that_merely_overlapped_a_little,
+         {"DET-11"}) {
+  // Raising the share threshold past what this capture shows must silence the
+  // finding, and the skip has to say why rather than going quiet.
+  auto trace = load("traces/android-react-and-network.real.mpi.json");
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  opts.threshold_overrides.push_back({"DET-11.min_share_of_interaction", 1.5});
+  const auto r = rules::analyze(trace, symbols, opts);
+  for (const auto& i : r.issues) {
+    MPI_CHECK(i.rule_id != "DET-11");
+  }
+  const auto* rec = record_for(r, "DET-11");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(contains(rec->skipped_reasons, "not enough to say the interaction waited"));
+}
+
+MPI_TEST(det11_says_it_cannot_observe_the_network_itself, {"DET-11", "H05"}) {
+  const auto r = run(load("traces/android-cold-launch.real.mpi.json"));
+  const auto* rec = record_for(r, "DET-11");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "does not observe the network"));
+  MPI_CHECK(contains(rec->skipped_reasons, "would be guesswork"));
 }

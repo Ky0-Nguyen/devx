@@ -104,6 +104,25 @@ class Rule {
 
 using RulePtr = std::shared_ptr<Rule>;
 
+// An interval from a producer's own clock, placed on the capture's timeline.
+//
+// A marker is stamped by the app. Reporting its raw numbers as an issue's
+// interval sends the UI to the wrong place in the capture -- spec section 13
+// requires clicking an issue to focus its actual evidence -- so a rule maps
+// the interval when a *measured* mapping exists and says so when it does not.
+// Nothing is ever shifted by an assumed offset.
+struct MappedInterval {
+  model::TimeNs start_ns = 0;
+  model::TimeNs end_ns = 0;
+  bool mapped = false;
+  // The clock the returned values are on.
+  std::string domain;
+};
+MappedInterval map_producer_interval(const model::NormalizedTrace& trace,
+                                     const std::string& producer_domain,
+                                     model::TimeNs start_ns,
+                                     model::TimeNs end_ns);
+
 // Stable fingerprint so re-analysing the same input yields the same issue
 // identity (spec section 15: stable issue fingerprints).
 std::string make_fingerprint(const std::string& rule_id,

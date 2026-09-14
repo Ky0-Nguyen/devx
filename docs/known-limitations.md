@@ -208,6 +208,21 @@ correlation look real. And it distinguishes warm-up from accumulation: a
 series that rises over the first visits and then settles is reported as
 warm-up settling, not as suspected retention.
 
+**DET-10 reports a pattern, not a defect.** The spec's allowed conclusion is
+"pattern, not automatically defect", so severity is capped at low, the finding
+says in its own words that a defect is not established, and the metric says a
+count is not a cost. It also refuses the obvious substitute: CPU samples that
+land inside React measure where time went, not how many times a component
+committed, and the skip names that rather than making do.
+
+**DET-11 blames nobody.** A request duration covers DNS, the TLS handshake, a
+cold radio, retries, proxies, time queued behind other requests in the app,
+and the app's own delay reading the response -- as well as the server. All of
+them are listed as missing evidence on every finding, the cause status stays
+`candidate` because a temporal overlap is not a demonstrated dependency, and
+the severity rationale says explicitly that it is not a claim about the
+network or the server.
+
 **DET-07 will not invent a budget.** A startup budget is a product decision and
 no platform publishes one, so the rule skips until `DET-07.budget_ms` is
 configured -- and says that the *budget* is missing, not the data. It also
