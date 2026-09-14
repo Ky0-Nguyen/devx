@@ -282,6 +282,22 @@ std::optional<std::string> parse_proc_stat_starttime(const std::string& stat_lin
   return starttime;
 }
 
+std::optional<ProcCpuTime> parse_proc_stat_cpu_time(const std::string& stat_line) {
+  // Same hazard as starttime: field 2 is the comm name in parentheses and can
+  // contain spaces, so nothing before the last ')' can be counted on.
+  const std::size_t rparen = stat_line.rfind(')');
+  if (rparen == std::string::npos) return std::nullopt;
+  const auto fields = split_ws(stat_line.substr(rparen + 1));
+  // After the ')' the next field is field 3 (state), so utime (field 14) is
+  // index 11 and stime (field 15) is index 12.
+  if (fields.size() < 13) return std::nullopt;
+  if (!all_digits(fields[11]) || !all_digits(fields[12])) return std::nullopt;
+  ProcCpuTime t;
+  t.utime_ticks = std::atoll(fields[11].c_str());
+  t.stime_ticks = std::atoll(fields[12].c_str());
+  return t;
+}
+
 PackageFlags parse_dumpsys_package_flags(const std::string& text) {
   PackageFlags f;
   for (const auto& line : split_lines(text)) {

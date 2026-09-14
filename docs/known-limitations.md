@@ -54,6 +54,23 @@ open; J14 is partially met.
 
 **Phase.** M2 for the iOS collector.
 
+### CPU time is collected now, so "busy" and "waiting" are separable
+
+ gives the process's own user and system CPU time, sampled
+on the same tick as memory. It is the counter that separates a process that
+was *busy* from one that was *waiting*, which wall-clock time cannot do and
+every CPU finding gets read as though it could. Measured on the emulator: 790
+ms of CPU over 5,107 ms of wall time.
+
+ is read from the device, never assumed. It is 100 everywhere seen,
+which is what makes assuming it dangerous -- a wrong constant would scale
+every figure and look plausible. When it cannot be read the counter is not
+collected and the source says why.
+
+Whole-process only: it never says which thread used the CPU. And the kernel's
+10 ms tick means a difference over a short interval is quantised, so a busy
+millisecond can read as zero.
+
 ### What the Android collector does not collect
 
 **No network timing.** DET-11 reads network markers from the app's own SDK,
@@ -467,8 +484,8 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**157 of 198** checklist items have at least one automated test
-(429 test cases in 19 binaries, plus 166 Swift). The remaining 41 are enumerated with a stated
+**158 of 198** checklist items have at least one automated test
+(432 test cases in 19 binaries, plus 166 Swift). The remaining 40 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

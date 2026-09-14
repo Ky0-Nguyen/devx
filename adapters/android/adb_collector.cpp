@@ -1,5 +1,6 @@
 #include "adapters/android/adb_collector.hpp"
 
+#include "adapters/android/adb_adapter.hpp"
 #include "adapters/android/atrace_parser.hpp"
 
 #include <algorithm>
@@ -761,8 +762,96 @@ std::int64_t AdbCollector::collect_memory_once(
     target->points.emplace_back(at_ns, *spec.value);
     ++added;
   }
+  // The process's own CPU time, read on the same tick so the two describe
+  // the same instant.
+  //
+  // This is the one counter that separates a process that was *busy* from one
+  // that was *waiting*: wall-clock time cannot tell those apart, and every
+  // CPU finding gets read as though it could. It is cumulative since the
+  // process started, so a reader takes a difference -- and because that is
+  // what the kernel reports, no rate is invented here.
+  added += collect_cpu_time_once(device, config, at_ns, out);
+
   source_ok = true;
   evidence = "meminfo yielded " + std::to_string(added) + " counter point(s)";
+  return added;
+}
+
+std::int64_t AdbCollector::collect_cpu_time_once(
+    const model::DeviceRef& device, const session::CaptureConfig& config,
+    model::TimeNs at_ns, model::NormalizedTrace& out) {
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(10000);
+  po.cancel = config.cancel;
+
+  if (stream_.pid <= 0) return 0;
+  // CLK_TCK converts the kernel's ticks to time, and it is read from the
+  // device rather than assumed. 100 is nearly universal, which is exactly
+  // what makes assuming it dangerous: on a device where it is not, every
+  // number would be wrong by a constant factor and look plausible.
+  if (stream_.clk_tck == 0) {
+    const auto conf = proc::run(
+        shell_argv(device.device_id, {"getconf", "CLK_TCK"}), po);
+    const long long parsed = conf.ok() ? std::atoll(trim(conf.out).c_str()) : 0;
+    if (parsed <= 0) {
+      if (!stream_.clk_tck_refused) {
+        stream_.clk_tck_refused = true;
+        out.ingestion_warnings.push_back(
+            "process CPU time was not collected: the device's CLK_TCK could "
+            "not be read, and the kernel reports CPU time in ticks whose "
+            "length that constant defines. Assuming a value would make every "
+            "figure wrong by a constant factor and look plausible");
+      }
+      stream_.clk_tck = -1;
+    } else {
+      stream_.clk_tck = parsed;
+    }
+  }
+  if (stream_.clk_tck <= 0) return 0;
+
+  const auto r = proc::run(
+      shell_argv(device.device_id,
+                 {"cat", "/proc/" + std::to_string(stream_.pid) + "/stat"}),
+      po);
+  if (!r.ok()) return 0;
+  const auto cpu = parse_proc_stat_cpu_time(r.out);
+  if (!cpu.has_value()) return 0;
+
+  const double ns_per_tick = 1e9 / static_cast<double>(stream_.clk_tck);
+  const struct {
+    const char* name;
+    const char* family;
+    std::int64_t ticks;
+  } series[] = {
+      {"cpu.process_time_ns", "cpu_time", cpu->total_ticks()},
+      {"cpu.process_user_time_ns", "cpu_time_user", cpu->utime_ticks},
+      {"cpu.process_system_time_ns", "cpu_time_system", cpu->stime_ticks},
+  };
+  std::int64_t added = 0;
+  for (const auto& spec : series) {
+    model::CounterSeries* target = nullptr;
+    for (auto& c : out.counters) {
+      if (c.name == spec.name) {
+        target = &c;
+        break;
+      }
+    }
+    if (target == nullptr) {
+      model::CounterSeries c;
+      c.name = spec.name;
+      c.unit = "ns";
+      c.provider = "/proc/<pid>/stat";
+      c.process_instance_id = stream_.process_key;
+      // Its own family: CPU time is not memory and must never be totalled
+      // with one, which is what keeping families apart is for.
+      c.family = spec.family;
+      out.counters.push_back(std::move(c));
+      target = &out.counters.back();
+    }
+    target->points.emplace_back(
+        at_ns, static_cast<double>(spec.ticks) * ns_per_tick);
+    ++added;
+  }
   return added;
 }
 
@@ -1385,6 +1474,7 @@ session::CaptureResult AdbCollector::begin(
     if (p.is_primary) primary = &p;
   }
   stream_.process_key = primary->canonical();
+  stream_.pid = primary->pid;
   stream_.clock_id = "android.boottime.ns";
 
   out.device = device;
@@ -1745,10 +1835,63 @@ session::CaptureResult AdbCollector::finish(
     result.source_results.push_back(std::move(c));
   }
   if (config.memory) {
-    std::size_t points = 0;
-    for (const auto& c : out.counters) points += c.points.size();
+    // Counted per provider, because they are two sources that happen to
+    // share a tick. Reporting one figure would attribute `/proc` points to
+    // `dumpsys meminfo`.
+    std::size_t memory_points = 0;
+    std::size_t cpu_time_points = 0;
+    for (const auto& c : out.counters) {
+      if (c.name.rfind("cpu.process_", 0) == 0) {
+        cpu_time_points += c.points.size();
+      } else {
+        memory_points += c.points.size();
+      }
+    }
     summarise("android.capture.memory", "Process memory counters",
-              "dumpsys meminfo", stream_.memory_ok, points, "counter point(s)");
+              "dumpsys meminfo", stream_.memory_ok, memory_points,
+              "counter point(s)");
+
+    // Its own source, with its own limits. Wall-clock time cannot separate a
+    // process that was busy from one that was waiting, and every CPU finding
+    // gets read as though it could -- so this is the counter that settles it,
+    // and what it cannot say travels with it.
+    auto cpu_time = make_source(
+        "android.capture.cpu_time", "Process CPU time",
+        stream_.clk_tck <= 0
+            ? model::CapabilityStatus::kUnsupported
+            : (cpu_time_points > 0 ? model::CapabilityStatus::kAvailable
+                                   : model::CapabilityStatus::kLimited),
+        "/proc/<pid>/stat");
+    if (stream_.clk_tck <= 0) {
+      cpu_time.evidence =
+          "the device's CLK_TCK could not be read, and the kernel reports CPU "
+          "time in ticks whose length that constant defines; assuming a value "
+          "would make every figure wrong by a constant factor";
+      cpu_time.recovery_action = "check that `getconf CLK_TCK` works on the "
+                                 "device";
+    } else {
+      cpu_time.evidence =
+          "/proc/<pid>/stat yielded " + std::to_string(cpu_time_points) +
+          " point(s) at CLK_TCK " + std::to_string(stream_.clk_tck);
+      cpu_time.limitations.push_back(
+          "the kernel counts in ticks of " +
+          std::to_string(1000 / std::max<std::int64_t>(stream_.clk_tck, 1)) +
+          " ms, so a difference taken over a short interval is quantised to "
+          "that and a busy millisecond can read as zero");
+      cpu_time.limitations.push_back(
+          "whole-process, all threads together: it says the app used CPU, "
+          "never which thread did");
+      cpu_time.limitations.push_back(
+          "cumulative since the process started, so a rate is a difference "
+          "the reader takes -- none is computed here");
+      cpu_time.limitations.push_back(
+          "user and system time are reported separately and never summed with "
+          "a memory family; CPU time is not memory");
+    }
+    cpu_time.tested = device.form == model::DeviceForm::kPhysical
+                          ? model::TestedState::kVerifiedOnPhysicalDevice
+                          : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    result.source_results.push_back(std::move(cpu_time));
   }
 
   // The collector's own cost over the session, so a reader can weigh the live

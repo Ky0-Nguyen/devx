@@ -218,6 +218,13 @@ class AdbCollector final : public session::Collector {
   // is not parsed here: parsing is analysis, and a collector that parsed its
   // own output would make a capture fail for a reason that has nothing to do
   // with the device.
+  // The process's own CPU time, from /proc/<pid>/stat. Sampled on the memory
+  // tick so the two describe the same instant.
+  std::int64_t collect_cpu_time_once(const model::DeviceRef& device,
+                                     const session::CaptureConfig& config,
+                                     model::TimeNs at_ns,
+                                     model::NormalizedTrace& out);
+
   std::string collect_heap_dump(const model::DeviceRef& device,
                                 const session::CaptureConfig& config,
                                 std::int32_t pid,
@@ -238,6 +245,13 @@ class AdbCollector final : public session::Collector {
     std::string package;
     std::string process_key;
     std::string clock_id;
+    // The target's pid, for the per-process reads that need one.
+    std::int32_t pid = 0;
+    // The device's CLK_TCK: 0 = not read yet, -1 = refused. Never defaulted
+    // to 100, however common that is -- a wrong constant would make every
+    // CPU-time figure wrong by a constant factor and look plausible.
+    std::int64_t clk_tck = 0;
+    bool clk_tck_refused = false;
     bool frames_reset = false;
     bool frames_ok = true;
     bool cpu_ok = true;
@@ -318,6 +332,9 @@ class AdbCollector final : public session::Collector {
       package.clear();
       process_key.clear();
       clock_id.clear();
+      pid = 0;
+      clk_tck = 0;
+      clk_tck_refused = false;
       frames_reset = false;
       frames_ok = true;
       cpu_ok = true;

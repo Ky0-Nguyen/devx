@@ -53,6 +53,23 @@ std::vector<PackageRow> parse_pm_list_packages(const std::string& text);
 // ownership accordingly (spec B02).
 std::optional<std::string> parse_proc_stat_starttime(const std::string& stat_line);
 
+// The process's own CPU time from /proc/<pid>/stat, in clock ticks.
+//
+// `utime` (field 14) and `stime` (field 15): time the process spent running
+// in user mode and in the kernel on its own behalf. This is what separates a
+// process that was *busy* from one that was *waiting* -- wall-clock time
+// cannot tell those apart, and every CPU finding is read as though it could.
+//
+// Ticks, not nanoseconds, because the unit depends on the device's CLK_TCK
+// and this parser does not guess it. The caller reads it and says what it
+// read.
+struct ProcCpuTime {
+  std::int64_t utime_ticks = 0;
+  std::int64_t stime_ticks = 0;
+  std::int64_t total_ticks() const { return utime_ticks + stime_ticks; }
+};
+std::optional<ProcCpuTime> parse_proc_stat_cpu_time(const std::string& stat_line);
+
 // Reads "profileable" / "debuggable" from `dumpsys package` output.
 struct PackageFlags {
   std::optional<bool> debuggable;

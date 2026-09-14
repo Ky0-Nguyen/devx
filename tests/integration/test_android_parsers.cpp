@@ -521,3 +521,51 @@ MPI_TEST(atrace_timestamps_keep_their_precision, {"D13"}) {
   MPI_CHECK_EQ(t.switches.size(), std::size_t{1});
   MPI_CHECK_EQ(t.switches.front().timestamp_ns, model::TimeNs{17921423446000});
 }
+
+MPI_TEST(proc_stat_cpu_time_is_read_from_the_right_fields, {"E11"}) {
+  // A real line from `/proc/<pid>/stat` on API 37. The field offsets are the
+  // whole test: utime is field 14 and stime field 15, and counting them from
+  // the start of the line rather than from the last ')' would read the
+  // fault counters instead and produce a plausible wrong number.
+  const std::string line =
+      "5119 (ut.hutbot.debug) S 432 432 0 0 -1 4194624 125717 246 165 0 "
+      "26763 7791 0 0 10 -10 76 0 1856103 52053442560 56168 18446744073709551615 "
+      "1 1 0 0 0 0 4612 1 0 0 17 4 0 0 0 0 0 0 0 0 0 0 0 0 0";
+  const auto cpu = android::parse_proc_stat_cpu_time(line);
+  MPI_CHECK(cpu.has_value());
+  if (!cpu.has_value()) return;
+  MPI_CHECK_EQ(cpu->utime_ticks, std::int64_t{26763});
+  MPI_CHECK_EQ(cpu->stime_ticks, std::int64_t{7791});
+  MPI_CHECK_EQ(cpu->total_ticks(), std::int64_t{34554});
+  // And starttime still reads from the same line, so the two agree about
+  // where the fields begin.
+  const auto start = android::parse_proc_stat_starttime(line);
+  MPI_CHECK(start.has_value());
+  MPI_CHECK_EQ(start.value_or(""), std::string("1856103"));
+}
+
+MPI_TEST(proc_stat_cpu_time_survives_a_comm_with_spaces_and_parens, {"E11", "D18"}) {
+  // The comm field is attacker-adjacent: it is the thread name, it can hold
+  // spaces and parentheses, and parsing from the left would be thrown off by
+  // either.
+  const std::string line =
+      "77 (weird ) name) S 1 1 0 0 -1 0 0 0 0 0 11 22 0 0 20 0 1 0 999 0 0 0";
+  const auto cpu = android::parse_proc_stat_cpu_time(line);
+  MPI_CHECK(cpu.has_value());
+  if (!cpu.has_value()) return;
+  MPI_CHECK_EQ(cpu->utime_ticks, std::int64_t{11});
+  MPI_CHECK_EQ(cpu->stime_ticks, std::int64_t{22});
+}
+
+MPI_TEST(a_short_or_non_numeric_proc_stat_yields_nothing, {"E11", "D18"}) {
+  // No value rather than a zero: a process that used no CPU and a line that
+  // could not be read are different facts, and only the first is a
+  // measurement.
+  MPI_CHECK(!android::parse_proc_stat_cpu_time("77 (x) S 1 1 0").has_value());
+  MPI_CHECK(!android::parse_proc_stat_cpu_time("no parenthesis here").has_value());
+  MPI_CHECK(!android::parse_proc_stat_cpu_time("").has_value());
+  const std::string bad =
+      "77 (x) S 1 1 0 0 -1 0 0 0 0 0 eleven 22 0 0 20 0 1 0 999";
+  MPI_CHECK_MSG(!android::parse_proc_stat_cpu_time(bad).has_value(),
+                "a non-numeric tick count is refused, not coerced to 0");
+}
