@@ -222,6 +222,15 @@ ExitCode cmd_timeline(const Invocation& inv) {
 
   ingest::ReadOptions read_opts;
   read_opts.cancel = inv.global.cancel;
+  if (inv.has_flag("max-input-mib")) {
+    const long long mib = std::atoll(inv.flag("max-input-mib").c_str());
+    if (mib <= 0) {
+      std::cerr << "error: --max-input-mib must be a positive integer\n";
+      return ExitCode::kUsage;
+    }
+    read_opts.json_limits.max_bytes =
+        static_cast<std::size_t>(mib) * 1024ull * 1024ull;
+  }
   model::NormalizedTrace trace;
   ingest::ReadDiagnostics diag;
   const auto reader_id = ingest::read_any(trace_path, read_opts, trace, diag);

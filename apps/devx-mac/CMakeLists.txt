@@ -43,6 +43,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LaunchOptions.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DevXApp.swift
@@ -59,6 +60,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

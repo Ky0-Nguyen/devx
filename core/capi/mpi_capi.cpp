@@ -397,6 +397,36 @@ char* mpi_session_timeline_json(const char* sessions_dir,
       root.set("error", json::Value::string(loaded.error));
       return root;
     }
+    // Building a timeline re-reads the whole trace, and that is the one
+    // expensive thing this call does. Measured on the specification's 1 GiB
+    // stress fixture: the window renders correctly and costs **7.8 GB of
+    // peak resident memory**, settling at 2.9 GB. That survives on a 48 GB
+    // machine and would take a 16 GB one down, so it is not spent silently.
+    // The limit is a default the caller raises deliberately, which is the
+    // same shape as `mpi analyze --max-input-mib`.
+    {
+      std::error_code ec;
+      const auto bytes = std::filesystem::file_size(loaded.trace_path, ec);
+      constexpr std::uintmax_t kDefaultCapMiB = 256;
+      if (!ec && bytes > kDefaultCapMiB * 1024 * 1024) {
+        const auto mib = bytes / (1024 * 1024);
+        root.set("error",
+                 json::Value::string(
+                     "this capture's trace is " + std::to_string(mib) +
+                     " MiB, over the " + std::to_string(kDefaultCapMiB) +
+                     " MiB default for building a timeline. Binning re-reads "
+                     "the whole trace: on the 1 GiB stress fixture that was "
+                     "measured at 7.8 GB of peak memory, which would end the "
+                     "process on a 16 GB machine. Raise the cap deliberately "
+                     "with `mpi timeline --max-input-mib` if this machine has "
+                     "the room."));
+        root.set("over_timeline_cap", json::Value::boolean(true));
+        root.set("trace_mib", json::Value::integer(
+                                  static_cast<std::int64_t>(mib)));
+        return root;
+      }
+    }
+
     model::NormalizedTrace trace;
     ingest::ReadDiagnostics diag;
     ingest::ReadOptions opts;
