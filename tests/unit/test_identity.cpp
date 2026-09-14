@@ -1,5 +1,7 @@
 #include <sstream>
 
+#include "core/discovery/discovery_service.hpp"
+#include "core/model/capability.hpp"
 #include "core/model/identity.hpp"
 #include "tests/unit/test_framework.hpp"
 
@@ -135,4 +137,148 @@ MPI_TEST(simulator_form_survives_serialization, {"C20", "J18"}) {
   MPI_CHECK_EQ(d.to_json().find("form")->as_string(), std::string("emulator"));
   d.form = DeviceForm::kPhysical;
   MPI_CHECK_EQ(d.to_json().find("form")->as_string(), std::string("physical"));
+}
+
+
+// --- waiting for a launched app's process (spec A22) -------------------------
+
+namespace {
+
+// A provider whose app takes a few polls to show up, which is what a real
+// launch looks like: `am start -W` returns before the process is listable.
+class LateProcessProvider final : public discovery::Provider {
+ public:
+  explicit LateProcessProvider(int appear_on_poll)
+      : appear_on_poll_(appear_on_poll) {}
+
+  model::Platform platform() const override { return model::Platform::kAndroid; }
+  std::string name() const override { return "fake.late-process"; }
+  void probe(model::CapabilityMatrix&, const discovery::ProviderOptions&) const override {}
+
+  std::vector<model::DeviceRef> list_devices(const discovery::ProviderOptions&,
+                                             std::vector<std::string>&) const override {
+    model::DeviceRef d;
+    d.platform = model::Platform::kAndroid;
+    d.device_id = "fake-1";
+    d.trust = model::TrustState::kAuthorized;
+    d.form = model::DeviceForm::kEmulator;
+    return {d};
+  }
+
+  std::vector<model::AppEntry> list_apps(const model::DeviceRef&,
+                                         const discovery::ProviderOptions&,
+                                         std::vector<std::string>&,
+                                         bool&) const override {
+    return {};
+  }
+
+  std::vector<model::ProcessInstance> resolve_processes(
+      const model::DeviceRef&, const model::ApplicationKey& app,
+      const discovery::ProviderOptions&,
+      std::vector<std::string>&) const override {
+    ++polls;
+    if (polls < appear_on_poll_) return {};
+    model::ProcessInstance p;
+    p.app = app;
+    p.pid = 4242;
+    p.process_name = app.app_identifier;
+    p.is_primary = true;
+    p.ownership = model::OwnershipEvidence::kProviderAttributed;
+    p.process_start_time = "12345";
+    p.boot_id = "boot";
+    return {p};
+  }
+
+  mutable int polls = 0;
+
+ private:
+  int appear_on_poll_;
+};
+
+model::ApplicationKey fake_key() {
+  model::ApplicationKey k;
+  k.platform = model::Platform::kAndroid;
+  k.device_id = "fake-1";
+  k.app_identifier = "com.example.launched";
+  k.identifier_kind = model::IdentifierKind::kPackageName;
+  return k;
+}
+
+model::DeviceRef fake_device() {
+  model::DeviceRef d;
+  d.platform = model::Platform::kAndroid;
+  d.device_id = "fake-1";
+  d.trust = model::TrustState::kAuthorized;
+  d.form = model::DeviceForm::kEmulator;
+  return d;
+}
+
+}  // namespace
+
+MPI_TEST(a_launched_app_is_waited_for_until_its_process_appears, {"A22", "A21"}) {
+  discovery::DiscoveryService svc;
+  auto provider = std::make_shared<LateProcessProvider>(/*appear_on_poll=*/3);
+  svc.add_provider(provider);
+
+  discovery::ProviderOptions opts;
+  const auto waited = svc.wait_for_app_process(
+      fake_device(), fake_key(), std::chrono::milliseconds(2000),
+      std::chrono::milliseconds(5), opts);
+
+  MPI_CHECK(waited.appeared);
+  MPI_CHECK_EQ(waited.processes.size(), std::size_t{1});
+  MPI_CHECK(waited.polls >= 3);
+  MPI_CHECK(!waited.cancelled);
+}
+
+MPI_TEST(a_wait_that_times_out_says_so_rather_than_reporting_no_processes,
+         {"A22", "E13"}) {
+  discovery::DiscoveryService svc;
+  // Never appears.
+  svc.add_provider(std::make_shared<LateProcessProvider>(/*appear_on_poll=*/100000));
+
+  discovery::ProviderOptions opts;
+  const auto waited = svc.wait_for_app_process(
+      fake_device(), fake_key(), std::chrono::milliseconds(30),
+      std::chrono::milliseconds(5), opts);
+
+  MPI_CHECK(!waited.appeared);
+  MPI_CHECK(waited.processes.empty());
+  // The distinction that matters: a timeout is missing evidence, not a
+  // finding that the app runs no processes.
+  bool said_timeout = false;
+  for (const auto& n : waited.notes) {
+    if (n.find("this is a timeout, not evidence") != std::string::npos) {
+      said_timeout = true;
+    }
+  }
+  MPI_CHECK(said_timeout);
+}
+
+MPI_TEST(a_zero_budget_still_gets_one_look, {"A22"}) {
+  discovery::DiscoveryService svc;
+  svc.add_provider(std::make_shared<LateProcessProvider>(/*appear_on_poll=*/1));
+  discovery::ProviderOptions opts;
+  // An app that is already up must not need a waiting budget to be found.
+  const auto waited = svc.wait_for_app_process(
+      fake_device(), fake_key(), std::chrono::milliseconds(0),
+      std::chrono::milliseconds(5), opts);
+  MPI_CHECK(waited.appeared);
+  MPI_CHECK_EQ(waited.polls, 1);
+}
+
+MPI_TEST(a_cancelled_wait_stops_and_reports_the_cancellation, {"A22", "J11"}) {
+  discovery::DiscoveryService svc;
+  svc.add_provider(std::make_shared<LateProcessProvider>(/*appear_on_poll=*/100000));
+  discovery::ProviderOptions opts;
+  CancellationSource source;
+  opts.cancel = source.token();
+  source.cancel();
+
+  const auto waited = svc.wait_for_app_process(
+      fake_device(), fake_key(), std::chrono::milliseconds(5000),
+      std::chrono::milliseconds(5), opts);
+  MPI_CHECK(waited.cancelled);
+  MPI_CHECK(!waited.appeared);
+  MPI_CHECK_EQ(waited.polls, 0);
 }
