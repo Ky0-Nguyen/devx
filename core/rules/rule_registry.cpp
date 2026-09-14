@@ -13,6 +13,8 @@ RulePtr make_det04_cpu_hotspot();
 RulePtr make_det05_memory_growth();
 RulePtr make_det07_startup_budget();
 RulePtr make_det08_regression();
+RulePtr make_det10_react_renders();
+RulePtr make_det11_network_delay();
 RulePtr make_det12_tooling_activity();
 std::vector<RulePtr> make_deferred_rules();
 
@@ -30,6 +32,8 @@ std::vector<RulePtr> all_rules() {
   rules.push_back(make_det05_memory_growth());
   rules.push_back(make_det07_startup_budget());
   rules.push_back(make_det08_regression());
+  rules.push_back(make_det10_react_renders());
+  rules.push_back(make_det11_network_delay());
   rules.push_back(make_det12_tooling_activity());
   for (auto& r : make_deferred_rules()) rules.push_back(std::move(r));
   std::sort(rules.begin(), rules.end(),
@@ -71,6 +75,30 @@ std::optional<double> RuleContext::override_for(const std::string& key) const {
 std::vector<model::MeasurementMode> Rule::supported_modes() const {
   return {model::MeasurementMode::kDiagnostic, model::MeasurementMode::kBenchmark,
           model::MeasurementMode::kUnknownLimited};
+}
+
+MappedInterval map_producer_interval(const model::NormalizedTrace& trace,
+                                     const std::string& producer_domain,
+                                     model::TimeNs start_ns,
+                                     model::TimeNs end_ns) {
+  MappedInterval out;
+  out.start_ns = start_ns;
+  out.end_ns = end_ns;
+  out.domain = producer_domain;
+  if (producer_domain.empty() ||
+      producer_domain == trace.primary_clock_domain) {
+    out.mapped = true;
+    out.domain = trace.primary_clock_domain;
+    return out;
+  }
+  const auto mapped_start = trace.map_to_primary(producer_domain, start_ns);
+  const auto mapped_end = trace.map_to_primary(producer_domain, end_ns);
+  if (!mapped_start.has_value() || !mapped_end.has_value()) return out;
+  out.start_ns = *mapped_start;
+  out.end_ns = *mapped_end;
+  out.mapped = true;
+  out.domain = trace.primary_clock_domain;
+  return out;
 }
 
 RuleOutput Rule::run(const RuleContext& ctx) const {

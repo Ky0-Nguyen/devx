@@ -26,6 +26,8 @@ add_library(mpi_core STATIC
   rules/det05_memory_growth.cpp
   rules/det07_startup_budget.cpp
   rules/det08_regression.cpp
+  rules/det10_react_renders.cpp
+  rules/det11_network_delay.cpp
   rules/det12_tooling_activity.cpp
   rules/deferred_rules.cpp
   rules/engine.cpp
