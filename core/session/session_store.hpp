@@ -85,6 +85,13 @@ struct LoadResult {
   // A heap dump inside the package, when one was captured. Empty otherwise,
   // and empty means "this capture has none" -- not "it had none to find".
   std::string heap_path;
+  // Notes about the package itself: a schema version this build does not
+  // know, a state that is not `completed`. Not fatal -- a package written by
+  // another version is usually readable and the operator decides whether to
+  // trust it -- but never silent, because a field this build cannot
+  // interpret would otherwise read as a field the capture did not have
+  // (spec J13).
+  std::vector<std::string> notes;
 };
 
 // Reads a package's manifest and verifies its checksums.

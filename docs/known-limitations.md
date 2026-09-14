@@ -529,16 +529,28 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**162 of 198** checklist items have at least one automated test
-(433 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 36 are enumerated with a stated
+**173 of 198** checklist items have at least one automated test
+(447 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 25 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
 A checklist item having a test is not the same as the capability being verified
 on hardware. The capability matrix is the authority on that.
 
-Twelve items moved from uncovered to covered without any new capability being
-built, because their stated reason had gone stale: six said "needs a
+Twenty-three items have moved from uncovered to covered without new
+capability being built, because their stated reasons were wrong rather than
+merely stale. Two mistakes ran through them. Several said "needs a device"
+while an emulator was running and a real React Native app was installed on
+it. More importantly, several confused *confirmation* with the requirement:
+the checklist asks whether **this tool** distinguishes, refuses or keeps
+things apart, and that is decided by its own logic -- hardware would confirm
+the behaviour, a test establishes it. A14 (two apps sharing a display name),
+B14 (profileable independent of running and visible), A09 (no foreground
+state to guess at), F09 (no cross-process memory sums) and J19 (no fabricated
+JS evidence) are all of that kind.
+
+An earlier batch of twelve moved for the plainer reason that their stated
+reason had gone stale: six said "needs a
 collector (M2)" when the collector had existed for some time. What they
 actually needed was a collector to *drive*, not a device -- so they are
 driven against a fake one, which is a test double rather than synthetic data

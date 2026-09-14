@@ -18,6 +18,8 @@
 #include <vector>
 
 #include "core/discovery/provider.hpp"
+#include "core/model/build.hpp"
+#include "core/util/process.hpp"
 
 namespace mpi::android {
 
@@ -76,8 +78,43 @@ struct PackageFlags {
   std::optional<bool> profileable_shell;
   std::string version_name;
   std::optional<std::int64_t> version_code;
+  // What identifies the *build* under test, as opposed to the package name.
+  //
+  // Without these a session records which app it measured and nothing about
+  // which build of it, so two captures of different builds are
+  // indistinguishable -- and a reinstall between them is invisible. Spec B11
+  // asks for a reinstall or update to revalidate build identity; that needs
+  // an identity to revalidate.
+  //
+  // `code_path` changes on every install (Android randomises the directory
+  // suffix), and `last_update_time` changes on every update, so either one
+  // detects a build swap that left the version number alone -- which is
+  // exactly what a developer iterating on one version does all day.
+  std::string code_path;
+  std::string first_install_time;
+  std::string last_update_time;
+  std::string signature_digest;
 };
 PackageFlags parse_dumpsys_package_flags(const std::string& text);
+
+// Reads the app's build identity into `out`, from `dumpsys package`.
+//
+// Separate from discovery on purpose: discovery answers "which apps are
+// there", and this answers "which build of this one am I about to measure" --
+// the question a session has to record if two captures of the same package
+// are ever to be compared. Spec B11 asks a reinstall or update to revalidate
+// build identity, which needs an identity to revalidate; before this the
+// Android build profile carried only the device's form and OS version, so a
+// reinstall between two captures was invisible.
+//
+// Returns false with `error` set when the package could not be read. A
+// missing fact is left absent rather than defaulted: an unknown version is
+// not version zero.
+bool read_app_build_facts(const std::string& adb_path,
+                          const std::string& serial,
+                          const std::string& package,
+                          const proc::Options& opts,
+                          model::BuildProfile& out, std::string& error);
 
 class AdbAdapter final : public discovery::Provider {
  public:

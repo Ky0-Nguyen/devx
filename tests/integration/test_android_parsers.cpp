@@ -569,3 +569,69 @@ MPI_TEST(a_short_or_non_numeric_proc_stat_yields_nothing, {"E11", "D18"}) {
   MPI_CHECK_MSG(!android::parse_proc_stat_cpu_time(bad).has_value(),
                 "a non-numeric tick count is refused, not coerced to 0");
 }
+
+MPI_TEST(a_permissions_flags_line_is_not_the_packages_flags_line,
+         {"C01", "B11", "D18"}) {
+  // REAL output from emulator-5554. The bug this pins: `dumpsys package`
+  // prints `flags=[ ... ]` for the package *and* for every granted
+  // permission, and matching " flags=[" anywhere caught both. Since each
+  // match overwrote the answer, a DEBUGGABLE app with any permission listed
+  // after its flags line came out as not debuggable -- which feeds
+  // profileability and the benchmark-eligibility verdict, so the tool was
+  // wrong about what it could measure.
+  const auto text =
+      read_fixture("provider-output/android-dumpsys-package.real.txt");
+  MPI_CHECK(!text.empty());
+  const auto flags = parse_dumpsys_package_flags(text);
+
+  MPI_CHECK(flags.debuggable.has_value());
+  MPI_CHECK_MSG(flags.debuggable.value_or(false),
+                "the package's own flags line says DEBUGGABLE, and eleven "
+                "permission lines after it do not change that");
+
+  // The build identity a session needs, so two captures either side of a
+  // reinstall are distinguishable (spec B11).
+  MPI_CHECK_EQ(flags.version_name, std::string("5.3.26"));
+  MPI_CHECK_EQ(flags.version_code.value_or(-1), std::int64_t{1});
+  MPI_CHECK(flags.code_path.find("io.pizzahut.hutbot.debug-") !=
+            std::string::npos);
+  MPI_CHECK_EQ(flags.last_update_time, std::string("2026-09-15 04:26:20"));
+  MPI_CHECK_EQ(flags.first_install_time, std::string("2026-08-26 16:19:26"));
+  MPI_CHECK_EQ(flags.signature_digest, std::string("51ed3f60"));
+}
+
+MPI_TEST(a_reinstall_changes_the_facts_that_identify_the_build, {"B11"}) {
+  // Measured on emulator-5554: `adb install -r` of the same APK moved the
+  // code path from `~~wWybFpP9kRfAKS-aEzqL5A==/...-kN8n58LMWmrbU2sS_xQ87Q==`
+  // to `~~z8OivMT9DzkrwDtGylZqFA==/...-sPU7L5iqpKZ4j9VNvjuSxQ==`, changed
+  // lastUpdateTime, and gave the process a new pid and start time -- while
+  // versionName and versionCode stayed exactly the same.
+  //
+  // That is the case B11 is really about: a developer rebuilding one version
+  // all day. A tool that identified a build by its version number alone would
+  // call two different builds the same build.
+  const std::string before =
+      "    versionCode=1 minSdk=28 targetSdk=36\n"
+      "    versionName=5.3.26\n"
+      "    codePath=/data/app/~~wWybFpP9kRfAKS-aEzqL5A==/"
+      "io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==\n"
+      "    lastUpdateTime=2026-09-14 16:11:02\n"
+      "    flags=[ DEBUGGABLE HAS_CODE ]\n";
+  const std::string after =
+      "    versionCode=1 minSdk=28 targetSdk=36\n"
+      "    versionName=5.3.26\n"
+      "    codePath=/data/app/~~z8OivMT9DzkrwDtGylZqFA==/"
+      "io.pizzahut.hutbot.debug-sPU7L5iqpKZ4j9VNvjuSxQ==\n"
+      "    lastUpdateTime=2026-09-15 04:26:20\n"
+      "    flags=[ DEBUGGABLE HAS_CODE ]\n";
+
+  const auto a = parse_dumpsys_package_flags(before);
+  const auto b = parse_dumpsys_package_flags(after);
+  MPI_CHECK_MSG(a.version_name == b.version_name,
+                "the version did not change, which is the whole difficulty");
+  MPI_CHECK_MSG(a.version_code == b.version_code, "nor the version code");
+  MPI_CHECK_MSG(a.code_path != b.code_path,
+                "but the install path did, and that is detectable");
+  MPI_CHECK_MSG(a.last_update_time != b.last_update_time,
+                "and so did the update time");
+}

@@ -6,8 +6,8 @@ the specification checklist ids it covers, and the framework prints them with
 so a UI behaviour that is tested appears here. Regenerate with
 `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 162 of 198 checklist items have at
-least one automated test.** The remaining 36 are listed below with a stated
+**Coverage of specification section 18: 173 of 198 checklist items have at
+least one automated test.** The remaining 25 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -19,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (162 items, 579 test-case links)
+## Covered (173 items, 600 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -49,6 +49,7 @@ Two cautions on reading this:
 | A06 | `test_process` | `process_reports_missing_executable_distinctly` |
 | A06 | `test_process` | `process_which_resolves_and_reports_absence` |
 | A08 | `test_ios_parsers` | `launchctl_entries_without_a_pid_are_not_running` |
+| A09 | `test_identity` | `there_is_no_foreground_state_to_guess_at` |
 | A11 | `test_identity` | `unknown_runtime_state_serializes_as_unknown` |
 | A11 | `test_ios_parsers` | `launchctl_entries_without_a_pid_are_not_running` |
 | A12 | `test_android_collector` | `framestats_handles_empty_and_headerless_blocks` |
@@ -69,8 +70,12 @@ Two cautions on reading this:
 | A13 | `test_android_parsers` | `pm_list_packages_without_uid_flag_still_parses` |
 | A13 | `test_ios_parsers` | `devicectl_apps_parser_reads_bundle_identifiers` |
 | A13 | `test_ios_parsers` | `parses_real_simctl_listapps_output` |
+| A14 | `test_identity` | `two_apps_sharing_a_display_name_stay_distinct` |
 | A15 | `test_identity` | `same_identifier_on_two_devices_stays_separate` |
 | A15 | `test_identity` | `same_identifier_on_two_platforms_stays_separate` |
+| A16 | `test_identity` | `an_app_that_exits_before_record_is_caught_by_revalidation` |
+| A17 | `test_identity` | `a_restarted_app_is_not_silently_retargeted` |
+| A17 | `test_identity` | `an_app_that_exits_before_record_is_caught_by_revalidation` |
 | A18 | `test_identity` | `installed_is_null_when_never_observed` |
 | A19 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
 | A19 | `test_sdk` | `sdk_handshake_becomes_runtime_build_facts` |
@@ -101,6 +106,7 @@ Two cautions on reading this:
 | B02 | `test_android_parsers` | `proc_stat_starttime_is_extracted` |
 | B02 | `test_identity` | `pid_reuse_does_not_merge_processes` |
 | B03 | `test_android_parsers` | `proc_stat_starttime_is_extracted` |
+| B03 | `test_identity` | `a_restarted_app_is_not_silently_retargeted` |
 | B03 | `test_identity` | `process_restart_is_a_new_instance` |
 | B04 | `test_identity` | `reboot_invalidates_process_identity` |
 | B06 | `test_identity` | `ambiguous_ownership_is_excluded_from_app_totals` |
@@ -115,13 +121,17 @@ Two cautions on reading this:
 | B09 | `test_ios_parsers` | `devicectl_processes_parser_reads_pid_and_path` |
 | B09 | `test_ios_parsers` | `parses_real_launchctl_list_and_extracts_bundle_ids` |
 | B10 | `test_identity` | `ambiguous_ownership_is_excluded_from_app_totals` |
+| B11 | `test_android_parsers` | `a_permissions_flags_line_is_not_the_packages_flags_line` |
+| B11 | `test_android_parsers` | `a_reinstall_changes_the_facts_that_identify_the_build` |
 | B12 | `test_identity` | `same_identifier_on_two_devices_stays_separate` |
 | B12 | `test_identity` | `same_identifier_on_two_platforms_stays_separate` |
 | B12 | `test_ingestion` | `process_filter_excludes_foreign_events` |
 | B13 | `test_symbols` | `missing_symbol_artifacts_yield_unavailable_with_a_reason` |
+| B14 | `test_identity` | `profileable_is_independent_of_running_and_visible` |
 | B15 | `test_android_collector` | `collector_refuses_an_empty_process_set` |
 | B15 | `test_android_collector` | `streaming_refuses_to_begin_without_a_process` |
 | B15 | `test_ios_parsers` | `xctrace_explains_an_attach_that_found_no_process` |
+| C01 | `test_android_parsers` | `a_permissions_flags_line_is_not_the_packages_flags_line` |
 | C01 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
 | C01 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
 | C03 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
@@ -191,6 +201,7 @@ Two cautions on reading this:
 | D05 | `test_heap` | `an_unknown_field_type_abandons_the_rest_of_its_segment` |
 | D05 | `test_heap` | `an_unsupported_identifier_size_is_refused_not_guessed` |
 | D06 | `test_session_lifecycle` | `a_missing_artifact_fails_the_write_rather_than_the_manifest` |
+| D06 | `test_session_lifecycle` | `an_interrupted_write_is_never_mistaken_for_a_session` |
 | D07 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | D08 | `test_heap` | `a_truncated_dump_reports_what_it_got` |
 | D08 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
@@ -237,6 +248,7 @@ Two cautions on reading this:
 | D18 | `test_android_collector` | `displayed_log_reads_each_unit_rather_than_assuming_a_shape` |
 | D18 | `test_android_collector` | `framestats_reads_the_header_rather_than_fixed_columns` |
 | D18 | `test_android_collector` | `framestats_refuses_a_header_missing_required_columns` |
+| D18 | `test_android_parsers` | `a_permissions_flags_line_is_not_the_packages_flags_line` |
 | D18 | `test_android_parsers` | `a_short_or_non_numeric_proc_stat_yields_nothing` |
 | D18 | `test_android_parsers` | `atrace_reads_userspace_slices_and_tolerates_a_nameless_one` |
 | D18 | `test_android_parsers` | `proc_stat_cpu_time_survives_a_comm_with_spaces_and_parens` |
@@ -257,6 +269,8 @@ Two cautions on reading this:
 | D19 | `test_rules` | `partial_capture_is_surfaced_and_never_a_clean_pass` |
 | D19 | `test_sdk` | `sdk_rejects_malformed_and_unknown_markers` |
 | D19 | `test_xml` | `xml_reports_malformed_documents_instead_of_guessing` |
+| D20 | `test_session_lifecycle` | `a_capture_that_loses_its_device_says_so_and_keeps_what_it_had` |
+| D20 | `test_session_lifecycle` | `a_healthy_capture_is_never_called_partial` |
 | D21 | `test_session_lifecycle` | `a_second_capture_on_a_running_session_is_refused` |
 | D22 | `test_session_lifecycle` | `delete_refuses_a_directory_that_is_not_the_named_session` |
 | E01 | `test_android_collector` | `framestats_parses_real_emulator_output` |
@@ -324,6 +338,7 @@ Two cautions on reading this:
 | F08 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | F08 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
 | F08 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
+| F09 | `test_rules` | `memory_families_are_never_summed_across_processes` |
 | F10 | `test_heap` | `a_reference_chain_is_read_from_the_dump` |
 | F10 | `test_heap` | `a_static_field_is_an_edge_a_path_can_run_through` |
 | F10 | `test_heap` | `an_app_root_is_preferred_over_vm_bookkeeping` |
@@ -413,6 +428,8 @@ Two cautions on reading this:
 | H08 | `test_android_collector` | `det09_leaves_an_io_wait_to_det03` |
 | H09 | `test_rules` | `ruleset_and_engine_versions_are_recorded` |
 | H09 | `test_rules` | `threshold_override_changes_the_verdict` |
+| H09 | `test_session_lifecycle` | `a_capture_that_loses_its_device_says_so_and_keeps_what_it_had` |
+| H09 | `test_session_lifecycle` | `a_healthy_capture_is_never_called_partial` |
 | H10 | `test_eligibility` | `user_override_is_audited_and_never_certifies` |
 | H10 | `test_report` | `suppressed_issues_can_be_omitted_or_kept_with_their_reason` |
 | H10 | `test_rules` | `a_suppression_inside_its_expiry_still_applies` |
@@ -479,6 +496,7 @@ Two cautions on reading this:
 | I03 | `test_compare` | `os_and_refresh_mismatch_blocks_a_verdict` |
 | I04 | `test_compare` | `thermal_and_power_mismatch_is_visible` |
 | I05 | `test_compare` | `thermal_and_power_mismatch_is_visible` |
+| I06 | `test_rules` | `a_background_workload_is_never_attributed_to_the_app` |
 | I07 | `test_compare` | `launch_class_mismatch_blocks_a_verdict` |
 | I08 | `test_compare` | `cache_network_and_input_mismatch_blocks_a_verdict` |
 | I09 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
@@ -572,6 +590,8 @@ Two cautions on reading this:
 | J11 | `test_process` | `process_honours_cancellation` |
 | J11 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
 | J11 | `test_timeline` | `cancellation_stops_the_build` |
+| J13 | `test_session_lifecycle` | `a_package_from_another_schema_version_is_named_not_migrated` |
+| J13 | `test_session_lifecycle` | `an_interrupted_write_is_never_mistaken_for_a_session` |
 | J14 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
 | J14 | `test_android_collector` | `det03_leaves_a_background_threads_io_in_the_background` |
 | J14 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
@@ -600,6 +620,7 @@ Two cautions on reading this:
 | J18 | `test_ios_parsers` | `adapter_lists_real_devices_including_simulators` |
 | J18 | `test_ios_parsers` | `parses_real_simctl_device_listing` |
 | J18 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
+| J19 | `test_rules` | `native_evidence_without_js_evidence_invents_none` |
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
@@ -727,32 +748,24 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (36)
+## Not yet covered (25)
 
 | Checklist id | Why not, stated |
 |---|---|
-| A07 | needs a real device and a measured refresh-interval budget (M2) |
-| A09 | iOS exposes no suspended signal; the negative guarantee is tested, the positive path needs Android hardware |
+| A07 | no refresh target is declared, so there is nothing to measure against; discovery is on demand rather than polled, and the launch path waits for the process instead (A22, tested) |
 | A10 | partial scope is asserted via iOS launchd-only entries; a dedicated Android case needs hardware |
-| A14 | duplicate display names need a device with two such apps installed |
-| A16 | selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested |
-| A17 | needs a live app that exits between listing and record (M2) |
-| B05 | secondary-service inclusion needs Android hardware |
-| B11 | reinstall revalidation needs a device and an install cycle |
-| B14 | profileable-vs-visible independence is modelled; asserting it needs a device |
+| B05 | the app available on this emulator runs a single process, so there is no secondary service to include or exclude |
 | C02 | needs a built app with native debug and JS dev off |
 | C12 | needs an iOS build with a debug entitlement and optimized code |
-| D15 | device sleep/resume needs hardware |
-| D20 | disconnect/reconnect needs hardware |
-| E05 | asserted in DET-04's alternative explanations; a real capture would confirm |
+| D15 | an emulator's KEYCODE_SLEEP turns the screen off but does not suspend the shell or the app: measured, a 6 s screen-off mid-capture left the tick cadence unchanged at ~710 ms and lost nothing, so that exercises a screen-off rather than a suspend. A true doze needs a physical device |
+| E05 | DET-04 says in every finding that a sampled share carries no claim about user-visible harm; inducing high CPU with provably unharmed frames needs a device whose frame timing is not the host's |
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
 | E09 | GPU evidence is not collected (M5) |
 | E18 | recorder overhead needs paired controlled runs (M4) |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
 | F06 | image and GPU allocation accounting has no provider on either platform |
-| F09 | shared-page accounting across processes needs a multi-process app on hardware |
-| F12 | in-process tooling stays in the process total by construction; a real capture would confirm |
+| F12 | in-process tooling stays in the process total by construction, and the real captures here are of a debug build that contains it; separating it would need a release build to compare against |
 | F15 | endpoint/library ambiguity needs more attribution rules |
 | G02 | the Hermes reader refuses unexpected shapes; a versioned corpus is M3 |
 | G03 | non-Hermes runtime needs such a build (M3) |
@@ -761,16 +774,13 @@ Two cautions on reading this:
 | G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
 | G12 | Expo's prerequisite is documented in samples/react-native/README.md: this SDK needs no native module, so it loads in Expo Go, and a native SDK would need a development build |
 | G13 | the architecture matrix needs RN builds (M3) |
-| I06 | background workload needs a device |
 | I20 | overhead measurement needs paired controlled runs on hardware (M4) |
 | J12 | signing, packaging and the (empty) license inventory are documentation, in docs/packaging-and-signing.md; no test binary can assert a Developer ID this environment does not have |
-| J13 | session migration needs more than one schema version |
 | J17 | App Store app depth needs a reachable device with such an app |
-| J19 | native-without-JS evidence needs a real mixed capture |
 
 ## Totals
 
 - test binaries: 20
-- test cases declaring at least one id: 445
-- checklist-item links: 579
-- section-18 coverage: 162/198 (82%)
+- test cases declaring at least one id: 459
+- checklist-item links: 600
+- section-18 coverage: 173/198 (87%)

@@ -1,16 +1,12 @@
-# Checklist items from specification section 18 with no automated test yet,
-# Format: <checklist-id>\t<reason>
-# and why. Consumed by tools/gen-requirement-map.py.
-A07	needs a real device and a measured refresh-interval budget (M2)
+A07	no refresh target is declared, so there is nothing to measure against; discovery is on demand rather than polled, and the launch path waits for the process instead (A22, tested)
 A09	iOS exposes no suspended signal; the negative guarantee is tested, the positive path needs Android hardware
 A10	partial scope is asserted via iOS launchd-only entries; a dedicated Android case needs hardware
 A14	duplicate display names need a device with two such apps installed
 A16	selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested
 A17	needs a live app that exits between listing and record (M2)
-A25	filtering is tested (a filter never means 'match nothing', and an unavailable entry is kept); rendering 265 apps is measured, nothing larger has been tried
+A25	filtering is tested, including that a filter never means 'match nothing' and that unavailable entries are kept; rendering 265 real apps is measured, nothing larger has been tried
 B01	multi-process grouping needs an Android device with a multi-process app
-B05	secondary-service inclusion needs Android hardware
-B11	reinstall revalidation needs a device and an install cycle
+B05	the app available on this emulator runs a single process, so there is no secondary service to include or exclude
 B14	profileable-vs-visible independence is modelled; asserting it needs a device
 B15	a launch/exit discovery race needs a live device
 C02	needs a built app with native debug and JS dev off
@@ -24,14 +20,13 @@ D06	host crash recovery needs fault injection; the .partial directory path is im
 D07	collector crash needs a collector (M2)
 D13	clock drift over a long capture needs a long real capture (M2)
 D14	durations never use the wall clock by construction; a timezone-change test needs host manipulation
-D15	device sleep/resume needs hardware
+D15	an emulator's KEYCODE_SLEEP turns the screen off but does not suspend the shell or the app: measured, a 6 s screen-off mid-capture left the tick cadence unchanged at ~710 ms and lost nothing, so that exercises a screen-off rather than a suspend. A true doze needs a physical device
 D17	long capture needs a collector; the 1 GiB ingest stress is measured separately
-D20	disconnect/reconnect needs hardware
 D21	conflicting collector detection needs a collector (M2)
 D22	cleanup scoping is implemented (delete_package refuses non-session dirs); full test needs a collector
 E03	idle-display handling needs a real idle capture
 E04	background-vs-foreground needs a device that reports surface state
-E05	asserted in DET-04's alternative explanations; a real capture would confirm
+E05	DET-04 says in every finding that a sampled share carries no claim about user-visible harm; inducing high CPU with provably unharmed frames needs a device whose frame timing is not the host's
 E06	low CPU with blocked UI needs scheduling evidence (DET-09, M5)
 E07	needs a real React Native capture
 E08	needs a real React Native capture
@@ -43,9 +38,9 @@ E18	recorder overhead needs paired controlled runs (M4)
 E19	DET-01 groups by surface; a multi-surface real capture would confirm
 F06	image and GPU allocation accounting has no provider on either platform
 F07	allocation volume versus retained size needs a heap provider (DET-06)
-F09	shared-page accounting across processes needs a multi-process app on hardware
+F09	cross-process sums are refused and that is tested; a real multi-process app would confirm it -- the app available here runs a single process
 F10	owned buffer allocations need a graphics/allocator provider
-F12	in-process tooling stays in the process total by construction; a real capture would confirm
+F12	in-process tooling stays in the process total by construction, and the real captures here are of a debug build that contains it; separating it would need a release build to compare against
 F15	endpoint/library ambiguity needs more attribution rules
 F16	memory-pressure kill needs hardware
 G02	the Hermes reader refuses unexpected shapes; a versioned corpus is M3
@@ -60,7 +55,6 @@ G15	OTA/native pairing needs a build pipeline (M3)
 H08	occurrence_count is implemented; a cross-session duplicate fixture would strengthen it
 H13	offline reopen is implemented in session_store; end-to-end needs record (M2)
 H14	missing source does not block rendering; asserted indirectly
-I06	background workload needs a device
 I18	the code reports median and IQR only and never a p95; a dedicated absence test would assert it
 I20	overhead measurement needs paired controlled runs on hardware (M4)
 I21	UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured

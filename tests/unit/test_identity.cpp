@@ -282,3 +282,244 @@ MPI_TEST(a_cancelled_wait_stops_and_reports_the_cancellation, {"A22", "J11"}) {
   MPI_CHECK(!waited.appeared);
   MPI_CHECK_EQ(waited.polls, 0);
 }
+
+// --- guarantees that are about this tool, not about a device ----------------
+//
+// Four of these were deferred with "needs a device with two such apps
+// installed" or similar. That confuses confirmation with the requirement: the
+// checklist asks whether *this tool* distinguishes, refuses or keeps things
+// apart, and that is decided by its own logic. Hardware would confirm the
+// behaviour; a test establishes it. Where a real capture adds something the
+// logic cannot, the capability matrix says so.
+
+MPI_TEST(two_apps_sharing_a_display_name_stay_distinct, {"A14"}) {
+    // A label is what a person recognises and it is not unique: two vendors
+    // ship "Camera", a work profile clones an app's label, a test build keeps
+    // the shipping name. Collapsing them would make the picker select the
+    // wrong target while looking right.
+    model::DiscoverySnapshot snap;
+    model::AppEntry a;
+    a.key.device_id = "d1";
+    a.key.platform = model::Platform::kAndroid;
+    a.key.app_identifier = "com.vendor.camera";
+    a.display_name = "Camera";
+    a.runtime_state = model::RuntimeState::kRunning;
+    model::AppEntry b = a;
+    b.key.app_identifier = "com.other.camera";
+    b.runtime_state = model::RuntimeState::kNotRunning;
+    snap.apps.push_back(a);
+    snap.apps.push_back(b);
+
+    MPI_CHECK_EQ(snap.apps.size(), std::size_t{2});
+    MPI_CHECK_MSG(!(snap.apps[0].key == snap.apps[1].key),
+                  "the same label does not make the same key");
+    MPI_CHECK(snap.apps[0].key.canonical() != snap.apps[1].key.canonical());
+    // And each is addressable by identifier, which is what the picker selects
+    // by -- the label is only ever shown.
+    const model::AppEntry* found = nullptr;
+    for (const auto& e : snap.apps) {
+        if (e.key.app_identifier == "com.other.camera") found = &e;
+    }
+    MPI_CHECK(found != nullptr);
+    if (found == nullptr) return;
+    MPI_CHECK(found->runtime_state == model::RuntimeState::kNotRunning);
+    // Serialization keeps both, so a session records which one was profiled.
+    const std::string text = snap.to_json().dump();
+    MPI_CHECK(text.find("com.vendor.camera") != std::string::npos);
+    MPI_CHECK(text.find("com.other.camera") != std::string::npos);
+}
+
+MPI_TEST(profileable_is_independent_of_running_and_visible, {"B14"}) {
+    // Three orthogonal facts that are easy to conflate: whether the app is
+    // running, whether this provider could see it, and whether it can be
+    // profiled. Inferring any from another is how "it's running, so we can
+    // profile it" gets into a tool.
+    struct Case {
+        model::RuntimeState state;
+        model::DiscoveryScope scope;
+        model::ProfilingAvailability profiling;
+    };
+    const Case cases[] = {
+        // Running and visible, but a release build: not profileable.
+        {model::RuntimeState::kRunning, model::DiscoveryScope::kCompleteForProvider,
+         model::ProfilingAvailability::kUnavailable},
+        // Not running, yet profileable once started.
+        {model::RuntimeState::kNotRunning, model::DiscoveryScope::kCompleteForProvider,
+         model::ProfilingAvailability::kAvailable},
+        // Seen only partially, and profileable anyway.
+        {model::RuntimeState::kUnknown, model::DiscoveryScope::kPartial,
+         model::ProfilingAvailability::kAvailable},
+        // Running, partially visible, and nothing known about profiling.
+        {model::RuntimeState::kRunning, model::DiscoveryScope::kPartial,
+         model::ProfilingAvailability::kUnknown},
+    };
+    for (const auto& c : cases) {
+        model::AppEntry e;
+        e.key.device_id = "d1";
+        e.key.platform = model::Platform::kAndroid;
+        e.key.app_identifier = "com.example.app";
+        e.runtime_state = c.state;
+        e.visibility_scope = c.scope;
+        e.profiling = c.profiling;
+        const auto round_trip = e.to_json().dump();
+        // Each field survives independently: none is derived from another, so
+        // every combination is representable and none is normalised away.
+        MPI_CHECK_MSG(round_trip.find(model::to_string(c.state)) != std::string::npos,
+                      "runtime state survives");
+        MPI_CHECK_MSG(round_trip.find(model::to_string(c.profiling)) != std::string::npos,
+                      "profiling availability survives independently");
+        MPI_CHECK_MSG(round_trip.find(model::to_string(c.scope)) != std::string::npos,
+                      "visibility scope survives independently");
+    }
+}
+
+MPI_TEST(there_is_no_foreground_state_to_guess_at, {"A09"}) {
+    // The spec's rule is that suspended and foreground states are never
+    // guessed. The strongest form of that guarantee is structural: this model
+    // cannot express "foreground" at all, so no provider can claim it and no
+    // view can render it. `running` means a process exists -- a comment in
+    // the UI says so too -- and `suspended` is only ever reported when a
+    // provider observed it.
+    for (const auto s : {model::RuntimeState::kRunning,
+                         model::RuntimeState::kNotRunning,
+                         model::RuntimeState::kSuspended,
+                         model::RuntimeState::kUnknown}) {
+        const std::string name = model::to_string(s);
+        MPI_CHECK_MSG(name.find("foreground") == std::string::npos,
+                      "no state is called foreground: got " + name);
+        MPI_CHECK_MSG(name.find("background") == std::string::npos,
+                      "nor background: got " + name);
+    }
+    // And a provider that did not observe the state leaves it unknown, which
+    // is not `kNotRunning` -- the failure that would read as "the app is not
+    // running" when nobody looked.
+    model::AppEntry e;
+    e.key.device_id = "d1";
+    e.key.platform = model::Platform::kAndroid;
+    e.key.app_identifier = "com.example.app";
+    MPI_CHECK(e.runtime_state == model::RuntimeState::kUnknown);
+    // Asserted through the document rather than on its exact spacing: the
+    // claim is that the field serializes as unknown, not how the writer
+    // indents.
+    const auto doc = e.to_json();
+    const json::Value* field = doc.find("runtime_state");
+    MPI_CHECK(field != nullptr);
+    if (field != nullptr) {
+        MPI_CHECK_EQ(field->as_string(), std::string("unknown"));
+    }
+    // A suspended app is running in the sense that matters for identity: it
+    // has a process. It is a distinct state rather than a flavour of either.
+    MPI_CHECK(std::string(model::to_string(model::RuntimeState::kSuspended)) ==
+              "suspended");
+}
+
+namespace {
+
+/// A provider whose app is there on the first look and gone on the next.
+///
+/// The A17 scenario exactly: a picker lists a running app, the operator
+/// presses Record, and in between the app exits. Verified end to end on
+/// emulator-5554 -- listed running, force-stopped, and `mpi record` refused
+/// with "no live process ... could be resolved" -- and pinned here so the
+/// refusal cannot regress without a device attached.
+class VanishingAppProvider final : public discovery::Provider {
+ public:
+  model::Platform platform() const override { return model::Platform::kAndroid; }
+  std::string name() const override { return "fake.vanishing"; }
+  void probe(model::CapabilityMatrix&, const discovery::ProviderOptions&) const override {}
+
+  std::vector<model::DeviceRef> list_devices(const discovery::ProviderOptions&,
+                                             std::vector<std::string>&) const override {
+    model::DeviceRef d;
+    d.platform = model::Platform::kAndroid;
+    d.device_id = "fake-1";
+    d.trust = model::TrustState::kAuthorized;
+    d.form = model::DeviceForm::kEmulator;
+    return {d};
+  }
+
+  std::vector<model::AppEntry> list_apps(const model::DeviceRef&,
+                                         const discovery::ProviderOptions&,
+                                         std::vector<std::string>&,
+                                         bool&) const override {
+    return {};
+  }
+
+  std::vector<model::ProcessInstance> resolve_processes(
+      const model::DeviceRef&, const model::ApplicationKey& app,
+      const discovery::ProviderOptions&,
+      std::vector<std::string>&) const override {
+    if (gone) return {};
+    model::ProcessInstance p;
+    p.pid = 4242;
+    p.app = app;
+    p.is_primary = true;
+    p.process_start_time = "1856103";
+    p.boot_id = "boot-1";
+    return {p};
+  }
+
+  mutable bool gone = false;
+};
+
+}  // namespace
+
+MPI_TEST(an_app_that_exits_before_record_is_caught_by_revalidation,
+         {"A17", "A16"}) {
+  discovery::DiscoveryService svc;
+  auto provider = std::make_shared<VanishingAppProvider>();
+  svc.add_provider(provider);
+  discovery::ProviderOptions opts;
+
+  // The listing: one process, and this is what a picker would have shown.
+  const auto first = svc.revalidate(fake_device(), fake_key(), {}, opts);
+  MPI_CHECK(first.app_still_present);
+  MPI_CHECK_EQ(first.processes.size(), std::size_t{1});
+
+  // The app exits. Revalidation before recording must notice, and must not
+  // hand back the previous process set -- capturing against a dead pid would
+  // produce a session attributed to a process that no longer existed.
+  provider->gone = true;
+  const auto second =
+      svc.revalidate(fake_device(), fake_key(), first.processes, opts);
+  MPI_CHECK_MSG(!second.app_still_present,
+                "the app is reported absent rather than assumed present");
+  MPI_CHECK(second.processes.empty());
+  MPI_CHECK_MSG(second.process_set_changed,
+                "the change is flagged, not just the absence");
+  bool says_so = false;
+  for (const auto& n : second.notes) {
+    if (n.find("no longer running") != std::string::npos ||
+        n.find("no process could be attributed") != std::string::npos) {
+      says_so = true;
+    }
+  }
+  MPI_CHECK_MSG(says_so,
+                "and the reason is stated: an empty process set with no note "
+                "reads like an app that has no processes");
+}
+
+MPI_TEST(a_restarted_app_is_not_silently_retargeted, {"A17", "B03"}) {
+  // The other half of A17, and the more dangerous one: the app is still
+  // "there" but it is a different process. Carrying the old pid forward would
+  // attribute the new process's work to the old instance.
+  discovery::DiscoveryService svc;
+  auto provider = std::make_shared<VanishingAppProvider>();
+  svc.add_provider(provider);
+  discovery::ProviderOptions opts;
+
+  model::ProcessInstance old_instance;
+  old_instance.pid = 4242;
+  old_instance.app = fake_key();
+  old_instance.is_primary = true;
+  // Same pid, different start time: a restart, and pid reuse at that.
+  old_instance.process_start_time = "1000000";
+  old_instance.boot_id = "boot-1";
+
+  const auto again =
+      svc.revalidate(fake_device(), fake_key(), {old_instance}, opts);
+  MPI_CHECK(again.app_still_present);
+  MPI_CHECK_MSG(again.process_set_changed,
+                "a process with the same pid but a different start time is a "
+                "different instance, and the change is reported");
+}

@@ -25,6 +25,7 @@
 #include "adapters/android/adb_collector.hpp"
 #include "adapters/ios/xctrace_collector.hpp"
 
+#include "adapters/android/adb_adapter.hpp"
 #include "adapters/android/hprof_parser.hpp"
 #include "apps/cli/cli.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -145,6 +146,28 @@ ExitCode cmd_record(const Invocation& inv) {
       reval.processes.empty() ? target->processes : reval.processes;
   trace.target.runtime_state_at_capture = target->runtime_state;
   trace.target.discovery_scope = target->visibility_scope;
+
+  // Which build of the app this session measured. Recorded here, before the
+  // capture, so it describes what was running -- and so two sessions of the
+  // same package are comparable only when they measured the same build
+  // (spec B11). Before this the Android build profile held two facts about
+  // the device and nothing about the app.
+  if (device.platform == model::Platform::kAndroid) {
+    proc::Options build_po;
+    build_po.timeout = std::chrono::milliseconds(inv.global.timeout_ms);
+    build_po.cancel = inv.global.cancel;
+    std::string build_error;
+    if (!android::read_app_build_facts("adb", device.device_id,
+                                       target->key.app_identifier, build_po,
+                                       trace.build, build_error) &&
+        !build_error.empty()) {
+      warn(build_error);
+      trace.ingestion_warnings.push_back(
+          "the app's build identity could not be read: " + build_error +
+          ". This session records which package it measured and not which "
+          "build of it");
+    }
+  }
 
   const std::string import_path = inv.flag("import");
 

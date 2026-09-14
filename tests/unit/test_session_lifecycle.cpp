@@ -81,6 +81,17 @@ class FakeCollector final : public session::Collector {
                            model::NormalizedTrace& out) override {
     const auto n = ++ticks;
     session::LiveUpdate u;
+    const int die = die_after.load();
+    if (die >= 0 && n > die) {
+      // Nothing collected, and every source reporting failure: the shape of
+      // a tick against a device that is no longer answering.
+      model::Capability c;
+      c.id = "test.frames";
+      c.status = model::CapabilityStatus::kUnsupported;
+      c.evidence = "the fake device stopped answering";
+      u.source_status.push_back(std::move(c));
+      return u;
+    }
     model::FrameRecord f;
     f.event_id = "f" + std::to_string(n);
     f.start_ns = static_cast<model::TimeNs>(n) * 1'000'000;
@@ -117,6 +128,9 @@ class FakeCollector final : public session::Collector {
   std::atomic<int> finishes{0};
   bool fail_begin = false;
   std::chrono::milliseconds begin_delay{0};
+  // After this many ticks, every source reports failure and nothing is
+  // collected -- what a capture sees when the device goes away.
+  std::atomic<int> die_after{-1};
 };
 
 session::CaptureConfig fast_config() {
@@ -575,4 +589,153 @@ MPI_TEST(a_malformed_suppression_file_is_an_error_not_an_empty_list,
   MPI_CHECK(no_array.error.find("suppressions") != std::string::npos);
   std::error_code ec;
   std::filesystem::remove_all(dir, ec);
+}
+
+MPI_TEST(a_package_from_another_schema_version_is_named_not_migrated,
+         {"J13"}) {
+  // There is one schema version, so there is nothing to migrate *to*, and
+  // claiming a migration would be worse than admitting there is none. What
+  // the loader owes a reader is recognition: a package written against a
+  // version this build does not know must be reported, because a field it
+  // cannot interpret would otherwise read as a field the capture did not
+  // have.
+  const auto dir = temp_dir("schema");
+  session::SessionManifest manifest;
+  manifest.session_id = "s-schema-001";
+  manifest.tool_version = "test";
+  manifest.state = session::SessionState::kCompleted;
+  model::NormalizedTrace trace;
+  trace.session_id = manifest.session_id;
+  model::AnalysisResult analysis;
+  model::DiscoverySnapshot snap;
+  const auto written = session::write_package(dir, manifest, trace, analysis,
+                                              snap, "", "{}");
+  MPI_CHECK(written.ok);
+  if (!written.ok) return;
+
+  // As written, nothing to say.
+  const auto current = session::load_package(written.package_dir);
+  MPI_CHECK(current.ok);
+  for (const auto& n : current.notes) {
+    MPI_CHECK_MSG(n.find("schema version") == std::string::npos,
+                  "a current package needs no schema note: " + n);
+  }
+
+  // Rewrite the manifest as an older version, the way a package from a
+  // previous build would arrive.
+  const auto manifest_path = written.package_dir + "/manifest.json";
+  std::string text;
+  {
+    std::ifstream in(manifest_path);
+    text.assign((std::istreambuf_iterator<char>(in)),
+                std::istreambuf_iterator<char>());
+  }
+  const auto at = text.find("\"2.0\"");
+  MPI_CHECK(at != std::string::npos);
+  if (at == std::string::npos) return;
+  text.replace(at, 5, "\"1.3\"");
+  {
+    std::ofstream out(manifest_path, std::ios::trunc);
+    out << text;
+  }
+
+  const auto older = session::load_package(written.package_dir);
+  // Readable, because refusing would strand a package whose events are
+  // probably fine -- but never silent.
+  MPI_CHECK_MSG(older.ok, "an older package still loads: " + older.error);
+  MPI_CHECK_EQ(older.manifest.schema_version, std::string("1.3"));
+  bool named = false;
+  for (const auto& n : older.notes) {
+    if (n.find("1.3") != std::string::npos &&
+        n.find("no migration") != std::string::npos) {
+      named = true;
+    }
+  }
+  MPI_CHECK_MSG(named,
+                "the version is named and the absence of a migration stated");
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+}
+
+MPI_TEST(an_interrupted_write_is_never_mistaken_for_a_session, {"J13", "D06"}) {
+  // The recovery half. A package is built in a sibling `.partial` directory
+  // and renamed into place, so a write that dies halfway leaves something
+  // that is not a session rather than one that looks finished and is not.
+  const auto dir = temp_dir("partial");
+  const auto half = dir + "/s-partial-001.partial";
+  std::error_code ec;
+  std::filesystem::create_directories(half + "/raw", ec);
+  {
+    std::ofstream f(half + "/manifest.json");
+    f << R"({"schema_version":"2.0","session_id":"s-partial-001"})";
+  }
+  // Loading the partial directory by name fails: its id does not match the
+  // directory a session lives in, and nothing about it claims to be
+  // complete.
+  const auto loaded = session::load_package(half);
+  if (loaded.ok) {
+    // If it parses at all, it must not claim to be a completed session.
+    MPI_CHECK_MSG(loaded.manifest.state != session::SessionState::kCompleted,
+                  "a half-written package must never read as completed");
+  }
+  // And the session's real directory does not exist, so a lister cannot
+  // offer it.
+  MPI_CHECK(!std::filesystem::exists(dir + "/s-partial-001"));
+  std::filesystem::remove_all(dir, ec);
+}
+
+MPI_TEST(a_capture_that_loses_its_device_says_so_and_keeps_what_it_had,
+         {"D20", "H09"}) {
+  // The run loop used to ignore a tick's outcome entirely, so a device that
+  // went away mid-capture produced a session reporting `partial: false` with
+  // no reason -- data for part of the window, nothing explaining the rest,
+  // and no way for a reader to tell that from an app that went quiet.
+  //
+  // Both halves of D20 matter: what was collected before the loss is kept
+  // and is real, and the loss itself is stated.
+  auto collector = std::make_shared<FakeCollector>();
+  collector->die_after.store(2);
+  session::LiveSession live;
+  MPI_CHECK(live.start(collector, fake_device(), one_process(), fast_config(),
+                       model::NormalizedTrace{}));
+  MPI_CHECK(wait_for([&] { return collector->ticks.load() >= 8; }));
+  live.stop();
+
+  const auto trace = live.take_trace();
+  MPI_CHECK_MSG(trace.frames.size() == 2,
+                "the two good ticks' data is kept: got " +
+                    std::to_string(trace.frames.size()));
+  MPI_CHECK_MSG(trace.partial,
+                "a capture that lost its device is partial, not complete");
+  bool stated = false;
+  for (const auto& r : trace.partial_reasons) {
+    if (r.find("stopped answering") != std::string::npos) stated = true;
+    // And the distinction that matters to a reader.
+    if (r.find("not a quiet app") != std::string::npos) stated = stated && true;
+  }
+  MPI_CHECK_MSG(stated, "the reason names the lost connection");
+  bool distinguishes = false;
+  for (const auto& r : trace.partial_reasons) {
+    if (r.find("not a quiet app") != std::string::npos) distinguishes = true;
+  }
+  MPI_CHECK_MSG(distinguishes,
+                "and says the silence after it is a lost device rather than "
+                "an idle app");
+}
+
+MPI_TEST(a_healthy_capture_is_never_called_partial, {"D20", "H09"}) {
+  // The false positive that would make the flag worthless. A tick that
+  // collects nothing but reports a working source is a quiet moment, not a
+  // lost device -- verified against the real emulator too, where killing the
+  // adb server turned out not to be a disconnect at all: the client respawns
+  // the server, the ticks keep succeeding, and nothing was marked partial.
+  auto collector = std::make_shared<FakeCollector>();
+  session::LiveSession live;
+  MPI_CHECK(live.start(collector, fake_device(), one_process(), fast_config(),
+                       model::NormalizedTrace{}));
+  MPI_CHECK(wait_for([&] { return collector->ticks.load() >= 6; }));
+  live.stop();
+  const auto trace = live.take_trace();
+  MPI_CHECK(!trace.partial);
+  MPI_CHECK(trace.partial_reasons.empty());
 }
