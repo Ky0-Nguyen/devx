@@ -26,7 +26,6 @@ D21	conflicting collector detection needs a collector (M2)
 D22	cleanup scoping is implemented (delete_package refuses non-session dirs); full test needs a collector
 E03	idle-display handling needs a real idle capture
 E04	background-vs-foreground needs a device that reports surface state
-E05	DET-04 says in every finding that a sampled share carries no claim about user-visible harm; inducing high CPU with provably unharmed frames needs a device whose frame timing is not the host's
 E06	low CPU with blocked UI needs scheduling evidence (DET-09, M5)
 E07	needs a real React Native capture
 E08	needs a real React Native capture
@@ -40,10 +39,8 @@ F06	no provider on either platform. `dumpsys gfxinfo` reports GPU frame-time per
 F07	allocation volume versus retained size needs a heap provider (DET-06)
 F09	cross-process sums are refused and that is tested; a real multi-process app would confirm it -- the app available here runs a single process
 F10	owned buffer allocations need a graphics/allocator provider
-F12	in-process tooling stays in the process total by construction, and the real captures here are of a debug build that contains it; separating it would need a release build to compare against
 F15	endpoint/library ambiguity needs more attribution rules
 F16	memory-pressure kill needs hardware
-G02	the Hermes reader refuses unexpected shapes; a versioned corpus is M3
 G03	non-Hermes runtime needs such a build (M3)
 G04	JS reload needs a live RN app (M3)
 G05	Fast Refresh needs a live RN app (M3)
