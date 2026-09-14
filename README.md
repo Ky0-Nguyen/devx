@@ -39,6 +39,7 @@ Three pieces:
 | Benchmark comparison engine | ✅ | ✅ |
 | Desktop app (DevX) | ✅ | ✅ |
 | Timeline view (states, not bare numbers) | ✅ | ✅ |
+| Compare view (gate status before verdict) | ✅ | ✅ |
 
 ✅ exercised against real tooling · ⚙️ implemented and unit-tested, awaiting hardware · ❌ not implemented
 
@@ -58,7 +59,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
 ```
 
-Run the tests (377 C++ cases in 17 binaries, plus 104 Swift cases):
+Run the tests (384 C++ cases in 17 binaries, plus 148 Swift cases):
 
 ```bash
 cd build && ctest --output-on-failure

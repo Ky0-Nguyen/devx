@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (143 items, 485 test-case links)
+## Covered (143 items, 494 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -56,6 +56,7 @@ Two cautions on reading this:
 | A12 | `test_android_parsers` | `ps_parser_handles_empty_input` |
 | A12 | `test_android_parsers` | `ps_parser_refuses_to_guess_at_an_unknown_header` |
 | A12 | `test_android_parsers` | `real_adb_with_no_device_yields_an_empty_list_not_an_error` |
+| A12 | `test_compare` | `a_missing_file_is_an_error_not_an_empty_set` |
 | A12 | `test_identity` | `empty_list_differs_from_enumeration_failure` |
 | A12 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
 | A12 | `test_ios_parsers` | `adapter_reports_unreachable_device_as_enumeration_failure` |
@@ -323,6 +324,8 @@ Two cautions on reading this:
 | G19 | `test_symbols` | `path_traversal_in_a_source_map_is_rejected` |
 | G19 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
 | H01 | `test_android_collector` | `det03_reports_a_main_thread_block_with_its_slice` |
+| H01 | `test_compare` | `a_run_with_no_value_keeps_its_place` |
+| H01 | `test_compare` | `an_unstated_eligibility_is_insufficient_evidence` |
 | H01 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
@@ -385,10 +388,12 @@ Two cautions on reading this:
 | H16 | `test_rules` | `no_issue_carries_an_uncalibrated_numeric_confidence` |
 | H17 | `test_rules` | `every_candidate_cause_lists_missing_evidence` |
 | I01 | `test_compare` | `clear_regression_is_detected` |
+| I02 | `test_compare` | `an_unstated_eligibility_is_insufficient_evidence` |
 | I02 | `test_compare` | `det08_skips_when_conditions_are_not_comparable` |
 | I02 | `test_compare` | `device_model_mismatch_blocks_a_verdict` |
 | I02 | `test_compare` | `simulator_vs_physical_is_never_comparable` |
 | I02 | `test_eligibility` | `simulator_is_not_benchmark_eligible` |
+| I03 | `test_compare` | `a_run_set_without_conditions_is_refused` |
 | I03 | `test_compare` | `os_and_refresh_mismatch_blocks_a_verdict` |
 | I04 | `test_compare` | `thermal_and_power_mismatch_is_visible` |
 | I05 | `test_compare` | `thermal_and_power_mismatch_is_visible` |
@@ -408,7 +413,11 @@ Two cautions on reading this:
 | I13 | `test_compare` | `small_change_is_not_significant` |
 | I14 | `test_compare` | `explicit_exclusion_reason_is_honoured_and_shown` |
 | I14 | `test_compare` | `run_with_no_measurement_is_excluded_and_visible` |
+| I15 | `test_compare` | `a_run_set_without_runs_is_refused` |
+| I15 | `test_compare` | `a_run_with_no_value_keeps_its_place` |
+| I15 | `test_compare` | `a_run_without_a_stated_outcome_is_excluded` |
 | I15 | `test_compare` | `incomplete_scenario_is_excluded_not_counted_as_fast` |
+| I16 | `test_compare` | `a_warm_up_run_is_marked_as_one` |
 | I16 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | I16 | `test_compare` | `det08_refuses_a_debug_versus_release_pair` |
 | I16 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
@@ -679,6 +688,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 17
-- test cases declaring at least one id: 377
-- checklist-item links: 485
+- test cases declaring at least one id: 384
+- checklist-item links: 494
 - section-18 coverage: 143/198 (72%)

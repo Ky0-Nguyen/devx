@@ -55,6 +55,14 @@ char* mpi_session_json(const char* sessions_dir, const char* session_id);
 char* mpi_session_timeline_json(const char* sessions_dir,
                                 const char* session_id, int bin_count);
 
+/* Compares two run-set files. Never returns a regression verdict when the
+ * conditions are incompatible, the runs are too few, or the variance is too
+ * high -- the thresholds travel back in the result so the caller can show
+ * what was applied. A zero or negative threshold means "use the default". */
+char* mpi_compare_json(const char* baseline_path, const char* candidate_path,
+                       int min_valid_runs, double min_relative_delta,
+                       double min_absolute_delta, double max_relative_spread);
+
 /* Runs a live capture. Blocks for `duration_s`. The result carries a
  * per-source status array whether or not a session was written; a capture
  * that measured nothing is reported, not saved. */

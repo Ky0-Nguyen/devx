@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include <sstream>
 
 #include "core/rules/engine.hpp"
@@ -482,4 +484,142 @@ MPI_TEST(det08_does_not_report_an_improvement_as_an_issue, {"DET-08"}) {
   MPI_CHECK(rec != nullptr);
   MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundNothing);
   MPI_CHECK(mentions(rec->skipped_reasons, "improvement"));
+}
+
+// --- reading a run set ------------------------------------------------------
+// The loader lived in the CLI until DevX needed it, which meant these rules
+// had no test at all: what an absent field means is part of the comparison's
+// honesty, and it is exactly where a second implementation would have drifted.
+namespace {
+
+std::string write_temp(const std::string& name, const std::string& body) {
+  const char* base = std::getenv("TMPDIR");
+  std::string path = (base ? std::string(base) : std::string("/tmp/")) + name;
+  std::ofstream f(path);
+  f << body;
+  return path;
+}
+
+}  // namespace
+
+MPI_TEST(a_run_without_a_stated_outcome_is_excluded, {"I15"}) {
+  // Absent `scenario_completed` means nobody said whether the scenario
+  // finished, and a run that may not have finished cannot count toward a
+  // median. Defaulting it to true would quietly admit broken runs.
+  const auto path = write_temp("mpi-runset-outcome.json", R"({
+    "conditions": {"platform": "android", "scenario_id": "s",
+                   "scenario_version": "1", "device_form": "physical"},
+    "runs": [
+      {"session_id": "a", "metric_name": "m", "unit": "ns", "value": 100,
+       "scenario_completed": true},
+      {"session_id": "b", "metric_name": "m", "unit": "ns", "value": 900}
+    ]
+  })");
+  RunSet set;
+  std::string error;
+  MPI_CHECK(read_run_set(path, "baseline", set, error));
+  MPI_CHECK_EQ(set.runs.size(), std::size_t{2});
+  if (set.runs.size() < 2) return;
+  MPI_CHECK(set.runs[0].scenario_completed);
+  MPI_CHECK_MSG(!set.runs[1].scenario_completed,
+                "an unstated outcome is not a completed scenario");
+  MPI_CHECK(!set.runs[1].exclusion_reason.empty());
+  MPI_CHECK(set.runs[1].exclusion_reason.find("not stated") !=
+            std::string::npos);
+  // And the value really is kept out of the median rather than merely flagged.
+  const auto valid = set.valid_values("m");
+  MPI_CHECK_EQ(valid.size(), std::size_t{1});
+  if (!valid.empty()) MPI_CHECK_EQ(valid.front(), 100.0);
+}
+
+MPI_TEST(an_unstated_eligibility_is_insufficient_evidence, {"I02", "H01"}) {
+  // Not a pass. A run set that says nothing about whether it is a certifiable
+  // benchmark has not certified itself.
+  const auto path = write_temp("mpi-runset-elig.json", R"({
+    "conditions": {"platform": "android", "scenario_id": "s",
+                   "scenario_version": "1", "device_form": "physical"},
+    "runs": [{"session_id": "a", "metric_name": "m", "unit": "ns",
+              "value": 1, "scenario_completed": true}]
+  })");
+  RunSet set;
+  std::string error;
+  MPI_CHECK(read_run_set(path, "baseline", set, error));
+  MPI_CHECK(set.eligibility.status ==
+            model::EligibilityStatus::kInsufficientEvidence);
+  MPI_CHECK(!set.eligibility.reasons.empty());
+  MPI_CHECK(!set.eligibility.user_override);
+}
+
+MPI_TEST(a_run_set_without_conditions_is_refused, {"I03"}) {
+  // Comparability is decided from the conditions. Without them the loader
+  // cannot know whether two sides are comparable, so it refuses rather than
+  // treating "unstated" as "matching".
+  const auto path = write_temp("mpi-runset-nocond.json",
+                               R"({"runs": []})");
+  RunSet set;
+  std::string error;
+  MPI_CHECK(!read_run_set(path, "baseline", set, error));
+  MPI_CHECK(error.find("conditions") != std::string::npos);
+  MPI_CHECK(error.find("comparability") != std::string::npos);
+}
+
+MPI_TEST(a_run_set_without_runs_is_refused, {"I15"}) {
+  const auto path = write_temp("mpi-runset-noruns.json", R"({
+    "conditions": {"platform": "android", "scenario_id": "s",
+                   "scenario_version": "1", "device_form": "physical"}
+  })");
+  RunSet set;
+  std::string error;
+  MPI_CHECK(!read_run_set(path, "baseline", set, error));
+  MPI_CHECK(error.find("runs") != std::string::npos);
+}
+
+MPI_TEST(a_run_with_no_value_keeps_its_place, {"I15", "H01"}) {
+  // A run that produced no measurement is not a run that measured zero. It
+  // stays in the set -- so the count of attempted runs is honest -- and out
+  // of the values.
+  const auto path = write_temp("mpi-runset-novalue.json", R"({
+    "conditions": {"platform": "android", "scenario_id": "s",
+                   "scenario_version": "1", "device_form": "physical"},
+    "runs": [
+      {"session_id": "a", "metric_name": "m", "unit": "ns", "value": 10,
+       "scenario_completed": true},
+      {"session_id": "b", "metric_name": "m", "unit": "ns",
+       "scenario_completed": true}
+    ]
+  })");
+  RunSet set;
+  std::string error;
+  MPI_CHECK(read_run_set(path, "baseline", set, error));
+  MPI_CHECK_EQ(set.runs.size(), std::size_t{2});
+  if (set.runs.size() < 2) return;
+  MPI_CHECK(set.runs[0].value.has_value());
+  MPI_CHECK_MSG(!set.runs[1].value.has_value(),
+                "a run with no measurement carries no value, not a zero");
+  MPI_CHECK_EQ(set.valid_values("m").size(), std::size_t{1});
+}
+
+MPI_TEST(a_missing_file_is_an_error_not_an_empty_set, {"A12"}) {
+  RunSet set;
+  std::string error;
+  MPI_CHECK(!read_run_set("/nonexistent/mpi-run-set.json", "baseline", set,
+                          error));
+  MPI_CHECK(!error.empty());
+  MPI_CHECK_MSG(set.runs.empty(),
+                "a failed read leaves nothing behind that could be compared");
+}
+
+MPI_TEST(a_warm_up_run_is_marked_as_one, {"I16"}) {
+  const auto path = write_temp("mpi-runset-warm.json", R"({
+    "conditions": {"platform": "android", "scenario_id": "s",
+                   "scenario_version": "1", "device_form": "physical"},
+    "runs": [{"session_id": "a", "metric_name": "m", "unit": "ns",
+              "value": 1, "scenario_completed": true, "warm_up": true}]
+  })");
+  RunSet set;
+  std::string error;
+  MPI_CHECK(read_run_set(path, "baseline", set, error));
+  MPI_CHECK_EQ(set.runs.size(), std::size_t{1});
+  if (set.runs.empty()) return;
+  MPI_CHECK(set.runs.front().warm_up);
 }

@@ -60,6 +60,14 @@ final class AppState: ObservableObject {
     @Published var sessionsDoc: JSON = .null
     @Published var sessionDoc: JSON = .null
     @Published var timelineDoc: JSON = .null
+    @Published var compareDoc: JSON = .null
+    @Published var baselinePath: String = ""
+    @Published var candidatePath: String = ""
+    // Thresholds the operator can raise. Zero means "the engine's default",
+    // never "no gate": a comparison that cleared a threshold of zero would
+    // report every difference as a regression.
+    @Published var compareMinRuns: Int = 0
+    @Published var compareMinRelativeDelta: Double = 0
     // How many bins the timeline is asked for. The capture's size does not
     // enter into it: a ten-minute recording and a ten-second one both come
     // back with this many, so the view's cost is fixed.
@@ -215,6 +223,54 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Checks a path this app was handed rather than chose, and explains a
+    /// refusal instead of stalling on it.
+    ///
+    /// macOS gates Documents, Desktop and Downloads behind a consent prompt
+    /// that an ad-hoc signed build cannot raise, and the block happens inside
+    /// the read -- so a path typed or passed on the command line can hang the
+    /// operation forever behind a spinner. A named failure is a better answer.
+    /// Paths chosen through an open panel are exempt in practice: the panel
+    /// grants access to what the user picked.
+    @discardableResult
+    func ensureReadable(_ path: String, label: String) -> Bool {
+        switch Core.probeReadable(path) {
+        case .some(true):
+            return true
+        case .some(false):
+            lastError = "The \(label) file cannot be read: \(path). If it "
+                + "exists, macOS may be withholding access to the folder it "
+                + "is in -- use Choose… instead of typing the path, which "
+                + "grants this app access to that one file."
+            return false
+        case .none:
+            // Neither readable nor unreadable: the probe itself blocked,
+            // which is what a withheld folder looks like from here.
+            lastError = "macOS has not granted this app access to \(path) -- "
+                + "the read did not return. Documents, Desktop and Downloads "
+                + "are gated, and an ad-hoc signed build cannot raise the "
+                + "prompt. Use Choose… to grant access to the file, or move "
+                + "it somewhere else."
+            return false
+        }
+    }
+
+    func runCompare() {
+        guard !baselinePath.isEmpty, !candidatePath.isEmpty else {
+            lastError = "Pick a baseline and a candidate run-set file."
+            return
+        }
+        let b = baselinePath, c = candidatePath
+        guard ensureReadable(b, label: "baseline"),
+              ensureReadable(c, label: "candidate") else { return }
+        let runs = compareMinRuns, rel = compareMinRelativeDelta
+        compareDoc = .null
+        run("Comparing…", {
+            Core.compare(baseline: b, candidate: c, minRuns: runs,
+                         minRelativeDelta: rel)
+        }) { self.compareDoc = $0 }
+    }
+
     func loadRules() {
         guard rulesDoc.isNull else { return }
         run("Loading detectors…", { Core.rules() }) { self.rulesDoc = $0 }
@@ -234,6 +290,8 @@ final class AppState: ObservableObject {
     func openSession(_ id: String, revealIn: DevXTab = .issues,
                      focusIssueId: String? = nil) {
         let dir = sessionsDir
+        guard ensureReadable(dir + "/" + id + "/manifest.json",
+                             label: "session") else { return }
         selectedSession = id
         selectedIssueIndex = 0
         timelineDoc = .null

@@ -125,6 +125,17 @@ struct ComparisonResult {
 ComparisonResult compare(RunSet baseline, RunSet candidate,
                          const ComparisonThresholds& thresholds);
 
+// Reads a run-set file into `out`, or returns false with `error` saying which
+// field was missing.
+//
+// Shared rather than duplicated per caller: what an absent field means is
+// part of the comparison's honesty, not a parsing detail. A run whose
+// `scenario_completed` is not stated is excluded rather than assumed good
+// (spec I15), and a run set that does not state its benchmark eligibility
+// reads as insufficient evidence rather than as a pass.
+bool read_run_set(const std::string& path, const std::string& label,
+                  RunSet& out, std::string& error);
+
 // Hands the comparison's own conclusions to DET-08, which renders them as
 // issues. The translation lives here because this layer already depends on
 // the rules layer; the detector never recomputes significance.

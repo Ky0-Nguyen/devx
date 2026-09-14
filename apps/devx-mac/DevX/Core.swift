@@ -134,6 +134,51 @@ enum Core {
         call { mpi_session_timeline_json(dir, id, Int32(bins)) }
     }
 
+    /// Zero means "unspecified" for every threshold: the engine's own
+    /// default applies, rather than a gate of zero that would pass anything.
+    /// Whether this app can actually read `path`, decided with a deadline.
+    ///
+    /// macOS gates the protected folders -- Documents, Desktop, Downloads,
+    /// iCloud Drive -- behind a consent prompt, and an ad-hoc signed app that
+    /// cannot present one blocks inside `open()` indefinitely. A spinner that
+    /// never ends is a worse answer than naming the problem, so the read is
+    /// probed on its own thread with a deadline.
+    ///
+    /// `nil` means the probe did not finish: not readable, not unreadable,
+    /// unknown. The caller says so rather than picking one.
+    static func probeReadable(_ path: String,
+                              timeout: TimeInterval = 2.0) -> Bool? {
+        guard !path.isEmpty else { return false }
+        let sem = DispatchSemaphore(value: 0)
+        // The result is written on the probe thread and read here only after
+        // the semaphore reports completion, so no lock is needed -- and on a
+        // timeout it is never read at all.
+        final class Box { var value = false }
+        let box = Box()
+        Thread.detachNewThread {
+            if let h = FileHandle(forReadingAtPath: path) {
+                // Reading a byte, not just opening: a handle can be granted
+                // and the first read still be the thing that blocks.
+                box.value = ((try? h.read(upToCount: 1)) != nil)
+                try? h.close()
+            }
+            sem.signal()
+        }
+        return sem.wait(timeout: .now() + timeout) == .success
+               ? box.value : nil
+    }
+
+    static func compare(baseline: String, candidate: String,
+                        minRuns: Int = 0, minRelativeDelta: Double = 0,
+                        minAbsoluteDelta: Double = 0,
+                        maxRelativeSpread: Double = 0) -> JSON {
+        call {
+            mpi_compare_json(baseline, candidate, Int32(minRuns),
+                             minRelativeDelta, minAbsoluteDelta,
+                             maxRelativeSpread)
+        }
+    }
+
     static func record(dir: String, device: String, app: String,
                        durationSeconds: Int, sampleHz: Int, frames: Bool,
                        cpu: Bool, memory: Bool, resetFrames: Bool) -> JSON {

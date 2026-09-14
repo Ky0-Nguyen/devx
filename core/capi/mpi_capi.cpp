@@ -22,6 +22,7 @@
 #include "core/rules/engine.hpp"
 #include "core/rules/rule_registry.hpp"
 #include "core/session/live_capture.hpp"
+#include "core/session/compare.hpp"
 #include "core/session/session_store.hpp"
 #include "core/timeline/timeline.hpp"
 #include "core/util/time.hpp"
@@ -432,6 +433,39 @@ char* mpi_session_timeline_json(const char* sessions_dir,
       checks.push_back(json::Value::string(f));
     }
     root.set("checksum_failures", std::move(checks));
+    return root;
+  });
+}
+
+char* mpi_compare_json(const char* baseline_path, const char* candidate_path,
+                       int min_valid_runs, double min_relative_delta,
+                       double min_absolute_delta, double max_relative_spread) {
+  return guard([&] {
+    json::Value root = json::Value::object();
+    session::RunSet baseline, candidate;
+    std::string error;
+    if (!session::read_run_set(safe(baseline_path), "baseline", baseline,
+                               error)) {
+      root.set("error", json::Value::string(error));
+      return root;
+    }
+    if (!session::read_run_set(safe(candidate_path), "candidate", candidate,
+                               error)) {
+      root.set("error", json::Value::string(error));
+      return root;
+    }
+    session::ComparisonThresholds th;
+    // A threshold the caller left at zero is not a threshold of zero: it
+    // means "unspecified", and the engine's own default applies. Reading it
+    // as zero would clear every gate the defaults exist to hold.
+    if (min_valid_runs > 0) {
+      th.min_valid_runs = static_cast<std::size_t>(min_valid_runs);
+    }
+    if (min_relative_delta > 0.0) th.min_relative_delta = min_relative_delta;
+    if (min_absolute_delta > 0.0) th.min_absolute_delta = min_absolute_delta;
+    if (max_relative_spread > 0.0) th.max_relative_spread = max_relative_spread;
+    root = session::compare(std::move(baseline), std::move(candidate), th)
+               .to_json();
     return root;
   });
 }

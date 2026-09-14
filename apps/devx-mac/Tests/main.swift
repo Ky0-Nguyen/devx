@@ -283,5 +283,76 @@ do {
     check(DevXTab(rawValue: "timeline") == .timeline, "the tab is addressable")
 }
 
+
+// --- the compare view's wording ---------------------------------------------
+// A comparison UI is asked for a single word, and two of the four words mean
+// "we do not know". Which word gets which treatment is the honesty of the
+// view, so it is tested rather than left to a switch nobody reads.
+do {
+    check(CompareWording.tone("regression") == .bad, "a regression is bad")
+    check(CompareWording.tone("improvement") == .good, "an improvement is good")
+    check(CompareWording.tone("no_significant_change") == .neutral,
+          "no significant change is neutral")
+    // The one that matters: inconclusive must never be toned as a pass.
+    check(CompareWording.tone("inconclusive") == .caution,
+          "inconclusive is a caution, never a pass")
+    check(CompareWording.tone("") == .caution,
+          "an unknown verdict is a caution, never a pass")
+    check(CompareWording.tone("something_new") == .caution,
+          "an unrecognised verdict is a caution, never a pass")
+
+    // And it must say, in words, that it is not "no change".
+    let inc = CompareWording.plainly("inconclusive")
+    check(inc.contains("not 'no change'"),
+          "inconclusive says it is not 'no change': got \(inc)")
+    let same = CompareWording.plainly("no_significant_change")
+    check(same.contains("not proof"),
+          "no-significant-change does not claim equivalence: got \(same)")
+    for v in ["regression", "improvement", "no_significant_change",
+              "inconclusive", "", "anything"] {
+        check(!CompareWording.plainly(v).isEmpty,
+              "every verdict has an explanation, including '\(v)'")
+    }
+
+    // Every condition the comparability check can reject on has to be on
+    // screen, or a reader cannot see why a pair was refused.
+    for key in ["platform", "scenario_id", "scenario_version", "device_form",
+                "os_version", "refresh_policy", "collector_preset",
+                "launch_class", "thermal_state", "power_state",
+                "input_data_version", "account_state", "network_condition",
+                "cache_state"] {
+        check(CompareWording.conditionKeys.contains(key),
+              "condition '\(key)' is shown")
+    }
+}
+
+do {
+    // The readability probe. A path this app was handed -- typed or passed on
+    // the command line -- can sit in a folder macOS gates, and the block
+    // happens inside the read, so the probe has a deadline and a third answer.
+    let tmp = NSTemporaryDirectory() + "devx-probe-\(getpid()).json"
+    try? "{}".write(toFile: tmp, atomically: true, encoding: .utf8)
+    check(Core.probeReadable(tmp) == true, "a readable file probes true")
+    check(Core.probeReadable(tmp + ".nope") == false,
+          "a missing file probes false, not nil: it is not a permission wall")
+    check(Core.probeReadable("") == false, "an empty path probes false")
+    try? FileManager.default.removeItem(atPath: tmp)
+    // A directory is not a readable file, and must not pass as one.
+    check(Core.probeReadable(NSTemporaryDirectory()) != true,
+          "a directory does not probe as a readable file")
+}
+
+do {
+    let o = LaunchOptions.parse(["--baseline=/tmp/b.json",
+                                 "--candidate=/tmp/c.json"])
+    check(o.baseline == "/tmp/b.json" && o.candidate == "/tmp/c.json",
+          "a comparison can be opened from the command line")
+    check(DevXTab(rawValue: "compare") == .compare, "the compare tab is addressable")
+    // Every tab needs a title and an icon or the sidebar shows a blank row.
+    for t in DevXTab.allCases {
+        check(!t.title.isEmpty && !t.icon.isEmpty, "tab \(t.rawValue) is labelled")
+    }
+}
+
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

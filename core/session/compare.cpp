@@ -4,6 +4,123 @@
 #include <cmath>
 
 namespace mpi::session {
+
+// Reads a run-set file.
+//
+// In the CLI until DevX needed it too, and a second parser would have been a
+// second set of rules about what an absent field means -- which is exactly
+// where a comparison stops being honest. A missing `scenario_completed` has
+// to exclude the run (I15) and absent eligibility has to read as insufficient
+// evidence rather than a pass, in every caller.
+namespace {
+
+std::string str_at(const json::Value& o, const char* key) {
+  const json::Value* v = o.find(key);
+  return v && v->is_string() ? v->as_string() : std::string();
+}
+
+// Reads a run-set file: the conditions plus one measurement per run.
+bool read_run_set_impl(const std::string& path, const std::string& label,
+                  RunSet& out, std::string& error) {
+  json::ParseError perr;
+  auto parsed = json::parse_file(path, json::Limits{}, &perr);
+  if (!parsed) {
+    error = path + ": " + perr.message;
+    return false;
+  }
+  const json::Value& root = *parsed;
+  out.label = label;
+
+  if (const json::Value* c = root.find("conditions"); c && c->is_object()) {
+    auto& k = out.conditions;
+    k.platform = str_at(*c, "platform");
+    k.scenario_id = str_at(*c, "scenario_id");
+    k.scenario_version = str_at(*c, "scenario_version");
+    k.device_id = str_at(*c, "device_id");
+    k.device_model = str_at(*c, "device_model");
+    k.device_form = str_at(*c, "device_form");
+    k.os_version = str_at(*c, "os_version");
+    k.refresh_policy = str_at(*c, "refresh_policy");
+    k.collector_preset = str_at(*c, "collector_preset");
+    if (const json::Value* r = c->find("collector_sample_rate_hz");
+        r && r->is_number()) {
+      k.collector_sample_rate_hz = r->as_double();
+    }
+    k.launch_class = str_at(*c, "launch_class");
+    k.thermal_state = str_at(*c, "thermal_state");
+    k.power_state = str_at(*c, "power_state");
+    k.input_data_version = str_at(*c, "input_data_version");
+    k.account_state = str_at(*c, "account_state");
+    k.network_condition = str_at(*c, "network_condition");
+    k.cache_state = str_at(*c, "cache_state");
+  } else {
+    error = path + ": no \"conditions\" object; comparability cannot be checked";
+    return false;
+  }
+
+  out.mode = model::measurement_mode_from_string(str_at(root, "measurement_mode"));
+
+  // Eligibility can be supplied directly, or derived from a build profile.
+  if (const json::Value* e = root.find("benchmark_eligibility");
+      e && e->is_object()) {
+    const std::string status = str_at(*e, "status");
+    out.eligibility.status =
+        status == "eligible" ? model::EligibilityStatus::kEligible
+        : status == "ineligible" ? model::EligibilityStatus::kIneligible
+                                 : model::EligibilityStatus::kInsufficientEvidence;
+    if (const json::Value* rs = e->find("reasons"); rs && rs->is_array()) {
+      for (const auto& r : rs->items()) {
+        if (r.is_string()) out.eligibility.reasons.push_back(r.as_string());
+      }
+    }
+    const json::Value* ov = e->find("user_override");
+    out.eligibility.user_override = ov && ov->as_bool();
+    out.eligibility.user_override_note = str_at(*e, "user_override_note");
+  } else {
+    // Absent eligibility is insufficient evidence, never a pass.
+    out.eligibility.status = model::EligibilityStatus::kInsufficientEvidence;
+    out.eligibility.reasons.push_back(
+        "the run set did not state its benchmark eligibility");
+  }
+
+  const json::Value* runs = root.find("runs");
+  if (!runs || !runs->is_array()) {
+    error = path + ": no \"runs\" array";
+    return false;
+  }
+  for (const auto& r : runs->items()) {
+    if (!r.is_object()) continue;
+    RunMeasurement m;
+    m.session_id = str_at(r, "session_id");
+    m.metric_name = str_at(r, "metric_name");
+    m.unit = str_at(r, "unit");
+    if (const json::Value* v = r.find("value"); v && v->is_number()) {
+      m.value = v->as_double();
+    }
+    const json::Value* done = r.find("scenario_completed");
+    // Absent means unknown, and an unknown scenario outcome cannot count as a
+    // valid run (spec I15).
+    m.scenario_completed = done ? done->as_bool() : false;
+    if (!done) m.exclusion_reason = "scenario completion not stated";
+    if (m.exclusion_reason.empty()) {
+      m.exclusion_reason = str_at(r, "exclusion_reason");
+    }
+    const json::Value* warm = r.find("warm_up");
+    m.warm_up = warm && warm->as_bool();
+    if (m.metric_name.empty()) continue;
+    out.runs.push_back(std::move(m));
+  }
+  return true;
+}
+
+
+}  // namespace
+
+bool read_run_set(const std::string& path, const std::string& label,
+                  RunSet& out, std::string& error) {
+  return read_run_set_impl(path, label, out, error);
+}
+
 namespace {
 
 std::optional<double> median(std::vector<double> v) {
