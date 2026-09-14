@@ -47,7 +47,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
 ```
 
-Run the tests (227 cases across 12 binaries):
+Run the tests (228 cases across 12 binaries):
 
 ```bash
 cd build && ctest --output-on-failure

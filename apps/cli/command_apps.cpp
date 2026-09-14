@@ -59,10 +59,13 @@ ExitCode cmd_apps(const Invocation& inv) {
         std::cout << "No app was listed for this device.\n";
       }
     } else {
-      std::cout << "STATE      PROFILING            SCOPE                  PROCS  "
-                   "IDENTIFIER\n";
+      // Column widths must exceed the longest value they hold, or the fields
+      // run together: "not_running" is itself 11 characters wide.
+      std::cout << std::left << std::setw(13) << "STATE" << std::setw(21)
+                << "PROFILING" << std::setw(23) << "SCOPE" << std::setw(7)
+                << "PROCS" << "IDENTIFIER\n";
       for (const auto& a : filtered) {
-        std::cout << std::left << std::setw(11)
+        std::cout << std::left << std::setw(13)
                   << model::to_string(a.runtime_state) << std::setw(21)
                   << model::to_string(a.profiling) << std::setw(23)
                   << model::to_string(a.visibility_scope) << std::setw(7)

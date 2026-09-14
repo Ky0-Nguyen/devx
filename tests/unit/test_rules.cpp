@@ -356,6 +356,52 @@ MPI_TEST(det12_preserves_original_total_alongside_slices, {"section-9"}) {
                 "attributed slices cannot exceed the original total");
 }
 
+MPI_TEST(obfuscated_frames_resolve_only_with_a_bound_mapping, {"C14", "DET-04"}) {
+  const auto t = load("traces/obfuscated-android.mpi.json");
+  rules::EngineOptions o;
+  o.mode = model::MeasurementMode::kDiagnostic;
+
+  // Without a mapping, the raw obfuscated string must not be presented as a
+  // function name.
+  {
+    symbols::SymbolService bare;
+    const auto r = rules::analyze(t, bare, o);
+    const auto* i = first(r, "DET-04");
+    MPI_CHECK(i != nullptr);
+    MPI_CHECK_EQ(i->symbol_status, std::string("unavailable"));
+    MPI_CHECK(contains(i->title, "unresolved frame"));
+    MPI_CHECK(contains(i->missing_evidence, "'a.b.c.d' is not a function name"));
+  }
+
+  // With a mapping bound to the build id the trace declares, the name resolves.
+  {
+    std::string err;
+    auto map = symbols::load_obfuscation_map(fixture("symbols/r8-mapping.txt"), &err);
+    MPI_CHECK_MSG(map.has_value(), err);
+    symbols::SymbolService svc;
+    const model::BuildFact* bid = t.build.find("native.build_id");
+    MPI_CHECK_MSG(bid != nullptr, "the fixture declares a native build id");
+    svc.set_expected_native_build_id(bid->value);
+    svc.add_obfuscation_map(std::move(*map));
+    MPI_CHECK_EQ(svc.bindings()[0].status, std::string("exact_build_match"));
+
+    const auto r = rules::analyze(t, svc, o);
+    const auto* i = first(r, "DET-04");
+    MPI_CHECK(i != nullptr);
+    MPI_CHECK(contains(i->title, "com.example.perf.render.TextShaper.shape"));
+    // An R8 map yields a symbol but no source file, so the location stays
+    // partial and is not navigable -- the binding being exact does not make
+    // a source claim safe.
+    MPI_CHECK(!i->candidate_stacks.empty());
+    for (const auto& l : i->candidate_stacks.front().locations) {
+      MPI_CHECK_EQ(l.symbol_status, std::string("partial"));
+      MPI_CHECK_MSG(!l.safe_to_open(),
+                    "no source file means the editor must not navigate");
+      MPI_CHECK(contains(l.note, "no source file is associated"));
+    }
+  }
+}
+
 MPI_TEST(diagnostic_session_never_reports_a_certified_benchmark, {"F14", "I16"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"),
                      model::MeasurementMode::kDiagnostic);
