@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 116 of 198 checklist items have at
-least one automated test.** The remaining 82 are listed below with a stated
+**Coverage of specification section 18: 117 of 198 checklist items have at
+least one automated test.** The remaining 81 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (116 items, 355 test-case links)
+## Covered (117 items, 362 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -74,6 +74,11 @@ Two cautions on reading this:
 | A20 | `test_ios_parsers` | `adapter_refuses_an_option_like_bundle_id` |
 | A20 | `test_process` | `process_rejects_option_like_identifier` |
 | A21 | `test_android_collector` | `resolve_activity_reads_the_component_not_the_details` |
+| A21 | `test_identity` | `a_launched_app_is_waited_for_until_its_process_appears` |
+| A22 | `test_identity` | `a_cancelled_wait_stops_and_reports_the_cancellation` |
+| A22 | `test_identity` | `a_launched_app_is_waited_for_until_its_process_appears` |
+| A22 | `test_identity` | `a_wait_that_times_out_says_so_rather_than_reporting_no_processes` |
+| A22 | `test_identity` | `a_zero_budget_still_gets_one_look` |
 | A24 | `test_ios_parsers` | `readiness_for_an_unknown_identifier_is_absent` |
 | B02 | `test_android_parsers` | `proc_stat_handles_a_comm_name_containing_spaces` |
 | B02 | `test_android_parsers` | `proc_stat_malformed_returns_nothing_not_a_fake_value` |
@@ -195,6 +200,7 @@ Two cautions on reading this:
 | E12 | `test_trace_model` | `cpu_percentage_declares_its_normalization` |
 | E13 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | E13 | `test_android_collector` | `uptime_is_read_or_refused_never_defaulted` |
+| E13 | `test_identity` | `a_wait_that_times_out_says_so_rather_than_reporting_no_processes` |
 | E13 | `test_ingestion` | `derived_coverage_treats_absent_collector_as_a_full_gap` |
 | E13 | `test_report` | `coverage_gaps_are_reported_with_their_semantics` |
 | E13 | `test_rules` | `det04_skips_when_no_samples_and_says_it_is_not_idle` |
@@ -353,6 +359,7 @@ Two cautions on reading this:
 | J05 | `test_process` | `process_runs_and_captures_output` |
 | J06 | `test_devx_http` | `server_generates_a_distinct_token_per_instance` |
 | J11 | `test_android_collector` | `live_session_start_stop_is_safe_without_a_collector` |
+| J11 | `test_identity` | `a_cancelled_wait_stops_and_reports_the_cancellation` |
 | J11 | `test_json` | `json_accessors_do_not_throw_on_type_mismatch` |
 | J11 | `test_process` | `process_honours_cancellation` |
 | J11 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
@@ -448,7 +455,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (82)
+## Not yet covered (81)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -459,7 +466,6 @@ Two cautions on reading this:
 | A16 | selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested |
 | A17 | needs a live app that exits between listing and record (M2) |
 | A19 | the optional app SDK is not implemented (M3) |
-| A22 | NO STATED REASON |
 | A23 | favourites/recents is a UI concept (M2) |
 | A25 | large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested |
 | B01 | multi-process grouping needs an Android device with a multi-process app |
@@ -538,6 +544,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 14
-- test cases declaring at least one id: 290
-- checklist-item links: 355
-- section-18 coverage: 116/198 (59%)
+- test cases declaring at least one id: 294
+- checklist-item links: 362
+- section-18 coverage: 117/198 (59%)

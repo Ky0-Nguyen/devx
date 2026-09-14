@@ -1,6 +1,7 @@
 #include "core/discovery/discovery_service.hpp"
 
 #include <algorithm>
+#include <thread>
 #include <cctype>
 
 #include "core/util/time.hpp"
@@ -255,6 +256,44 @@ std::vector<model::AppEntry> DiscoveryService::apply_filter(
                      if (ra != rb) return ra < rb;
                      return a.key.app_identifier < b.key.app_identifier;
                    });
+  return out;
+}
+
+DiscoveryService::ProcessWait DiscoveryService::wait_for_app_process(
+    const model::DeviceRef& device, const model::ApplicationKey& app,
+    std::chrono::milliseconds timeout, std::chrono::milliseconds poll_interval,
+    const ProviderOptions& opts) const {
+  ProcessWait out;
+  const auto started = std::chrono::steady_clock::now();
+  const auto deadline = started + timeout;
+
+  for (;;) {
+    if (opts.cancel.cancelled()) {
+      out.cancelled = true;
+      out.notes.push_back("cancelled while waiting for the app's process");
+      break;
+    }
+    ++out.polls;
+    const auto reval = revalidate(device, app, out.processes, opts);
+    for (const auto& e : reval.errors) out.notes.push_back(e);
+    if (reval.app_still_present && !reval.processes.empty()) {
+      out.appeared = true;
+      out.processes = reval.processes;
+      break;
+    }
+    // Checked after the poll, so a zero timeout still gets one look: an app
+    // that is already up should not need a waiting budget to be found.
+    if (std::chrono::steady_clock::now() >= deadline) {
+      out.notes.push_back(
+          "the app did not appear as a running process within the wait budget; "
+          "this is a timeout, not evidence that the app has no processes");
+      break;
+    }
+    std::this_thread::sleep_for(poll_interval);
+  }
+
+  out.waited = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - started);
   return out;
 }
 

@@ -226,28 +226,20 @@ ExitCode cmd_record(const Invocation& inv) {
       // against it: the pid that existed before the launch is not the one to
       // capture (spec A21, A22).
       if (cfg.wait_for_app.count() > 0) {
-        const auto deadline =
-            std::chrono::steady_clock::now() + cfg.wait_for_app;
-        bool appeared = false;
-        while (std::chrono::steady_clock::now() < deadline) {
-          if (inv.global.cancel.cancelled()) return ExitCode::kCancelled;
-          const auto again = svc.revalidate(device, target->key,
-                                            trace.target.processes, po);
-          if (again.app_still_present && !again.processes.empty()) {
-            trace.target.processes = again.processes;
-            trace.target.runtime_state_at_capture = model::RuntimeState::kRunning;
-            appeared = true;
-            break;
-          }
-          std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        }
-        if (!appeared) {
+        const auto waited = svc.wait_for_app_process(
+            device, target->key, cfg.wait_for_app,
+            std::chrono::milliseconds(250), po);
+        for (const auto& n : waited.notes) std::cerr << "note: " << n << "\n";
+        if (waited.cancelled) return ExitCode::kCancelled;
+        if (!waited.appeared) {
           std::cerr << "error: '" << inv.global.app
                     << "' did not appear as a running process within "
                     << (cfg.wait_for_app.count() / 1000)
                     << "s of the launch.\n";
           return ExitCode::kNotFound;
         }
+        trace.target.processes = waited.processes;
+        trace.target.runtime_state_at_capture = model::RuntimeState::kRunning;
       }
     }
 

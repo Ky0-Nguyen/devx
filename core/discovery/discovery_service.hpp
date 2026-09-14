@@ -4,6 +4,7 @@
 // selection is revalidated immediately before recording (spec A16, A17, A24).
 #pragma once
 
+#include <chrono>
 #include <optional>
 #include <string>
 #include <vector>
@@ -48,6 +49,27 @@ class DiscoveryService {
                           const model::ApplicationKey& app,
                           const std::vector<model::ProcessInstance>& previous,
                           const ProviderOptions& opts) const;
+
+  // Waits for a launched app's process to appear.
+  //
+  // `am start -W` returns once the activity reported being drawn, which is
+  // before the process is reliably listable -- and a capture that begins
+  // immediately pins nothing. This polls `revalidate` until the app is
+  // present or the budget runs out, and says which of the two happened rather
+  // than returning an empty set that reads like an app with no processes.
+  struct ProcessWait {
+    bool appeared = false;
+    std::vector<model::ProcessInstance> processes;
+    std::chrono::milliseconds waited{0};
+    int polls = 0;
+    bool cancelled = false;
+    std::vector<std::string> notes;
+  };
+  ProcessWait wait_for_app_process(const model::DeviceRef& device,
+                                   const model::ApplicationKey& app,
+                                   std::chrono::milliseconds timeout,
+                                   std::chrono::milliseconds poll_interval,
+                                   const ProviderOptions& opts) const;
 
   // Resolves one device and one app without enumerating everything.
   //
