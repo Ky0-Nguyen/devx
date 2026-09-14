@@ -19,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (162 items, 578 test-case links)
+## Covered (162 items, 579 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -460,6 +460,7 @@ Two cautions on reading this:
 | H14 | `test_session_lifecycle` | `a_suppression_with_no_reason_is_refused_on_read_and_write` |
 | H14 | `test_session_lifecycle` | `an_empty_fingerprint_suppresses_the_whole_rule` |
 | H14 | `test_timeline` | `a_suppressed_issue_is_not_drawn` |
+| H15 | `devx_swift_tests` | `the settings view exists` |
 | H15 | `test_ingestion` | `mark_synthetic_option_forces_the_label` |
 | H15 | `test_ingestion` | `reads_native_trace_and_keeps_synthetic_label` |
 | H15 | `test_report` | `synthetic_data_is_announced_in_both_formats` |
@@ -770,6 +771,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 20
-- test cases declaring at least one id: 444
-- checklist-item links: 578
+- test cases declaring at least one id: 445
+- checklist-item links: 579
 - section-18 coverage: 162/198 (82%)

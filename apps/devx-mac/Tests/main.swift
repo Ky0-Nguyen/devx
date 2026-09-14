@@ -580,6 +580,25 @@ do {
     check(empty.entries.isEmpty, "an incomplete target is not remembered")
 }
 
+do {
+    // Every tab the spec section 13 view list names has a home. The list is
+    // 11 views; DevX has 11 tabs because Recording splits into Record and
+    // Live, and Issue detail plus Stack/source live inside Issues rather
+    // than being their own tabs -- which the map below states rather than
+    // leaving to be inferred.
+    let tabs = Set(DevXTab.allCases.map { $0.rawValue })
+    for expected in ["devices", "apps", "preflight", "record", "live",
+                     "sessions", "issues", "timeline", "compare",
+                     "detectors", "settings"] {
+        check(tabs.contains(expected), "the \(expected) view exists",
+              req: expected == "settings" ? ["H15"] : [])
+    }
+    check(DevXTab.settings.title == "Export",
+          "the export/settings view is labelled for what it does")
+    let o = LaunchOptions.parse(["--tab=settings"])
+    check(o.tab == .settings, "and is addressable from the command line")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

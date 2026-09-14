@@ -351,11 +351,22 @@ reporting a qualified finding.
 
 ## 5. DevX exists; some UI behaviours are still unbuilt
 
-`DevX.app` is a native SwiftUI application over the C ABI (ADR-0007), covering
-Devices, Apps, Live, Preflight, Record, Sessions, Issues and Detectors. The
-Live tab streams a capture alongside the running app: counters, memory
+`DevX.app` is a native SwiftUI application over the C ABI (ADR-0007), and it
+now covers **every view specification section 13 lists**: Devices, Apps,
+Preflight, Record and Live, Sessions, Issues, Timeline, Compare, Detectors and
+Export/settings. Two of the eleven are panels rather than tabs, which is worth
+stating rather than leaving to be inferred -- the issue detail and the
+stack/source view live inside Issues, next to the finding they describe.
+
+The Live tab streams a capture alongside the running app: counters, memory
 sparklines, per-source status, and the preliminary banner over everything
 until the window closes.
+
+The Export view carries the one statement section 13 asks for that has no
+control attached: "no source or trace upload without configured user consent".
+There is no consent switch, because there is nothing to consent to -- this
+build has no upload path. Exporting writes a local file, and the view says so
+outright rather than offering a toggle that implies an upload exists.
 
 Still open, and all inherently UI behaviours:
 
@@ -519,7 +530,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **162 of 198** checklist items have at least one automated test
-(433 test cases in 19 binaries, plus 196 Swift, both harnesses declaring the checklist ids they cover). The remaining 36 are enumerated with a stated
+(433 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 36 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

@@ -98,6 +98,7 @@ final class AppState: ObservableObject {
     // The project's suppression list, and the fields for adding one. The
     // reason is mandatory and the UI enforces it before the core has to.
     @Published var suppressionsDoc: JSON = .null
+    @Published var lastExport: String = ""
     @Published var suppressReason: String = ""
     @Published var suppressExpiry: String = ""
     @Published var suppressReference: String = ""
@@ -378,6 +379,26 @@ final class AppState: ObservableObject {
     // keeps and the CLI reads too. The session on disk is never rewritten:
     // the raw trace is immutable, and applying a suppression re-runs the
     // analysis over it rather than editing what was recorded.
+
+    /// Copies the open session's stored report to a path the user picked.
+    ///
+    /// The package's own report is copied rather than regenerated, so what
+    /// leaves is what was recorded. Nothing is uploaded: this writes a local
+    /// file, which is the only thing this app can do with a report.
+    func exportSession(format: String, to path: String) {
+        guard !selectedSession.isEmpty else {
+            lastError = "Open a session first."
+            return
+        }
+        let dir = sessionsDir, id = selectedSession
+        run("Exporting \(id)…", {
+            Core.exportSession(dir: dir, id: id, format: format, outPath: path)
+        }) { doc in
+            if let written = doc["written"].string, !written.isEmpty {
+                self.lastExport = "Wrote \(doc["bytes"].stamp) bytes to \(written)"
+            }
+        }
+    }
 
     func loadSuppressions() {
         let path = Core.suppressionsPath(sessionsDir: sessionsDir)

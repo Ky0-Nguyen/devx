@@ -78,6 +78,15 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
                       int collect_scheduling, int collect_heap,
                       int timeout_ms);
 
+/* Copies a stored report out of a session package to `out_path`.
+ *
+ * `format` is "json" or "markdown". The package's own report is copied rather
+ * than regenerated, so what is exported is what was recorded -- checksum
+ * failures are reported alongside so the caller knows whether to trust it.
+ * Nothing is uploaded anywhere: this writes a local file. */
+char* mpi_export_session_json(const char* sessions_dir, const char* session_id,
+                              const char* format, const char* out_path);
+
 /* ---- suppressions -------------------------------------------------------
  *
  * A project's suppression list, shared with the CLI's `--suppressions`. A

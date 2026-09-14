@@ -8,6 +8,8 @@
 #include <cstring>
 #include <exception>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -722,6 +724,71 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
                             static_cast<std::int64_t>(trace.counters.size())));
     out.set("issues", json::Value::integer(
                           static_cast<std::int64_t>(analysis.issues.size())));
+    return out;
+  });
+}
+
+char* mpi_export_session_json(const char* sessions_dir, const char* session_id,
+                              const char* format, const char* out_path) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    const std::string id = safe(session_id);
+    if (!session_id_is_safe(id)) {
+      out.set("error", json::Value::string("invalid session id"));
+      return out;
+    }
+    const std::string dir = safe(sessions_dir) + "/" + id;
+    const auto loaded = session::load_package(dir);
+    if (!loaded.ok) {
+      out.set("error", json::Value::string(loaded.error));
+      return out;
+    }
+    const std::string fmt = safe(format);
+    std::string source;
+    if (fmt == "markdown" || fmt == "md") {
+      source = dir + "/report.md";
+    } else if (fmt == "json") {
+      source = dir + "/report.json";
+    } else {
+      out.set("error",
+              json::Value::string("format must be \"json\" or \"markdown\""));
+      return out;
+    }
+    std::ifstream in(source, std::ios::binary);
+    if (!in) {
+      out.set("error", json::Value::string(
+                           source + " is not present in this session package"));
+      return out;
+    }
+    const std::string content((std::istreambuf_iterator<char>(in)),
+                              std::istreambuf_iterator<char>());
+    const std::string target = safe(out_path);
+    if (target.empty()) {
+      out.set("error", json::Value::string("an output path is required"));
+      return out;
+    }
+    std::ofstream f(target, std::ios::binary | std::ios::trunc);
+    if (!f) {
+      out.set("error", json::Value::string("cannot write " + target));
+      return out;
+    }
+    f << content;
+    if (!f) {
+      out.set("error", json::Value::string("failed while writing " + target));
+      return out;
+    }
+    out.set("written", json::Value::string(target));
+    out.set("bytes",
+            json::Value::integer(static_cast<std::int64_t>(content.size())));
+    out.set("format", json::Value::string(fmt));
+    // The report is copied, not regenerated, so it is exactly what was
+    // recorded -- and whether that file still matches its checksum is the
+    // caller's to know.
+    json::Value checks = json::Value::array();
+    for (const auto& c : loaded.checksum_failures) {
+      checks.push_back(json::Value::string(c));
+    }
+    out.set("checksum_failures", std::move(checks));
     return out;
   });
 }
