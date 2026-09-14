@@ -545,8 +545,8 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**174 of 198** checklist items have at least one automated test
-(448 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 24 are enumerated with a stated
+**177 of 198** checklist items have at least one automated test
+(451 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 21 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

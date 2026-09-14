@@ -1497,3 +1497,165 @@ MPI_TEST(a_missed_frame_is_never_called_gpu_bound, {"E09"}) {
   MPI_CHECK_MSG(text.find("\"gpu_bound\"") == std::string::npos,
                 "nothing is labelled gpu_bound");
 }
+
+MPI_TEST(dev_tooling_stays_inside_the_process_total, {"F12"}) {
+  // A debug build carries its own observer: Metro's websocket, a dev-support
+  // thread, an inspector. That work is really happening in the app's process
+  // and really costs the user's device nothing in release -- which is exactly
+  // the temptation. Subtracting it would produce a "release estimate" from a
+  // debug capture, and the spec forbids that by any route.
+  //
+  // So the tooling is attributed *next to* the total, never out of it.
+  model::NormalizedTrace t;
+  t.session_id = "tooling";
+  t.primary_clock_domain = "android.boottime.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  model::ThreadInfo th;
+  th.thread_instance_id = "ui";
+  th.process_instance_id = "app-proc";
+  th.name = "main";
+  th.is_main_ui_thread = true;
+  t.threads.push_back(th);
+  model::Coverage cov;
+  cov.collector = "simpleperf";
+  cov.window_start_ns = 0;
+  cov.window_end_ns = 1'000'000'000;
+  t.coverage.push_back(cov);
+
+  // 120 samples of the app's own work, 80 of dev tooling.
+  for (int i = 0; i < 120; ++i) {
+    model::CpuSample s;
+    s.timestamp_ns = static_cast<model::TimeNs>(i) * 4'000'000;
+    s.process_instance_id = "app-proc";
+    s.thread_instance_id = "ui";
+    s.provider = "simpleperf";
+    s.frames = {"libapp.so!RealWork"};
+    t.cpu_samples.push_back(s);
+  }
+  for (int i = 0; i < 80; ++i) {
+    model::CpuSample s;
+    s.timestamp_ns = 500'000'000 + static_cast<model::TimeNs>(i) * 4'000'000;
+    s.process_instance_id = "app-proc";
+    s.thread_instance_id = "ui";
+    s.provider = "simpleperf";
+    // A frame DET-12 attributes conclusively: the RN dev-support
+    // package exists only in development builds.
+    s.frames = {"com.facebook.react.devsupport.DevSupportManagerImpl.handleException"};
+    t.cpu_samples.push_back(s);
+  }
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(t, symbols, opts);
+
+  MPI_CHECK_MSG(!r.attribution.empty(),
+                "the tooling is attributed, which is the point of DET-12");
+  if (r.attribution.empty()) return;
+  bool total_intact = false;
+  bool warned = false;
+  for (const auto& a : r.attribution) {
+    // The original total counts every sample, tooling included: 200, not 120.
+    if (a.original_total.value.value_or(0.0) >= 200.0) total_intact = true;
+    for (const auto& l : a.limitations) {
+      if (l.find("must not be subtracted") != std::string::npos) warned = true;
+    }
+  }
+  MPI_CHECK_MSG(total_intact,
+                "the process total still includes the tooling's samples");
+  MPI_CHECK_MSG(warned,
+                "and the report says the slices must not be subtracted from "
+                "it to estimate release performance");
+}
+
+MPI_TEST(a_high_cpu_share_carries_no_claim_about_harm, {"E05"}) {
+  // One function holding most of the samples is a fact. That the user noticed
+  // is not. A capture can show a thread pinned at 100% while every frame
+  // arrived on time -- a background encode, a prefetch, a deliberate busy
+  // loop -- and a tool that reads high CPU as a problem will report a
+  // non-problem with total confidence.
+  model::NormalizedTrace t;
+  t.session_id = "busy-but-fine";
+  t.primary_clock_domain = "android.boottime.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  model::ThreadInfo worker;
+  worker.thread_instance_id = "worker";
+  worker.process_instance_id = "app-proc";
+  worker.name = "encoder";
+  t.threads.push_back(worker);
+  model::Coverage cov;
+  cov.collector = "simpleperf";
+  cov.window_start_ns = 0;
+  cov.window_end_ns = 1'000'000'000;
+  t.coverage.push_back(cov);
+  for (int i = 0; i < 300; ++i) {
+    model::CpuSample s;
+    s.timestamp_ns = static_cast<model::TimeNs>(i) * 3'000'000;
+    s.process_instance_id = "app-proc";
+    s.thread_instance_id = "worker";
+    s.provider = "simpleperf";
+    s.frames = {"libapp.so!EncodeFrame"};
+    t.cpu_samples.push_back(s);
+  }
+  // Frames, all comfortably inside their deadline: nothing was harmed.
+  model::Coverage fcov;
+  fcov.collector = "dumpsys gfxinfo";
+  fcov.window_start_ns = 0;
+  fcov.window_end_ns = 1'000'000'000;
+  t.coverage.push_back(fcov);
+  t.refresh_intervals.push_back({0, 1'000'000'000, 60.0, false, "gfxinfo"});
+  for (int i = 0; i < 50; ++i) {
+    model::FrameRecord f;
+    f.event_id = "f" + std::to_string(i);
+    f.start_ns = static_cast<model::TimeNs>(i) * 16'666'666;
+    f.presented_ns = f.start_ns + 6'000'000;  // 6 ms of a 16.6 ms budget
+    f.deadline_ns = 16'666'666;
+    f.source = model::FrameSource::kFrameDeadlineReports;
+    t.frames.push_back(f);
+  }
+
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(t, symbols, opts);
+
+  // No frame finding: nothing missed a deadline, so nothing was harmed.
+  for (const auto& i : r.issues) {
+    MPI_CHECK_MSG(i.rule_id != "DET-01",
+                  "no frame finding, because no frame missed its deadline");
+  }
+  // The CPU hotspot is still reported -- it is a real fact -- but it must
+  // carry no claim about the user.
+  const model::Issue* cpu = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-04") { cpu = &i; break; }
+  }
+  MPI_CHECK(cpu != nullptr);
+  if (cpu == nullptr) return;
+  MPI_CHECK(cpu->cause_status == model::CauseStatus::kUnknown);
+  bool says_no_harm_claim = false;
+  for (const auto& a : cpu->alternative_explanations) {
+    if (a.find("not") != std::string::npos &&
+        (a.find("harm") != std::string::npos ||
+         a.find("user") != std::string::npos ||
+         a.find("problem") != std::string::npos)) {
+      says_no_harm_claim = true;
+    }
+  }
+  for (const auto& m : cpu->metrics) {
+    for (const auto& l : m.limitations) {
+      if (l.find("not a share of a core") != std::string::npos ||
+          l.find("not a measured function duration") != std::string::npos) {
+        says_no_harm_claim = true;
+      }
+    }
+  }
+  MPI_CHECK_MSG(says_no_harm_claim,
+                "the CPU finding says what its share does not establish");
+  // And its severity is not raised by the share alone.
+  MPI_CHECK_MSG(cpu->severity != model::Severity::kHigh,
+                "a sampled share alone does not reach the top severity: "
+                "nothing here measured a cost to the user");
+}

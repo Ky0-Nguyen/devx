@@ -1,4 +1,8 @@
+#include <unistd.h>
+
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <sstream>
 
 #include "core/ingestion/normalize.hpp"
@@ -8,6 +12,28 @@
 using namespace mpi;
 
 namespace {
+
+// Small on-disk helpers: the readers take paths, so a format test needs a
+// file rather than a string.
+std::string temp_dir_for(const char* name) {
+  const char* base = std::getenv("TMPDIR");
+  std::string dir = (base ? std::string(base) : std::string("/tmp/")) +
+                    "mpi-ingest-" + name + "-" + std::to_string(::getpid());
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+  std::filesystem::create_directories(dir, ec);
+  return dir;
+}
+
+void write_text(const std::string& path, const std::string& body) {
+  std::ofstream f(path, std::ios::binary | std::ios::trunc);
+  f << body;
+}
+
+void remove_dir(const std::string& dir) {
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+}
 
 std::string fixture(const char* rel) {
   const char* dir = std::getenv("MPI_FIXTURE_DIR");
@@ -459,4 +485,55 @@ MPI_TEST(xctrace_export_refuses_a_malformed_document, {"J02", "D19"}) {
   // Not XML at all: the sniff must decline it rather than the read failing
   // deep inside.
   MPI_CHECK(!reader.can_read(path));
+}
+
+MPI_TEST(an_unsupported_sampling_format_is_refused_not_guessed_at, {"G02"}) {
+  // A profile in a format this build does not know must be refused. The
+  // failure to avoid is a partial read: a reader that recognises the wrapper,
+  // misreads the samples inside it, and produces a trace that looks like a
+  // capture and describes nothing.
+  const auto dir = temp_dir_for("unsupported-profile");
+
+  // Shaped like a sampling profile -- it even calls itself one -- but with
+  // none of the structure the reader needs.
+  const auto path = dir + "/profile.json";
+  write_text(path, R"({
+    "profileFormat": "some-future-runtime/3",
+    "samples": [{"at": 1, "frame": "a"}, {"at": 2, "frame": "b"}],
+    "frames": {"a": {"name": "foo"}, "b": {"name": "bar"}}
+  })");
+
+  model::NormalizedTrace trace;
+  ingest::ReadDiagnostics diag;
+  ingest::ReadOptions opts;
+  const auto reader = ingest::read_any(path, opts, trace, diag);
+  MPI_CHECK_MSG(!reader.has_value(),
+                "no reader claims a format it cannot read");
+  MPI_CHECK_MSG(trace.cpu_samples.empty(),
+                "and nothing is half-read into the trace: two samples that "
+                "could not be interpreted must not become two samples that "
+                "were");
+  MPI_CHECK(trace.js_tasks.empty());
+  MPI_CHECK(trace.events.empty());
+  MPI_CHECK_MSG(!diag.errors.empty(),
+                "the refusal says something, rather than returning an empty "
+                "trace that reads as a capture of nothing");
+
+  // The near miss: the Hermes wrapper's own key present, but the companion
+  // structure absent. Claiming this one would be worse than refusing it,
+  // because the file really is a Hermes-family profile and a reader that
+  // half-understood it would produce plausible nonsense.
+  const auto half = dir + "/half.json";
+  write_text(half, R"({"stackFrames": {"1": {"name": "f"}}, "samples": "not an array"})");
+  model::NormalizedTrace t2;
+  ingest::ReadDiagnostics d2;
+  const auto r2 = ingest::read_any(half, opts, t2, d2);
+  if (r2.has_value()) {
+    // If a reader accepted it, it must have produced nothing and said why.
+    MPI_CHECK(t2.cpu_samples.empty());
+    MPI_CHECK(!d2.errors.empty());
+  } else {
+    MPI_CHECK(!d2.errors.empty());
+  }
+  remove_dir(dir);
 }

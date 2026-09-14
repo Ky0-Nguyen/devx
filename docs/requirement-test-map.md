@@ -6,8 +6,8 @@ the specification checklist ids it covers, and the framework prints them with
 so a UI behaviour that is tested appears here. Regenerate with
 `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 174 of 198 checklist items have at
-least one automated test.** The remaining 24 are listed below with a stated
+**Coverage of specification section 18: 177 of 198 checklist items have at
+least one automated test.** The remaining 21 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -19,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (174 items, 601 test-case links)
+## Covered (177 items, 604 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -284,6 +284,7 @@ Two cautions on reading this:
 | E02 | `test_trace_model` | `variable_refresh_yields_no_single_deadline` |
 | E03 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
 | E04 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
+| E05 | `test_rules` | `a_high_cpu_share_carries_no_claim_about_harm` |
 | E06 | `test_android_collector` | `det09_reports_waits_on_visible_threads_and_excludes_the_rest` |
 | E06 | `test_android_parsers` | `atrace_distinguishes_blocked_from_merely_preempted` |
 | E09 | `test_rules` | `a_missed_frame_is_never_called_gpu_bound` |
@@ -348,6 +349,7 @@ Two cautions on reading this:
 | F10 | `test_heap` | `det06_says_when_only_the_runtime_holds_the_object` |
 | F11 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | F11 | `test_process` | `process_separates_stdout_and_stderr` |
+| F12 | `test_rules` | `dev_tooling_stays_inside_the_process_total` |
 | F13 | `test_rules` | `det12_excludes_name_only_matches_from_attribution` |
 | F14 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | F14 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
@@ -362,6 +364,7 @@ Two cautions on reading this:
 | G01 | `test_android_collector` | `simpleperf_finds_the_react_native_js_thread` |
 | G01 | `test_ingestion` | `hermes_reader_produces_samples_not_tasks` |
 | G01 | `test_rules` | `det02_refuses_sampling_only_input` |
+| G02 | `test_ingestion` | `an_unsupported_sampling_format_is_refused_not_guessed_at` |
 | G04 | `test_sdk` | `sdk_notices_a_reload_onto_a_different_bundle` |
 | G07 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
 | G08 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
@@ -749,7 +752,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (24)
+## Not yet covered (21)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -759,15 +762,12 @@ Two cautions on reading this:
 | C02 | needs a built app with native debug and JS dev off |
 | C12 | needs an iOS build with a debug entitlement and optimized code |
 | D15 | an emulator's KEYCODE_SLEEP turns the screen off but does not suspend the shell or the app: measured, a 6 s screen-off mid-capture left the tick cadence unchanged at ~710 ms and lost nothing, so that exercises a screen-off rather than a suspend. A true doze needs a physical device |
-| E05 | DET-04 says in every finding that a sampled share carries no claim about user-visible harm; inducing high CPU with provably unharmed frames needs a device whose frame timing is not the host's |
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
 | E18 | measured with paired controls on an emulator and reported as a limitation on the overhead source (1.5-2 s of induced app CPU per capture); a *test* would need the paired runs to be reproducible in CI, which needs a dedicated device |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
 | F06 | no provider on either platform. `dumpsys gfxinfo` reports GPU frame-time percentiles but no allocation, and on an app that rendered nothing those percentiles read '4950ms' -- a sentinel, not a measurement |
-| F12 | in-process tooling stays in the process total by construction, and the real captures here are of a debug build that contains it; separating it would need a release build to compare against |
 | F15 | endpoint/library ambiguity needs more attribution rules |
-| G02 | the Hermes reader refuses unexpected shapes; a versioned corpus is M3 |
 | G03 | non-Hermes runtime needs such a build (M3) |
 | G05 | Fast Refresh needs a live RN app (M3) |
 | G06 | multiple runtimes needs a live RN app (M3) |
@@ -781,6 +781,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 20
-- test cases declaring at least one id: 460
-- checklist-item links: 601
-- section-18 coverage: 174/198 (88%)
+- test cases declaring at least one id: 463
+- checklist-item links: 604
+- section-18 coverage: 177/198 (89%)
