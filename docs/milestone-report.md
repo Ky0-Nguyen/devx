@@ -8,7 +8,8 @@ step.
 Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 
 > **This report is the record of the M0/M1 gate and is left as it stood.**
-> Work has landed since, so three of its statements are no longer current:
+> Work has landed since, so several of its statements are no longer current.
+> Superseded, with the section each one contradicts:
 >
 > - **Android live capture is implemented and verified** on an emulator, batch
 >   and streaming, over the platform's text interfaces rather than Perfetto
@@ -17,11 +18,29 @@ Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 >   the window open and show evidence as it arrives, with every pre-close
 >   snapshot marked preliminary.
 > - **The streaming ingest reader** named as step 1 of section 5 is done.
+> - **Eleven of the twelve detectors are implemented**, not seven. DET-03,
+>   DET-05, DET-07, DET-08, DET-09, DET-10 and DET-11 have landed since;
+>   DET-06 alone is still registered-and-skipped, for want of heap reference
+>   paths. Section 4 of `known-limitations.md` is the current account.
+> - **The desktop UI exists.** DevX is a SwiftUI/AppKit app, so the "not
+>   implemented (M2)" row in section 6 and ADR-0004's open framework question
+>   are both closed.
+> - **The app SDK exists for React Native** (`sdk/react-native`), with a
+>   token-gated loopback transport and a build handshake, so section 6's
+>   "`sdk/*` are empty directories" is true only of `sdk/ios` and
+>   `sdk/android`.
+> - **The test count is 355 cases in 16 binaries**, not 228 in 12.
 >
-> iOS live capture is still not implemented -- there is no `xctrace` collector
-> -- so the cross-platform claim in the gate assessment stands unchanged.
+> **Still open**, unchanged from this report: no physical device has been
+> reached on either platform, and no iOS recording has ever completed. An
+> `xctrace` collector now exists and its export path is tested against real
+> Instruments output, but `xctrace record` does not terminate against the
+> simulator on this host, so the cross-platform live-capture claim in the gate
+> assessment stands as it was written.
+>
 > `docs/known-limitations.md` and
-> `docs/capabilities/tested-capability-matrix.md` are the current authorities.
+> `docs/capabilities/tested-capability-matrix.md` are the current
+> authorities.
 
 ---
 
