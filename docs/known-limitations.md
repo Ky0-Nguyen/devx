@@ -403,6 +403,30 @@ What still depends on the app doing the work:
 
 ---
 
+### There is no native SDK, and that is a scope decision
+
+`sdk/ios` and `sdk/android` contain a README each and nothing else. The
+specification calls the app SDK *optional* and defines its job as reporting
+what no device provider can see -- which screen mounted, which navigation was
+cancelled, which interaction the user started, what build the bundle came
+from. For a React Native app every one of those facts lives in JavaScript, and
+`sdk/react-native` reports all of them with no native code.
+
+What a native SDK would add is stated in each directory's README rather than
+implied by an empty folder. The one that would improve an existing detector:
+an Android SDK emitting `Trace.beginSection` would put the app's own slices
+into an `atrace` capture, which DET-03 already reads when they are there.
+
+### The sample app is a module that runs and components that do not
+
+`samples/react-native` holds a two-screen app. Its `instrumentation.js` --
+the module a real app imports, where every SDK call lives -- is executed
+against a live host by `samples/react-native/verify.mjs`, 23 checks, wired
+into `tools/smoke-test.sh`. `App.js` is **not built**: it needs React Native,
+npm, Gradle and Xcode, none of which runs here. Its own README leads with that
+distinction, because a sample that looks tested and is not is worse than no
+sample.
+
 ## 7. The clock-mapping path has one real producer, and it is coarse
 
 `ClockMapping` carries a measured offset and its uncertainty, and

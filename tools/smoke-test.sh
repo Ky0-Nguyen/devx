@@ -115,8 +115,19 @@ if command -v node >/dev/null 2>&1; then
     printf '  FAIL the SDK end-to-end test failed:\n'; sed 's/^/       /' "$TMP/sdk-e2e.log" | tail -20
     fail=$((fail+1))
   fi
+  # The sample app's own instrumentation module, driven the way its screens
+  # drive it. `App.js` needs React Native and is not built here, but the module
+  # it imports is plain JavaScript -- so the part a developer copies is the
+  # part that gets tested.
+  if node samples/react-native/verify.mjs "$MPI" > "$TMP/sample.log" 2>&1; then
+    printf '  ok   the sample app'"'"'s instrumentation drives the real endpoint (%s checks)\n' \
+      "$(grep -c '  ok ' "$TMP/sample.log")"; pass=$((pass+1))
+  else
+    printf '  FAIL the sample app verification failed:\n'; sed 's/^/       /' "$TMP/sample.log" | tail -20
+    fail=$((fail+1))
+  fi
 else
-  printf '  skip node is not installed, so the SDK end-to-end test did not run\n'
+  printf '  skip node is not installed, so neither the SDK end-to-end test nor the sample verification ran\n'
 fi
 
 echo "== analysis exit codes =="
