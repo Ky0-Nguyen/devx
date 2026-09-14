@@ -109,7 +109,9 @@ bool needs_value(const std::string& flag) {
       "--r8-map",
       "--sample-hz",
       "--tick-ms",
+      "--wait-for-app-s",
       "--search",
+      "--launch-class",
       "--sessions-dir",
       "--source-map",
       "--source-revision",
@@ -135,7 +137,8 @@ bool needs_value(const std::string& flag) {
 bool is_boolean_flag(const std::string& flag) {
   static const char* kBoolean[] = {
       "--ci",           "--include-events", "--include-source-paths",
-      "--installed",    "--json",           "--live",
+      "--installed",    "--json",           "--launch",
+      "--live",
       "--no-cpu",       "--no-frame-reset", "--no-frames",
       "--no-memory",    "--no-simulators",  "--profileable",
       "--quiet",        "--running",        "--source-dirty",

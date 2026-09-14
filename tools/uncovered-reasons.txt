@@ -8,8 +8,6 @@ A14	duplicate display names need a device with two such apps installed
 A16	selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested
 A17	needs a live app that exits between listing and record (M2)
 A19	the optional app SDK is not implemented (M3)
-A21	launch-and-record is not implemented (M2)
-A22	wait-for-app is not implemented (M2)
 A23	favourites/recents is a UI concept (M2)
 A25	large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested
 B01	multi-process grouping needs an Android device with a multi-process app

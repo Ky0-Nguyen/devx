@@ -30,6 +30,7 @@ a working profiler. The naming is how that is enforced at a glance.
 | `malformed-not-json.bin` | 256 arbitrary bytes. |
 | `malformed-empty.json` | Zero bytes. |
 | `chrome-trace-event.json` | Real Chrome/Perfetto trace-event format, including a closing B/E pair, an unclosed B, an orphan E, an X with no `dur`, an out-of-order timestamp, an instant event and a counter. |
+| `android-cold-launch.real.mpi.json` | **Real capture**, not synthetic: a cold launch of the superapp HutBot debug build on a booted emulator, recorded with `mpi record --launch`. Carries the two startup markers (`app_launch` from `am start -W` TotalTime, `startup_displayed` from the platform's `Displayed` log) both reporting 5239 ms, plus five memory families. Exercises DET-07, including the case where two endpoints agree and must group into one finding. |
 | `hermes-profile.json` | Real Hermes sampling-profiler shape (`stackFrames` + `samples`), including a self-referential parent chain that must not hang the unwinder. |
 
 The 1 GiB stress fixture required by section 15 is **not committed**. Generate
@@ -49,6 +50,10 @@ it with `python3 tools/gen-stress-fixture.py <path>`.
 | `android-simpleperf-report-sample.real.txt` | real `simpleperf report-sample --show-callchain` from the superapp HutBot debug build, including the `meta_info` block that carries `app_type: debuggable` |
 | `android-simpleperf-not-debuggable.real.txt` | real simpleperf refusing a non-debuggable package -- the case the capability contract exists to report honestly |
 | `android-meminfo.real.txt` | real `dumpsys meminfo`, including the swap situation that makes PSS exceed RSS |
+| `android-am-start-w-cold.real.txt` | real `am start -W` for a genuine cold launch: `LaunchState: COLD`, TotalTime 4889 |
+| `android-am-start-w-already-running.real.txt` | real `am start -W` re-launching an app that is already foreground. Prints `TotalTime: 0` with a warning that no activity was started -- the zero that must never become a zero-millisecond startup |
+| `android-displayed-logcat.real.txt` | real `ActivityTaskManager: Displayed ... +4s889ms`, the platform's own first-frame figure |
+| `android-resolve-activity.real.txt` | real `cmd package resolve-activity --brief`, whose component sits on the last line under the resolution details |
 | `android-ps-A.synthetic.txt` | **hand-written.** No Android device was available. Covers a main process, two sub-processes, an isolated process, a shared-uid sibling, a same-name different-uid process, a work-profile instance and an unlisted process. |
 | `android-pm-list-packages-U.synthetic.txt` | **hand-written.** Includes two packages sharing uid 10234. |
 | `android-adb-devices-l.synthetic.txt` | **hand-written.** Authorized, emulator, wireless, unauthorized and offline devices. |

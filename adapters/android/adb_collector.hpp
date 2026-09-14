@@ -96,6 +96,50 @@ struct MemInfo {
 };
 MemInfo parse_dumpsys_meminfo(const std::string& text);
 
+// What `am start -W` reported about one launch.
+//
+// `TotalTime: 0` is the trap here. The platform prints it when no activity
+// was started at all -- re-launching an app that is already foreground prints
+// "Warning: Activity not started, intent has been delivered to currently
+// running top-most instance" and a TotalTime of zero. Read literally that is
+// a zero-millisecond startup, comfortably inside any budget. So the zero is
+// never carried as a measurement: `started` says whether a launch happened,
+// and the durations stay absent when it did not.
+struct AmStartResult {
+  bool started = false;
+  // "ok" / "error ..." exactly as the platform reported it.
+  std::string status;
+  // COLD / WARM / HOT / UNKNOWN, as the platform classified it. Never
+  // inferred from the durations.
+  std::string launch_state;
+  std::string component;
+  // Absent unless the platform printed a figure for an actual launch.
+  std::optional<model::TimeNs> total_time_ns;
+  std::optional<model::TimeNs> wait_time_ns;
+  // Warnings the platform emitted, kept verbatim.
+  std::vector<std::string> warnings;
+  std::string refusal;  // why no measurement was produced
+};
+AmStartResult parse_am_start_w(const std::string& text);
+
+// `ActivityTaskManager: Displayed <component> for user N: +3s687ms`.
+//
+// This is the platform's own first-frame figure. It is a different endpoint
+// from `am start -W`'s TotalTime and is kept separate rather than averaged
+// with it.
+struct DisplayedRecord {
+  std::string component;
+  model::TimeNs elapsed_ns = 0;
+  std::string raw;  // the duration as printed, e.g. "+3s687ms"
+};
+// Returns every Displayed line in the log, oldest first.
+std::vector<DisplayedRecord> parse_displayed_log(const std::string& text);
+
+// The launcher component from `cmd package resolve-activity --brief PKG`,
+// whose last line is `package/.Activity`. Empty when the package declares no
+// launchable activity, which is a real answer and not an error.
+std::string parse_resolved_activity(const std::string& text);
+
 // Reads the leading decimal number of a string, as in /proc/uptime's first
 // field. Returns false on anything it cannot read, so a boot time is never
 // silently defaulted -- a zero there would anchor a whole capture to the wrong
@@ -128,6 +172,12 @@ class AdbCollector final : public session::Collector {
   //  * `simpleperf` is run in a short window per tick. That costs a process
   //    spawn each time, which LiveUpdate::tick_cost reports.
   bool supports_streaming() const override { return true; }
+
+  // Launches the app and records the platform's own startup figures.
+  session::Collector::LaunchReport launch(const model::DeviceRef& device,
+                                          const std::string& app_identifier,
+                                          const session::CaptureConfig& config,
+                                          model::NormalizedTrace& out) override;
 
   session::CaptureResult begin(
       const model::DeviceRef& device,

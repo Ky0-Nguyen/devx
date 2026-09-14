@@ -157,26 +157,36 @@ the ingest cost above is what is measured.
 
 ---
 
-## 4. Eight of the twelve catalog detectors are registered but not implemented
+## 4. Six of the twelve catalog detectors are registered but not implemented
 
 Implemented: **DET-01** (frame deadlines), **DET-02** (long JS), **DET-04**
-(sampled CPU hotspot), **DET-12** (tooling attribution).
+(sampled CPU hotspot), **DET-07** (startup budget), **DET-08** (regression),
+**DET-12** (tooling attribution).
 
 Registered and always skipped, each with its prerequisites, its phase and the
 conclusion it will be allowed to reach: DET-03 (sync main-thread I/O), DET-05
-(memory growth), DET-06 (retention), DET-07 (startup budget), DET-08
-(regression), DET-09 (lock contention), DET-10 (React renders), DET-11 (network
-delay).
+(memory growth), DET-06 (retention), DET-09 (lock contention), DET-10 (React
+renders), DET-11 (network delay).
 
 **Why register them at all.** Spec H05 requires an unsupported rule to be
 *reported as skipped* and H11 requires "no findings" to be distinguishable from
 "no analysis". A detector the engine has never heard of can satisfy neither.
 Every report therefore lists all twelve with an explicit outcome.
 
-**Note on DET-08.** The comparison *engine* is implemented and tested
-(24 cases, `mpi compare`). The detector is still marked M4 because a defensible
-regression verdict needs the repeated-run scenario workflow, which does not
-exist yet.
+**DET-07 will not invent a budget.** A startup budget is a product decision and
+no platform publishes one, so the rule skips until `DET-07.budget_ms` is
+configured -- and says that the *budget* is missing, not the data. It also
+refuses to average its two endpoints: `am start -W`'s TotalTime ends when the
+activity reported being drawn, the platform's `Displayed` line marks the first
+frame, and neither is the moment the app became usable. Each endpoint is named
+in the finding; endpoints that report the same figure group into one finding
+with two witnesses rather than two apparent problems.
+
+**DET-08 runs over a pair, not a capture.** Its evidence is a baseline and a
+candidate run set, so it skips in a single-session analysis saying exactly
+that. It does not decide significance -- the comparison engine does -- and it
+refuses cross-platform pairs and incomparable conditions outright instead of
+reporting a qualified finding.
 
 ---
 

@@ -98,6 +98,11 @@ else
   fail=$((fail+1))
 fi
 
+# Launch-and-record has to refuse a bad launch class rather than launching
+# something the operator did not ask for (spec A21).
+check "a bad --launch-class is refused" 2 "$MPI" record --device d --app a --launch --launch-class=tepid
+check "--wait-for-app-s must be positive" 2 "$MPI" record --device d --app a --launch --wait-for-app-s 0
+
 echo "== analysis exit codes =="
 check "healthy fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --format json --out "$TMP/a.json"
 check "positive fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --format json --out "$TMP/b.json"
