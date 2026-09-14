@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "adapters/ios/ios_adapter.hpp"
+#include "adapters/ios/xctrace_collector.hpp"
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
@@ -461,4 +462,79 @@ MPI_TEST(simulator_apps_are_enumerated_from_the_real_booted_simulator,
   MPI_CHECK_MSG(running > 0, "at least one app should be running on a booted sim");
   MPI_CHECK_MSG(provider_attributed > 0,
                 "launchd labels give provider-attributed ownership");
+}
+
+
+// --- xctrace capture outcomes ------------------------------------------------
+//
+// The successful path needs a device this environment does not have. The
+// failures are what a user actually hits, and every one of them is a
+// different statement about what was and was not measured.
+
+MPI_TEST(xctrace_timeout_is_a_provider_failure_not_an_empty_capture,
+         {"J15", "E13", "D07"}) {
+  // The measured behaviour on this host: xctrace attaches to a simulator
+  // target and then runs indefinitely, ignoring its own --time-limit.
+  const auto out = ios::interpret_record_output(
+      "Starting recording with the Time Profiler template. Attaching to: "
+      "Settings (87700). Time limit: 3.0 s\n",
+      "", /*exit_code=*/-1, /*timed_out=*/true);
+  MPI_CHECK(out.attached);
+  MPI_CHECK(out.timed_out);
+  MPI_CHECK(!out.wrote_bundle);
+  MPI_CHECK(!out.refusal.empty());
+  // The distinction the whole tool is built around.
+  MPI_CHECK(out.refusal.find("not the same as a recording that found nothing") !=
+            std::string::npos);
+}
+
+MPI_TEST(xctrace_keeps_a_bundle_it_wrote_despite_reporting_errors,
+         {"D19", "J15"}) {
+  // Real output from this host: it says the recording failed and still writes
+  // a usable 10 MB bundle. Discarding that would throw away real samples.
+  const auto out = ios::interpret_record_output(
+      "Recording failed with errors. Saving output file...\n"
+      "Output file saved as: /tmp/mpi/run.trace\n",
+      "", /*exit_code=*/2, /*timed_out=*/false);
+  MPI_CHECK(out.wrote_bundle);
+  MPI_CHECK_EQ(out.output_path, std::string("/tmp/mpi/run.trace"));
+  // Kept, but the caveat travels with it.
+  MPI_CHECK(out.refusal.empty());
+  MPI_CHECK(!out.notes.empty());
+}
+
+MPI_TEST(xctrace_explains_an_attach_that_found_no_process, {"J15", "B15"}) {
+  const auto out = ios::interpret_record_output(
+      "", "Cannot find process for provided pid: 87700\n",
+      /*exit_code=*/21, /*timed_out=*/false);
+  MPI_CHECK(!out.attached);
+  MPI_CHECK(!out.refusal.empty());
+  MPI_CHECK(out.refusal.find("--device") != std::string::npos);
+}
+
+MPI_TEST(xctrace_reports_a_nonzero_exit_with_no_bundle, {"J15"}) {
+  const auto out = ios::interpret_record_output("", "some other failure\n",
+                                                /*exit_code=*/70,
+                                                /*timed_out=*/false);
+  MPI_CHECK(!out.wrote_bundle);
+  MPI_CHECK(out.refusal.find("exited 70") != std::string::npos);
+}
+
+MPI_TEST(xctrace_export_xpath_is_built_in_one_place, {"J05", "J20"}) {
+  // The quoting matters and is easy to get subtly wrong at a call site, so
+  // there is exactly one place that builds it.
+  MPI_CHECK_EQ(ios::export_xpath_for("time-profile"),
+               std::string("/trace-toc/run[@number=\"1\"]/data/"
+                           "table[@schema=\"time-profile\"]"));
+  MPI_CHECK_EQ(ios::export_xpath_for("potential-hangs", 3),
+               std::string("/trace-toc/run[@number=\"3\"]/data/"
+                           "table[@schema=\"potential-hangs\"]"));
+}
+
+MPI_TEST(xctrace_collector_does_not_claim_to_stream, {"section-13"}) {
+  // Instruments records a window and writes its bundle at the end. A live
+  // view would mean inventing intermediate numbers.
+  ios::XctraceCollector collector;
+  MPI_CHECK(!collector.supports_streaming());
+  MPI_CHECK(collector.platform() == model::Platform::kIos);
 }
