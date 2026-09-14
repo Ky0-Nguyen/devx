@@ -13,7 +13,7 @@ struct RecordView: View {
                      + "for CPU stacks, dumpsys meminfo for memory. For iOS the collector "
                      + "is not wired up yet, and DevX will say so rather than writing a "
                      + "capture-shaped session with nothing measured in it.")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Panel(title: "Target") {
@@ -21,7 +21,7 @@ struct RecordView: View {
                         Field(label: "device") {
                             Text(state.selectedDevice.isEmpty
                                  ? "none selected" : state.selectedDevice)
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(Term.font(12))
                         }
                         Field(label: "app") {
                             TextField("package name or bundle id",
@@ -78,7 +78,7 @@ struct RecordView: View {
                               || state.selectedApp.isEmpty)
 
                     if state.busy != nil {
-                        Button("Cancel") { state.cancel() }
+                        Button("cancel") { state.cancel() }
                         ProgressView().controlSize(.small)
                     }
                 }
@@ -125,20 +125,20 @@ private struct RecordResult: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 7) {
                                     Text(s["id"].text)
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(Term.font(12))
                                     Spacer()
                                     Chip(text: s["status"].text,
                                          tone: StatusTone.capability(s["status"].text))
                                 }
                                 if let e = s["evidence"].string, !e.isEmpty {
-                                    Text(e).font(.caption).foregroundStyle(.secondary)
+                                    Text(e).font(Term.small).foregroundStyle(.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 BulletList(title: "",
                                            items: s["limitations"].array
                                             .compactMap { $0.string })
                                 if let fix = s["recovery_action"].string, !fix.isEmpty {
-                                    Text("fix: \(fix)").font(.caption)
+                                    Text("fix: \(fix)").font(Term.small)
                                         .foregroundStyle(StatusTone.caution.color)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -170,7 +170,7 @@ struct SessionsView: View {
         let failures = s["checksum_failures"].array.count
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(id).font(.system(size: 12, design: .monospaced))
+                Text(id).font(Term.font(12))
                 HStack(spacing: 6) {
                     Chip(text: s["state"].text,
                          tone: s["state"].text == "completed" ? .good : .caution)
@@ -189,10 +189,10 @@ struct SessionsView: View {
                          tone: failures == 0 ? .good : .bad)
                 }
                 if let created = s["created_at"].string, !created.isEmpty {
-                    Text(created).font(.caption).foregroundStyle(Term.dim)
+                    Text(created).font(Term.small).foregroundStyle(Term.dim)
                 }
                 if let err = s["error"].string, !err.isEmpty {
-                    Text(err).font(.caption).foregroundStyle(StatusTone.bad.color)
+                    Text(err).font(Term.small).foregroundStyle(StatusTone.bad.color)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -211,10 +211,10 @@ struct SessionsView: View {
                 Text("Captures and imports on this machine. A session built from an "
                      + "import is labelled as one, and so is a session built from "
                      + "synthetic fixture data.")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(state.sessionsDir)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Term.font(11))
                     .foregroundStyle(Term.dim.opacity(0.8))
                 }
                 Rectangle().fill(Term.line).frame(height: 1)
@@ -261,7 +261,7 @@ struct DetectorsView: View {
                      + "including the ones not implemented yet — a detector the engine has "
                      + "never heard of could not be reported as skipped, and then "
                      + "\"no findings\" would be indistinguishable from \"no analysis\".")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 ForEach(Array(state.rulesDoc["rules"].array.enumerated()),
@@ -297,21 +297,21 @@ private struct DetectorCard: View {
                 let thresholds = rule["thresholds"].array
                 if !thresholds.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("Thresholds").font(.caption.weight(.semibold))
+                        Text("Thresholds").font(Term.font(11, .semibold))
                             .foregroundStyle(.secondary)
                         ForEach(Array(thresholds.enumerated()), id: \.offset) { _, t in
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 6) {
                                     Text("\(t["name"].text) = "
                                          + "\(t["value"].display()) \(t["unit"].text)")
-                                        .font(.system(size: 12, design: .monospaced))
+                                        .font(Term.font(12))
                                     // A heuristic must never read as a platform
                                     // standard, so the origin is shown as a chip.
                                     Chip(text: t["origin"].text,
                                          tone: t["is_platform_standard"].bool == true
                                                ? .good : .caution)
                                 }
-                                Text(t["rationale"].text).font(.caption)
+                                Text(t["rationale"].text).font(Term.small)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }

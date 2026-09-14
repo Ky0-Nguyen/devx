@@ -48,7 +48,7 @@ struct LiveView: View {
             VStack(alignment: .leading, spacing: 9) {
                 Field(label: "device") {
                     Text(state.selectedDevice.isEmpty ? "none selected" : state.selectedDevice)
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(Term.font(12))
                 }
                 Field(label: "app") {
                     TextField("package name or bundle id", text: $state.selectedApp)
@@ -82,16 +82,16 @@ struct LiveView: View {
                         }
                         .buttonStyle(TermButtonStyle(tone: Term.red, filled: true))
                         AsciiSpinner()
-                        Text("streaming").font(.callout)
+                        Text("streaming").font(Term.body)
                             .foregroundStyle(Term.green)
                         BlinkingCursor()
                     } else if state.liveStarting {
                         AsciiSpinner(color: Term.amber)
-                        Text("resolving the target…").font(.callout)
+                        Text("resolving the target…").font(Term.body)
                             .foregroundStyle(Term.dim)
                     } else if state.liveStopping {
                         AsciiSpinner(color: Term.amber)
-                        Text("stopping and saving…").font(.callout)
+                        Text("stopping and saving…").font(Term.body)
                             .foregroundStyle(Term.dim)
                     } else {
                         Button {
@@ -145,12 +145,12 @@ struct LiveView: View {
                         HStack(spacing: 10) {
                             Text(name.replacingOccurrences(of: "memory.", with: "")
                                      .replacingOccurrences(of: "_bytes", with: ""))
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(Term.font(11))
                                 .frame(width: 132, alignment: .leading)
                             Sparkline(values: series)
                                 .frame(height: 26)
                             Text(formatBytes(c["value"].double ?? 0))
-                                .font(.callout.weight(.medium))
+                                .font(Term.font(12, .medium))
                                 .frame(width: 86, alignment: .trailing)
                         }
                     }
@@ -167,19 +167,19 @@ struct LiveView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 7) {
                             Text(s["id"].text)
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(Term.font(11))
                             Spacer()
                             Chip(text: s["status"].text,
                                  tone: StatusTone.capability(s["status"].text))
                         }
                         if let e = s["evidence"].string, !e.isEmpty {
-                            Text(e).font(.caption).foregroundStyle(.secondary)
+                            Text(e).font(Term.small).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         BulletList(title: "",
                                    items: s["limitations"].array.compactMap { $0.string })
                         if let fix = s["recovery_action"].string, !fix.isEmpty {
-                            Text("fix: \(fix)").font(.caption)
+                            Text("fix: \(fix)").font(Term.small)
                                 .foregroundStyle(StatusTone.caution.color)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -211,7 +211,7 @@ struct LiveView: View {
                            + "the same as nothing being wrong: several detectors cannot "
                            + "run until more evidence arrives."
                          : "No detector that ran produced a finding.")
-                        .font(.callout).foregroundStyle(.secondary)
+                        .font(Term.body).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 ForEach(Array(issues.enumerated()), id: \.offset) { _, i in
@@ -219,11 +219,11 @@ struct LiveView: View {
                         Chip(text: i["severity"].text,
                              tone: StatusTone.severity(i["severity"].text))
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(i["title"].text).font(.callout)
+                            Text(i["title"].text).font(Term.body)
                                 .fixedSize(horizontal: false, vertical: true)
                             HStack(spacing: 5) {
                                 Text(i["rule_id"].text)
-                                    .font(.system(size: 10, design: .monospaced))
+                                    .font(Term.font(10))
                                     .foregroundStyle(.secondary)
                                 Chip(text: i["detection_status"].text,
                                      tone: StatusTone.detection(i["detection_status"].text))
@@ -270,9 +270,11 @@ private struct Counter: View {
     var tone: StatusTone = .neutral
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.title2.weight(.semibold).monospacedDigit())
+            // No `monospacedDigit()`: every digit in this face is already
+            // the same width, so a counter cannot jitter as it climbs.
+            Text(value).font(Term.display)
                 .foregroundStyle(tone == .neutral ? Color.primary : tone.color)
-            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(label).font(Term.small).foregroundStyle(.secondary)
         }
     }
 }
@@ -289,7 +291,7 @@ private struct Sparkline: View {
                 // One point is not a trend, so nothing is drawn that might
                 // suggest one.
                 Text(values.isEmpty ? "" : "collecting…")
-                    .font(.caption2).foregroundStyle(Term.dim.opacity(0.8))
+                    .font(Term.micro).foregroundStyle(Term.dim.opacity(0.8))
                     .frame(width: w, height: h, alignment: .leading)
             } else {
                 let lo = values.min() ?? 0

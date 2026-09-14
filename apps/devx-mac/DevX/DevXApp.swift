@@ -98,7 +98,7 @@ struct RootView: View {
             Text("▸").foregroundStyle(Term.line)
             Text(value).foregroundStyle(Term.dim).lineLimit(1).truncationMode(.middle)
         }
-        .font(.system(size: 10, design: .monospaced))
+        .font(Term.font(10))
     }
 
     var body: some View {
@@ -108,8 +108,7 @@ struct RootView: View {
                 set: { if let v = $0 { state.tab = v } })) { tab in
                 NavigationLink(value: tab) {
                     Label(tab.title.uppercased(), systemImage: tab.icon)
-                        .font(.system(size: 11, weight: .semibold,
-                                      design: .monospaced))
+                        .font(Term.font(11, .semibold))
                         .kerning(0.9)
                 }
             }
@@ -122,7 +121,7 @@ struct RootView: View {
                 HStack(spacing: 6) {
                     Text("▚").foregroundStyle(Term.green).phosphor(Term.green, radius: 3)
                     Text("DEVX")
-                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .font(Term.font(13, .heavy))
                         .kerning(2.4)
                     Spacer(minLength: 0)
                 }
@@ -133,7 +132,7 @@ struct RootView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Rectangle().fill(Term.line).frame(height: 1)
                     Text("engine \(state.engineVersion) · ruleset \(state.rulesetVersion)")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(Term.font(10))
                         .foregroundStyle(Term.dim)
                     // The pinned target, in the shape a shell would show it.
                     if !state.selectedDevice.isEmpty {
@@ -166,11 +165,10 @@ struct RootView: View {
                     VStack(spacing: 9) {
                         HStack(spacing: 8) {
                             AsciiSpinner()
-                            Text(busy).font(.callout)
+                            Text(busy).font(Term.body)
                         }
-                        Button("[cancel]") { state.cancel() }
-                            .buttonStyle(.borderless)
-                            .foregroundStyle(Term.amber)
+                        Button("cancel") { state.cancel() }
+                            .buttonStyle(TermButtonStyle(tone: Term.amber))
                     }
                     .padding(22)
                     .background(Term.raised, in: RoundedRectangle(cornerRadius: 3))
@@ -183,15 +181,14 @@ struct RootView: View {
                 if let err = state.lastError {
                     HStack(alignment: .top, spacing: 8) {
                         Text("stderr")
-                            .font(.system(size: 11, weight: .bold,
-                                          design: .monospaced))
+                            .font(Term.font(11, .bold))
                             .foregroundStyle(Term.red)
-                        Text(err).font(.callout).lineLimit(3)
+                        Text(err).font(Term.body).lineLimit(3)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer()
                         Button { state.lastError = nil } label: {
                             Text("[dismiss]")
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(Term.font(11))
                         }
                         .buttonStyle(.borderless)
                     }
