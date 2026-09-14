@@ -56,9 +56,25 @@ open; J14 is partially met.
 
 ### What the Android collector does not collect
 
-No scheduling states, no I/O, no network. DET-03, DET-05, DET-09 and DET-11
-therefore stay registered and skipped rather than being approximated from what
-is available. Getting scheduling data means taking on Perfetto's protobuf;
+**No network timing.** DET-11 reads network markers from the app's own SDK,
+so a capture without an instrumented app reaches no network conclusion at all.
+Nothing on the device side is read for it: `dumpsys netstats` counts bytes per
+uid, which is not a request timeline.
+
+**Scheduling is opt-in, not on by default.** `--scheduling` runs
+`atrace sched disk am view`, which is a system-wide kernel trace: it costs CPU
+on every context switch across every process, and its ring buffer can overflow
+and drop events. The CLI states that before enabling it, and a capture without
+the flag carries no scheduling evidence -- DET-03 and DET-09 then skip and say
+the provider was not run, which is not the same as finding nothing.
+
+An earlier version of this file said scheduling data required taking on
+Perfetto's protobuf. That was wrong, and the correction matters because it was
+the stated reason two detectors stayed unimplemented: `atrace` without `-z`
+prints plain ftrace text, which carries `sched_switch` with `prev_state`,
+`sched_blocked_reason` with the kernel's `iowait` flag, and `sched_waking`.
+That is exactly the evidence DET-03 and DET-09 need, with no new dependency.
+Perfetto would still buy a better-bounded buffer and per-syscall detail;
 ADR-0006 says when that trade becomes the right one.
 
 A live capture does produce a memory *series* -- one reading per tick per
@@ -175,17 +191,28 @@ the ingest cost above is what is measured.
 
 ---
 
-## 4. Five of the twelve catalog detectors are registered but not implemented
+## 4. One of the twelve catalog detectors is registered but not implemented
 
-Implemented: **DET-01** (frame deadlines), **DET-02** (long JS), **DET-04**
-(sampled CPU hotspot), **DET-05** (memory growth across screen cycles),
-**DET-07** (startup budget), **DET-08** (regression), **DET-12** (tooling
-attribution).
+Implemented: **DET-01** (frame deadlines), **DET-02** (long JS), **DET-03**
+(synchronous main-thread I/O), **DET-04** (sampled CPU hotspot), **DET-05**
+(memory growth across screen cycles), **DET-07** (startup budget), **DET-08**
+(regression), **DET-09** (wait contention), **DET-10** (React renders),
+**DET-11** (network delay), **DET-12** (tooling attribution).
 
-Registered and always skipped, each with its prerequisites, its phase and the
-conclusion it will be allowed to reach: DET-03 (sync main-thread I/O), DET-06
-(retention), DET-09 (lock contention), DET-10 (React renders), DET-11 (network
-delay).
+Registered and always skipped, with its prerequisites, its phase and the
+conclusion it will be allowed to reach: **DET-06** (retained-object
+investigation). It needs reference paths from a heap graph -- which object
+holds the retained one, and through what -- and no provider in this build
+produces those. Android's `am dumpheap` writes an HPROF file, so the route
+exists; parsing HPROF is the work, and it is not done. DET-06 therefore skips
+saying the heap graph is missing, rather than re-reporting DET-05's rising
+counters as if they identified an object.
+
+**Implemented does not mean exercised on every platform.** DET-03 and DET-09
+read Android scheduling evidence only; on an iOS capture they skip for want of
+the provider. DET-10 and DET-11 read the app SDK, so they skip on any capture
+from an app that did not handshake. The capability matrix is the authority on
+what has been exercised against what.
 
 **Why register them at all.** Spec H05 requires an unsupported rule to be
 *reported as skipped* and H11 requires "no findings" to be distinguishable from
@@ -214,6 +241,29 @@ says in its own words that a defect is not established, and the metric says a
 count is not a cost. It also refuses the obvious substitute: CPU samples that
 land inside React measure where time went, not how many times a component
 committed, and the skip names that rather than making do.
+
+**DET-03 will not promote a blocked thread to an I/O finding.** A thread in
+uninterruptible sleep (`D`) is blocked on *something*; only the kernel's own
+`sched_blocked_reason` with `iowait=1` says that something was I/O. Without
+that flag the rule records the state and reports nothing, because "the main
+thread stalled" and "the main thread stalled on disk" are different claims and
+this provider distinguishes them. What it still cannot supply is the app's own
+call stack: ftrace gives the kernel function that blocked
+(`folio_wait_bit_common`, say) and the app's `Trace.beginSection` slice if one
+was open, which together locate the block without proving which line of app
+code caused it. That gap is on every finding. It also keeps the three "main"
+threads apart -- the UI main thread, the JS thread, and the native-module
+threads -- because a blocking read means something different on each.
+
+**DET-09 names the waker, never a lock owner.** `sched_waking` records which
+thread made another runnable. That is not the same as which thread held a
+lock: a thread can be woken by a timer, a binder reply, or an unrelated
+signal, and the kernel does not report ownership. So the wait duration is
+measured and the cause stays qualified, the finding names the waking thread as
+the waker only, and it says that identifying a lock and its owner needs
+instrumentation this build does not have. It reports only user-visible threads
+-- a background worker blocking is its job -- and lists the threads it passed
+over, and it hands I/O waits to DET-03 instead of counting one stall twice.
 
 **DET-11 blames nobody.** A request duration covers DNS, the TLS handshake, a
 cold radio, retries, proxies, time queued behind other requests in the app,
@@ -343,10 +393,10 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**108 of 198** checklist items have at least one automated test
-(228 test cases in 12 binaries). The remaining 90 are enumerated with a stated
+**139 of 198** checklist items have at least one automated test
+(355 test cases in 16 binaries). The remaining 59 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
-needs a collector, needs the SDK, needs a UI.
+needs an iOS recording that completes, needs a UI test harness.
 
 A checklist item having a test is not the same as the capability being verified
 on hardware. The capability matrix is the authority on that.

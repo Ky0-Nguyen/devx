@@ -52,6 +52,7 @@ against `com.android.settings`:
 | `android.capture.cpu_samples` (`simpleperf`) | `available` -- 42 symbolised samples incl. React Native's `mqt_v_js` thread | `permission_denied`, with the manifest change that would fix it |
 | `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available`; the reading is excluded from app-scoped totals when ownership is ambiguous, which is what a shared-uid system app produces |
 | `android.capture.streaming` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
+| `android.capture.scheduling` (`atrace sched disk am view`) | `available`, **opt-in only** -- 4082 events over 64 threads in a 10 s capture | `available`; ftrace is system-wide and does not depend on the target's debuggability |
 
 ### Measured live, against a real emulator
 
@@ -64,6 +65,29 @@ Both verified on `emulator-5554` (Pixel 9 Pro image, API 37):
 
 Neither row is a claim about phone hardware: an emulator's GPU is emulated and
 its scheduler is the host's. Physical-device live capture is unverified.
+
+### Scheduling evidence, measured on the same emulator
+
+`mpi record --scheduling` against `io.pizzahut.hutbot.debug`: 4082 ftrace
+events attributed across 64 of the app's threads, with
+`sched_blocked_reason iowait=1 caller=folio_wait_bit_common` observed on the
+React Native JS thread (`mqt_v_js`). The kernel reported no dropped events in
+that capture (`entries-in-buffer` equalled `entries-written`); a capture where
+they differ records the difference as a coverage gap rather than a quiet
+period.
+
+Two caveats specific to this source, and both matter more on an emulator than
+elsewhere:
+
+- **The scheduler is the host's.** An emulated device's context switches,
+  block times and wake-ups are macOS scheduling decisions wearing Android's
+  clothes. Durations measured here are not phone durations. This is the source
+  whose numbers transfer *least* well off hardware.
+- **It is off by default and says why.** `atrace` traces every process on the
+  device, costs CPU at every context switch, and can overflow its ring buffer.
+  The CLI states that before enabling it. A capture without `--scheduling`
+  carries no scheduling evidence at all, and DET-03/DET-09 then report that
+  the provider did not run.
 
 ## Evidence and limitations
 

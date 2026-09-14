@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 133 of 198 checklist items have at
-least one automated test.** The remaining 65 are listed below with a stated
+**Coverage of specification section 18: 139 of 198 checklist items have at
+least one automated test.** The remaining 59 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (133 items, 432 test-case links)
+## Covered (139 items, 453 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -84,6 +84,7 @@ Two cautions on reading this:
 | A22 | `test_identity` | `a_wait_that_times_out_says_so_rather_than_reporting_no_processes` |
 | A22 | `test_identity` | `a_zero_budget_still_gets_one_look` |
 | A24 | `test_ios_parsers` | `readiness_for_an_unknown_identifier_is_absent` |
+| B01 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | B02 | `test_android_parsers` | `proc_stat_handles_a_comm_name_containing_spaces` |
 | B02 | `test_android_parsers` | `proc_stat_malformed_returns_nothing_not_a_fake_value` |
 | B02 | `test_android_parsers` | `proc_stat_starttime_is_extracted` |
@@ -135,8 +136,12 @@ Two cautions on reading this:
 | C16 | `test_sdk` | `sdk_handshake_becomes_runtime_build_facts` |
 | C16 | `test_sdk` | `sdk_notices_a_reload_onto_a_different_bundle` |
 | C17 | `test_symbols` | `dirty_checkout_blocks_exact_source_claims` |
+| C18 | `test_android_collector` | `atrace_mapping_keeps_states_apart_and_only_calls_iowait_io` |
+| C18 | `test_android_collector` | `det03_will_not_promote_a_bare_uninterruptible_state` |
 | C18 | `test_android_collector` | `meminfo_absent_fields_stay_absent` |
 | C18 | `test_android_collector` | `simpleperf_meta_info_yields_real_build_facts` |
+| C18 | `test_android_parsers` | `atrace_only_treats_an_iowait_flag_as_io` |
+| C18 | `test_android_parsers` | `atrace_without_a_header_says_the_loss_is_unknown` |
 | C18 | `test_android_parsers` | `dumpsys_absent_flags_stay_unknown` |
 | C18 | `test_android_parsers` | `dumpsys_flags_parse_debuggable_and_version` |
 | C18 | `test_eligibility` | `missing_fact_returns_unknown_not_false` |
@@ -155,6 +160,7 @@ Two cautions on reading this:
 | C20 | `test_android_parsers` | `parses_device_states_and_forms` |
 | C20 | `test_android_parsers` | `probe_never_claims_physical_verification_from_an_emulator` |
 | C20 | `test_identity` | `simulator_form_survives_serialization` |
+| D04 | `test_android_parsers` | `atrace_reports_a_dropped_buffer_rather_than_absorbing_it` |
 | D04 | `test_json` | `stream_parser_can_abandon_an_array_midway` |
 | D04 | `test_process` | `process_honours_cancellation` |
 | D04 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
@@ -179,6 +185,7 @@ Two cautions on reading this:
 | D12 | `test_ingestion` | `normalize_flags_unmappable_clock_domains` |
 | D12 | `test_ingestion` | `unmeasured_clock_mapping_is_flagged_at_read_time` |
 | D12 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
+| D13 | `test_android_parsers` | `atrace_timestamps_keep_their_precision` |
 | D16 | `test_android_collector` | `framestats_handles_empty_and_headerless_blocks` |
 | D16 | `test_android_collector` | `simpleperf_handles_empty_input` |
 | D16 | `test_android_parsers` | `ps_parser_handles_empty_input` |
@@ -189,6 +196,7 @@ Two cautions on reading this:
 | D18 | `test_android_collector` | `displayed_log_reads_each_unit_rather_than_assuming_a_shape` |
 | D18 | `test_android_collector` | `framestats_reads_the_header_rather_than_fixed_columns` |
 | D18 | `test_android_collector` | `framestats_refuses_a_header_missing_required_columns` |
+| D18 | `test_android_parsers` | `atrace_reads_userspace_slices_and_tolerates_a_nameless_one` |
 | D18 | `test_ingestion` | `unsupported_schema_version_is_reported_not_guessed` |
 | D18 | `test_ios_parsers` | `devicectl_parsers_tolerate_unexpected_shapes` |
 | D18 | `test_json` | `json_bom_is_tolerated` |
@@ -216,10 +224,17 @@ Two cautions on reading this:
 | E02 | `test_trace_model` | `variable_refresh_yields_no_single_deadline` |
 | E03 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
 | E04 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
+| E06 | `test_android_collector` | `det09_reports_waits_on_visible_threads_and_excludes_the_rest` |
+| E06 | `test_android_parsers` | `atrace_distinguishes_blocked_from_merely_preempted` |
+| E10 | `test_android_collector` | `atrace_mapping_keeps_states_apart_and_only_calls_iowait_io` |
+| E10 | `test_android_parsers` | `atrace_distinguishes_blocked_from_merely_preempted` |
+| E10 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
 | E12 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | E12 | `test_trace_model` | `cpu_percentage_declares_its_normalization` |
 | E13 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | E13 | `test_android_collector` | `uptime_is_read_or_refused_never_defaulted` |
+| E13 | `test_android_parsers` | `atrace_reports_a_dropped_buffer_rather_than_absorbing_it` |
+| E13 | `test_android_parsers` | `atrace_without_a_header_says_the_loss_is_unknown` |
 | E13 | `test_identity` | `a_wait_that_times_out_says_so_rather_than_reporting_no_processes` |
 | E13 | `test_ingestion` | `derived_coverage_treats_absent_collector_as_a_full_gap` |
 | E13 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
@@ -232,6 +247,7 @@ Two cautions on reading this:
 | E15 | `test_android_collector` | `simpleperf_stacks_are_outermost_first` |
 | E15 | `test_ingestion` | `hermes_reader_unwinds_stacks_outermost_first` |
 | E15 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
+| E17 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | E20 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
 | E20 | `test_rules` | `det11_observes_the_delay_and_blames_nobody` |
 | E21 | `test_rules` | `det01_excludes_unjudgeable_frames_from_the_denominator` |
@@ -249,6 +265,7 @@ Two cautions on reading this:
 | F08 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | F08 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
 | F08 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
+| F11 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
 | F11 | `test_process` | `process_separates_stdout_and_stderr` |
 | F14 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | F14 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
@@ -284,6 +301,7 @@ Two cautions on reading this:
 | G18 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
 | G19 | `test_symbols` | `path_traversal_in_a_source_map_is_rejected` |
 | G19 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
+| H01 | `test_android_collector` | `det03_reports_a_main_thread_block_with_its_slice` |
 | H01 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
@@ -304,6 +322,7 @@ Two cautions on reading this:
 | H05 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
 | H06 | `test_rules` | `severity_is_independent_of_causal_confidence` |
 | H07 | `test_rules` | `every_evidence_reference_resolves_to_captured_data` |
+| H08 | `test_android_collector` | `det09_leaves_an_io_wait_to_det03` |
 | H09 | `test_rules` | `ruleset_and_engine_versions_are_recorded` |
 | H09 | `test_rules` | `threshold_override_changes_the_verdict` |
 | H10 | `test_eligibility` | `user_override_is_audited_and_never_certifies` |
@@ -426,11 +445,13 @@ Two cautions on reading this:
 | J11 | `test_process` | `process_honours_cancellation` |
 | J11 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
 | J14 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
+| J14 | `test_android_collector` | `det03_leaves_a_background_threads_io_in_the_background` |
 | J14 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
 | J14 | `test_android_collector` | `framestats_parses_real_emulator_output` |
 | J14 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | J14 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
 | J14 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
+| J14 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
 | J14 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
 | J15 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J15 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
@@ -454,7 +475,7 @@ Two cautions on reading this:
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
-## Additional coverage keyed to specification sections and detector ids (23)
+## Additional coverage keyed to specification sections and detector ids (25)
 
 | Reference | Test binary | Test case |
 |---|---|---|
@@ -463,6 +484,14 @@ Two cautions on reading this:
 | DET-02 | `test_ingestion` | `hermes_reader_produces_samples_not_tasks` |
 | DET-02 | `test_rules` | `det02_refuses_sampling_only_input` |
 | DET-02 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
+| DET-03 | `test_android_collector` | `atrace_mapping_keeps_states_apart_and_only_calls_iowait_io` |
+| DET-03 | `test_android_collector` | `det03_leaves_a_background_threads_io_in_the_background` |
+| DET-03 | `test_android_collector` | `det03_reports_a_main_thread_block_with_its_slice` |
+| DET-03 | `test_android_collector` | `det03_will_not_promote_a_bare_uninterruptible_state` |
+| DET-03 | `test_android_collector` | `det09_leaves_an_io_wait_to_det03` |
+| DET-03 | `test_android_parsers` | `atrace_only_treats_an_iowait_flag_as_io` |
+| DET-03 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
+| DET-03 | `test_android_parsers` | `atrace_reads_userspace_slices_and_tolerates_a_nameless_one` |
 | DET-04 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
 | DET-04 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | DET-04 | `test_rules` | `det04_refuses_to_name_a_function_without_symbols` |
@@ -490,6 +519,11 @@ Two cautions on reading this:
 | DET-08 | `test_compare` | `det08_says_a_forced_pair_certifies_nothing` |
 | DET-08 | `test_compare` | `det08_skips_when_conditions_are_not_comparable` |
 | DET-08 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
+| DET-09 | `test_android_collector` | `det09_leaves_an_io_wait_to_det03` |
+| DET-09 | `test_android_collector` | `det09_never_names_a_lock_owner` |
+| DET-09 | `test_android_collector` | `det09_reports_waits_on_visible_threads_and_excludes_the_rest` |
+| DET-09 | `test_android_parsers` | `atrace_keeps_only_the_waking_that_identifies_a_waker` |
+| DET-09 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
 | DET-10 | `test_rules` | `det10_reports_a_render_pattern_and_refuses_to_call_it_a_defect` |
 | DET-10 | `test_rules` | `det10_will_not_accept_cpu_samples_as_render_data` |
 | DET-11 | `test_rules` | `det11_does_not_report_a_request_that_merely_overlapped_a_little` |
@@ -550,7 +584,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (65)
+## Not yet covered (59)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -562,7 +596,6 @@ Two cautions on reading this:
 | A17 | needs a live app that exits between listing and record (M2) |
 | A23 | favourites/recents is a UI concept (M2) |
 | A25 | large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested |
-| B01 | multi-process grouping needs an Android device with a multi-process app |
 | B05 | secondary-service inclusion needs Android hardware |
 | B11 | reinstall revalidation needs a device and an install cycle |
 | B14 | profileable-vs-visible independence is modelled; asserting it needs a device |
@@ -573,21 +606,17 @@ Two cautions on reading this:
 | D03 | double-stop idempotency needs a collector (M2) |
 | D05 | disk-full is handled in the write path; triggering it needs a constrained filesystem |
 | D06 | host crash recovery needs fault injection; the .partial directory path is implemented |
-| D13 | clock drift over a long capture needs a long real capture (M2) |
 | D14 | durations never use the wall clock by construction; a timezone-change test needs host manipulation |
 | D15 | device sleep/resume needs hardware |
 | D20 | disconnect/reconnect needs hardware |
 | D21 | conflicting collector detection needs a collector (M2) |
 | D22 | cleanup scoping is implemented (delete_package refuses non-session dirs); full test needs a collector |
 | E05 | asserted in DET-04's alternative explanations; a real capture would confirm |
-| E06 | low CPU with blocked UI needs scheduling evidence (DET-09, M5) |
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
 | E09 | GPU evidence is not collected (M5) |
-| E10 | runnable-vs-running needs a scheduling provider (M5) |
 | E11 | CPU-time vs wall-time needs a CPU-time counter (M2) |
 | E16 | DET-02 sums siblings only and says so; a nested fixture would strengthen this |
-| E17 | external contention needs a device |
 | E18 | recorder overhead needs paired controlled runs (M4) |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
 | F06 | image and GPU allocation accounting has no provider on either platform |
@@ -605,7 +634,6 @@ Two cautions on reading this:
 | G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
 | G12 | Expo prerequisites are documentation (M3) |
 | G13 | the architecture matrix needs RN builds (M3) |
-| H08 | occurrence_count is implemented; a cross-session duplicate fixture would strengthen it |
 | H13 | offline reopen is implemented in session_store; end-to-end needs record (M2) |
 | H14 | missing source does not block rendering; asserted indirectly |
 | I06 | background workload needs a device |
@@ -623,6 +651,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 16
-- test cases declaring at least one id: 339
-- checklist-item links: 432
-- section-18 coverage: 133/198 (67%)
+- test cases declaring at least one id: 355
+- checklist-item links: 453
+- section-18 coverage: 139/198 (70%)

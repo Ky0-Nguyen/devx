@@ -57,7 +57,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
 ```
 
-Run the tests (264 C++ cases in 14 binaries, plus 49 Swift cases):
+Run the tests (355 C++ cases in 16 binaries, plus 61 Swift cases):
 
 ```bash
 cd build && ctest --output-on-failure
@@ -221,11 +221,11 @@ core/
   discovery/         provider interface + reconciliation across adapters
   ingestion/         readers (native, Chrome trace-event, Hermes profile) + normalization
   symbols/           source maps, R8 mappings, path-traversal defence
-  rules/             detector contract, registry, DET-01/02/04/12, deferred detectors
+  rules/             detector contract, registry, DET-01..05 and 07..12; DET-06 deferred
   report/            JSON and Markdown writers
   session/           session package on disk, collector contract, comparison
   util/              JSON, process execution, cancellation, time
-adapters/android/    adb adapter + live capture collector
+adapters/android/    adb adapter, live capture collector, atrace/ftrace parser
 adapters/ios/        devicectl / simctl / xctrace adapter
 fixtures/
   traces/            labelled synthetic traces (positive, negative, incomplete, malformed)
