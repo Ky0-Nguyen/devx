@@ -31,13 +31,14 @@ ExitCode cmd_devices(const Invocation& inv) {
                      "             Settings > Privacy & Security.\n\n";
       }
     } else {
-      std::cout << "PLATFORM  FORM       STATE        DEVICE ID                              "
-                   "OS            NAME\n";
+      std::cout << std::left << std::setw(10) << "PLATFORM" << std::setw(11)
+                << "FORM" << std::setw(14) << "STATE" << std::setw(39)
+                << "DEVICE ID" << std::setw(16) << "OS" << "NAME\n";
       for (const auto& d : snap.devices) {
         std::cout << std::left << std::setw(10) << model::to_string(d.platform)
-                  << std::setw(11) << model::to_string(d.form) << std::setw(13)
+                  << std::setw(11) << model::to_string(d.form) << std::setw(14)
                   << model::to_string(d.trust) << std::setw(39) << d.device_id
-                  << std::setw(14)
+                  << std::setw(16)
                   << (d.os_version.empty() ? "unknown" : d.os_version)
                   << d.display_name << "\n";
       }

@@ -448,7 +448,7 @@ each corresponds to an entry in `docs/known-limitations.md`.
 ## Totals
 
 - test binaries: 12
-- test cases: 227
+- test cases: 228
 - checklist-item links: 285
 - section-18 coverage: 109/198 (55%)
 

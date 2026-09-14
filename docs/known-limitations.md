@@ -175,7 +175,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **108 of 198** checklist items have at least one automated test
-(226 test cases in 12 binaries). The remaining 90 are enumerated with a stated
+(228 test cases in 12 binaries). The remaining 90 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs a collector, needs the SDK, needs a UI.
 

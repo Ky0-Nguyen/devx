@@ -123,7 +123,7 @@ overridable.
 
 ## 2. How it was tested, per platform
 
-**227 test cases in 12 binaries. 12/12 green under both RelWithDebInfo and
+**228 test cases in 12 binaries. 12/12 green under both RelWithDebInfo and
 Debug+ASan+UBSan.** ASan caught two real defects during development (a
 use-after-free in a test, and a heap issue), and `-Werror` with
 `-Wconversion -Wsign-conversion -Wold-style-cast -Wshadow` caught a malformed
