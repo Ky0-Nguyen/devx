@@ -179,13 +179,22 @@ enum Core {
         }
     }
 
+    /// `scheduling` and `heap` are the heavier collectors. The caller is
+    /// expected to have told the user what they cost first -- the Record tab
+    /// does, and will not enable either until it has been read.
     static func record(dir: String, device: String, app: String,
                        durationSeconds: Int, sampleHz: Int, frames: Bool,
-                       cpu: Bool, memory: Bool, resetFrames: Bool) -> JSON {
+                       cpu: Bool, memory: Bool, resetFrames: Bool,
+                       scheduling: Bool = false, heap: Bool = false) -> JSON {
         call {
             mpi_record_json(dir, device, app, Int32(durationSeconds),
                             Int32(sampleHz), frames ? 1 : 0, cpu ? 1 : 0,
-                            memory ? 1 : 0, resetFrames ? 1 : 0, 120000)
+                            memory ? 1 : 0, resetFrames ? 1 : 0,
+                            scheduling ? 1 : 0, heap ? 1 : 0,
+                            // A heap dump adds a whole-heap walk and a pull of
+                            // tens of megabytes to the capture, so the budget
+                            // is raised when one was asked for.
+                            heap ? 600_000 : 120_000)
         }
     }
 

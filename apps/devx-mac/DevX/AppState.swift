@@ -82,6 +82,15 @@ final class AppState: ObservableObject {
     @Published var selectedDevice: String = ""
     @Published var selectedApp: String = ""
     @Published var selectedSession: String = ""
+    // Issue filters (spec section 13). Empty means "no filter on this
+    // dimension" -- never "match nothing", which would make an empty list
+    // look like a clean app.
+    @Published var filterCategory: String = ""
+    @Published var filterSeverity: String = ""
+    @Published var filterScreen: String = ""
+    @Published var filterThread: String = ""
+    @Published var filterProcess: String = ""
+    @Published var showSuppressed: Bool = false
     @Published var selectedIssueIndex: Int = 0
     @Published var appFilter: String = ""
     @Published var runningOnly = false
@@ -89,6 +98,11 @@ final class AppState: ObservableObject {
     @Published var recordDuration = 6
     @Published var recordHz = 200
     @Published var recordFrames = true
+    // The heavier collectors, off by default. Spec section 13 requires the
+    // overhead to be explained before one is enabled, so the UI gates them
+    // behind a panel that states the cost rather than a bare switch.
+    @Published var recordScheduling = false
+    @Published var recordHeap = false
     @Published var recordCpu = true
     @Published var recordMemory = true
     @Published var recordResetFrames = true
@@ -119,6 +133,34 @@ final class AppState: ObservableObject {
     var apps: [JSON] { appsDoc["apps"].array }
     var sessions: [JSON] { sessionsDoc["sessions"].array }
     var issues: [JSON] { sessionDoc["analysis"]["issues"].array }
+
+    /// The issues after filtering, and the count that was hidden.
+    var filteredIssues: (shown: [JSON], hidden: Int) {
+        issueFilter.apply(issues)
+    }
+
+    var issueFilter: IssueFilter {
+        IssueFilter(category: filterCategory, severity: filterSeverity,
+                    screen: filterScreen, thread: filterThread,
+                    process: filterProcess, includeSuppressed: showSuppressed)
+    }
+
+    func matchesFilters(_ issue: JSON) -> Bool { issueFilter.matches(issue) }
+
+    func filterOptions(_ field: String) -> [String] {
+        IssueFilter.options(field, in: issues)
+    }
+
+    var anyFilterActive: Bool { issueFilter.isActive }
+
+    func clearFilters() {
+        filterCategory = ""
+        filterSeverity = ""
+        filterScreen = ""
+        filterThread = ""
+        filterProcess = ""
+        showSuppressed = false
+    }
     var ruleRuns: [JSON] { sessionDoc["analysis"]["rule_runs"].array }
 
     var filteredApps: [JSON] {
@@ -349,12 +391,15 @@ final class AppState: ObservableObject {
         let dir = sessionsDir, dev = selectedDevice, app = selectedApp
         let d = recordDuration, hz = recordHz
         let f = recordFrames, c = recordCpu, m = recordMemory, r = recordResetFrames
+        let sched = recordScheduling, heap = recordHeap
         Core.resetCancel()
         recordDoc = .null
-        run("Recording \(app) for \(d)s…", {
+        let label = heap ? "Recording \(app) for \(d)s, then dumping the heap…"
+                         : "Recording \(app) for \(d)s…"
+        run(label, {
             Core.record(dir: dir, device: dev, app: app, durationSeconds: d,
                         sampleHz: hz, frames: f, cpu: c, memory: m,
-                        resetFrames: r)
+                        resetFrames: r, scheduling: sched, heap: heap)
         }) { doc in
             self.recordDoc = doc
             if let id = doc["session_id"].string, !id.isEmpty {

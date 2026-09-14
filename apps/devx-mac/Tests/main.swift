@@ -354,5 +354,82 @@ do {
     }
 }
 
+
+// --- the issue filter -------------------------------------------------------
+// A filter is the easiest way for a UI to report "nothing is wrong" when the
+// truth is "you asked to see a subset".
+do {
+    let issues = [
+        parse(#"{"issue_id":"a","category":"frames","severity":"high","screen":"Checkout","thread_instance_id":"t1","process_instance_id":"p1"}"#),
+        parse(#"{"issue_id":"b","category":"memory","severity":"medium","thread_instance_id":"t2","process_instance_id":"p1"}"#),
+        parse(#"{"issue_id":"c","category":"frames","severity":"low","screen":"Feed","process_instance_id":"p2"}"#),
+        parse(#"{"issue_id":"d","category":"memory","severity":"high","suppression":{"suppressed":true,"reason":"known"}}"#),
+    ]
+
+    // No filter set: everything except the suppressed one, and the suppressed
+    // one is counted as hidden rather than vanishing.
+    var f = IssueFilter()
+    check(!f.isActive, "a blank filter is not active")
+    var r = f.apply(issues)
+    check(r.shown.count == 3, "got \(r.shown.count)")
+    check(r.hidden == 1, "the suppressed issue is counted as hidden")
+
+    f.includeSuppressed = true
+    r = f.apply(issues)
+    check(r.shown.count == 4, "suppressed issues appear when asked for")
+    check(r.hidden == 0, "and nothing is hidden then")
+
+    f = IssueFilter(); f.category = "frames"
+    check(f.isActive, "a set field makes the filter active")
+    r = f.apply(issues)
+    check(r.shown.count == 2, "category filters: got \(r.shown.count)")
+    check(r.hidden == 2, "the hidden count includes the suppressed one")
+
+    f = IssueFilter(); f.severity = "high"
+    r = f.apply(issues)
+    check(r.shown.count == 1, "severity filters, and the suppressed high one "
+          + "stays hidden: got \(r.shown.count)")
+
+    // The rule that matters: an issue with no screen is not on every screen.
+    f = IssueFilter(); f.screen = "Checkout"
+    r = f.apply(issues)
+    check(r.shown.count == 1, "got \(r.shown.count)")
+    check(r.shown.first?["issue_id"].text == "a",
+          "an issue with no screen does not match a screen filter")
+
+    // Dimensions compose, and a combination matching nothing yields an empty
+    // list with every issue counted as hidden -- which is what lets the view
+    // say why it is empty.
+    f = IssueFilter(); f.category = "frames"; f.severity = "medium"
+    r = f.apply(issues)
+    check(r.shown.isEmpty, "an unmatched combination shows nothing")
+    check(r.hidden == issues.count, "and reports every issue as hidden")
+
+    f = IssueFilter(); f.process = "p1"; f.thread = "t2"
+    r = f.apply(issues)
+    check(r.shown.count == 1 && r.shown.first?["issue_id"].text == "b",
+          "process and thread compose")
+
+    // An empty field never means "match nothing".
+    f = IssueFilter(); f.category = ""; f.thread = ""
+    check(f.apply(issues).shown.count == 3,
+          "empty fields are not filters")
+}
+
+do {
+    let issues = [
+        parse(#"{"category":"frames","screen":"Feed"}"#),
+        parse(#"{"category":"memory","screen":"Feed"}"#),
+        parse(#"{"category":"frames"}"#),
+    ]
+    let cats = IssueFilter.options("category", in: issues)
+    check(cats == ["frames", "memory"], "options are distinct and sorted: got \(cats)")
+    let screens = IssueFilter.options("screen", in: issues)
+    check(screens == ["Feed"], "a blank value is not an option: got \(screens)")
+    check(IssueFilter.options("thread_instance_id", in: issues).isEmpty,
+          "a field nothing records offers no options, so a filter cannot be "
+          + "set to something that matches nothing")
+}
+
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

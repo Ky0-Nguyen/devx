@@ -123,6 +123,7 @@ struct IssuesView: View {
 
     @ViewBuilder private var issueList: some View {
         let issues = state.issues
+        let (shown, hidden) = state.filteredIssues
         if issues.isEmpty {
             Banner(kind: .info, title: "No detector that ran produced a finding",
                    message: "See the detector table below for which detectors could not "
@@ -130,14 +131,99 @@ struct IssuesView: View {
                           + "did not run — that is not the same statement as \"no issue "
                           + "exists\".")
         } else {
-            Panel(title: "Issues (\(issues.count))") {
+            filters
+            Panel(title: "Issues (\(shown.count)\(hidden > 0 ? " of \(issues.count)" : ""))",
+                  subtitle: hidden > 0
+                    ? "\(hidden) hidden by the filters above. An empty list "
+                    + "under a filter says nothing about the app."
+                    : nil) {
                 VStack(spacing: 5) {
-                    ForEach(Array(issues.enumerated()), id: \.offset) { idx, i in
-                        IssueListRow(issue: i, selected: idx == state.selectedIssueIndex)
-                            .onTapGesture { state.selectedIssueIndex = idx }
+                    if shown.isEmpty {
+                        // Never a bare empty list: the reason it is empty is
+                        // the filter, and saying so is the difference between
+                        // "nothing matched" and "nothing is wrong".
+                        Text("No issue matches these filters. "
+                             + "\(issues.count) finding(s) are hidden.")
+                            .font(Term.font(11)).foregroundStyle(Term.cyan)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    ForEach(Array(shown.enumerated()), id: \.offset) { idx, i in
+                        // Selection is by identity, not by position in the
+                        // filtered list: changing a filter must not move the
+                        // selection onto a different finding.
+                        let realIndex = state.issues.firstIndex {
+                            $0["issue_id"].text == i["issue_id"].text
+                        } ?? idx
+                        IssueListRow(issue: i,
+                                     selected: realIndex == state.selectedIssueIndex)
+                            .onTapGesture { state.selectedIssueIndex = realIndex }
                     }
                 }
             }
+        }
+    }
+
+    /// Filter by process, thread, screen, category and severity (spec
+    /// section 13). Each menu offers only values present in this session, so
+    /// a filter cannot be set to something that matches nothing.
+    private var filters: some View {
+        Panel(title: "Filter") {
+            VStack(alignment: .leading, spacing: 6) {
+                // One per line, using the same label column as every other
+                // panel. Three menus abreast fitted the width only by
+                // truncating their labels away, which left three unlabelled
+                // dropdowns.
+                filterRow("category", field: "category",
+                          selection: $state.filterCategory)
+                filterRow("severity", field: "severity",
+                          selection: $state.filterSeverity)
+                filterRow("screen", field: "screen",
+                          selection: $state.filterScreen)
+                filterRow("process", field: "process_instance_id",
+                          selection: $state.filterProcess)
+                filterRow("thread", field: "thread_instance_id",
+                          selection: $state.filterThread)
+                Field(label: "suppressed") {
+                    HStack(spacing: 10) {
+                        Toggle("include", isOn: $state.showSuppressed)
+                            .font(Term.font(11))
+                        if state.anyFilterActive {
+                            Button("clear all") { state.clearFilters() }
+                                .buttonStyle(TermButtonStyle())
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+        }
+    }
+
+    private func filterRow(_ label: String, field: String,
+                           selection: Binding<String>) -> some View {
+        Field(label: label) { filterMenu(field: field, selection: selection) }
+    }
+
+    private func filterMenu(field: String,
+                            selection: Binding<String>) -> some View {
+        let options = state.filterOptions(field)
+        return HStack(spacing: 8) {
+            Picker("", selection: selection) {
+                // "none recorded" rather than "any" when the session has no
+                // values for this field: an empty menu labelled "any" implies
+                // there is something to choose.
+                Text(options.isEmpty ? "none recorded" : "any")
+                    .font(Term.font(11)).tag("")
+                ForEach(options, id: \.self) { o in
+                    Text(o).font(Term.font(11)).tag(o)
+                }
+            }
+            .frame(width: 220)
+            .disabled(options.isEmpty)
+            if options.isEmpty {
+                Text("no issue in this session records one")
+                    .font(Term.font(10)).foregroundStyle(Term.dim)
+            }
+            Spacer(minLength: 0)
         }
     }
 
