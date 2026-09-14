@@ -8,6 +8,7 @@
 #include <cstring>
 #include <exception>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@
 #include "core/report/report.hpp"
 #include "core/rules/engine.hpp"
 #include "core/rules/rule_registry.hpp"
+#include "core/session/live_capture.hpp"
 #include "core/session/session_store.hpp"
 #include "core/util/time.hpp"
 
@@ -27,12 +29,41 @@ namespace {
 
 using namespace mpi;
 
-// One process-wide cancellation source. The UI has a single Cancel affordance
-// and the core's operations are not nested, so a single flag is the honest
-// model rather than a handle the caller has to thread through.
-CancellationSource& cancel_source() {
-  static CancellationSource src;
-  return src;
+// One process-wide cancellation source, behind a lock.
+//
+// The UI has a single Cancel affordance, so a single flag is the honest model.
+// It must be guarded, though: the source was previously a bare static that
+// mpi_live_start reassigned on every start, while concurrent calls -- a device
+// listing and a session listing both run when DevX opens -- were copying
+// tokens out of it. Reassigning a shared_ptr while other threads read it is a
+// data race, and it hung the UI on "Starting live capture..." rather than
+// failing visibly.
+class CancelRegistry {
+ public:
+  CancellationToken token() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return source_.token();
+  }
+  void cancel() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    source_.cancel();
+  }
+  // Replaces the source so a new operation starts uncancelled. Tokens already
+  // handed out keep referring to the old flag, which is what callers of a
+  // cancelled operation should see.
+  void reset() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    source_ = CancellationSource();
+  }
+
+ private:
+  std::mutex mutex_;
+  CancellationSource source_;
+};
+
+CancelRegistry& cancel_registry() {
+  static CancelRegistry reg;
+  return reg;
 }
 
 char* dup_string(const std::string& s) {
@@ -74,7 +105,7 @@ discovery::DiscoveryService make_discovery(bool include_simulators) {
 
 discovery::ProviderOptions provider_options(int timeout_ms) {
   discovery::ProviderOptions po;
-  po.cancel = cancel_source().token();
+  po.cancel = cancel_registry().token();
   po.command_timeout_ms = timeout_ms > 0 ? timeout_ms : 20000;
   return po;
 }
@@ -124,20 +155,31 @@ std::vector<std::string> list_session_dirs(const std::string& root) {
   return out;
 }
 
+// The single live session this process can run, plus the context needed to
+// finalise it. Guarded because the UI polls from its own thread.
+struct LiveContext {
+  std::mutex mutex;
+  std::unique_ptr<session::LiveSession> live;
+  session::SessionManifest manifest;
+  model::DiscoverySnapshot discovery;
+  std::string sessions_dir;
+  bool active = false;
+};
+
+LiveContext& live_context() {
+  static LiveContext ctx;
+  return ctx;
+}
+
 }  // namespace
 
 extern "C" {
 
 void mpi_string_free(char* s) { std::free(s); }
 
-void mpi_cancel_all(void) { cancel_source().cancel(); }
+void mpi_cancel_all(void) { cancel_registry().cancel(); }
 
-void mpi_cancel_reset(void) {
-  // A fresh source, because CancellationSource has no reset: a token already
-  // handed out must stay cancelled so an in-flight operation still unwinds.
-  static_cast<void>(0);
-  cancel_source() = CancellationSource();
-}
+void mpi_cancel_reset(void) { cancel_registry().reset(); }
 
 char* mpi_version_json(void) {
   return guard([] {
@@ -442,7 +484,7 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
     trace.target.discovery_scope = target->visibility_scope;
 
     session::CaptureConfig cfg;
-    cfg.cancel = cancel_source().token();
+    cfg.cancel = cancel_registry().token();
     cfg.duration = std::chrono::milliseconds(
         static_cast<std::int64_t>(duration_s > 0 ? duration_s : 6) * 1000);
     cfg.sample_frequency_hz = sample_hz > 0 ? sample_hz : 200;
@@ -471,13 +513,13 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
       return out;
     }
 
-    const auto norm = ingest::normalize(trace, cancel_source().token());
+    const auto norm = ingest::normalize(trace, cancel_registry().token());
     for (const auto& n : norm.notes) trace.ingestion_warnings.push_back(n);
 
     symbols::SymbolService symbol_service;
     rules::EngineOptions eopts;
     eopts.mode = manifest.requested_mode;
-    eopts.cancel = cancel_source().token();
+    eopts.cancel = cancel_registry().token();
     auto analysis = rules::analyze(trace, symbol_service, eopts);
 
     report::ReportOptions rep;
@@ -519,7 +561,7 @@ char* mpi_analyze_trace_json(const char* trace_path) {
     model::NormalizedTrace trace;
     ingest::ReadDiagnostics diag;
     ingest::ReadOptions opts;
-    opts.cancel = cancel_source().token();
+    opts.cancel = cancel_registry().token();
     const auto reader = ingest::read_any(safe(trace_path), opts, trace, diag);
     if (!reader.has_value()) {
       json::Value errs = json::Value::array();
@@ -532,12 +574,12 @@ char* mpi_analyze_trace_json(const char* trace_path) {
       trace.session_id = "imported-" + session::new_session_id();
     }
     for (const auto& w : diag.warnings) trace.ingestion_warnings.push_back(w);
-    ingest::normalize(trace, cancel_source().token());
+    ingest::normalize(trace, cancel_registry().token());
 
     symbols::SymbolService symbol_service;
     rules::EngineOptions eopts;
     eopts.mode = model::MeasurementMode::kDiagnostic;
-    eopts.cancel = cancel_source().token();
+    eopts.cancel = cancel_registry().token();
     const auto analysis = rules::analyze(trace, symbol_service, eopts);
     report::ReportOptions rep;
     json::ParseError perr;
@@ -549,6 +591,283 @@ char* mpi_analyze_trace_json(const char* trace_path) {
     }
     out = *parsed;
     out.set("reader_id", json::Value::string(*reader));
+    return out;
+  });
+}
+
+char* mpi_live_start(const char* sessions_dir, const char* device_id,
+                     const char* app_identifier, int sample_hz,
+                     int collect_frames, int collect_cpu, int collect_memory,
+                     int reset_frame_history, int tick_ms, int cpu_window_ms,
+                     int timeout_ms) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& ctx = live_context();
+    std::lock_guard<std::mutex> ctx_lock(ctx.mutex);
+
+    if (ctx.active && ctx.live && ctx.live->running()) {
+      out.set("error",
+              json::Value::string("a live session is already running; stop it "
+                                  "before starting another"));
+      return out;
+    }
+
+    const std::string device = safe(device_id);
+    const std::string app = safe(app_identifier);
+    if (device.empty() || app.empty()) {
+      out.set("error", json::Value::string("device and app are both required"));
+      return out;
+    }
+
+    // A previous session's stop cancelled the shared flag, and leaving it set
+    // would abort this one before its first tick.
+    cancel_registry().reset();
+
+    auto svc = make_discovery(true);
+    const auto po = provider_options(timeout_ms);
+    // Targeted resolution rather than probe() plus a full snapshot. Those
+    // enumerate every capability and every app on every device -- several
+    // seconds on a host with a booted simulator, which would make "start live
+    // capture" take longer than the first few seconds it is meant to show.
+    const auto resolved = svc.resolve_target(device, app, po);
+
+    if (resolved.device_ambiguous) {
+      out.set("error",
+              json::Value::string("device id '" + device +
+                                  "' matches more than one platform"));
+      return out;
+    }
+    if (!resolved.device_found) {
+      out.set("error",
+              json::Value::string("no device with id '" + device + "'"));
+      return out;
+    }
+    const model::DeviceRef* dev = &resolved.device;
+    if (!resolved.device_usable) {
+      out.set("error",
+              json::Value::string("device is " +
+                                  std::string(model::to_string(dev->trust)) +
+                                  " and cannot be used for capture"));
+      return out;
+    }
+    if (resolved.app_ambiguous) {
+      out.set("error",
+              json::Value::string("'" + app +
+                                  "' matches more than one entry; narrow the "
+                                  "target"));
+      return out;
+    }
+    if (!resolved.app_found) {
+      out.set("error",
+              json::Value::string(
+                  resolved.enumeration_failed
+                      ? "app enumeration failed on this device, so '" + app +
+                            "' could not be resolved"
+                      : "'" + app + "' was not found on this device"));
+      return out;
+    }
+    const model::AppEntry* target = &resolved.app;
+    if (target->profiling == model::ProfilingAvailability::kUnavailable) {
+      out.set("error", json::Value::string("'" + app + "' cannot be profiled: " +
+                                           target->profiling_reason));
+      return out;
+    }
+    if (dev->platform != model::Platform::kAndroid) {
+      // The same refusal the batch path makes: no collector, so no session.
+      out.set("error",
+              json::Value::string(
+                  "live capture is not implemented for " +
+                  std::string(model::to_string(dev->platform)) +
+                  " in this build: the xctrace collector is not wired to the "
+                  "session controller yet. The target resolved successfully, "
+                  "so the blocker is the collector, not this target."));
+      out.set("unsupported", json::Value::boolean(true));
+      out.set("target_resolved", json::Value::boolean(true));
+      return out;
+    }
+
+    // The app listing above already resolved the live processes, so no
+    // separate revalidation round-trip is needed to start.
+    auto processes = target->processes;
+    if (processes.empty()) {
+      out.set("error",
+              json::Value::string("no live process of '" + app +
+                                  "' could be resolved; start it on the device "
+                                  "and retry"));
+      return out;
+    }
+
+    // The discovery snapshot stored with the session records the devices seen
+    // at capture time. The app listing is scoped to the target, so the
+    // snapshot says so rather than implying it covered the whole host.
+    model::DiscoverySnapshot snap;
+    snap.taken_at = time_util::now_iso8601_utc();
+    snap.devices = resolved.all_devices;
+    snap.apps.push_back(*target);
+    snap.provider_errors = resolved.errors;
+    snap.provider_errors.push_back(
+        "this snapshot was taken for a live capture: app enumeration was "
+        "scoped to the selected target, so it is not a full inventory of the "
+        "device");
+
+    ctx.sessions_dir = safe(sessions_dir);
+    ctx.discovery = snap;
+    ctx.manifest = session::SessionManifest{};
+    ctx.manifest.session_id = session::new_session_id();
+    ctx.manifest.created_at = time_util::now_iso8601_utc();
+    ctx.manifest.tool_version = rules::engine_version();
+    ctx.manifest.requested_mode = model::MeasurementMode::kDiagnostic;
+    ctx.manifest.state = session::SessionState::kRecording;
+    ctx.manifest.state_transitions.push_back(
+        std::string("idle -> recording (live) @ ") + ctx.manifest.created_at);
+
+    model::NormalizedTrace trace;
+    trace.session_id = ctx.manifest.session_id;
+    trace.device = *dev;
+    trace.requested_mode = ctx.manifest.requested_mode;
+    trace.target.app = target->key;
+    trace.target.processes = processes;
+    trace.target.runtime_state_at_capture = target->runtime_state;
+    trace.target.discovery_scope = target->visibility_scope;
+    // The full capability probe is deliberately skipped for a live start: it
+    // costs seconds and is what `mpi preflight` is for. The per-source results
+    // the collector reports are recorded instead, and the omission is stated
+    // rather than left as an empty matrix that could read as "nothing works".
+    trace.ingestion_warnings.push_back(
+        "no capability probe was run before this live capture: probing costs "
+        "seconds and would delay the start. Run `mpi preflight` for the full "
+        "matrix; the per-source results below are what this capture observed.");
+
+    session::CaptureConfig cfg;
+    cfg.sample_frequency_hz = sample_hz > 0 ? sample_hz : 200;
+    cfg.frames = collect_frames != 0;
+    cfg.cpu_samples = collect_cpu != 0;
+    cfg.memory = collect_memory != 0;
+    cfg.reset_frame_history = reset_frame_history != 0;
+    cfg.tick_interval =
+        std::chrono::milliseconds(tick_ms >= 100 ? tick_ms : 500);
+    cfg.cpu_window =
+        std::chrono::milliseconds(cpu_window_ms >= 1000 ? cpu_window_ms : 5000);
+    cfg.run_until_stopped = true;
+
+    ctx.live = std::make_unique<session::LiveSession>();
+    const bool started = ctx.live->start(std::make_shared<android::AdbCollector>(),
+                                         *dev, processes, cfg, std::move(trace));
+    if (!started) {
+      const auto s = ctx.live->snapshot();
+      out.set("error", json::Value::string(s.error.empty()
+                                               ? "live capture failed to start"
+                                               : s.error));
+      ctx.live.reset();
+      return out;
+    }
+    ctx.active = true;
+    out.set("started", json::Value::boolean(true));
+    out.set("session_id", json::Value::string(ctx.manifest.session_id));
+    out.set("capture_config", cfg.to_json());
+    return out;
+  });
+}
+
+char* mpi_live_poll_json(void) {
+  return guard([] {
+    auto& ctx = live_context();
+    std::lock_guard<std::mutex> ctx_lock(ctx.mutex);
+    if (!ctx.live) {
+      json::Value out = json::Value::object();
+      out.set("state", json::Value::string("idle"));
+      out.set("analysis_is_preliminary", json::Value::boolean(false));
+      return out;
+    }
+    return ctx.live->snapshot().to_json();
+  });
+}
+
+int mpi_live_is_running(void) {
+  auto& ctx = live_context();
+  std::lock_guard<std::mutex> ctx_lock(ctx.mutex);
+  return (ctx.live && ctx.live->running()) ? 1 : 0;
+}
+
+char* mpi_live_stop_json(void) {
+  return guard([] {
+    json::Value out = json::Value::object();
+    auto& ctx = live_context();
+    std::lock_guard<std::mutex> ctx_lock(ctx.mutex);
+    if (!ctx.live) {
+      out.set("error", json::Value::string("no live session is running"));
+      return out;
+    }
+
+    ctx.live->stop();
+    const auto capture = ctx.live->result();
+    auto trace = ctx.live->take_trace();
+    const auto final_snapshot = ctx.live->snapshot();
+    ctx.live.reset();
+    ctx.active = false;
+
+    for (const auto& c : capture.source_results) trace.capabilities.upsert(c);
+
+    json::Value srcs = json::Value::array();
+    for (const auto& c : capture.source_results) srcs.push_back(c.to_json());
+    out.set("source_results", std::move(srcs));
+    out.set("elapsed_ms", json::Value::integer(final_snapshot.elapsed.count()));
+    out.set("ticks", json::Value::integer(final_snapshot.ticks));
+    out.set("collector_cost_ms",
+            json::Value::integer(final_snapshot.collector_cost.count()));
+
+    const bool any_data = !trace.frames.empty() || !trace.cpu_samples.empty() ||
+                          !trace.counters.empty();
+    if (!any_data) {
+      // A capture that measured nothing is not written, live or not.
+      out.set("session_written", json::Value::boolean(false));
+      out.set("error",
+              json::Value::string(capture.error.empty()
+                                      ? "no source produced data"
+                                      : capture.error));
+      return out;
+    }
+
+    // The final analysis runs over a closed window, so it is not preliminary.
+    symbols::SymbolService symbol_service;
+    rules::EngineOptions eopts;
+    eopts.mode = ctx.manifest.requested_mode;
+    auto analysis = rules::analyze(trace, symbol_service, eopts);
+
+    report::ReportOptions rep;
+    const std::string md = report::to_markdown(trace, analysis, rep);
+    const std::string js = report::to_json(trace, analysis, rep);
+
+    ctx.manifest.state = trace.partial ? session::SessionState::kPartial
+                                       : session::SessionState::kCompleted;
+    ctx.manifest.finalized_at = time_util::now_iso8601_utc();
+    ctx.manifest.state_transitions.push_back(
+        std::string("recording -> ") + session::to_string(ctx.manifest.state) +
+        " @ " + ctx.manifest.finalized_at);
+    ctx.manifest.synthetic = trace.synthetic;
+    ctx.manifest.partial_reasons = trace.partial_reasons;
+
+    const auto written = session::write_package(ctx.sessions_dir, ctx.manifest,
+                                                trace, analysis, ctx.discovery,
+                                                md, js);
+    if (!written.ok) {
+      out.set("session_written", json::Value::boolean(false));
+      out.set("error", json::Value::string(written.error));
+      return out;
+    }
+    out.set("session_written", json::Value::boolean(true));
+    out.set("session_id", json::Value::string(ctx.manifest.session_id));
+    out.set("frames",
+            json::Value::integer(static_cast<std::int64_t>(trace.frames.size())));
+    out.set("cpu_samples", json::Value::integer(
+                               static_cast<std::int64_t>(trace.cpu_samples.size())));
+    std::int64_t points = 0;
+    for (const auto& c : trace.counters) {
+      points += static_cast<std::int64_t>(c.points.size());
+    }
+    out.set("counter_points", json::Value::integer(points));
+    out.set("issues", json::Value::integer(
+                          static_cast<std::int64_t>(analysis.issues.size())));
     return out;
   });
 }

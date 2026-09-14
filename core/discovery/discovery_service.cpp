@@ -162,6 +162,59 @@ DiscoveryService::Revalidation DiscoveryService::revalidate(
   return r;
 }
 
+DiscoveryService::TargetResolution DiscoveryService::resolve_target(
+    const std::string& device_id, const std::string& app_identifier,
+    const ProviderOptions& opts) const {
+  TargetResolution out;
+
+  // Devices first, from every provider. This is the cheap half: adb's listing
+  // is a few hundred milliseconds and devicectl's a couple of seconds.
+  const Provider* owner = nullptr;
+  for (const auto& p : providers_) {
+    if (opts.cancel.cancelled()) break;
+    std::vector<std::string> errors;
+    auto devices = p->list_devices(opts, errors);
+    for (auto& e : errors) out.errors.push_back(p->name() + ": " + e);
+    for (auto& d : devices) {
+      if (d.device_id == device_id) {
+        if (out.device_found) {
+          // The same id on two platforms stays separate; picking one would be
+          // exactly the silent retarget spec A15 forbids.
+          out.device_ambiguous = true;
+          out.app_found = false;
+          return out;
+        }
+        out.device_found = true;
+        out.device = d;
+        owner = p.get();
+      }
+      out.all_devices.push_back(std::move(d));
+    }
+  }
+  if (!out.device_found || owner == nullptr) return out;
+  out.device_usable = out.device.usable_for_capture();
+  if (!out.device_usable || app_identifier.empty()) return out;
+
+  // Apps for the matched device only.
+  std::vector<std::string> app_errors;
+  bool failed = false;
+  const auto apps = owner->list_apps(out.device, opts, app_errors, failed);
+  for (auto& e : app_errors) {
+    out.errors.push_back(owner->name() + "/" + out.device.device_id + ": " + e);
+  }
+  out.enumeration_failed = failed;
+
+  std::size_t matches = 0;
+  for (const auto& a : apps) {
+    if (a.key.app_identifier != app_identifier) continue;
+    ++matches;
+    out.app = a;
+  }
+  out.app_found = matches == 1;
+  out.app_ambiguous = matches > 1;
+  return out;
+}
+
 std::vector<model::AppEntry> DiscoveryService::apply_filter(
     const std::vector<model::AppEntry>& apps, const Filter& f) {
   std::vector<model::AppEntry> out;

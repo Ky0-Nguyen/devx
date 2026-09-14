@@ -15,8 +15,10 @@
 // capture) or exits `unsupported` with the blocker spelled out.
 #include <chrono>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 #include "adapters/android/adb_collector.hpp"
 
@@ -25,6 +27,7 @@
 #include "core/ingestion/reader.hpp"
 #include "core/report/report.hpp"
 #include "core/rules/engine.hpp"
+#include "core/session/live_capture.hpp"
 #include "core/session/session_store.hpp"
 #include "core/util/time.hpp"
 
@@ -160,14 +163,93 @@ ExitCode cmd_record(const Invocation& inv) {
     manifest.state = session::SessionState::kRecording;
     manifest.state_transitions.push_back(
         std::string("preflight -> recording @ ") + time_util::now_iso8601_utc());
-    if (!inv.global.quiet) {
-      std::cerr << "recording " << inv.global.app << " on " << device.device_id
-                << " for " << (cfg.duration.count() / 1000) << "s via "
-                << collector->id() << " ...\n";
+
+    if (inv.has_flag("tick-ms")) {
+      const int ms = std::atoi(inv.flag("tick-ms").c_str());
+      if (ms < 100) {
+        std::cerr << "error: --tick-ms must be at least 100\n";
+        return ExitCode::kUsage;
+      }
+      cfg.tick_interval = std::chrono::milliseconds(ms);
     }
 
-    const auto capture = collector->capture(
-        device, trace.target.processes, cfg, trace);
+    // --live streams: the collector ticks and the numbers are printed as they
+    // arrive, rather than the command blocking and reporting at the end.
+    const bool live = inv.has_flag("live");
+    session::CaptureResult capture;
+    if (live && collector->supports_streaming()) {
+      session::LiveSession session;
+      if (!session.start(std::move(collector), device, trace.target.processes,
+                         cfg, std::move(trace))) {
+        const auto live_snap = session.snapshot();
+        std::cerr << "error: live capture could not start: " << live_snap.error
+                  << "\n";
+        return ExitCode::kCollectionError;
+      }
+      if (!inv.global.quiet) {
+        std::cerr << "streaming " << inv.global.app << " on "
+                  << device.device_id << " every " << cfg.tick_interval.count()
+                  << " ms -- Ctrl-C to stop"
+                  << (cfg.duration.count() > 0
+                          ? (" (auto-stop after " +
+                             std::to_string(cfg.duration.count() / 1000) + "s)")
+                          : std::string())
+                  << "\n";
+      }
+
+      const auto deadline = std::chrono::steady_clock::now() + cfg.duration;
+      std::int64_t printed = 0;
+      while (session.running() && !inv.global.cancel.cancelled()) {
+        if (cfg.duration.count() > 0 &&
+            std::chrono::steady_clock::now() >= deadline) {
+          break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        const auto live_snap = session.snapshot();
+        if (live_snap.ticks == printed) continue;
+        printed = live_snap.ticks;
+        if (inv.global.quiet) continue;
+        // One line per tick. Live numbers are labelled every time, so a line
+        // copied out of a terminal cannot be mistaken for a final result.
+        std::cerr << "  [" << std::setw(6) << live_snap.elapsed.count()
+                  << " ms] frames=" << live_snap.frames
+                  << " samples=" << live_snap.cpu_samples
+                  << " counters=" << live_snap.counter_points
+                  << " issues(preliminary)="
+                  << live_snap.preliminary_analysis.issues.size()
+                  << " tick=" << live_snap.last_tick_cost.count() << "ms";
+        for (const auto& kv : live_snap.latest_counters) {
+          if (kv.first != "memory.rss_total_bytes") continue;
+          std::cerr << " rss=" << static_cast<long long>(kv.second / 1048576)
+                    << "MB";
+        }
+        std::cerr << "\n";
+      }
+
+      session.stop();
+      capture = session.result();
+      trace = session.take_trace();
+      for (const auto& c : capture.source_results) trace.capabilities.upsert(c);
+      if (!inv.global.quiet) {
+        const auto live_snap = session.snapshot();
+        std::cerr << "stopped after " << live_snap.ticks
+                  << " tick(s); collector spent "
+                  << live_snap.collector_cost.count()
+                  << " ms interacting with the device\n";
+      }
+    } else {
+      if (live) {
+        warn("this collector does not support streaming; falling back to a "
+             "batch capture of " +
+             std::to_string(cfg.duration.count() / 1000) + "s");
+      }
+      if (!inv.global.quiet) {
+        std::cerr << "recording " << inv.global.app << " on " << device.device_id
+                  << " for " << (cfg.duration.count() / 1000) << "s via "
+                  << collector->id() << " ...\n";
+      }
+      capture = collector->capture(device, trace.target.processes, cfg, trace);
+    }
 
     manifest.state = session::SessionState::kProcessing;
     manifest.state_transitions.push_back(
@@ -247,7 +329,8 @@ ExitCode cmd_record(const Invocation& inv) {
   }
 
   if (import_path.empty()) {
-    // No collector for this platform yet.
+    // No collector for this platform yet. (Reached only when `collector` was
+    // never created; the streaming path above moves it and returns.)
     std::cerr
         << "\nUNSUPPORTED: live capture is not implemented for "
         << model::to_string(device.platform) << " in this build.\n\n"

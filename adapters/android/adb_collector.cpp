@@ -1,6 +1,7 @@
 #include "adapters/android/adb_collector.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <map>
 #include <sstream>
@@ -42,6 +43,59 @@ std::int64_t to_i64(const std::string& s, std::int64_t fallback = 0) {
   return errno == 0 ? static_cast<std::int64_t>(v) : fallback;
 }
 
+// Records that a source which did not run covered none of the window.
+//
+// The collectors already write a coverage row per source, so this merges into
+// the row that is there rather than adding a second one: two rows for one
+// collector read as two different measurements of the same thing. The
+// status-derived reason is the more informative of the two -- it says *why*
+// nothing was collected -- so it replaces a generic "produced nothing" gap
+// over the same interval instead of sitting beside it.
+void record_failed_source_coverage(
+    model::NormalizedTrace& out,
+    const std::vector<model::Capability>& sources) {
+  static const char* generic[] = {"no_sampling_window_completed",
+                                  "no_frames_were_reported",
+                                  "no_memory_sample_was_recorded"};
+  for (const auto& c : sources) {
+    if (c.status == model::CapabilityStatus::kAvailable ||
+        c.status == model::CapabilityStatus::kLimited) {
+      continue;
+    }
+    model::CoverageGap gap;
+    gap.collector = c.provider;
+    gap.start_ns = out.window_start_ns;
+    gap.end_ns = out.window_end_ns;
+    gap.reason = std::string("source_") + model::to_string(c.status);
+
+    model::Coverage* existing = nullptr;
+    for (auto& cov : out.coverage) {
+      if (cov.collector == c.provider) {
+        existing = &cov;
+        break;
+      }
+    }
+    if (existing == nullptr) {
+      model::Coverage cov;
+      cov.collector = c.provider;
+      cov.window_start_ns = out.window_start_ns;
+      cov.window_end_ns = out.window_end_ns;
+      cov.event_count = 0;
+      cov.gaps.push_back(std::move(gap));
+      out.coverage.push_back(std::move(cov));
+      continue;
+    }
+    std::erase_if(existing->gaps, [&](const model::CoverageGap& g) {
+      if (g.start_ns != gap.start_ns || g.end_ns != gap.end_ns) return false;
+      for (const char* r : generic) {
+        if (g.reason == r) return true;
+      }
+      return false;
+    });
+    existing->gaps.push_back(std::move(gap));
+  }
+}
+
 model::Capability make_source(const char* id, const char* human,
                               model::CapabilityStatus status,
                               const char* provider) {
@@ -55,6 +109,18 @@ model::Capability make_source(const char* id, const char* human,
 }
 
 }  // namespace
+
+// Declared in the header for testing.
+bool parse_leading_double(const std::string& text, double& out) {
+  const std::string t = trim(text);
+  if (t.empty()) return false;
+  errno = 0;
+  char* end = nullptr;
+  const double v = std::strtod(t.c_str(), &end);
+  if (errno != 0 || end == t.c_str() || !std::isfinite(v)) return false;
+  out = v;
+  return true;
+}
 
 FrameStats parse_gfxinfo_framestats(const std::string& text) {
   FrameStats out;
@@ -286,6 +352,898 @@ std::vector<std::string> AdbCollector::shell_argv(
   argv.push_back("shell");
   for (const auto& a : args) argv.push_back(a);
   return argv;
+}
+
+// ---------------------------------------------------------------------------
+// Shared collection steps
+//
+// The batch and streaming paths call the same helpers, so a frame recorded
+// live is byte-for-byte the frame the same capture would have recorded in one
+// shot. Only the cadence differs.
+// ---------------------------------------------------------------------------
+
+std::int64_t AdbCollector::collect_frames_once(
+    const model::DeviceRef& device, const session::CaptureConfig& config,
+    model::NormalizedTrace& out, std::vector<std::string>& notes,
+    bool& source_ok, std::string& evidence) {
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(15000);
+  po.cancel = config.cancel;
+
+  const auto r = proc::run(
+      shell_argv(device.device_id,
+                 {"dumpsys", "gfxinfo", stream_.package, "framestats"}),
+      po);
+  if (!r.ok()) {
+    source_ok = false;
+    evidence = "`dumpsys gfxinfo framestats` failed: " +
+               (r.spawned ? trim(r.err) : r.spawn_error);
+    return 0;
+  }
+
+  const FrameStats fs = parse_gfxinfo_framestats(r.out);
+  std::int64_t accepted = 0;
+  std::int64_t duplicates = 0;
+  model::TimeNs highest = stream_.last_frame_vsync;
+  const model::TimeNs previous_high = stream_.last_frame_vsync;
+  model::TimeNs oldest_accepted = 0;
+  for (const auto& row : fs.rows) {
+    // The read is a ring buffer, not a queue: rows already recorded come back
+    // on the next read too. IntendedVsync identifies a frame, so anything at
+    // or below the high-water mark has already been counted.
+    if (row.intended_vsync <= stream_.last_frame_vsync) {
+      ++duplicates;
+      continue;
+    }
+    highest = std::max(highest, row.intended_vsync);
+    if (oldest_accepted == 0 || row.intended_vsync < oldest_accepted) {
+      oldest_accepted = row.intended_vsync;
+    }
+    ++accepted;
+
+    model::FrameRecord fr;
+    fr.event_id = "frame-" + std::to_string(stream_.frame_seq++);
+    fr.start_ns = row.intended_vsync;
+    if (row.frame_deadline > row.intended_vsync) {
+      fr.deadline_ns = row.frame_deadline - row.intended_vsync;
+    }
+    // DisplayPresentTime is the real presentation instant but is zero when the
+    // platform does not supply it. FrameCompleted is then the best available,
+    // and the source is labelled so nothing downstream calls it presentation
+    // truth.
+    if (row.display_present_time > row.intended_vsync) {
+      fr.presented_ns = row.display_present_time;
+      fr.source = model::FrameSource::kPresentationTimestamps;
+    } else {
+      fr.presented_ns = row.frame_completed;
+      fr.source = model::FrameSource::kFrameDeadlineReports;
+    }
+    if (row.gpu_completed > row.draw_start && row.draw_start > 0) {
+      fr.cpu_duration_ns = row.gpu_completed - row.draw_start;
+    }
+    fr.process_instance_id = stream_.process_key;
+    fr.surface = stream_.package;
+    out.frames.push_back(std::move(fr));
+  }
+
+  // The refresh rate comes from the platform's own FrameInterval. Across a
+  // streaming capture the intervals accumulate, so more than one distinct
+  // value means the rate changed during the session and no single deadline is
+  // defensible for the whole window.
+  if (!fs.observed_frame_intervals.empty()) {
+    for (const auto iv : fs.observed_frame_intervals) {
+      const double hz = iv > 0 ? 1e9 / static_cast<double>(iv) : 0.0;
+      bool already = false;
+      for (const auto& ri : out.refresh_intervals) {
+        if (ri.hz.has_value() && std::abs(*ri.hz - hz) < 0.01) already = true;
+      }
+      if (already || hz <= 0.0) continue;
+      model::RefreshInterval ri;
+      ri.start_ns = out.frames.empty() ? 0 : out.frames.front().start_ns;
+      ri.end_ns = out.frames.empty()
+                      ? 0
+                      : out.frames.back().presented_ns.value_or(
+                            out.frames.back().start_ns);
+      ri.hz = hz;
+      ri.variable = false;
+      ri.provider = "dumpsys gfxinfo FrameInterval";
+      out.refresh_intervals.push_back(std::move(ri));
+    }
+    if (out.refresh_intervals.size() > 1) {
+      for (auto& ri : out.refresh_intervals) ri.variable = true;
+      notes.push_back(
+          "the platform reported more than one frame interval during this "
+          "capture, so the refresh rate is variable and no single deadline "
+          "applies to the whole window");
+    }
+  }
+
+  stream_.last_frame_vsync = highest;
+  stream_.frames_seen_duplicate += duplicates;
+
+  // A read that was *entirely* duplicates means the app rendered nothing since
+  // the previous tick. A read where every row is new, and the row count is at
+  // the ring buffer's capacity, means frames were produced faster than the
+  // tick could collect them -- which is a real loss and is reported.
+  if (accepted > 0 && duplicates == 0 && fs.rows.size() >= 120) {
+    notes.push_back(
+        "the frame buffer was full and contained no frame seen before, so "
+        "frames rendered between ticks were lost: shorten the tick interval");
+    // The lost stretch is known: it runs from the last frame this capture did
+    // see to the oldest one this read returned.
+    if (previous_high > 0 && oldest_accepted > previous_high) {
+      model::CoverageGap gap;
+      gap.collector = "dumpsys gfxinfo";
+      gap.start_ns = previous_high;
+      gap.end_ns = oldest_accepted;
+      gap.reason = "frame_ring_buffer_wrapped_between_ticks";
+      stream_.frame_gaps.push_back(std::move(gap));
+    }
+  }
+
+  for (const auto& w : fs.warnings) notes.push_back(w);
+  source_ok = true;
+  evidence = "framestats returned " + std::to_string(fs.rows.size()) +
+             " row(s), " + std::to_string(accepted) + " new";
+  return accepted;
+}
+
+std::int64_t AdbCollector::collect_memory_once(
+    const model::DeviceRef& device, const session::CaptureConfig& config,
+    model::TimeNs at_ns, model::NormalizedTrace& out, bool& source_ok,
+    std::string& evidence) {
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(15000);
+  po.cancel = config.cancel;
+
+  const auto r = proc::run(
+      shell_argv(device.device_id, {"dumpsys", "meminfo", stream_.package}), po);
+  if (!r.ok()) {
+    source_ok = false;
+    evidence = "`dumpsys meminfo` failed: " +
+               (r.spawned ? trim(r.err) : r.spawn_error);
+    return 0;
+  }
+
+  const MemInfo mem = parse_dumpsys_meminfo(r.out);
+  std::int64_t added = 0;
+  // Each family keeps its own series and is appended to, so repeated ticks
+  // build a time series rather than a pile of one-point series. Spec section 8
+  // forbids summing or equating the families, so they never merge.
+  const struct {
+    const char* name;
+    const char* family;
+    const std::optional<double>& value;
+  } series[] = {
+      {"memory.rss_total_bytes", "rss", mem.rss_total_bytes},
+      {"memory.pss_total_bytes", "pss", mem.pss_total_bytes},
+      {"memory.private_dirty_bytes", "private_dirty", mem.private_dirty_bytes},
+      {"memory.native_heap_rss_bytes", "native_heap", mem.native_heap_rss_bytes},
+      {"memory.dalvik_heap_rss_bytes", "dalvik_heap", mem.dalvik_heap_rss_bytes},
+  };
+  for (const auto& spec : series) {
+    if (!spec.value.has_value()) continue;
+    model::CounterSeries* target = nullptr;
+    for (auto& c : out.counters) {
+      if (c.name == spec.name) {
+        target = &c;
+        break;
+      }
+    }
+    if (target == nullptr) {
+      model::CounterSeries c;
+      c.name = spec.name;
+      c.unit = "bytes";
+      c.provider = "dumpsys meminfo";
+      c.process_instance_id = stream_.process_key;
+      c.family = spec.family;
+      out.counters.push_back(std::move(c));
+      target = &out.counters.back();
+    }
+    target->points.emplace_back(at_ns, *spec.value);
+    ++added;
+  }
+  source_ok = true;
+  evidence = "meminfo yielded " + std::to_string(added) + " counter point(s)";
+  return added;
+}
+
+SimpleperfSamples AdbCollector::record_cpu_window(
+    const model::DeviceRef& device, const session::CaptureConfig& config,
+    std::chrono::milliseconds window, bool& ok, std::string& error) {
+  SimpleperfSamples empty;
+  const std::string perf_path = "/data/local/tmp/mpi-perf.data";
+  proc::Options po;
+  po.timeout = window + std::chrono::milliseconds(45000);
+  // Deliberately not config.cancel: a window already recording is allowed to
+  // finish so its samples are not thrown away. stop_cpu_worker() stops the
+  // loop between windows instead.
+  po.cancel = CancellationToken::none();
+
+  const long long seconds = std::max<long long>(1, window.count() / 1000);
+  const auto rec = proc::run(
+      shell_argv(device.device_id,
+                 {"simpleperf", "record", "--app", stream_.package, "-o",
+                  perf_path, "--duration", std::to_string(seconds), "-f",
+                  std::to_string(config.sample_frequency_hz), "-g", "-e",
+                  "cpu-clock"}),
+      po);
+  if (!rec.ok()) {
+    ok = false;
+    error = rec.spawned ? trim(rec.err) : rec.spawn_error;
+    return empty;
+  }
+
+  const auto rep = proc::run(
+      shell_argv(device.device_id, {"simpleperf", "report-sample",
+                                    "--show-callchain", "-i", perf_path}),
+      po);
+  // Remove only the file this session created (spec D22).
+  proc::run(shell_argv(device.device_id, {"rm", "-f", perf_path}), po);
+
+  if (!rep.ok()) {
+    ok = false;
+    error = "report-sample failed: " +
+            (rep.spawned ? trim(rep.err) : rep.spawn_error);
+    return empty;
+  }
+  ok = true;
+  error.clear();
+  return parse_simpleperf_report_sample(rep.out);
+}
+
+void AdbCollector::start_cpu_worker(const model::DeviceRef& device,
+                                    const session::CaptureConfig& config) {
+  stream_.cpu_stop.store(false);
+  stream_.cpu_thread = std::thread([this, device, config] {
+    while (!stream_.cpu_stop.load()) {
+      const auto window_started = std::chrono::steady_clock::now();
+      bool ok = false;
+      std::string error;
+      auto parsed = record_cpu_window(device, config, config.cpu_window, ok, error);
+      const auto cost = std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now() - window_started);
+
+      std::lock_guard<std::mutex> lock(stream_.cpu_mutex);
+      stream_.cpu_busy += cost;
+      ++stream_.cpu_windows_done;
+      if (!ok) {
+        stream_.cpu_ok = false;
+        stream_.cpu_status_error = error;
+        stream_.cpu_denied =
+            error.find("Permission denied") != std::string::npos ||
+            error.find("isn't debuggable") != std::string::npos ||
+            error.find("not debuggable") != std::string::npos ||
+            error.find("debuggable/profileable") != std::string::npos;
+        // A target that cannot be profiled will not become profileable by
+        // retrying, so the worker stops rather than spinning on it.
+        if (stream_.cpu_denied) return;
+        continue;
+      }
+      stream_.cpu_ok = true;
+      if (!stream_.meta_recorded && !parsed.app_type.empty()) {
+        stream_.pending_meta = parsed;
+        stream_.meta_recorded = true;
+      }
+      if (!parsed.samples.empty()) {
+        model::TimeNs lo = parsed.samples.front().time_ns;
+        model::TimeNs hi = lo;
+        for (const auto& smp : parsed.samples) {
+          lo = std::min(lo, smp.time_ns);
+          hi = std::max(hi, smp.time_ns);
+        }
+        stream_.cpu_covered.emplace_back(lo, hi);
+      }
+      stream_.pending_samples.insert(stream_.pending_samples.end(),
+                                     parsed.samples.begin(),
+                                     parsed.samples.end());
+    }
+  });
+}
+
+void AdbCollector::stop_cpu_worker() {
+  stream_.cpu_stop.store(true);
+  if (stream_.cpu_thread.joinable()) stream_.cpu_thread.join();
+}
+
+std::int64_t AdbCollector::drain_cpu_samples(model::NormalizedTrace& out) {
+  std::vector<SimpleperfSamples::Sample> batch;
+  SimpleperfSamples meta;
+  bool have_meta = false;
+  {
+    std::lock_guard<std::mutex> lock(stream_.cpu_mutex);
+    batch.swap(stream_.pending_samples);
+    if (stream_.meta_recorded && !stream_.pending_meta.app_type.empty()) {
+      meta = stream_.pending_meta;
+      have_meta = true;
+      stream_.pending_meta = SimpleperfSamples{};
+    }
+  }
+
+  for (const auto& sample : batch) {
+    const std::string tkey =
+        stream_.process_key + "|tid=" + std::to_string(sample.thread_id);
+    bool known = false;
+    for (const auto& t : out.threads) {
+      if (t.thread_instance_id == tkey) known = true;
+    }
+    if (!known) {
+      model::ThreadInfo ti;
+      ti.thread_instance_id = tkey;
+      ti.process_instance_id = stream_.process_key;
+      ti.tid = sample.thread_id;
+      ti.name = sample.thread_name;
+      ti.is_main_ui_thread =
+          sample.thread_name == stream_.package || sample.thread_name == "main";
+      // Thread names observed on a real React Native debug build: the JS
+      // thread is "mqt_v_js" there, and older builds use "mqt_js".
+      ti.is_js_thread = sample.thread_name == "mqt_js" ||
+                        sample.thread_name == "mqt_v_js" ||
+                        sample.thread_name.rfind("mqt_js", 0) == 0 ||
+                        sample.thread_name.find("hermes") != std::string::npos ||
+                        sample.thread_name.find("Hermes") != std::string::npos;
+      out.threads.push_back(std::move(ti));
+    }
+
+    model::CpuSample smp;
+    smp.timestamp_ns = sample.time_ns;
+    smp.process_instance_id = stream_.process_key;
+    smp.thread_instance_id = tkey;
+    smp.provider = "simpleperf";
+    smp.weight = sample.event_count > 0 ? std::optional<double>(1.0) : std::nullopt;
+    smp.frames = sample.frames;
+    out.cpu_samples.push_back(std::move(smp));
+
+    model::Event ev;
+    ev.event_id = "simpleperf-" + std::to_string(stream_.sample_seq++);
+    ev.provider = "simpleperf";
+    ev.clock_domain = stream_.clock_id;
+    ev.timestamp = sample.time_ns;
+    ev.process_instance_id = stream_.process_key;
+    ev.thread_instance_id = tkey;
+    ev.category = model::EventCategory::kCpuSample;
+    ev.name = out.cpu_samples.back().frames.empty()
+                  ? std::string("(unsymbolised)")
+                  : out.cpu_samples.back().frames.back();
+    out.events.push_back(std::move(ev));
+  }
+
+  // Build facts read off the device, recorded once.
+  if (have_meta) {
+    if (out.build.find("native.debuggable") == nullptr) {
+      model::BuildFact f;
+      f.key = "native.debuggable";
+      f.value = meta.app_type;
+      f.boolean_value =
+          meta.app_type == "debuggable" ? model::Tri::kTrue : model::Tri::kFalse;
+      f.source = model::FactSource::kDeviceProvider;
+      f.observed_at = time_util::now_iso8601_utc();
+      f.basis = "simpleperf meta_info app_type=" + meta.app_type;
+      out.build.upsert(std::move(f));
+    }
+    if (!meta.build_type.empty() &&
+        out.build.find("device.build_type") == nullptr) {
+      model::BuildFact f;
+      f.key = "device.build_type";
+      f.value = meta.build_type;
+      f.source = model::FactSource::kDeviceProvider;
+      f.observed_at = time_util::now_iso8601_utc();
+      f.basis = "simpleperf meta_info android_build_type";
+      out.build.upsert(std::move(f));
+    }
+    if (meta.sdk_version.has_value() &&
+        out.build.find("device.sdk_version") == nullptr) {
+      model::BuildFact f;
+      f.key = "device.sdk_version";
+      f.value = std::to_string(*meta.sdk_version);
+      f.source = model::FactSource::kDeviceProvider;
+      f.observed_at = time_util::now_iso8601_utc();
+      f.basis = "simpleperf meta_info android_sdk_version";
+      out.build.upsert(std::move(f));
+    }
+  }
+  return static_cast<std::int64_t>(batch.size());
+}
+
+// ---------------------------------------------------------------------------
+// Streaming
+// ---------------------------------------------------------------------------
+
+session::CaptureResult AdbCollector::begin(
+    const model::DeviceRef& device,
+    const std::vector<model::ProcessInstance>& processes,
+    const session::CaptureConfig& config, model::NormalizedTrace& out) {
+  session::CaptureResult result;
+  // StreamState owns a thread and a mutex, so it is reset field-by-field
+  // rather than reassigned. Any previous worker is stopped first: leaving one
+  // running would have it appending into a trace this session no longer owns.
+  stop_cpu_worker();
+  stream_.reset();
+
+  if (processes.empty()) {
+    result.error = "no process instance was supplied; nothing to capture";
+    return result;
+  }
+  stream_.package = processes.front().app.app_identifier;
+  if (!proc::is_safe_argument(stream_.package, /*reject_option_like=*/true)) {
+    result.error = "refusing to capture identifier '" + stream_.package +
+                   "': it would be read as a command-line option";
+    return result;
+  }
+  const model::ProcessInstance* primary = &processes.front();
+  for (const auto& p : processes) {
+    if (p.is_primary) primary = &p;
+  }
+  stream_.process_key = primary->canonical();
+  stream_.clock_id = "android.boottime.ns";
+
+  out.device = device;
+  if (out.primary_clock_domain.empty()) out.primary_clock_domain = stream_.clock_id;
+  model::ClockDomain cd;
+  cd.id = stream_.clock_id;
+  cd.base = "monotonic";
+  cd.provider = "android.kernel.boottime";
+  cd.monotonic = true;
+  out.clock_domains.push_back(cd);
+
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(15000);
+  po.cancel = config.cancel;
+
+  // Anchor the host clock to the device's boot time once, so a source that
+  // reports no time of its own (`dumpsys meminfo`) can still be placed on the
+  // device clock. /proc/uptime's first field is the boot time in seconds.
+  {
+    const auto r =
+        proc::run(shell_argv(device.device_id, {"cat", "/proc/uptime"}), po);
+    double seconds = 0.0;
+    if (r.ok() && parse_leading_double(r.out, seconds) && seconds > 0.0) {
+      stream_.boot_base_ns =
+          static_cast<model::TimeNs>(seconds * 1'000'000'000.0);
+      stream_.host_base = std::chrono::steady_clock::now();
+      stream_.clock_anchored = true;
+
+      model::ClockMapping m;
+      m.from_domain = "host.steady.ns";
+      m.to_domain = stream_.clock_id;
+      m.offset_ns = stream_.boot_base_ns;
+      // /proc/uptime is reported in hundredths of a second, and the adb round
+      // trip is itself unmeasured, so the half-width is at least that coarse.
+      m.uncertainty_ns = StreamState::kUptimeResolutionNs;
+      m.method = "single read of /proc/uptime over adb, paired with the host "
+                 "steady clock; later instants are extrapolated from the host";
+      m.measured = true;
+      out.clock_mappings.push_back(std::move(m));
+    }
+    // A failed read is not fatal: everything else carries the platform's own
+    // timestamps. The memory source reports the consequence per tick.
+  }
+
+  if (config.frames && config.reset_frame_history) {
+    const auto r = proc::run(
+        shell_argv(device.device_id,
+                   {"dumpsys", "gfxinfo", stream_.package, "reset"}),
+        po);
+    stream_.frames_reset = r.ok();
+  }
+
+  if (config.cpu_samples) start_cpu_worker(device, config);
+
+  result.started = true;
+  return result;
+}
+
+// The capture window is whatever the evidence spans. It is recomputed after
+// every tick and again once the sampler's last window has been drained: the
+// final CPU samples arrive only in finish(), and a window that stopped at the
+// last tick left them outside the interval the report says they came from.
+void AdbCollector::extend_window_from_trace(model::NormalizedTrace& out) {
+  const auto extend = [&](model::TimeNs a, model::TimeNs b) {
+    if (a <= 0) return;
+    if (!stream_.have_window) {
+      stream_.window_lo = a;
+      stream_.window_hi = b;
+      stream_.have_window = true;
+    } else {
+      stream_.window_lo = std::min(stream_.window_lo, a);
+      stream_.window_hi = std::max(stream_.window_hi, b);
+    }
+  };
+  for (const auto& f : out.frames) {
+    extend(f.start_ns, f.presented_ns.value_or(f.start_ns));
+  }
+  for (const auto& smp : out.cpu_samples) {
+    extend(smp.timestamp_ns, smp.timestamp_ns);
+  }
+  // Counter points count too. Leaving them out put memory samples outside the
+  // very window the report says they were collected in, which reads as though
+  // the tool had measured something it was not looking at.
+  for (const auto& c : out.counters) {
+    for (const auto& pt : c.points) extend(pt.first, pt.first);
+  }
+  if (stream_.have_window) {
+    out.window_start_ns = stream_.window_lo;
+    out.window_end_ns = stream_.window_hi;
+  }
+}
+
+session::LiveUpdate AdbCollector::tick(
+    const model::DeviceRef& device,
+    const std::vector<model::ProcessInstance>& processes,
+    const session::CaptureConfig& config, model::NormalizedTrace& out) {
+  session::LiveUpdate update;
+  static_cast<void>(processes);
+  const auto tick_started = std::chrono::steady_clock::now();
+  ++stream_.tick_count;
+
+  // The cheap sources run on the tick. CPU is not one of them: simpleperf
+  // costs roughly 5.6 s of fixed overhead per record-and-symbolise cycle, so
+  // it runs on its own thread in long windows and the tick only collects
+  // whatever that thread has finished.
+  if (config.cpu_samples) {
+    update.new_cpu_samples = drain_cpu_samples(out);
+
+    std::int64_t windows = 0;
+    std::chrono::milliseconds busy{0};
+    bool ok = true;
+    bool denied = false;
+    std::string error;
+    {
+      std::lock_guard<std::mutex> lock(stream_.cpu_mutex);
+      windows = stream_.cpu_windows_done;
+      busy = stream_.cpu_busy;
+      ok = stream_.cpu_ok;
+      denied = stream_.cpu_denied;
+      error = stream_.cpu_status_error;
+    }
+
+    auto c = make_source("android.capture.cpu_samples", "Sampled CPU stacks",
+                         ok ? (out.cpu_samples.empty()
+                                   ? model::CapabilityStatus::kLimited
+                                   : model::CapabilityStatus::kAvailable)
+                            : (denied ? model::CapabilityStatus::kPermissionDenied
+                                      : model::CapabilityStatus::kUnsupported),
+                         "simpleperf");
+    if (ok) {
+      c.evidence = std::to_string(windows) + " window(s) of " +
+                   std::to_string(config.cpu_window.count() / 1000) +
+                   "s completed; " + std::to_string(out.cpu_samples.size()) +
+                   " sample(s) so far";
+      c.limitations.push_back(
+          "sampled in windows on a background thread, not on the tick: CPU "
+          "numbers lag the frame and memory numbers by up to one window plus "
+          "its symbolisation time");
+      if (windows == 0) {
+        c.limitations.push_back(
+            "the first window has not completed yet, so no CPU sample has "
+            "arrived; this is not an absence of CPU activity");
+      }
+    } else {
+      c.evidence = "simpleperf could not record: " + error;
+      c.recovery_action =
+          denied ? "this target is not debuggable or profileable, which is "
+                   "Android's own restriction and is not bypassed here"
+                 : "check that simpleperf is present and the device is authorized";
+    }
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    update.source_status.push_back(std::move(c));
+    static_cast<void>(busy);
+  }
+
+  if (config.frames) {
+    std::string evidence;
+    bool ok = true;
+    // The read returns a ring buffer that overlaps the previous read, so
+    // collect_frames_once de-duplicates by IntendedVsync; `added` is the
+    // genuinely new frames.
+    const auto added = collect_frames_once(device, config, out, update.notes,
+                                           ok, evidence);
+    update.new_frames = added;
+    stream_.frames_ok = ok;
+    auto c = make_source("android.capture.frames", "Frame timing",
+                         ok ? (added > 0 ? model::CapabilityStatus::kAvailable
+                                         : model::CapabilityStatus::kLimited)
+                            : model::CapabilityStatus::kUnsupported,
+                         "dumpsys gfxinfo");
+    c.evidence = evidence;
+    if (!stream_.frames_reset && config.reset_frame_history) {
+      c.limitations.push_back(
+          "the frame history could not be reset at capture start");
+    }
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    update.source_status.push_back(std::move(c));
+  }
+
+  if (config.memory) {
+    // Placed at the tick's own instant, which is what makes repeated ticks a
+    // time series rather than a set of unrelated readings. The instant comes
+    // from the clock anchor taken at capture start; without it there is no
+    // honest timestamp to give a meminfo reading, and the samples are dropped
+    // rather than stamped with an unrelated event's time or with zero.
+    const model::TimeNs at =
+        stream_.clock_anchored ? stream_.device_now_ns() : 0;
+    std::string evidence;
+    bool ok = true;
+    std::int64_t added = 0;
+    if (stream_.clock_anchored) {
+      added = collect_memory_once(device, config, at, out, ok, evidence);
+    } else {
+      ok = false;
+      evidence = "the device clock could not be read at capture start "
+                 "(/proc/uptime), so a meminfo reading cannot be placed on the "
+                 "capture timeline; no memory points were recorded";
+    }
+    update.new_counter_points = added;
+    stream_.memory_ok = ok;
+    auto c = make_source("android.capture.memory", "Process memory counters",
+                         ok ? model::CapabilityStatus::kAvailable
+                            : model::CapabilityStatus::kUnsupported,
+                         "dumpsys meminfo");
+    c.evidence = evidence;
+    c.limitations.push_back(
+        "sampled once per tick, so growth between ticks is not observed");
+    if (stream_.clock_anchored) {
+      c.limitations.push_back(
+          "meminfo carries no timestamp of its own: each point is placed by "
+          "the host clock against a single reading of the device boot time, "
+          "so its position on the timeline is accurate to about 10 ms plus "
+          "clock drift, not exact");
+    }
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    update.source_status.push_back(std::move(c));
+  }
+
+  extend_window_from_trace(out);
+
+  update.at_ns = stream_.window_hi;
+  update.tick_cost = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - tick_started);
+  stream_.total_tick_cost += update.tick_cost;
+  return update;
+}
+
+session::CaptureResult AdbCollector::finish(
+    const model::DeviceRef& device,
+    const std::vector<model::ProcessInstance>& processes,
+    const session::CaptureConfig& config, model::NormalizedTrace& out) {
+  static_cast<void>(processes);
+  session::CaptureResult result;
+  result.started = true;
+
+  // Stop the sampler and take whatever its last completed window produced.
+  if (config.cpu_samples) {
+    stop_cpu_worker();
+    drain_cpu_samples(out);
+    // Coverage below is measured against the window, so the window has to
+    // account for these samples before it is used.
+    extend_window_from_trace(out);
+
+    // The intervals between sampling windows are genuine gaps. Recording them
+    // is what stops an unsampled stretch from reading as measured idle time
+    // (spec section 8, E13).
+    std::vector<std::pair<model::TimeNs, model::TimeNs>> covered;
+    {
+      std::lock_guard<std::mutex> lock(stream_.cpu_mutex);
+      covered = stream_.cpu_covered;
+    }
+    std::sort(covered.begin(), covered.end());
+    model::Coverage cov;
+    cov.collector = "simpleperf";
+    cov.window_start_ns = out.window_start_ns;
+    cov.window_end_ns = out.window_end_ns;
+    cov.event_count = static_cast<std::int64_t>(out.cpu_samples.size());
+    model::TimeNs cursor = out.window_start_ns;
+    for (const auto& span : covered) {
+      if (span.first > cursor) {
+        model::CoverageGap gap;
+        gap.collector = "simpleperf";
+        gap.start_ns = cursor;
+        gap.end_ns = span.first;
+        gap.reason = "between_sampling_windows";
+        cov.gaps.push_back(std::move(gap));
+      }
+      cursor = std::max(cursor, span.second);
+    }
+    if (out.window_end_ns > cursor && !covered.empty()) {
+      model::CoverageGap gap;
+      gap.collector = "simpleperf";
+      gap.start_ns = cursor;
+      gap.end_ns = out.window_end_ns;
+      gap.reason = "after_last_sampling_window";
+      cov.gaps.push_back(std::move(gap));
+    }
+    if (covered.empty()) {
+      // No sampling window completed at all. Without a gap this row reported
+      // full coverage of a window it never observed, which is the one reading
+      // the report must never allow: nothing measured is not nothing there.
+      model::CoverageGap gap;
+      gap.collector = "simpleperf";
+      gap.start_ns = out.window_start_ns;
+      gap.end_ns = out.window_end_ns;
+      gap.reason = "no_sampling_window_completed";
+      cov.gaps.push_back(std::move(gap));
+    }
+    out.coverage.push_back(std::move(cov));
+  }
+  // Frames and memory are collected on the tick, so they had no coverage row
+  // at all -- and a source with no row is indistinguishable from a source that
+  // measured nothing. Both get one, with what each can honestly claim.
+  if (config.frames) {
+    model::Coverage cov;
+    cov.collector = "dumpsys gfxinfo";
+    cov.window_start_ns = out.window_start_ns;
+    cov.window_end_ns = out.window_end_ns;
+    cov.event_count = static_cast<std::int64_t>(out.frames.size());
+    cov.gaps = stream_.frame_gaps;
+    if (out.frames.empty()) {
+      model::CoverageGap gap;
+      gap.collector = "dumpsys gfxinfo";
+      gap.start_ns = out.window_start_ns;
+      gap.end_ns = out.window_end_ns;
+      // framestats reports rendered frames; an empty buffer cannot distinguish
+      // an app that drew nothing from a source that returned nothing, so the
+      // window is uncovered either way and the source status carries which.
+      gap.reason = "no_frames_were_reported";
+      cov.gaps.push_back(std::move(gap));
+    }
+    out.coverage.push_back(std::move(cov));
+  }
+  if (config.memory) {
+    std::int64_t points = 0;
+    const model::CounterSeries* series = nullptr;
+    for (const auto& c : out.counters) {
+      points += static_cast<std::int64_t>(c.points.size());
+      if (series == nullptr && !c.points.empty()) series = &c;
+    }
+    model::Coverage cov;
+    cov.collector = "dumpsys meminfo";
+    cov.window_start_ns = out.window_start_ns;
+    cov.window_end_ns = out.window_end_ns;
+    cov.event_count = points;
+    // meminfo samples instants, not intervals, so a run of them can never
+    // claim to have watched the whole window -- the per-source limitation says
+    // so. What a gap can honestly mark here is a cadence that slipped: if two
+    // consecutive samples are further apart than twice the requested tick,
+    // memory went unobserved for a stretch the caller did not ask for.
+    if (series == nullptr) {
+      model::CoverageGap gap;
+      gap.collector = "dumpsys meminfo";
+      gap.start_ns = out.window_start_ns;
+      gap.end_ns = out.window_end_ns;
+      gap.reason = "no_memory_sample_was_recorded";
+      cov.gaps.push_back(std::move(gap));
+    }
+    if (series != nullptr) {
+      const auto tick_ns = static_cast<model::TimeNs>(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              config.tick_interval)
+              .count());
+      const model::TimeNs allowed = tick_ns > 0 ? tick_ns * 2 : 0;
+      if (allowed > 0) {
+        for (std::size_t i = 1; i < series->points.size(); ++i) {
+          const auto from = series->points[i - 1].first;
+          const auto to = series->points[i].first;
+          if (to - from <= allowed) continue;
+          model::CoverageGap gap;
+          gap.collector = "dumpsys meminfo";
+          gap.start_ns = from;
+          gap.end_ns = to;
+          gap.reason = "tick_interval_overrun";
+          cov.gaps.push_back(std::move(gap));
+        }
+      }
+    }
+    out.coverage.push_back(std::move(cov));
+  }
+
+  result.any_data = !out.frames.empty() || !out.cpu_samples.empty() ||
+                    !out.counters.empty();
+  result.elapsed = stream_.total_tick_cost;
+
+  auto summarise = [&](const char* id, const char* human, const char* provider,
+                       bool ok, std::size_t count, const char* unit) {
+    auto c = make_source(id, human,
+                         ok ? (count > 0 ? model::CapabilityStatus::kAvailable
+                                         : model::CapabilityStatus::kLimited)
+                            : model::CapabilityStatus::kUnsupported,
+                         provider);
+    c.evidence = "streamed over " + std::to_string(stream_.tick_count) +
+                 " tick(s): " + std::to_string(count) + " " + unit;
+    c.scope = "collected in increments of " +
+              std::to_string(config.tick_interval.count()) + " ms";
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    result.source_results.push_back(std::move(c));
+  };
+
+  if (config.frames) {
+    summarise("android.capture.frames", "Frame timing", "dumpsys gfxinfo",
+              stream_.frames_ok, out.frames.size(), "frame record(s)");
+  }
+  if (config.cpu_samples) {
+    auto c = make_source("android.capture.cpu_samples", "Sampled CPU stacks",
+                         stream_.cpu_ok
+                             ? (out.cpu_samples.empty()
+                                    ? model::CapabilityStatus::kLimited
+                                    : model::CapabilityStatus::kAvailable)
+                             : model::CapabilityStatus::kPermissionDenied,
+                         "simpleperf");
+    c.evidence = "streamed over " + std::to_string(stream_.tick_count) +
+                 " tick(s): " + std::to_string(out.cpu_samples.size()) +
+                 " sample(s)";
+    if (!stream_.cpu_ok) {
+      c.evidence += "; last error: " + stream_.cpu_error;
+      c.recovery_action =
+          "install a debuggable build of the target, or add <profileable "
+          "android:shell=\"true\"/> to its manifest";
+    }
+    c.limitations.push_back(
+        "sampled on a background thread in windows of " +
+        std::to_string(config.cpu_window.count() / 1000) +
+        "s, not on the tick; the intervals between windows are recorded as "
+        "coverage gaps rather than as measured idle time");
+    {
+      std::lock_guard<std::mutex> lock(stream_.cpu_mutex);
+      c.limitations.push_back(
+          std::to_string(stream_.cpu_windows_done) +
+          " sampling window(s) completed, costing " +
+          std::to_string(stream_.cpu_busy.count()) +
+          " ms including symbolisation");
+    }
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    result.source_results.push_back(std::move(c));
+  }
+  if (config.memory) {
+    std::size_t points = 0;
+    for (const auto& c : out.counters) points += c.points.size();
+    summarise("android.capture.memory", "Process memory counters",
+              "dumpsys meminfo", stream_.memory_ok, points, "counter point(s)");
+  }
+
+  // The collector's own cost over the session, so a reader can weigh the live
+  // numbers against what watching them cost (spec section 9 rule 10).
+  {
+    auto c = make_source("android.capture.streaming_overhead",
+                         "Collector overhead while streaming",
+                         model::CapabilityStatus::kAvailable, "mpi collector");
+    c.evidence = std::to_string(stream_.tick_count) + " tick(s) costing " +
+                 std::to_string(stream_.total_tick_cost.count()) +
+                 " ms of device interaction in total";
+    c.limitations.push_back(
+        "each tick spawns processes on the device; a shorter tick interval "
+        "means fresher numbers and more overhead");
+    c.limitations.push_back(
+        "this is the collector's cost, not the app's, and must not be "
+        "subtracted from the app's own measurements");
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    result.source_results.push_back(std::move(c));
+  }
+
+  record_failed_source_coverage(out, result.source_results);
+
+  if (config.cancel.cancelled()) {
+    out.partial = true;
+    out.partial_reasons.push_back("capture stopped by the operator");
+  }
+  if (!result.any_data) {
+    out.partial = true;
+    out.partial_reasons.push_back("no source produced data");
+    result.error =
+        "capture completed but no source produced data; see the per-source "
+        "results";
+  }
+  return result;
 }
 
 session::CaptureResult AdbCollector::capture(
@@ -728,25 +1686,7 @@ session::CaptureResult AdbCollector::capture(
     for (auto& pt : s.points) pt.first = out.window_end_ns;
   }
 
-  for (const auto& c : result.source_results) {
-    if (c.status == model::CapabilityStatus::kAvailable ||
-        c.status == model::CapabilityStatus::kLimited) {
-      continue;
-    }
-    // A source that did not run covers none of the window.
-    model::Coverage cov;
-    cov.collector = c.provider;
-    cov.window_start_ns = out.window_start_ns;
-    cov.window_end_ns = out.window_end_ns;
-    cov.event_count = 0;
-    model::CoverageGap gap;
-    gap.collector = c.provider;
-    gap.start_ns = out.window_start_ns;
-    gap.end_ns = out.window_end_ns;
-    gap.reason = std::string("source_") + model::to_string(c.status);
-    cov.gaps.push_back(std::move(gap));
-    out.coverage.push_back(std::move(cov));
-  }
+  record_failed_source_coverage(out, result.source_results);
 
   if (config.cancel.cancelled()) {
     out.partial = true;

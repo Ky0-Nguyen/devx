@@ -37,9 +37,11 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Views.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Views2.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LiveView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LaunchOptions.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DevXApp.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/main.swift
 )
 
 # The layers a unit test can reach: everything except the @main entry point,

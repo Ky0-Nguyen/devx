@@ -25,8 +25,12 @@
 // it.
 #pragma once
 
+#include <atomic>
+#include <chrono>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "core/session/collector.hpp"
@@ -92,6 +96,12 @@ struct MemInfo {
 };
 MemInfo parse_dumpsys_meminfo(const std::string& text);
 
+// Reads the leading decimal number of a string, as in /proc/uptime's first
+// field. Returns false on anything it cannot read, so a boot time is never
+// silently defaulted -- a zero there would anchor a whole capture to the wrong
+// instant. Exposed for testing.
+bool parse_leading_double(const std::string& text, double& out);
+
 class AdbCollector final : public session::Collector {
  public:
   explicit AdbCollector(std::string adb_path = "adb");
@@ -105,10 +115,189 @@ class AdbCollector final : public session::Collector {
       const session::CaptureConfig& config,
       model::NormalizedTrace& out) override;
 
+  // ---- streaming ----------------------------------------------------------
+  //
+  // Streaming suits these sources well, and in one case is strictly better:
+  //
+  //  * `framestats` returns a ring buffer of roughly the last 120 frames on
+  //    every read, so consecutive reads overlap. Frames are de-duplicated by
+  //    IntendedVsync, which makes a read idempotent and a tick's delta the
+  //    frames that are genuinely new.
+  //  * `meminfo` per tick turns a single instantaneous reading into a real
+  //    time series, which is what DET-05 will eventually need.
+  //  * `simpleperf` is run in a short window per tick. That costs a process
+  //    spawn each time, which LiveUpdate::tick_cost reports.
+  bool supports_streaming() const override { return true; }
+
+  session::CaptureResult begin(
+      const model::DeviceRef& device,
+      const std::vector<model::ProcessInstance>& processes,
+      const session::CaptureConfig& config,
+      model::NormalizedTrace& out) override;
+
+  session::LiveUpdate tick(
+      const model::DeviceRef& device,
+      const std::vector<model::ProcessInstance>& processes,
+      const session::CaptureConfig& config,
+      model::NormalizedTrace& out) override;
+
+  session::CaptureResult finish(
+      const model::DeviceRef& device,
+      const std::vector<model::ProcessInstance>& processes,
+      const session::CaptureConfig& config,
+      model::NormalizedTrace& out) override;
+
  private:
   std::string adb_path_;
   std::vector<std::string> shell_argv(const std::string& serial,
                                       const std::vector<std::string>& args) const;
+
+  // Per-session streaming state. A collector instance drives one capture at a
+  // time, which the live session guarantees.
+  //
+  // CPU sampling runs on its own thread and parks its results in
+  // `pending_samples`; the tick loop drains them into the trace. That keeps
+  // all trace mutation on the tick thread, so the live session's lock remains
+  // the only thing protecting the trace.
+  struct StreamState {
+    std::string package;
+    std::string process_key;
+    std::string clock_id;
+    bool frames_reset = false;
+    bool frames_ok = true;
+    bool cpu_ok = true;
+    bool memory_ok = true;
+    std::string cpu_error;
+    std::int64_t frame_seq = 0;
+    // Highest IntendedVsync already recorded.
+    //
+    // `framestats` does NOT drain when read: it is a ring buffer of roughly
+    // the last 120 frames, returned in full on every read. Consecutive reads
+    // therefore overlap heavily, and appending each read's rows wholesale
+    // double-counts frames -- measured at 523 frames across 8 ticks where
+    // about 120 had actually rendered. IntendedVsync is unique and monotonic
+    // per frame, so it is the identity that makes a read idempotent.
+    model::TimeNs last_frame_vsync = 0;
+    std::int64_t frames_seen_duplicate = 0;
+    // Stretches where the ring buffer wrapped between two ticks. The frames
+    // in them rendered and were never read, so they are missing evidence, not
+    // an idle app -- and only a coverage gap says that.
+    std::vector<model::CoverageGap> frame_gaps;
+    std::int64_t sample_seq = 0;
+    std::int64_t tick_count = 0;
+    std::chrono::milliseconds total_tick_cost{0};
+    model::TimeNs window_lo = 0;
+    model::TimeNs window_hi = 0;
+    bool have_window = false;
+    // Counter series are created once and appended to, so memory becomes a
+    // series rather than a set of one-point series.
+    std::vector<std::string> counter_names;
+
+    // ---- device clock anchor ----
+    //
+    // `dumpsys meminfo` reports no timestamp of its own, so a memory sample
+    // has to be placed on the device clock by the host. The device's boot
+    // time is read once at capture start and paired with the host's steady
+    // clock; each later tick is that base plus the host elapsed time.
+    //
+    // Borrowing the timestamp of the newest frame or CPU sample instead --
+    // which is what this did first -- stamps a memory reading with the time
+    // of an unrelated event, and stamps it 0 until the first such event
+    // arrives. Since the CPU worker needs about 5.6 s for its first window,
+    // the opening samples of every capture landed at 0.
+    model::TimeNs boot_base_ns = 0;
+    std::chrono::steady_clock::time_point host_base{};
+    bool clock_anchored = false;
+
+    // Resolution of /proc/uptime, which reports hundredths of a second.
+    static constexpr model::TimeNs kUptimeResolutionNs = 10'000'000;
+
+    // The device clock at this instant, by extrapolation from the anchor.
+    // Only meaningful when `clock_anchored`.
+    model::TimeNs device_now_ns() const {
+      const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::steady_clock::now() - host_base)
+                               .count();
+      return boot_base_ns + static_cast<model::TimeNs>(elapsed);
+    }
+
+    // ---- CPU worker ----
+    std::thread cpu_thread;
+    std::atomic<bool> cpu_stop{false};
+    std::mutex cpu_mutex;
+    std::vector<SimpleperfSamples::Sample> pending_samples;
+    SimpleperfSamples pending_meta;
+    bool meta_recorded = false;
+    std::int64_t cpu_windows_done = 0;
+    std::chrono::milliseconds cpu_busy{0};
+    std::string cpu_status_error;
+    bool cpu_denied = false;
+    // Windows the sampler actually covered, so the intervals between them can
+    // be reported as gaps instead of looking like measured idle time.
+    std::vector<std::pair<model::TimeNs, model::TimeNs>> cpu_covered;
+
+    // Clears everything for a new session. Not an assignment, because the
+    // thread and mutex members are not assignable -- and a stale worker must
+    // be joined before its state is discarded, which begin() does.
+    void reset() {
+      package.clear();
+      process_key.clear();
+      clock_id.clear();
+      frames_reset = false;
+      frames_ok = true;
+      cpu_ok = true;
+      memory_ok = true;
+      cpu_error.clear();
+      frame_seq = 0;
+      last_frame_vsync = 0;
+      frames_seen_duplicate = 0;
+      frame_gaps.clear();
+      sample_seq = 0;
+      tick_count = 0;
+      total_tick_cost = std::chrono::milliseconds{0};
+      window_lo = 0;
+      window_hi = 0;
+      have_window = false;
+      counter_names.clear();
+      boot_base_ns = 0;
+      host_base = {};
+      clock_anchored = false;
+      cpu_stop.store(false);
+      pending_samples.clear();
+      pending_meta = SimpleperfSamples{};
+      meta_recorded = false;
+      cpu_windows_done = 0;
+      cpu_busy = std::chrono::milliseconds{0};
+      cpu_status_error.clear();
+      cpu_denied = false;
+      cpu_covered.clear();
+    }
+  };
+  StreamState stream_;
+
+  // Shared by the batch and streaming paths so both produce identical records.
+  std::int64_t collect_frames_once(const model::DeviceRef& device,
+                                   const session::CaptureConfig& config,
+                                   model::NormalizedTrace& out,
+                                   std::vector<std::string>& notes,
+                                   bool& source_ok, std::string& evidence);
+  void extend_window_from_trace(model::NormalizedTrace& out);
+  std::int64_t collect_memory_once(const model::DeviceRef& device,
+                                   const session::CaptureConfig& config,
+                                   model::TimeNs at_ns,
+                                   model::NormalizedTrace& out,
+                                   bool& source_ok, std::string& evidence);
+  // Records and symbolises one CPU window, returning the parsed samples
+  // rather than writing them into the trace: it runs on the worker thread.
+  SimpleperfSamples record_cpu_window(const model::DeviceRef& device,
+                                      const session::CaptureConfig& config,
+                                      std::chrono::milliseconds window,
+                                      bool& ok, std::string& error);
+  // Moves whatever the worker has parked into the trace. Tick thread only.
+  std::int64_t drain_cpu_samples(model::NormalizedTrace& out);
+  void start_cpu_worker(const model::DeviceRef& device,
+                        const session::CaptureConfig& config);
+  void stop_cpu_worker();
 };
 
 }  // namespace mpi::android

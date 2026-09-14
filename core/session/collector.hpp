@@ -45,6 +45,19 @@ struct CaptureConfig {
   // A preset name recorded in the trace so two runs can be compared only when
   // they used the same collector configuration (spec I17).
   std::string preset = "lightweight";
+  // Streaming cadence for the cheap sources. Measured on a real emulator,
+  // `dumpsys gfxinfo framestats` costs ~50 ms and `dumpsys meminfo` ~130 ms,
+  // so a few hundred milliseconds is comfortable.
+  std::chrono::milliseconds tick_interval{500};
+  // CPU sampling window, which is deliberately *not* on the tick path.
+  // simpleperf costs roughly 5.6 s of fixed overhead per record-and-symbolise
+  // cycle regardless of window length, so putting it on a 500 ms tick would
+  // make the tick take 6 s and the cadence meaningless. Instead it runs on its
+  // own thread in windows of this length, and the intervals between windows
+  // are recorded as coverage gaps rather than as measured idle time.
+  std::chrono::milliseconds cpu_window{5000};
+  // Zero means run until stopped, which is what a live session does.
+  bool run_until_stopped = false;
   CancellationToken cancel;
 
   json::Value to_json() const;
@@ -63,6 +76,26 @@ struct CaptureResult {
   bool ok() const { return started && any_data && error.empty(); }
 };
 
+// What one streaming tick added.
+//
+// A UI polls these to show a capture as it happens. The counts are deltas, and
+// the per-source status is the *current* state, so a source that starts
+// failing mid-capture shows up immediately rather than at the end.
+struct LiveUpdate {
+  model::TimeNs at_ns = 0;
+  std::int64_t new_frames = 0;
+  std::int64_t new_cpu_samples = 0;
+  std::int64_t new_counter_points = 0;
+  // Wall time this tick's collection itself took. This is collector overhead
+  // and is reported rather than hidden: spec section 9 rule 10 wants it
+  // measured, and a UI showing live numbers should be able to show its cost.
+  std::chrono::milliseconds tick_cost{0};
+  std::vector<model::Capability> source_status;
+  std::vector<std::string> notes;
+
+  json::Value to_json() const;
+};
+
 class Collector {
  public:
   virtual ~Collector() = default;
@@ -76,6 +109,41 @@ class Collector {
                                 const std::vector<model::ProcessInstance>& processes,
                                 const CaptureConfig& config,
                                 model::NormalizedTrace& out) = 0;
+
+  // ---- streaming -----------------------------------------------------------
+  //
+  // A streaming collector collects in increments so a capture can be watched
+  // while it runs. `begin` prepares the device, `tick` collects one increment
+  // into `out`, and `finish` closes the window and fills coverage.
+  //
+  // Streaming is not a different measurement: the same sources produce the
+  // same events. What differs is cadence, and cadence costs -- each tick is
+  // process invocations against the device, which `LiveUpdate::tick_cost`
+  // reports.
+  virtual bool supports_streaming() const { return false; }
+
+  virtual CaptureResult begin(const model::DeviceRef& /*device*/,
+                              const std::vector<model::ProcessInstance>& /*processes*/,
+                              const CaptureConfig& /*config*/,
+                              model::NormalizedTrace& /*out*/) {
+    CaptureResult r;
+    r.error = "this collector does not support streaming";
+    return r;
+  }
+  virtual LiveUpdate tick(const model::DeviceRef& /*device*/,
+                          const std::vector<model::ProcessInstance>& /*processes*/,
+                          const CaptureConfig& /*config*/,
+                          model::NormalizedTrace& /*out*/) {
+    return LiveUpdate{};
+  }
+  virtual CaptureResult finish(const model::DeviceRef& /*device*/,
+                               const std::vector<model::ProcessInstance>& /*processes*/,
+                               const CaptureConfig& /*config*/,
+                               model::NormalizedTrace& /*out*/) {
+    CaptureResult r;
+    r.error = "this collector does not support streaming";
+    return r;
+  }
 };
 
 }  // namespace mpi::session

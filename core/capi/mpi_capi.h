@@ -59,6 +59,36 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
 /* Analyses a trace file that is not part of a session package. */
 char* mpi_analyze_trace_json(const char* trace_path);
 
+/* ---- live capture -------------------------------------------------------
+ *
+ * A capture you can watch while it runs. mpi_live_start returns as soon as the
+ * collector has prepared the device; mpi_live_poll_json returns the current
+ * snapshot, which a UI can call on a timer.
+ *
+ * Every snapshot carries `analysis_is_preliminary` and an `analysis_caveat`,
+ * because findings over a window that is still open are preliminary by
+ * definition (spec sections 2.2 and 13). The caveat is in the document rather
+ * than left to the caller to remember.
+ *
+ * One live session at a time per process. */
+char* mpi_live_start(const char* sessions_dir, const char* device_id,
+                     const char* app_identifier, int sample_hz,
+                     int collect_frames, int collect_cpu, int collect_memory,
+                     int reset_frame_history, int tick_ms, int cpu_window_ms,
+                     int timeout_ms);
+
+/* The current snapshot: counts, per-source status, and the preliminary
+ * analysis. Safe to call at any time, including before a start. */
+char* mpi_live_poll_json(void);
+
+/* Stops the session, closes the window, runs the final (non-preliminary)
+ * analysis and writes the session package. Returns what was written, or the
+ * reason nothing was. */
+char* mpi_live_stop_json(void);
+
+/* True while a session is running. */
+int mpi_live_is_running(void);
+
 /* Requests cancellation of whatever the calling thread is running. The core's
  * long operations poll this, so a capture or analysis unwinds cleanly. */
 void mpi_cancel_all(void);

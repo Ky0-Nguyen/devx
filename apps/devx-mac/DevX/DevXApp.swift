@@ -1,9 +1,25 @@
 import SwiftUI
 
-@main
+/// Belt and braces for file-open launches. `main.swift` keeps bare command-line
+/// arguments away from AppKit, which is what actually stopped SwiftUI from
+/// creating a window; these hooks cover the other way in — a file dropped on
+/// the app icon or opened through LaunchServices — so DevX acknowledges it and
+/// still shows its window instead of starting up invisible.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func application(_ sender: NSApplication, openFiles filenames: [String]) {
+        sender.reply(toOpenOrPrint: .success)
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {}
+
+    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { true }
+
+}
+
 struct DevXApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var state = AppState()
-    private let launch = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+    private let launch = devxLaunch
 
     var body: some Scene {
         WindowGroup("DevX") {
@@ -14,8 +30,34 @@ struct DevXApp: App {
                     state.loadVersion()
                     state.loadDevices()
                     state.loadSessions()
+                    if let dev = launch.device { state.selectedDevice = dev }
+                    if let app = launch.app { state.selectedApp = app }
                     if let tab = launch.tab { state.tab = tab }
                     if let id = launch.session { state.openSession(id) }
+                    if launch.startLive {
+                        state.tab = .live
+                        Task { @MainActor in
+                            // Device resolution takes a couple of seconds, so
+                            // the start is deferred a moment rather than racing
+                            // the initial discovery.
+                            try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            state.startLive()
+                            guard let seconds = launch.liveSeconds else { return }
+                            // Wait for the session to actually be running
+                            // before timing it. A fixed sleep raced the start
+                            // and stopped a session that had not begun, which
+                            // silently produced no capture at all.
+                            var waited = 0
+                            while !state.liveRunning && waited < 40 {
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                waited += 1
+                            }
+                            guard state.liveRunning else { return }
+                            try? await Task.sleep(
+                                nanoseconds: UInt64(seconds) * 1_000_000_000)
+                            if state.liveRunning { state.stopLive() }
+                        }
+                    }
                 }
         }
         .windowToolbarStyle(.unified)
@@ -67,13 +109,17 @@ struct RootView: View {
                 case .devices: DevicesView()
                 case .apps: AppsView()
                 case .preflight: PreflightView()
+                case .live: LiveView()
                 case .record: RecordView()
                 case .sessions: SessionsView()
                 case .issues: IssuesView()
                 case .detectors: DetectorsView()
                 }
 
-                if let busy = state.busy {
+                // The live view shows its own progress inline, so the modal
+                // overlay is suppressed there: it previously sat on top of a
+                // capture that was already streaming.
+                if let busy = state.busy, state.tab != .live {
                     VStack(spacing: 9) {
                         ProgressView()
                         Text(busy).font(.callout)

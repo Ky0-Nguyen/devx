@@ -77,6 +77,27 @@ else
   fail=$((fail+1))
 fi
 
+# A flag the parser does not know must be refused, not ignored. `--duration 14`
+# (the real flag is --duration-s) recorded the default 5 s and reported
+# success, which hands back numbers for a window the caller never asked for.
+check "an unknown flag is refused" 2 "$MPI" record --device d --app a --duration 14
+check "a misspelled boolean flag is refused" 2 "$MPI" record --device d --app a --lives
+
+# And every flag the subcommands actually read must be accepted, so the
+# vocabulary cannot drift from the parser.
+echo "== every flag the subcommands read is known to the parser =="
+readers="$(grep -ohE 'inv\.(flag|has_flag)\("[a-z0-9-]+"' apps/cli/*.cpp \
+  | sed 's/.*("//; s/"//' | sort -u)"
+vocabulary="$(sed -n '/kWithValue\[\]/,/};/p;/kBoolean\[\]/,/};/p' apps/cli/main.cpp \
+  | grep -oE '"--[a-z0-9-]+"' | tr -d '"' | sed 's/^--//' | sort -u)"
+unknown="$(comm -13 <(echo "$vocabulary") <(echo "$readers"))"
+if [ -z "$unknown" ]; then
+  printf '  ok   every flag a subcommand reads is accepted by the parser\n'; pass=$((pass+1))
+else
+  printf '  FAIL these flags are read but would be refused: %s\n' "$(echo $unknown)"
+  fail=$((fail+1))
+fi
+
 echo "== analysis exit codes =="
 check "healthy fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --format json --out "$TMP/a.json"
 check "positive fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --format json --out "$TMP/b.json"
