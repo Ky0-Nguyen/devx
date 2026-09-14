@@ -1,4 +1,4 @@
-#include "apps/devx-serve/http_server.hpp"
+#include "core/net/http_server.hpp"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -14,7 +14,7 @@
 
 #include "core/util/json.hpp"
 
-namespace mpi::devx {
+namespace mpi::net {
 namespace {
 
 // Requests are small (a UI's API calls); anything larger is refused rather
@@ -346,6 +346,20 @@ void HttpServer::handle_connection(int fd) const {
         auto it = req.headers.find("x-devx-token");
         if (it != req.headers.end()) given = it->second;
       }
+      if (given.empty()) {
+        // `Authorization: Bearer <token>` as well, because that is what an
+        // SDK client sends and requiring a bespoke header would push every
+        // integration into hand-rolled request building.
+        auto it = req.headers.find("authorization");
+        if (it != req.headers.end()) {
+          const std::string& value = it->second;
+          const std::string prefix = "Bearer ";
+          if (value.size() > prefix.size() &&
+              value.compare(0, prefix.size(), prefix) == 0) {
+            given = value.substr(prefix.size());
+          }
+        }
+      }
       if (!token_matches(token_, given)) {
         resp = Response::error(
             401, "missing or invalid token; open the URL DevX printed on start");
@@ -403,4 +417,4 @@ void HttpServer::serve(const CancellationToken& cancel) {
   }
 }
 
-}  // namespace mpi::devx
+}  // namespace mpi::net

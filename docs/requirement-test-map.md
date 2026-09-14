@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 119 of 198 checklist items have at
-least one automated test.** The remaining 79 are listed below with a stated
+**Coverage of specification section 18: 127 of 198 checklist items have at
+least one automated test.** The remaining 71 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (119 items, 391 test-case links)
+## Covered (127 items, 416 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -68,6 +68,10 @@ Two cautions on reading this:
 | A15 | `test_identity` | `same_identifier_on_two_devices_stays_separate` |
 | A15 | `test_identity` | `same_identifier_on_two_platforms_stays_separate` |
 | A18 | `test_identity` | `installed_is_null_when_never_observed` |
+| A19 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
+| A19 | `test_sdk` | `sdk_handshake_becomes_runtime_build_facts` |
+| A19 | `test_sdk` | `sdk_markers_need_a_handshake_first` |
+| A19 | `test_sdk` | `sdk_refuses_a_handshake_that_does_not_identify_its_producer` |
 | A20 | `test_android_collector` | `collector_refuses_an_option_like_identifier` |
 | A20 | `test_android_collector` | `streaming_refuses_an_option_like_identifier` |
 | A20 | `test_android_parsers` | `adapter_rejects_an_option_like_app_identifier` |
@@ -109,6 +113,7 @@ Two cautions on reading this:
 | C01 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
 | C03 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
 | C04 | `test_eligibility` | `clean_optimized_build_is_benchmark_eligible` |
+| C05 | `test_sdk` | `sdk_handshake_becomes_runtime_build_facts` |
 | C06 | `test_eligibility` | `debuggable_without_attached_debugger_is_still_ineligible` |
 | C07 | `test_eligibility` | `debugger_attached_invalidates_benchmark` |
 | C08 | `test_eligibility` | `debugger_attached_invalidates_benchmark` |
@@ -127,6 +132,8 @@ Two cautions on reading this:
 | C15 | `test_symbols` | `matching_bundle_id_yields_exact_build_match` |
 | C15 | `test_symbols` | `mismatched_bundle_id_is_rejected_not_used_silently` |
 | C15 | `test_symbols` | `missing_file_is_an_error_not_a_silent_empty_map` |
+| C16 | `test_sdk` | `sdk_handshake_becomes_runtime_build_facts` |
+| C16 | `test_sdk` | `sdk_notices_a_reload_onto_a_different_bundle` |
 | C17 | `test_symbols` | `dirty_checkout_blocks_exact_source_claims` |
 | C18 | `test_android_collector` | `meminfo_absent_fields_stay_absent` |
 | C18 | `test_android_collector` | `simpleperf_meta_info_yields_real_build_facts` |
@@ -196,6 +203,7 @@ Two cautions on reading this:
 | D19 | `test_ios_parsers` | `xctrace_keeps_a_bundle_it_wrote_despite_reporting_errors` |
 | D19 | `test_report` | `partial_capture_is_announced` |
 | D19 | `test_rules` | `partial_capture_is_surfaced_and_never_a_clean_pass` |
+| D19 | `test_sdk` | `sdk_rejects_malformed_and_unknown_markers` |
 | D19 | `test_xml` | `xml_reports_malformed_documents_instead_of_guessing` |
 | E01 | `test_android_collector` | `framestats_parses_real_emulator_output` |
 | E01 | `test_android_collector` | `framestats_yields_the_refresh_rate_from_the_platform` |
@@ -217,6 +225,8 @@ Two cautions on reading this:
 | E13 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | E13 | `test_report` | `coverage_gaps_are_reported_with_their_semantics` |
 | E13 | `test_rules` | `det04_skips_when_no_samples_and_says_it_is_not_idle` |
+| E13 | `test_sdk` | `sdk_counts_what_the_app_dropped_before_sending` |
+| E13 | `test_sdk` | `sdk_records_a_lost_batch_as_a_gap_not_as_silence` |
 | E13 | `test_trace_model` | `coverage_gap_is_not_measured_zero` |
 | E14 | `test_rules` | `det04_skips_below_minimum_sample_population` |
 | E15 | `test_android_collector` | `simpleperf_stacks_are_outermost_first` |
@@ -244,10 +254,15 @@ Two cautions on reading this:
 | G01 | `test_android_collector` | `simpleperf_finds_the_react_native_js_thread` |
 | G01 | `test_ingestion` | `hermes_reader_produces_samples_not_tasks` |
 | G01 | `test_rules` | `det02_refuses_sampling_only_input` |
+| G04 | `test_sdk` | `sdk_notices_a_reload_onto_a_different_bundle` |
+| G07 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
+| G08 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
 | G11 | `test_eligibility` | `remote_js_execution_invalidates_benchmark` |
 | G14 | `test_symbols` | `exact_match_resolves_to_a_real_local_file` |
 | G14 | `test_symbols` | `matching_bundle_id_yields_exact_build_match` |
 | G14 | `test_symbols` | `source_map_v3_loads_and_decodes_vlq` |
+| G15 | `test_sdk` | `sdk_handshake_becomes_runtime_build_facts` |
+| G15 | `test_sdk` | `sdk_notices_a_reload_onto_a_different_bundle` |
 | G16 | `test_symbols` | `exact_match_resolves_to_a_real_local_file` |
 | G16 | `test_symbols` | `missing_local_file_downgrades_to_partial` |
 | G16 | `test_trace_model` | `non_exact_symbol_match_is_not_safe_to_open` |
@@ -288,6 +303,7 @@ Two cautions on reading this:
 | H11 | `test_rules` | `det07_under_budget_runs_and_says_what_it_measured` |
 | H11 | `test_rules` | `every_catalog_detector_is_registered` |
 | H11 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
+| H11 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
 | H11 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
 | H12 | `test_devx_http` | `request_param_lookup` |
 | H12 | `test_devx_http` | `response_error_is_machine_readable` |
@@ -344,6 +360,7 @@ Two cautions on reading this:
 | J01 | `test_json` | `json_escapes_on_output` |
 | J01 | `test_report` | `hostile_identifiers_cannot_break_the_markdown_table` |
 | J01 | `test_report` | `source_paths_are_excluded_from_export_by_default` |
+| J01 | `test_sdk` | `sdk_rejects_malformed_and_unknown_markers` |
 | J02 | `test_android_parsers` | `proc_stat_malformed_returns_nothing_not_a_fake_value` |
 | J02 | `test_ingestion` | `hermes_reader_survives_cyclic_parent_chain` |
 | J02 | `test_ingestion` | `rejects_malformed_traces_without_crashing` |
@@ -364,6 +381,7 @@ Two cautions on reading this:
 | J03 | `test_json` | `stream_parser_enforces_depth_inside_a_skip` |
 | J03 | `test_json` | `stream_parser_enforces_the_byte_limit` |
 | J03 | `test_process` | `process_bounds_output_size` |
+| J03 | `test_sdk` | `sdk_refuses_a_batch_over_the_limit` |
 | J03 | `test_xml` | `xml_enforces_its_limits` |
 | J03 | `test_xml` | `xml_refuses_a_document_type_declaration` |
 | J04 | `test_symbols` | `path_root_containment_check` |
@@ -380,6 +398,13 @@ Two cautions on reading this:
 | J05 | `test_process` | `process_rejects_option_like_identifier` |
 | J05 | `test_process` | `process_runs_and_captures_output` |
 | J06 | `test_devx_http` | `server_generates_a_distinct_token_per_instance` |
+| J06 | `test_sdk` | `sdk_bridge_binds_loopback_and_requires_a_token` |
+| J06 | `test_sdk` | `sdk_markers_need_a_handshake_first` |
+| J07 | `test_sdk` | `sdk_applies_backpressure_instead_of_growing_without_limit` |
+| J07 | `test_sdk` | `sdk_counts_what_the_app_dropped_before_sending` |
+| J07 | `test_sdk` | `sdk_does_not_store_a_retried_batch_twice` |
+| J07 | `test_sdk` | `sdk_records_a_lost_batch_as_a_gap_not_as_silence` |
+| J07 | `test_sdk` | `sdk_refuses_a_batch_over_the_limit` |
 | J11 | `test_android_collector` | `live_session_start_stop_is_safe_without_a_collector` |
 | J11 | `test_identity` | `a_cancelled_wait_stops_and_reports_the_cancellation` |
 | J11 | `test_json` | `json_accessors_do_not_throw_on_type_mismatch` |
@@ -452,6 +477,8 @@ Two cautions on reading this:
 | section-10.3 | `test_rules` | `every_rule_declares_prerequisites_and_a_phase` |
 | section-11 | `test_ingestion` | `hermes_samples_stay_on_an_unmapped_js_clock` |
 | section-11 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
+| section-11 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
+| section-11 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
 | section-11 | `test_trace_model` | `screen_is_null_when_not_observed` |
 | section-12 | `test_compare` | `median_and_spread_are_both_reported` |
 | section-12 | `test_compare` | `warm_up_runs_are_excluded_and_visible` |
@@ -468,6 +495,7 @@ Two cautions on reading this:
 | section-14 | `test_devx_http` | `server_generates_a_distinct_token_per_instance` |
 | section-14 | `test_report` | `raw_events_are_excluded_from_the_export_by_default` |
 | section-14 | `test_report` | `source_paths_are_excluded_from_export_by_default` |
+| section-14 | `test_sdk` | `sdk_bridge_binds_loopback_and_requires_a_token` |
 | section-15 | `test_devx_http` | `html_escape_neutralises_markup` |
 | section-15 | `test_ingestion` | `normalize_is_idempotent` |
 | section-15 | `test_json` | `stream_parser_skips_without_materialising` |
@@ -487,7 +515,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (79)
+## Not yet covered (71)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -497,7 +525,6 @@ Two cautions on reading this:
 | A14 | duplicate display names need a device with two such apps installed |
 | A16 | selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested |
 | A17 | needs a live app that exits between listing and record (M2) |
-| A19 | the optional app SDK is not implemented (M3) |
 | A23 | favourites/recents is a UI concept (M2) |
 | A25 | large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested |
 | B01 | multi-process grouping needs an Android device with a multi-process app |
@@ -505,9 +532,7 @@ Two cautions on reading this:
 | B11 | reinstall revalidation needs a device and an install cycle |
 | B14 | profileable-vs-visible independence is modelled; asserting it needs a device |
 | C02 | needs a built app with native debug and JS dev off |
-| C05 | custom configuration names need a build integration (M3) |
 | C12 | needs an iOS build with a debug entitlement and optimized code |
-| C16 | OTA identity change needs an OTA pipeline (M3) |
 | D01 | start/stop needs a collector (M2) |
 | D02 | stop-during-startup needs a collector (M2) |
 | D03 | double-stop idempotency needs a collector (M2) |
@@ -545,16 +570,12 @@ Two cautions on reading this:
 | F16 | memory-pressure kill needs hardware |
 | G02 | the Hermes reader refuses unexpected shapes; a versioned corpus is M3 |
 | G03 | non-Hermes runtime needs such a build (M3) |
-| G04 | JS reload needs a live RN app (M3) |
 | G05 | Fast Refresh needs a live RN app (M3) |
 | G06 | multiple runtimes needs a live RN app (M3) |
-| G07 | cancelled navigation needs SDK markers (M3) |
-| G08 | repeated mounts needs SDK markers (M3) |
-| G09 | cross-runtime async needs SDK markers (M3) |
+| G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
 | G10 | React profiling data is DET-10 (M5); its absence is reported as a skip |
 | G12 | Expo prerequisites are documentation (M3) |
 | G13 | the architecture matrix needs RN builds (M3) |
-| G15 | OTA/native pairing needs a build pipeline (M3) |
 | H08 | occurrence_count is implemented; a cross-session duplicate fixture would strengthen it |
 | H13 | offline reopen is implemented in session_store; end-to-end needs record (M2) |
 | H14 | missing source does not block rendering; asserted indirectly |
@@ -562,7 +583,6 @@ Two cautions on reading this:
 | I18 | the code reports median and IQR only and never a p95; a dedicated absence test would assert it |
 | I20 | overhead measurement needs paired controlled runs on hardware (M4) |
 | I21 | UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured |
-| J07 | transport backpressure needs the SDK transport (M3) |
 | J08 | delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated |
 | J09 | there is no AI layer, so the core trivially works without one |
 | J10 | there is no AI layer yet; trace text is never executed |
@@ -573,7 +593,7 @@ Two cautions on reading this:
 
 ## Totals
 
-- test binaries: 15
-- test cases declaring at least one id: 313
-- checklist-item links: 391
-- section-18 coverage: 119/198 (60%)
+- test binaries: 16
+- test cases declaring at least one id: 326
+- checklist-item links: 416
+- section-18 coverage: 127/198 (64%)

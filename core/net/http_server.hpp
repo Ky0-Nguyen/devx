@@ -1,4 +1,7 @@
-// A minimal HTTP/1.1 server for DevX, the desktop UI.
+// A minimal HTTP/1.1 server.
+//
+// Two consumers: DevX's local UI and the app SDK's ingest endpoint. Both
+// need the same two properties, which is why this lives in the core.
 //
 // Written here rather than pulled in, for the reason ADR-0002 gives: the
 // licence inventory stays empty and the build stays offline. It is deliberately
@@ -8,8 +11,10 @@
 // spec section 14 forbids an unauthenticated network listener:
 //
 //   * The socket binds to 127.0.0.1 only. There is no option to bind elsewhere.
+//     An app on a device reaches it through `adb reverse` or the simulator's
+//     shared loopback, never over the network.
 //   * Every request must carry a token generated at startup, either as
-//     `?token=` or an `X-DevX-Token` header. The token is printed once, in the
+//     `?token=` or an `X-DevX-Token` header (the SDK sends `Authorization: Bearer <token>`). The token is printed once, in the
 //     URL the operator opens.
 #pragma once
 
@@ -21,7 +26,7 @@
 
 #include "core/util/cancel.hpp"
 
-namespace mpi::devx {
+namespace mpi::net {
 
 struct Request {
   std::string method;
@@ -96,4 +101,4 @@ std::string url_decode(const std::string& in);
 // Escapes text for HTML text content.
 std::string html_escape(const std::string& in);
 
-}  // namespace mpi::devx
+}  // namespace mpi::net

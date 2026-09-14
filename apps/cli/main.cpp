@@ -97,6 +97,7 @@ bool needs_value(const std::string& flag) {
       "--import",
       "--label",
       "--max-input-mib",
+      "--max-markers",
       "--max-spread",
       "--min-absolute-delta",
       "--min-relative-delta",
@@ -108,6 +109,7 @@ bool needs_value(const std::string& flag) {
       "--preset",
       "--r8-map",
       "--sample-hz",
+      "--sdk-port",
       "--tick-ms",
       "--wait-for-app-s",
       "--search",
@@ -142,6 +144,7 @@ bool is_boolean_flag(const std::string& flag) {
       "--no-cpu",       "--no-frame-reset", "--no-frames",
       "--no-memory",    "--no-simulators",  "--profileable",
       "--quiet",        "--running",        "--source-dirty",
+      "--sdk",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
@@ -412,6 +415,8 @@ int main(int argc, char** argv) {
     code = cmd_export(parsed.inv);
   } else if (cmd == "rules") {
     code = cmd_rules(parsed.inv);
+  } else if (cmd == "sdk-bridge") {
+    code = cmd_sdk_bridge(parsed.inv);
   } else if (cmd == "version") {
     std::cout << "mpi " << mpi::rules::engine_version() << " (ruleset "
               << mpi::rules::ruleset_version() << ")\n";

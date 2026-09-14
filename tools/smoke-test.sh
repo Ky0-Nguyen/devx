@@ -103,6 +103,22 @@ fi
 check "a bad --launch-class is refused" 2 "$MPI" record --device d --app a --launch --launch-class=tepid
 check "--wait-for-app-s must be positive" 2 "$MPI" record --device d --app a --launch --wait-for-app-s 0
 
+# The SDK's own end-to-end test, when node is available. It drives the real
+# JavaScript client over real HTTP into the real ingest, which is the only way
+# the sequence and backpressure behaviour is exercised as a pair.
+if command -v node >/dev/null 2>&1; then
+  echo "== app SDK end to end (node) =="
+  if node sdk/react-native/test/e2e.mjs "$MPI" > "$TMP/sdk-e2e.log" 2>&1; then
+    printf '  ok   the React Native SDK drives the real endpoint (%s checks)\n' \
+      "$(grep -c '  ok ' "$TMP/sdk-e2e.log")"; pass=$((pass+1))
+  else
+    printf '  FAIL the SDK end-to-end test failed:\n'; sed 's/^/       /' "$TMP/sdk-e2e.log" | tail -20
+    fail=$((fail+1))
+  fi
+else
+  printf '  skip node is not installed, so the SDK end-to-end test did not run\n'
+fi
+
 echo "== analysis exit codes =="
 check "healthy fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/negative-healthy.mpi.json --format json --out "$TMP/a.json"
 check "positive fixture analyzes ok" 0 "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --format json --out "$TMP/b.json"

@@ -1,6 +1,9 @@
 add_library(mpi_core STATIC
   util/json.cpp
   util/xml.cpp
+  net/http_server.cpp
+  sdk/marker_ingest.cpp
+  sdk/sdk_bridge.cpp
   util/process.cpp
   util/time.cpp
   model/capability.cpp

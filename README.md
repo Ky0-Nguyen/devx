@@ -136,6 +136,7 @@ mpi record --live --tick-ms 500                 # stream until Ctrl-C, one line 
 mpi analyze <session|trace>                     # analyze and report
 mpi compare <baseline.json> <candidate.json>    # compare two run sets
 mpi rules                                       # describe every detector
+mpi sdk-bridge                                  # accept SDK markers without recording
 mpi export <session> --format json              # re-export a session
 ```
 
@@ -188,11 +189,31 @@ Every fixture is labelled `synthetic` and every report says so at the top.
 
 ---
 
+## The in-app SDK
+
+Screens, navigations, interactions and the build handshake come from the app
+itself -- no device provider can see them, and a screen is never guessed from a
+function name. `sdk/react-native/mpi-sdk.js` is dependency-free ES module
+JavaScript with no build step; see
+[its README](sdk/react-native/README.md).
+
+```bash
+mpi record --device <id> --app <identifier> --sdk --duration-s 20
+# prints: SDK endpoint http://127.0.0.1:60773 token e5c7675b...
+#         let the device reach it: adb reverse tcp:60773 tcp:60773
+```
+
+The endpoint binds 127.0.0.1 and requires that token on every request. A lost
+batch becomes a recorded gap rather than silence, and a capture with no SDK
+reports that it has no screen or interaction evidence instead of leaving the
+fields quietly empty.
+
 ## Layout
 
 ```
 apps/cli/            the `mpi` command-line interface
 apps/devx-mac/       DevX.app -- native SwiftUI desktop app
+sdk/react-native/    the in-app SDK: markers, build handshake, transport
 apps/devx-serve/     the same views over loopback HTTP
 core/capi/           C ABI the SwiftUI app is built on
 core/

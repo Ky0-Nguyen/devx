@@ -15,6 +15,7 @@ endfunction()
 
 mpi_add_test(test_json unit/test_json.cpp)
 mpi_add_test(test_xml unit/test_xml.cpp)
+mpi_add_test(test_sdk unit/test_sdk.cpp)
 mpi_add_test(test_process unit/test_process.cpp)
 mpi_add_test(test_identity unit/test_identity.cpp)
 mpi_add_test(test_eligibility unit/test_eligibility.cpp)
@@ -28,8 +29,7 @@ mpi_add_test(test_android_parsers integration/test_android_parsers.cpp)
 mpi_add_test(test_ios_parsers integration/test_ios_parsers.cpp)
 mpi_add_test(test_android_collector integration/test_android_collector.cpp)
 
-# DevX's HTTP layer lives in the app target, so its sources are compiled into
-# the test directly rather than linked from a library.
+# The HTTP server is in the core now (the SDK ingest endpoint needs it too);
+# only the view rendering still lives in the app target.
 mpi_add_test(test_devx_http unit/test_devx_http.cpp
-             ${PROJECT_SOURCE_DIR}/apps/devx-serve/http_server.cpp
              ${PROJECT_SOURCE_DIR}/apps/devx-serve/ui.cpp)
