@@ -66,10 +66,16 @@ char* mpi_compare_json(const char* baseline_path, const char* candidate_path,
 /* Runs a live capture. Blocks for `duration_s`. The result carries a
  * per-source status array whether or not a session was written; a capture
  * that measured nothing is reported, not saved. */
+/* `collect_scheduling` and `collect_heap` are the heavier collectors: the
+ * first traces the whole device, the second pauses the app and writes tens of
+ * megabytes. A caller is expected to have said so before passing them
+ * (spec section 13: explain the overhead before enabling a heavier
+ * collector). */
 char* mpi_record_json(const char* sessions_dir, const char* device_id,
                       const char* app_identifier, int duration_s,
                       int sample_hz, int collect_frames, int collect_cpu,
                       int collect_memory, int reset_frame_history,
+                      int collect_scheduling, int collect_heap,
                       int timeout_ms);
 
 /* Analyses a trace file that is not part of a session package. */

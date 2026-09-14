@@ -58,6 +58,8 @@ struct RecordView: View {
                     }
                 }
 
+                HeavierCollectors()
+
                 if state.recordResetFrames {
                     Banner(kind: .info, title: nil,
                            message: "framestats is a ring buffer of about the last 120 "
@@ -323,6 +325,77 @@ private struct DetectorCard: View {
                            items: rule["known_false_positives"].array
                             .compactMap { $0.string })
             }
+        }
+    }
+}
+
+/// The collectors that cost something, and what they cost.
+///
+/// Spec section 13: "Collect-missing-evidence action explains overhead before
+/// enabling heavier collectors." The explanation is not a tooltip and it is
+/// not behind a disclosure triangle -- it sits between the switch and the
+/// reader, above the switch, because an overhead note nobody reads is not an
+/// explanation. Each one names the evidence it buys, so the trade is legible
+/// rather than being a switch labelled with a flag name.
+struct HeavierCollectors: View {
+    @EnvironmentObject var state: AppState
+
+    var body: some View {
+        Panel(title: "Heavier collectors",
+              subtitle: "off by default; each one costs something on the "
+                      + "device and says what") {
+            VStack(alignment: .leading, spacing: 12) {
+                row(title: "Scheduling and I/O  (atrace)",
+                    buys: "DET-03 (synchronous main-thread I/O) and DET-09 "
+                        + "(wait contention). Without it both report that the "
+                        + "provider did not run, which is not the same as "
+                        + "finding nothing.",
+                    costs: "traces the WHOLE DEVICE, not just this app, for "
+                         + "the capture's duration. Costs CPU at every context "
+                         + "switch across every process, and its kernel ring "
+                         + "buffer can overflow -- dropped events are reported "
+                         + "as a coverage gap rather than absorbed.",
+                    isOn: $state.recordScheduling)
+                row(title: "Heap dump  (am dumpheap)",
+                    buys: "DET-06 (retained-object investigation): the chain "
+                        + "of references that keeps an object alive, which no "
+                        + "memory counter can give you -- a counter says how "
+                        + "much is held, never by what.",
+                    costs: "PAUSES THE APP while the runtime walks the whole "
+                         + "heap, and writes tens of megabytes into the "
+                         + "session (49 MB for a React Native app on an "
+                         + "emulator). Taken after every other source, so the "
+                         + "pause falls outside the measured window.",
+                    isOn: $state.recordHeap)
+            }
+        }
+    }
+
+    private func row(title: String, buys: String, costs: String,
+                     isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(Term.font(12, .medium)).foregroundStyle(Term.ink)
+            HStack(alignment: .top, spacing: 6) {
+                Text("buys")
+                    .font(Term.font(10)).foregroundStyle(Term.green)
+                    .frame(width: 34, alignment: .trailing)
+                Text(buys)
+                    .font(Term.font(10)).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(alignment: .top, spacing: 6) {
+                Text("costs")
+                    .font(Term.font(10)).foregroundStyle(Term.amber)
+                    .frame(width: 34, alignment: .trailing)
+                Text(costs)
+                    .font(Term.font(10)).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            // The switch last: the cost is read on the way to it.
+            Toggle("enable", isOn: isOn)
+                .font(Term.font(11))
+                .padding(.leading, 40)
         }
     }
 }

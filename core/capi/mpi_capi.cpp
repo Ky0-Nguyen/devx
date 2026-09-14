@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -14,6 +15,7 @@
 
 #include "adapters/android/adb_adapter.hpp"
 #include "adapters/android/adb_collector.hpp"
+#include "adapters/android/hprof_parser.hpp"
 #include "adapters/ios/ios_adapter.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -473,7 +475,8 @@ char* mpi_compare_json(const char* baseline_path, const char* candidate_path,
 char* mpi_record_json(const char* sessions_dir, const char* device_id,
                       const char* app_identifier, int duration_s, int sample_hz,
                       int collect_frames, int collect_cpu, int collect_memory,
-                      int reset_frame_history, int timeout_ms) {
+                      int reset_frame_history, int collect_scheduling,
+                      int collect_heap, int timeout_ms) {
   return guard([&] {
     json::Value out = json::Value::object();
     const std::string device = safe(device_id);
@@ -585,6 +588,20 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
     cfg.cpu_samples = collect_cpu != 0;
     cfg.memory = collect_memory != 0;
     cfg.reset_frame_history = reset_frame_history != 0;
+    cfg.scheduling = collect_scheduling != 0;
+    cfg.heap_dump = collect_heap != 0;
+    if (cfg.heap_dump) {
+      cfg.artifact_dir =
+          safe(sessions_dir) + "/" + manifest.session_id + ".artifacts";
+      std::error_code ec;
+      std::filesystem::create_directories(cfg.artifact_dir, ec);
+      if (ec) {
+        out.set("error", json::Value::string("cannot create " +
+                                             cfg.artifact_dir + ": " +
+                                             ec.message()));
+        return out;
+      }
+    }
 
     android::AdbCollector collector;
     const auto capture = collector.capture(*dev, processes, cfg, trace);
@@ -613,7 +630,32 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
     rules::EngineOptions eopts;
     eopts.mode = manifest.requested_mode;
     eopts.cancel = cancel_registry().token();
+
+    // The dump this capture just took, parsed so DET-06 runs over the same
+    // session rather than needing a second command.
+    heap::HeapGraph heap_graph;
+    std::string heap_note;
+    for (const auto& [name, path] : capture.artifacts) {
+      if (name != "heap.hprof") continue;
+      android::HprofLimits hlimits;
+      const auto hr = android::read_hprof(path, hlimits,
+                                          cancel_registry().token(), heap_graph);
+      if (hr.ok && !heap_graph.objects().empty()) {
+        heap_graph.gc_requested_before_dump = true;
+        eopts.heap_graph = &heap_graph;
+        heap_note = "heap dump parsed: " +
+                    std::to_string(heap_graph.objects().size()) +
+                    " object(s), " + std::to_string(heap_graph.roots().size()) +
+                    " root(s)";
+      } else {
+        heap_note = "the heap dump was captured but could not be read (" +
+                    (hr.error.empty() ? std::string("no objects found")
+                                      : hr.error) +
+                    "), so no reference paths are available from it";
+      }
+    }
     auto analysis = rules::analyze(trace, symbol_service, eopts);
+    if (!heap_note.empty()) analysis.data_quality_notes.push_back(heap_note);
 
     report::ReportOptions rep;
     const std::string md = report::to_markdown(trace, analysis, rep);
@@ -629,10 +671,15 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
     manifest.partial_reasons = trace.partial_reasons;
 
     const auto written = session::write_package(safe(sessions_dir), manifest,
-                                                trace, analysis, snap, md, js);
+                                                trace, analysis, snap, md, js,
+                                                capture.artifacts);
     if (!written.ok) {
       out.set("error", json::Value::string(written.error));
       return out;
+    }
+    if (!cfg.artifact_dir.empty()) {
+      std::error_code ec;
+      std::filesystem::remove_all(cfg.artifact_dir, ec);
     }
     out.set("session_written", json::Value::boolean(true));
     out.set("session_id", json::Value::string(manifest.session_id));
