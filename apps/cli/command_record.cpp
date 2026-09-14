@@ -21,6 +21,7 @@
 #include <thread>
 
 #include "adapters/android/adb_collector.hpp"
+#include "adapters/ios/xctrace_collector.hpp"
 
 #include "apps/cli/cli.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -149,6 +150,8 @@ ExitCode cmd_record(const Invocation& inv) {
   std::unique_ptr<session::Collector> collector;
   if (import_path.empty() && device.platform == model::Platform::kAndroid) {
     collector = std::make_unique<android::AdbCollector>();
+  } else if (import_path.empty() && device.platform == model::Platform::kIos) {
+    collector = std::make_unique<ios::XctraceCollector>();
   }
 
   if (collector) {

@@ -18,11 +18,29 @@ deadline, `simpleperf` for symbolised stacks, `dumpsys meminfo` for memory.
 Verified against a booted emulator (API 37) on the superapp HutBot debug
 build, and live against `com.android.settings` for the frame path.
 
-**iOS does not.** There is no `xctrace` collector wired to the session
-controller. `mpi record` and DevX both perform discovery, target pinning,
-preflight and revalidation, then say so and exit `unsupported` (6) with the
-blocker named -- stating explicitly that the blocker is the collector and not
-the target. Neither writes a session.
+**iOS records, and on this host it does not finish.** There is an `xctrace`
+collector wired to the session controller now, and an importer
+(`ios.xctrace.export`) for what Instruments exports. The recording step was
+exercised against the booted simulator with a real app
+(`io.pizzahut.hutbot.debug`): `xctrace record` attaches -- it prints
+`Attaching to: ... Time limit: 3.0 s` -- and then runs indefinitely, ignoring
+its own `--time-limit` even with `--no-prompt`. The collector bounds the
+recording itself and reports that as a **provider failure**, explicitly not as
+a capture that found nothing, and writes no session.
+
+So the honest state is: discovery, app enumeration, process identity,
+preflight, the recording command and the export-and-read path are all
+implemented for iOS; a **completed** iOS recording has never been produced in
+this environment, on a simulator or a device. The successful branch of
+`XctraceCollector::capture` is therefore code that has not run end to end, and
+`ios.capture.live_recording` reports `tested: not_tested` unless discovery
+established the device form.
+
+What *is* verified is the ingestion: the importer is tested against real
+`xctrace export` output for both shapes (`--toc` and a `time-profile` table),
+including the reference table that makes frames and binaries repeat, and the
+case where the export records platform `macOS` and must not be promoted to
+iOS evidence.
 
 **Why it is not disguised.** Spec section 0.16 forbids substituting
 import-only support for the required live workflow, and section 0.5 forbids

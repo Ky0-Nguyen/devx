@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 118 of 198 checklist items have at
-least one automated test.** The remaining 80 are listed below with a stated
+**Coverage of specification section 18: 119 of 198 checklist items have at
+least one automated test.** The remaining 79 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (118 items, 381 test-case links)
+## Covered (119 items, 391 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -104,6 +104,7 @@ Two cautions on reading this:
 | B13 | `test_symbols` | `missing_symbol_artifacts_yield_unavailable_with_a_reason` |
 | B15 | `test_android_collector` | `collector_refuses_an_empty_process_set` |
 | B15 | `test_android_collector` | `streaming_refuses_to_begin_without_a_process` |
+| B15 | `test_ios_parsers` | `xctrace_explains_an_attach_that_found_no_process` |
 | C01 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
 | C01 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
 | C03 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
@@ -150,6 +151,7 @@ Two cautions on reading this:
 | D04 | `test_json` | `stream_parser_can_abandon_an_array_midway` |
 | D04 | `test_process` | `process_honours_cancellation` |
 | D04 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
+| D07 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | D08 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
 | D08 | `test_ingestion` | `rejects_malformed_traces_without_crashing` |
 | D08 | `test_json` | `json_rejects_malformed` |
@@ -191,6 +193,7 @@ Two cautions on reading this:
 | D18 | `test_xml` | `xml_skip_element_walks_past_a_subtree` |
 | D18 | `test_xml` | `xml_skips_the_declaration_and_comments` |
 | D19 | `test_ingestion` | `xctrace_export_refuses_a_malformed_document` |
+| D19 | `test_ios_parsers` | `xctrace_keeps_a_bundle_it_wrote_despite_reporting_errors` |
 | D19 | `test_report` | `partial_capture_is_announced` |
 | D19 | `test_rules` | `partial_capture_is_surfaced_and_never_a_clean_pass` |
 | D19 | `test_xml` | `xml_reports_malformed_documents_instead_of_guessing` |
@@ -211,6 +214,7 @@ Two cautions on reading this:
 | E13 | `test_android_collector` | `uptime_is_read_or_refused_never_defaulted` |
 | E13 | `test_identity` | `a_wait_that_times_out_says_so_rather_than_reporting_no_processes` |
 | E13 | `test_ingestion` | `derived_coverage_treats_absent_collector_as_a_full_gap` |
+| E13 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | E13 | `test_report` | `coverage_gaps_are_reported_with_their_semantics` |
 | E13 | `test_rules` | `det04_skips_when_no_samples_and_says_it_is_not_idle` |
 | E13 | `test_trace_model` | `coverage_gap_is_not_measured_zero` |
@@ -370,6 +374,7 @@ Two cautions on reading this:
 | J05 | `test_devx_http` | `url_decode_handles_escapes_and_plus` |
 | J05 | `test_devx_http` | `url_decode_leaves_malformed_escapes_literal` |
 | J05 | `test_ios_parsers` | `adapter_refuses_an_option_like_bundle_id` |
+| J05 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 | J05 | `test_process` | `process_argv_is_never_shell_interpreted` |
 | J05 | `test_process` | `process_rejects_nul_in_argument` |
 | J05 | `test_process` | `process_rejects_option_like_identifier` |
@@ -391,6 +396,10 @@ Two cautions on reading this:
 | J15 | `test_ios_parsers` | `parses_real_devicectl_device_listing` |
 | J15 | `test_ios_parsers` | `readiness_reports_ddi_services_state` |
 | J15 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
+| J15 | `test_ios_parsers` | `xctrace_explains_an_attach_that_found_no_process` |
+| J15 | `test_ios_parsers` | `xctrace_keeps_a_bundle_it_wrote_despite_reporting_errors` |
+| J15 | `test_ios_parsers` | `xctrace_reports_a_nonzero_exit_with_no_bundle` |
+| J15 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | J16 | `test_ios_parsers` | `readiness_reports_ddi_services_state` |
 | J16 | `test_ios_parsers` | `unreachable_paired_device_is_offline_not_authorized` |
 | J18 | `test_android_parsers` | `parses_device_states_and_forms` |
@@ -402,6 +411,7 @@ Two cautions on reading this:
 | J18 | `test_ios_parsers` | `parses_real_simctl_device_listing` |
 | J18 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
+| J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
 ## Additional coverage keyed to specification sections and detector ids (20)
 
@@ -449,6 +459,7 @@ Two cautions on reading this:
 | section-13 | `test_android_collector` | `live_snapshot_states_that_it_is_preliminary` |
 | section-13 | `test_android_collector` | `live_update_serialises_its_deltas_and_cost` |
 | section-13 | `test_android_collector` | `streaming_is_declared_and_batch_is_not_removed` |
+| section-13 | `test_ios_parsers` | `xctrace_collector_does_not_claim_to_stream` |
 | section-13 | `test_report` | `unknown_values_are_shown_as_unknown_not_omitted` |
 | section-13 | `test_rules` | `issue_interval_lies_inside_the_capture_window` |
 | section-13 | `test_rules` | `issues_are_sorted_by_severity_then_stably` |
@@ -476,7 +487,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (80)
+## Not yet covered (79)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -502,7 +513,6 @@ Two cautions on reading this:
 | D03 | double-stop idempotency needs a collector (M2) |
 | D05 | disk-full is handled in the write path; triggering it needs a constrained filesystem |
 | D06 | host crash recovery needs fault injection; the .partial directory path is implemented |
-| D07 | collector crash needs a collector (M2) |
 | D13 | clock drift over a long capture needs a long real capture (M2) |
 | D14 | durations never use the wall clock by construction; a timezone-change test needs host manipulation |
 | D15 | device sleep/resume needs hardware |
@@ -564,6 +574,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 15
-- test cases declaring at least one id: 307
-- checklist-item links: 381
-- section-18 coverage: 118/198 (60%)
+- test cases declaring at least one id: 313
+- checklist-item links: 391
+- section-18 coverage: 119/198 (60%)
