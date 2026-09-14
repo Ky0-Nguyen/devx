@@ -173,6 +173,10 @@ class AdbCollector final : public session::Collector {
   //    spawn each time, which LiveUpdate::tick_cost reports.
   bool supports_streaming() const override { return true; }
 
+  // The device clock, from the anchor taken at capture start.
+  std::optional<session::Collector::DeviceClock> device_clock_at(
+      std::chrono::steady_clock::time_point host_instant) const override;
+
   // Launches the app and records the platform's own startup figures.
   session::Collector::LaunchReport launch(const model::DeviceRef& device,
                                           const std::string& app_identifier,

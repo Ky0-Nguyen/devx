@@ -175,21 +175,38 @@ the ingest cost above is what is measured.
 
 ---
 
-## 4. Six of the twelve catalog detectors are registered but not implemented
+## 4. Five of the twelve catalog detectors are registered but not implemented
 
 Implemented: **DET-01** (frame deadlines), **DET-02** (long JS), **DET-04**
-(sampled CPU hotspot), **DET-07** (startup budget), **DET-08** (regression),
-**DET-12** (tooling attribution).
+(sampled CPU hotspot), **DET-05** (memory growth across screen cycles),
+**DET-07** (startup budget), **DET-08** (regression), **DET-12** (tooling
+attribution).
 
 Registered and always skipped, each with its prerequisites, its phase and the
-conclusion it will be allowed to reach: DET-03 (sync main-thread I/O), DET-05
-(memory growth), DET-06 (retention), DET-09 (lock contention), DET-10 (React
-renders), DET-11 (network delay).
+conclusion it will be allowed to reach: DET-03 (sync main-thread I/O), DET-06
+(retention), DET-09 (lock contention), DET-10 (React renders), DET-11 (network
+delay).
 
 **Why register them at all.** Spec H05 requires an unsupported rule to be
 *reported as skipped* and H11 requires "no findings" to be distinguishable from
 "no analysis". A detector the engine has never heard of can satisfy neither.
 Every report therefore lists all twelve with an explicit outcome.
+
+**DET-05 will not say "leak".** The strongest conclusion the spec allows it is
+*suspected retention*, and the rule is built around that: rising memory across
+screen cycles is equally consistent with a cache filling up, garbage that has
+not been collected, an allocator holding freed pages, or a screen legitimately
+keeping more state. All four travel with every finding, severity is capped at
+medium so an inferred finding cannot outrank a measured one, and the missing
+evidence names what would settle it (reference paths, which is DET-06).
+
+It also refuses two comparisons. It never sums memory families -- each is
+judged separately and a finding names which one grew (section 8) -- and it
+will not compare the app's marker clock against a device measurement without
+a **measured** mapping between them, because an assumed offset would make a
+correlation look real. And it distinguishes warm-up from accumulation: a
+series that rises over the first visits and then settles is reported as
+warm-up settling, not as suspected retention.
 
 **DET-07 will not invent a budget.** A startup budget is a product decision and
 no platform publishes one, so the rule skips until `DET-07.budget_ms` is

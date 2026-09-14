@@ -23,6 +23,7 @@ add_library(mpi_core STATIC
   rules/det01_frame_deadlines.cpp
   rules/det02_long_js.cpp
   rules/det04_cpu_hotspot.cpp
+  rules/det05_memory_growth.cpp
   rules/det07_startup_budget.cpp
   rules/det08_regression.cpp
   rules/det12_tooling_activity.cpp

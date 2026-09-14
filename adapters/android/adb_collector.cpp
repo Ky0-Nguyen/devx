@@ -884,6 +884,22 @@ std::int64_t AdbCollector::drain_cpu_samples(model::NormalizedTrace& out) {
 // Launch and startup measurement
 // ---------------------------------------------------------------------------
 
+std::optional<session::Collector::DeviceClock> AdbCollector::device_clock_at(
+    std::chrono::steady_clock::time_point host_instant) const {
+  if (!stream_.clock_anchored) return std::nullopt;
+  const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                           host_instant - stream_.host_base)
+                           .count();
+  session::Collector::DeviceClock clock;
+  clock.domain = stream_.clock_id.empty() ? "android.boottime.ns"
+                                          : stream_.clock_id;
+  clock.at_ns = stream_.boot_base_ns + static_cast<model::TimeNs>(elapsed);
+  // The anchor itself came from /proc/uptime, which reports hundredths of a
+  // second, and the adb round trip that read it is unmeasured.
+  clock.uncertainty_ns = StreamState::kUptimeResolutionNs;
+  return clock;
+}
+
 session::Collector::LaunchReport AdbCollector::launch(
     const model::DeviceRef& device, const std::string& app_identifier,
     const session::CaptureConfig& config, model::NormalizedTrace& out) {
@@ -1993,6 +2009,12 @@ session::CaptureResult AdbCollector::capture(
     if (up.ok() && parse_leading_double(up.out, seconds) && seconds > 0.0) {
       at = static_cast<model::TimeNs>(seconds * 1'000'000'000.0);
       extend(at, at);
+      // Kept as the capture's clock anchor as well, so a batch capture can
+      // still relate another producer's clock to the device's.
+      stream_.boot_base_ns = at;
+      stream_.host_base = std::chrono::steady_clock::now();
+      stream_.clock_id = "android.boottime.ns";
+      stream_.clock_anchored = true;
     } else if (have_window) {
       at = hi;
     }

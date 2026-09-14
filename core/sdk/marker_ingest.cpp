@@ -99,6 +99,24 @@ IngestResult MarkerIngest::receive_handshake(const json::Value& body) {
         "and are not interchangeable");
   }
   handshake_ = h;
+
+  // Pair the app's clock with ours at the moment the handshake landed. The
+  // pair is only as good as the request's own latency, which is why the
+  // uncertainty is carried with it rather than assumed away.
+  if (h.app_clock_ns.has_value()) {
+    const auto before = std::chrono::steady_clock::now();
+    pairing_.app_clock_ns = *h.app_clock_ns;
+    pairing_.host_received = before;
+    pairing_.app_domain =
+        h.clock_domain.empty() ? std::string("app.unspecified") : h.clock_domain;
+    // The app read its clock before sending and the host reads its own on
+    // arrival, so the offset is out by the one-way latency. A loopback
+    // request is sub-millisecond; a millisecond of half-width is a
+    // deliberately conservative bound on it.
+    pairing_.host_uncertainty = std::chrono::milliseconds(1);
+    pairing_.valid = true;
+  }
+
   result.accepted = true;
   result.next_sequence = next_sequence_;
   return result;
@@ -253,6 +271,12 @@ IngestResult MarkerIngest::receive_markers(const json::Value& body) {
       if (payload->is_object()) m.payload = *payload;
     }
     m.event_id = "sdk-" + std::to_string(markers_.size());
+    // Stamped with the app's clock, because that is what produced the
+    // timestamp. Nothing downstream may compare it against a device
+    // measurement without a mapping.
+    m.clock_domain = handshake_->clock_domain.empty()
+                         ? std::string("app.unspecified")
+                         : handshake_->clock_domain;
     m.payload.set("sdk_sequence", json::Value::number(
                                       static_cast<double>(sequence)));
 
@@ -349,6 +373,11 @@ std::int64_t MarkerIngest::markers_dropped_by_app() const {
 std::int64_t MarkerIngest::markers_rejected() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return markers_rejected_;
+}
+
+MarkerIngest::ClockPairing MarkerIngest::clock_pairing() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return pairing_;
 }
 
 std::vector<std::string> MarkerIngest::notes() const {

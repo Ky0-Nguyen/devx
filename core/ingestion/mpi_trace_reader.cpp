@@ -286,6 +286,7 @@ bool convert_marker(const json::Value& m, const KeepFilter& keep,
   mk.screen = str_at(m, "screen");
   mk.interaction = str_at(m, "interaction");
   mk.process_instance_id = str_at(m, "process_instance_id");
+  mk.clock_domain = str_at(m, "clock_domain");
   if (const json::Value* pl = m.find("payload"); pl) mk.payload = *pl;
   return keep(mk.process_instance_id);
 }
