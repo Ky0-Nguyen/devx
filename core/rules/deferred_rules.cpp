@@ -56,14 +56,6 @@ std::vector<RulePtr> make_deferred_rules() {
   std::vector<RulePtr> r;
 
   r.push_back(std::make_shared<DeferredRule>(
-      "DET-03", "io", "Synchronous main-thread I/O", "M5",
-      std::vector<Prerequisite>{
-          {"io_events", "I/O events carrying the issuing thread"},
-          {"stack_for_location", "a stack to locate the call site"}},
-      "I/O observed on the main thread; severity depends on measured impact",
-      "no validated I/O provider is wired up yet on either platform"));
-
-  r.push_back(std::make_shared<DeferredRule>(
       "DET-06", "memory", "Retained-object investigation", "M5",
       std::vector<Prerequisite>{
           {"heap_snapshot", "a heap snapshot with reference paths"},
@@ -71,17 +63,6 @@ std::vector<RulePtr> make_deferred_rules() {
            "a stated expectation of when the object should have been freed"}},
       "supported retention, with its assumptions listed",
       "heap capture is not implemented; allocation volume is not retained size"));
-
-  r.push_back(std::make_shared<DeferredRule>(
-      "DET-09", "scheduling", "Wait / lock contention", "M5",
-      std::vector<Prerequisite>{
-          {"scheduling_evidence",
-           "running / runnable / blocked state transitions"},
-          {"owner_proof",
-           "proof of the lock owner before any owner is named"}},
-      "wait observed; the cause stays qualified unless the owner is proven",
-      "no scheduling provider is wired up; naming a lock owner without proof "
-      "would be a fabricated cause"));
 
   return r;
 }

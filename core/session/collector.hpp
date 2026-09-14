@@ -39,6 +39,16 @@ struct CaptureConfig {
   bool reset_frame_history = true;
   bool cpu_samples = true;
   bool memory = true;
+  // Scheduling and I/O evidence from `atrace`. Off by default, and
+  // deliberately so: the trace is **system-wide**, it costs a kernel buffer
+  // and CPU on the device, and it is the one source here that observes
+  // processes other than the target. It is enabled per capture by an
+  // operator who wants it (spec section 13: explain overhead before enabling
+  // a heavier collector).
+  bool scheduling = false;
+  // Kernel buffer per CPU, in kilobytes. Too small and the kernel drops
+  // events, which is reported as a gap rather than absorbed.
+  int scheduling_buffer_kb = 16384;
   // Interval between memory counter reads. Each read is a separate process
   // invocation, so this is also the collector's own overhead cadence.
   std::chrono::milliseconds memory_interval{500};

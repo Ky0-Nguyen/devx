@@ -202,6 +202,16 @@ class AdbCollector final : public session::Collector {
       model::NormalizedTrace& out) override;
 
  private:
+  // Scheduling and I/O evidence for the target's own threads.
+  //
+  // atrace is system-wide, so this needs the app's thread ids to attribute
+  // anything: everything else in the file belongs to other processes and is
+  // counted as out of scope rather than folded into the app's totals.
+  std::int64_t collect_scheduling(const model::DeviceRef& device,
+                                  const session::CaptureConfig& config,
+                                  std::int32_t pid, model::NormalizedTrace& out,
+                                  model::Capability& capability);
+
   std::string adb_path_;
   std::vector<std::string> shell_argv(const std::string& serial,
                                       const std::vector<std::string>& args) const;

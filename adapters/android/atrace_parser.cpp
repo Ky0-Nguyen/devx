@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <map>
+#include <optional>
 #include <sstream>
 
 namespace mpi::android {
@@ -312,6 +314,170 @@ AtraceTrace parse_atrace(const std::string& text) {
         "is unknown; absence of evidence in this trace cannot be relied on");
   }
   return out;
+}
+
+
+AtraceMapping map_atrace_to_trace(const AtraceTrace& trace,
+                                  const std::vector<AppThread>& threads,
+                                  std::int32_t pid,
+                                  const std::string& process_instance_id,
+                                  model::NormalizedTrace& out) {
+  AtraceMapping mapping;
+  const std::string& process_key = process_instance_id;
+
+  const auto app_thread = [&](std::int32_t tid) -> const AppThread* {
+    for (const auto& t : threads) {
+      if (t.tid == tid) return &t;
+    }
+    return nullptr;
+  };
+
+  // Thread identity, so a finding can say *which* thread blocked. The main
+  // thread is the one whose tid equals the pid, which is the platform's own
+  // convention rather than a guess from the name.
+  for (const auto& thread : threads) {
+    model::ThreadInfo info;
+    info.thread_instance_id = "tid=" + std::to_string(thread.tid);
+    info.process_instance_id = process_key;
+    info.tid = thread.tid;
+    info.name = thread.name;
+    info.is_main_ui_thread = thread.tid == pid;
+    bool known = false;
+    for (const auto& existing : out.threads) {
+      if (existing.tid == thread.tid) known = true;
+    }
+    if (!known) out.threads.push_back(std::move(info));
+  }
+
+  // Off-CPU intervals. A switch away from a thread starts one; the next
+  // switch *to* that thread ends it. An interval still open at the end of the
+  // trace has an unknown duration, which stays absent rather than becoming
+  // the rest of the window.
+  struct Pending {
+    model::TimeNs since = 0;
+    ThreadState state = ThreadState::kOther;
+    std::string raw;
+  };
+  std::map<std::int32_t, Pending> off_cpu;
+
+  const auto emit = [&](model::EventCategory category, const std::string& name,
+                        model::TimeNs at, std::optional<model::TimeNs> duration,
+                        std::int32_t tid, json::Value payload) {
+    model::Event e;
+    e.event_id = "atrace-" + std::to_string(out.events.size());
+    e.provider = "atrace";
+    e.clock_domain = "android.boottime.ns";
+    e.timestamp = at;
+    e.duration_ns = duration;
+    e.category = category;
+    e.name = name;
+    e.process_instance_id = process_key;
+    e.thread_instance_id = "tid=" + std::to_string(tid);
+    e.payload = std::move(payload);
+    out.events.push_back(std::move(e));
+    ++mapping.events_emitted;
+  };
+
+  for (const auto& sw : trace.switches) {
+    const auto* leaving = app_thread(sw.prev_tid);
+    const auto* arriving = app_thread(sw.next_tid);
+    if (leaving == nullptr && arriving == nullptr) {
+      ++mapping.foreign_events;
+      continue;
+    }
+    if (leaving != nullptr) {
+      off_cpu[sw.prev_tid] = Pending{sw.timestamp_ns, sw.prev_state,
+                                     sw.prev_state_raw};
+    }
+    if (arriving != nullptr) {
+      const auto it = off_cpu.find(sw.next_tid);
+      if (it == off_cpu.end()) continue;
+      const model::TimeNs duration = sw.timestamp_ns - it->second.since;
+      json::Value payload = json::Value::object();
+      payload.set("state", json::Value::string(to_string(it->second.state)));
+      payload.set("kernel_state", json::Value::string(it->second.raw));
+      payload.set("cpu", json::Value::number(static_cast<double>(sw.cpu)));
+      if (arriving->name.empty() == false) {
+        payload.set("thread_name", json::Value::string(arriving->name));
+      }
+      payload.set("is_main_thread",
+                  json::Value::boolean(sw.next_tid == pid));
+      emit(model::EventCategory::kSchedule, to_string(it->second.state),
+           it->second.since, duration, sw.next_tid, std::move(payload));
+      off_cpu.erase(it);
+    }
+  }
+
+  // Why a thread blocked, which is the only evidence here that a block was
+  // I/O. Without `iowait=1` this stays a schedule event and never becomes an
+  // I/O claim.
+  for (const auto& blocked : trace.blocked) {
+    const auto* thread = app_thread(blocked.tid);
+    if (thread == nullptr) {
+      ++mapping.foreign_events;
+      continue;
+    }
+    json::Value payload = json::Value::object();
+    payload.set("iowait", json::Value::boolean(blocked.iowait));
+    payload.set("kernel_caller", json::Value::string(blocked.caller));
+    payload.set("thread_name", json::Value::string(thread->name));
+    payload.set("is_main_thread", json::Value::boolean(blocked.tid == pid));
+    emit(blocked.iowait ? model::EventCategory::kIo
+                        : model::EventCategory::kSchedule,
+         blocked.iowait ? "blocked_on_io" : "blocked",
+         blocked.timestamp_ns, std::nullopt, blocked.tid, std::move(payload));
+  }
+
+  // Who woke an app thread. A wake by another process is exactly what a
+  // contention claim needs, and it is recorded with the waker's identity
+  // rather than inferred from timing.
+  for (const auto& waking : trace.wakings) {
+    const auto* target = app_thread(waking.target_tid);
+    if (target == nullptr) continue;
+    json::Value payload = json::Value::object();
+    payload.set("waker_tid",
+                json::Value::number(static_cast<double>(waking.waker_tid)));
+    payload.set("waker_name", json::Value::string(waking.waker_comm));
+    payload.set("waker_is_this_app",
+                json::Value::boolean(app_thread(waking.waker_tid) != nullptr));
+    payload.set("is_main_thread",
+                json::Value::boolean(waking.target_tid == pid));
+    emit(model::EventCategory::kSchedule, "woken",
+         waking.timestamp_ns, std::nullopt, waking.target_tid,
+         std::move(payload));
+  }
+
+  // The app's own slices, which name the work a blocked stretch interrupted.
+  // A nameless slice is skipped: it cannot name anything, and inventing a
+  // name would be worse than having none.
+  std::map<std::int32_t, std::vector<Slice>> open_slices;
+  for (const auto& slice : trace.slices) {
+    if (app_thread(slice.tid) == nullptr) continue;
+    if (slice.begin) {
+      if (slice.name.empty()) continue;
+      open_slices[slice.tid].push_back(slice);
+      continue;
+    }
+    auto& stack = open_slices[slice.tid];
+    if (stack.empty()) continue;
+    const auto begin = stack.back();
+    stack.pop_back();
+    json::Value payload = json::Value::object();
+    payload.set("slice", json::Value::string(begin.name));
+    payload.set("is_main_thread", json::Value::boolean(slice.tid == pid));
+    emit(model::EventCategory::kOther, begin.name, begin.timestamp_ns,
+         slice.timestamp_ns - begin.timestamp_ns, slice.tid,
+         std::move(payload));
+  }
+
+  if (trace.first_ns > 0) {
+    if (out.window_start_ns == 0 || trace.first_ns < out.window_start_ns) {
+      out.window_start_ns = trace.first_ns;
+    }
+    out.window_end_ns = std::max(out.window_end_ns, trace.last_ns);
+  }
+
+  return mapping;
 }
 
 }  // namespace mpi::android

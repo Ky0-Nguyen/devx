@@ -91,7 +91,7 @@ MPI_TEST(every_rule_declares_prerequisites_and_a_phase, {"section-10.3"}) {
 
 MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
-  for (const char* id : {"DET-03", "DET-06", "DET-09"}) {
+  for (const char* id : {"DET-06"}) {
     const auto* rec = record_for(r, id);
     MPI_CHECK_MSG(rec != nullptr, std::string("no run record for ") + id);
     MPI_CHECK_MSG(rec->outcome == model::RuleOutcome::kSkipped,
