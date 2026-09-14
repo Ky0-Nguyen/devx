@@ -130,6 +130,37 @@ enum Core {
         call { mpi_session_json(dir, id) }
     }
 
+    /// The project's suppression list. Kept beside the sessions directory so
+    /// the CLI's `--suppressions` and this app point at the same file: a
+    /// suppression only one of them can see is not a project decision.
+    static func suppressionsPath(sessionsDir: String) -> String {
+        sessionsDir + "/suppressions.json"
+    }
+
+    static func suppressions(path: String) -> JSON {
+        call { mpi_suppressions_json(path) }
+    }
+
+    static func addSuppression(path: String, ruleId: String,
+                               fingerprint: String, reason: String,
+                               expiry: String, author: String,
+                               reference: String) -> JSON {
+        call {
+            mpi_add_suppression_json(path, ruleId, fingerprint, reason, expiry,
+                                     author, reference)
+        }
+    }
+
+    static func removeSuppression(path: String, ruleId: String,
+                                  fingerprint: String) -> JSON {
+        call { mpi_remove_suppression_json(path, ruleId, fingerprint) }
+    }
+
+    static func reanalyze(dir: String, id: String,
+                          suppressionsPath: String) -> JSON {
+        call { mpi_reanalyze_session_json(dir, id, suppressionsPath) }
+    }
+
     static func timeline(dir: String, id: String, bins: Int) -> JSON {
         call { mpi_session_timeline_json(dir, id, Int32(bins)) }
     }

@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (157 items, 540 test-case links)
+## Covered (157 items, 554 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -234,6 +234,7 @@ Two cautions on reading this:
 | D18 | `test_json` | `json_bom_is_tolerated` |
 | D18 | `test_json` | `stream_parser_skips_without_materialising` |
 | D18 | `test_json` | `stream_parser_tolerates_a_bom` |
+| D18 | `test_session_lifecycle` | `a_malformed_suppression_file_is_an_error_not_an_empty_list` |
 | D18 | `test_symbols` | `source_map_rejects_wrong_version` |
 | D18 | `test_xml` | `xml_reads_cdata_as_text` |
 | D18 | `test_xml` | `xml_reads_elements_attributes_and_text` |
@@ -394,7 +395,13 @@ Two cautions on reading this:
 | H09 | `test_rules` | `threshold_override_changes_the_verdict` |
 | H10 | `test_eligibility` | `user_override_is_audited_and_never_certifies` |
 | H10 | `test_report` | `suppressed_issues_can_be_omitted_or_kept_with_their_reason` |
+| H10 | `test_rules` | `a_suppression_inside_its_expiry_still_applies` |
+| H10 | `test_rules` | `a_suppression_with_no_expiry_applies_forever` |
+| H10 | `test_rules` | `an_expired_suppression_is_not_applied_and_says_so` |
+| H10 | `test_rules` | `an_unreadable_expiry_keeps_the_suppression_and_reports_it` |
 | H10 | `test_rules` | `suppression_retains_reason_and_expiry` |
+| H10 | `test_session_lifecycle` | `a_suppression_list_round_trips_with_everything_that_audits_it` |
+| H10 | `test_session_lifecycle` | `a_suppression_with_no_reason_is_refused_on_read_and_write` |
 | H11 | `test_compare` | `det08_records_an_undecided_metric_rather_than_passing_it` |
 | H11 | `test_heap` | `det06_says_nothing_about_a_live_object` |
 | H11 | `test_json` | `json_null_is_distinct_from_absent` |
@@ -421,6 +428,13 @@ Two cautions on reading this:
 | H13 | `test_session_lifecycle` | `a_missing_artifact_fails_the_write_rather_than_the_manifest` |
 | H13 | `test_session_lifecycle` | `a_stored_artifact_is_checksummed_and_found_again` |
 | H13 | `test_session_lifecycle` | `a_written_package_reopens_with_no_device` |
+| H14 | `test_rules` | `a_suppression_inside_its_expiry_still_applies` |
+| H14 | `test_rules` | `an_expired_suppression_is_not_applied_and_says_so` |
+| H14 | `test_session_lifecycle` | `a_malformed_suppression_file_is_an_error_not_an_empty_list` |
+| H14 | `test_session_lifecycle` | `a_missing_suppression_file_is_not_an_error` |
+| H14 | `test_session_lifecycle` | `a_suppression_list_round_trips_with_everything_that_audits_it` |
+| H14 | `test_session_lifecycle` | `a_suppression_with_no_reason_is_refused_on_read_and_write` |
+| H14 | `test_session_lifecycle` | `an_empty_fingerprint_suppresses_the_whole_rule` |
 | H14 | `test_timeline` | `a_suppressed_issue_is_not_drawn` |
 | H15 | `test_ingestion` | `mark_synthetic_option_forces_the_label` |
 | H15 | `test_ingestion` | `reads_native_trace_and_keeps_synthetic_label` |
@@ -735,6 +749,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 19
-- test cases declaring at least one id: 420
-- checklist-item links: 540
+- test cases declaring at least one id: 429
+- checklist-item links: 554
 - section-18 coverage: 157/198 (79%)

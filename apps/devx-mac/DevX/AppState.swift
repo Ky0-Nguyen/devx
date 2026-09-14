@@ -91,6 +91,17 @@ final class AppState: ObservableObject {
     @Published var filterThread: String = ""
     @Published var filterProcess: String = ""
     @Published var showSuppressed: Bool = false
+
+    // The project's suppression list, and the fields for adding one. The
+    // reason is mandatory and the UI enforces it before the core has to.
+    @Published var suppressionsDoc: JSON = .null
+    @Published var suppressReason: String = ""
+    @Published var suppressExpiry: String = ""
+    @Published var suppressReference: String = ""
+    /// Whether the open report came from re-analysis rather than from the
+    /// session as recorded. Shown, because a reader needs to know which they
+    /// are looking at.
+    @Published var reanalyzed: Bool = false
     @Published var selectedIssueIndex: Int = 0
     @Published var appFilter: String = ""
     @Published var runningOnly = false
@@ -313,6 +324,95 @@ final class AppState: ObservableObject {
         }) { self.compareDoc = $0 }
     }
 
+    // ---- suppressions ---------------------------------------------------
+    //
+    // A suppression is a project decision, so it goes in a file the project
+    // keeps and the CLI reads too. The session on disk is never rewritten:
+    // the raw trace is immutable, and applying a suppression re-runs the
+    // analysis over it rather than editing what was recorded.
+
+    func loadSuppressions() {
+        let path = Core.suppressionsPath(sessionsDir: sessionsDir)
+        run("Reading suppressions…", { Core.suppressions(path: path) }) {
+            self.suppressionsDoc = $0
+        }
+    }
+
+    var suppressionEntries: [JSON] {
+        suppressionsDoc["suppressions"].array
+    }
+
+    /// Adds a suppression for the selected issue, then re-analyses so the
+    /// effect is visible rather than promised.
+    func suppressSelectedIssue(allFindings: Bool) {
+        guard issues.indices.contains(selectedIssueIndex) else { return }
+        let issue = issues[selectedIssueIndex]
+        let reason = suppressReason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !reason.isEmpty else {
+            lastError = "A suppression needs a reason. One nobody can review "
+                + "is permanent by accident."
+            return
+        }
+        let path = Core.suppressionsPath(sessionsDir: sessionsDir)
+        let ruleId = issue["rule_id"].text
+        // Empty fingerprint means every finding from the rule, which is a
+        // much larger claim -- so it is a separate, deliberate action.
+        let fingerprint = allFindings ? "" : issue["fingerprint"].text
+        let expiry = suppressExpiry.trimmingCharacters(in: .whitespacesAndNewlines)
+        let author = NSFullUserName()
+        let reference = suppressReference
+        run("Suppressing \(ruleId)…", {
+            Core.addSuppression(path: path, ruleId: ruleId,
+                                fingerprint: fingerprint, reason: reason,
+                                expiry: expiry, author: author,
+                                reference: reference)
+        }) { doc in
+            if doc["error"].text.isEmpty {
+                self.suppressionsDoc = doc
+                self.suppressReason = ""
+                self.suppressExpiry = ""
+                self.suppressReference = ""
+                self.reanalyzeSession()
+            }
+        }
+    }
+
+    func removeSuppression(_ entry: JSON) {
+        let path = Core.suppressionsPath(sessionsDir: sessionsDir)
+        let ruleId = entry["rule_id"].text
+        let fingerprint = entry["fingerprint"].text
+        run("Removing the suppression…", {
+            Core.removeSuppression(path: path, ruleId: ruleId,
+                                   fingerprint: fingerprint)
+        }) { doc in
+            if doc["error"].text.isEmpty {
+                self.suppressionsDoc = doc
+                self.reanalyzeSession()
+            }
+        }
+    }
+
+    /// Re-runs the analysis over the open session's stored trace with the
+    /// current suppression list. The session package is not modified.
+    func reanalyzeSession() {
+        guard !selectedSession.isEmpty else { return }
+        let dir = sessionsDir, id = selectedSession
+        let path = Core.suppressionsPath(sessionsDir: sessionsDir)
+        run("Re-analysing \(id)…", {
+            Core.reanalyze(dir: dir, id: id, suppressionsPath: path)
+        }) { doc in
+            if doc["error"].text.isEmpty {
+                self.sessionDoc = doc
+                self.reanalyzed = true
+                self.selectedIssueIndex = 0
+                // The timeline's bands come from the analysis, so a
+                // suppression that hides a finding must hide its band too.
+                self.timelineDoc = .null
+                self.focusedBandId = ""
+            }
+        }
+    }
+
     func loadRules() {
         guard rulesDoc.isNull else { return }
         run("Loading detectors…", { Core.rules() }) { self.rulesDoc = $0 }
@@ -338,6 +438,8 @@ final class AppState: ObservableObject {
         selectedIssueIndex = 0
         timelineDoc = .null
         focusedBandId = ""
+        reanalyzed = false
+        loadSuppressions()
         run("Opening \(id)…", { Core.session(dir: dir, id: id) }) {
             self.sessionDoc = $0
             self.tab = revealIn

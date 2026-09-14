@@ -24,6 +24,11 @@ struct EngineOptions {
     std::string author;
   };
   std::vector<Suppression> suppressions;
+  // The instant suppression expiries are judged against, as ISO-8601 UTC.
+  // Empty means "now". It exists so a test can pin a date, and so a CI run
+  // can reproduce an old analysis exactly rather than having its
+  // suppressions lapse underneath it.
+  std::string evaluated_at;
   // A parsed heap dump, when one was collected. Not owned.
   const heap::HeapGraph* heap_graph = nullptr;
   CancellationToken cancel;

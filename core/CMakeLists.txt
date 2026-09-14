@@ -39,6 +39,7 @@ add_library(mpi_core STATIC
   report/json_report.cpp
   report/markdown_report.cpp
   session/session_store.cpp
+  session/suppressions.cpp
   session/compare.cpp
   session/collector.cpp
   session/live_capture.cpp

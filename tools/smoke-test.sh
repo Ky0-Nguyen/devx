@@ -168,6 +168,32 @@ check "a cross-platform pair exits 4, not 3" 4 "$MPI" compare fixtures/runsets/b
 check_contains "the cross-platform refusal is explained" "cannot be used as a gate" \
   "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-ios-crossplatform.json
 
+echo "== suppressions =="
+# A suppression is a project decision, so the CLI and the desktop app read the
+# same file. The three behaviours that make one auditable are asserted here.
+cat > "$TMP/suppressions.json" <<'SUPP'
+{
+  "schema_version": "2.0",
+  "suppressions": [
+    {"rule_id": "DET-01", "reason": "known third-party surface, TICKET-42",
+     "expiry": "2099-12-31", "author": "smoke-test"},
+    {"rule_id": "DET-02", "reason": "lapsed on purpose", "expiry": "2020-01-01",
+     "author": "smoke-test"},
+    {"rule_id": "DET-04"}
+  ]
+}
+SUPP
+check_contains "a suppression with no reason is refused out loud" "not auditable" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --suppressions "$TMP/suppressions.json"
+check_contains "an expired suppression is NOT applied and says so" "NOT applied because it had expired" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --suppressions "$TMP/suppressions.json"
+check_contains "a live suppression applies with its reason retained" "TICKET-42" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --suppressions "$TMP/suppressions.json"
+check_contains "a suppressed finding stays in the export" "Suppressed" \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --suppressions "$TMP/suppressions.json"
+check "a malformed suppression file is a usage error" 2 \
+  "$MPI" analyze fixtures/traces/positive-frames-js-cpu.mpi.json --suppressions /dev/null
+
 echo "== timeline =="
 # The timeline's whole job is to keep "not measured" apart from "zero" once
 # the data is shaped for drawing, so the legend that says so is asserted, not

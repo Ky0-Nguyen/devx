@@ -19,6 +19,7 @@
 #include "core/rules/engine.hpp"
 #include "core/session/live_capture.hpp"
 #include "core/session/session_store.hpp"
+#include "core/session/suppressions.hpp"
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
@@ -421,5 +422,157 @@ MPI_TEST(delete_refuses_a_directory_that_is_not_the_named_session,
   MPI_CHECK(!std::filesystem::exists(written.package_dir));
   MPI_CHECK_MSG(std::filesystem::exists(plain + "/important.txt"),
                 "the sibling directory is untouched");
+  std::filesystem::remove_all(dir, ec);
+}
+
+// --- the project's suppression list -----------------------------------------
+
+MPI_TEST(a_suppression_with_no_reason_is_refused_on_read_and_write,
+         {"H10", "H14"}) {
+  // The one rule worth refusing on. A suppression nobody can review is
+  // permanent by accident, so it never reaches the engine -- and it is
+  // refused out loud, because one that vanished quietly would look like a
+  // finding that was never suppressed.
+  const auto dir = temp_dir("suppress-reason");
+  const auto path = dir + "/suppressions.json";
+  {
+    std::ofstream f(path);
+    f << R"({"schema_version":"2.0","suppressions":[
+        {"rule_id":"DET-01","reason":"tracked in TICKET-9","author":"a"},
+        {"rule_id":"DET-02"},
+        {"reason":"a reason with no rule"},
+        "not an object"
+      ]})";
+  }
+  session::SuppressionFile file;
+  const auto read = session::read_suppressions(path, file);
+  MPI_CHECK_MSG(read.ok, read.error);
+  MPI_CHECK_EQ(file.entries.size(), std::size_t{1});
+  MPI_CHECK_EQ(read.rejected.size(), std::size_t{3});
+  bool named = false;
+  for (const auto& r : read.rejected) {
+    if (r.find("DET-02") != std::string::npos &&
+        r.find("not auditable") != std::string::npos) {
+      named = true;
+    }
+  }
+  MPI_CHECK(named);
+
+  // And the same rule on the way out.
+  session::SuppressionFile bad;
+  session::SuppressionEntry e;
+  e.rule_id = "DET-03";
+  const auto wrote = session::write_suppressions(path, bad = [&] {
+    session::SuppressionFile f;
+    f.entries.push_back(e);
+    return f;
+  }());
+  MPI_CHECK(!wrote.ok);
+  MPI_CHECK(wrote.error.find("no reason") != std::string::npos);
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+}
+
+MPI_TEST(a_missing_suppression_file_is_not_an_error, {"H14"}) {
+  // A project with no suppressions is the normal case, and the normal case is
+  // not an error. Returning one would make every analysis of a clean project
+  // fail.
+  session::SuppressionFile file;
+  const auto read = session::read_suppressions("/nonexistent/suppressions.json",
+                                               file);
+  MPI_CHECK(read.ok);
+  MPI_CHECK(read.error.empty());
+  MPI_CHECK(file.entries.empty());
+  MPI_CHECK(read.rejected.empty());
+}
+
+MPI_TEST(a_suppression_list_round_trips_with_everything_that_audits_it,
+         {"H10", "H14"}) {
+  const auto dir = temp_dir("suppress-round");
+  const auto path = dir + "/suppressions.json";
+  session::SuppressionFile file;
+  session::SuppressionEntry e;
+  e.rule_id = "DET-04";
+  e.fingerprint = "DET-04-abc";
+  e.reason = "third-party thread, accepted";
+  e.expiry = "2026-12-31";
+  e.author = "someone";
+  e.created_at = "2026-09-15T00:00:00Z";
+  e.reference = "TICKET-7";
+  file.entries.push_back(e);
+  MPI_CHECK(session::write_suppressions(path, file).ok);
+
+  session::SuppressionFile back;
+  MPI_CHECK(session::read_suppressions(path, back).ok);
+  MPI_CHECK_EQ(back.entries.size(), std::size_t{1});
+  if (back.entries.empty()) return;
+  const auto& r = back.entries.front();
+  MPI_CHECK_EQ(r.rule_id, e.rule_id);
+  MPI_CHECK_EQ(r.fingerprint, e.fingerprint);
+  MPI_CHECK_EQ(r.reason, e.reason);
+  MPI_CHECK_EQ(r.expiry, e.expiry);
+  MPI_CHECK_EQ(r.author, e.author);
+  MPI_CHECK_MSG(r.reference == e.reference,
+                "the reference survives: a reason wants somewhere to point");
+  MPI_CHECK_MSG(r.created_at == e.created_at,
+                "and when it was made, which is what dates an expiry");
+
+  // The engine form carries what the report needs to stay auditable.
+  const auto engine = back.to_engine();
+  MPI_CHECK_EQ(engine.size(), std::size_t{1});
+  if (engine.empty()) return;
+  MPI_CHECK_EQ(engine.front().reason, e.reason);
+  MPI_CHECK_EQ(engine.front().expiry, e.expiry);
+  MPI_CHECK_EQ(engine.front().author, e.author);
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+}
+
+MPI_TEST(an_empty_fingerprint_suppresses_the_whole_rule, {"H14"}) {
+  // A much larger claim than suppressing one finding, and the difference has
+  // to survive the file: an entry with no fingerprint covers every finding
+  // the rule produces, now and later.
+  const auto dir = temp_dir("suppress-wide");
+  const auto path = dir + "/suppressions.json";
+  session::SuppressionFile file;
+  session::SuppressionEntry e;
+  e.rule_id = "DET-10";
+  e.reason = "render patterns are reviewed separately";
+  file.entries.push_back(e);
+  MPI_CHECK(session::write_suppressions(path, file).ok);
+  session::SuppressionFile back;
+  MPI_CHECK(session::read_suppressions(path, back).ok);
+  MPI_CHECK_EQ(back.entries.size(), std::size_t{1});
+  if (back.entries.empty()) return;
+  MPI_CHECK(back.entries.front().fingerprint.empty());
+  MPI_CHECK(back.to_engine().front().fingerprint.empty());
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+}
+
+MPI_TEST(a_malformed_suppression_file_is_an_error_not_an_empty_list,
+         {"H14", "D18"}) {
+  // Silently reading a broken file as "nothing is suppressed" would apply no
+  // suppressions and say nothing, which is the same shape of failure as
+  // applying them all.
+  const auto dir = temp_dir("suppress-malformed");
+  const auto path = dir + "/suppressions.json";
+  {
+    std::ofstream f(path);
+    f << "{ this is not json";
+  }
+  session::SuppressionFile file;
+  const auto read = session::read_suppressions(path, file);
+  MPI_CHECK(!read.ok);
+  MPI_CHECK(!read.error.empty());
+
+  {
+    std::ofstream f(path, std::ios::trunc);
+    f << R"({"schema_version":"2.0"})";
+  }
+  const auto no_array = session::read_suppressions(path, file);
+  MPI_CHECK(!no_array.ok);
+  MPI_CHECK(no_array.error.find("suppressions") != std::string::npos);
+  std::error_code ec;
   std::filesystem::remove_all(dir, ec);
 }

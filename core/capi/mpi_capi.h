@@ -78,6 +78,36 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
                       int collect_scheduling, int collect_heap,
                       int timeout_ms);
 
+/* ---- suppressions -------------------------------------------------------
+ *
+ * A project's suppression list, shared with the CLI's `--suppressions`. A
+ * reason is mandatory: an entry without one is refused rather than written,
+ * because a suppression nobody can review is permanent by accident. An entry
+ * whose expiry has passed is reported and NOT applied. */
+
+/* Reads the list at `path`. A missing file is not an error: it yields an
+ * empty list, which is what a project with no suppressions has. */
+char* mpi_suppressions_json(const char* path);
+
+/* Appends one entry and rewrites the file atomically. `reason` must be
+ * non-empty. An empty `fingerprint` suppresses every finding from the rule. */
+char* mpi_add_suppression_json(const char* path, const char* rule_id,
+                               const char* fingerprint, const char* reason,
+                               const char* expiry, const char* author,
+                               const char* reference);
+
+/* Removes the entry matching `rule_id` and `fingerprint` exactly. */
+char* mpi_remove_suppression_json(const char* path, const char* rule_id,
+                                  const char* fingerprint);
+
+/* Re-runs the analysis over a stored session's trace, applying the
+ * suppression list at `suppressions_path` (empty for none). The session on
+ * disk is not modified: the raw trace is immutable, and a re-analysis is a
+ * view of it rather than a replacement. */
+char* mpi_reanalyze_session_json(const char* sessions_dir,
+                                 const char* session_id,
+                                 const char* suppressions_path);
+
 /* Analyses a trace file that is not part of a session package. */
 char* mpi_analyze_trace_json(const char* trace_path);
 

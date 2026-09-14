@@ -9,6 +9,7 @@
 #include "core/report/report.hpp"
 #include "core/rules/engine.hpp"
 #include "core/session/session_store.hpp"
+#include "core/session/suppressions.hpp"
 
 namespace mpi::cli {
 namespace {
@@ -119,6 +120,27 @@ ExitCode cmd_analyze(const Invocation& inv) {
     }
     engine_opts.threshold_overrides.push_back(parsed);
   }
+  // A project's suppression file, shared with the desktop app. Read before
+  // the one-off --suppress flag so a flag can add to a list rather than
+  // replacing it.
+  const std::string suppressions_path = inv.flag("suppressions");
+  if (!suppressions_path.empty()) {
+    session::SuppressionFile file;
+    const auto read = session::read_suppressions(suppressions_path, file);
+    if (!read.ok) {
+      std::cerr << "error: " << read.error << "\n";
+      return ExitCode::kUsage;
+    }
+    for (const auto& r : read.rejected) {
+      // Refused, and said out loud: a suppression that vanished quietly would
+      // look like a finding that was never suppressed.
+      warn("suppression refused -- " + r);
+    }
+    for (auto& s : file.to_engine()) {
+      engine_opts.suppressions.push_back(std::move(s));
+    }
+  }
+
   const std::string suppress = inv.flag("suppress");
   if (!suppress.empty()) {
     const std::string reason = inv.flag("suppress-reason");
