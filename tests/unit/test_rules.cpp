@@ -1442,3 +1442,58 @@ MPI_TEST(a_background_workload_is_never_attributed_to_the_app, {"I06"}) {
     }
   }
 }
+
+MPI_TEST(a_missed_frame_is_never_called_gpu_bound, {"E09"}) {
+  // A slow frame has a short list of plausible causes and the GPU is on it.
+  // This build collects no GPU evidence of any kind, so "GPU-bound" is a
+  // conclusion it cannot reach -- and the finding has to say that rather than
+  // leave the reader to assume the possibility was checked.
+  //
+  // Worth recording why no GPU evidence is collected even though a source
+  // appears to exist: `dumpsys gfxinfo` prints GPU percentiles and a
+  // histogram, and on an app that rendered nothing they read
+  // "50th gpu percentile: 4950ms" -- a sentinel, not a measurement. Parsing
+  // that naively would report a 4.95-second GPU frame. GPU timing is left
+  // uncollected rather than collected wrongly.
+  const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
+  const model::Issue* frame = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-01") { frame = &i; break; }
+  }
+  MPI_CHECK(frame != nullptr);
+  if (frame == nullptr) return;
+
+  MPI_CHECK(frame->cause_status == model::CauseStatus::kUnknown);
+  // The GPU appears as an alternative explanation, never as the cause.
+  bool gpu_as_alternative = false;
+  for (const auto& a : frame->alternative_explanations) {
+    if (a.find("GPU") != std::string::npos) gpu_as_alternative = true;
+  }
+  MPI_CHECK(gpu_as_alternative);
+  // And the absence of GPU evidence is stated, so "not ruled out" is not
+  // mistaken for "ruled out".
+  bool absence_stated = false;
+  for (const auto& m : frame->missing_evidence) {
+    if (m.find("GPU evidence") != std::string::npos) absence_stated = true;
+  }
+  MPI_CHECK_MSG(absence_stated,
+                "the finding says no GPU evidence was collected at all");
+  // Nothing *asserts* a GPU cause. The phrase may appear in a refusal --
+  // saying a GPU-bound symptom cannot be confirmed is the point -- so the
+  // check is on the places a claim lives rather than on the string.
+  for (const auto& i : r.issues) {
+    MPI_CHECK_MSG(i.title.find("GPU") == std::string::npos,
+                  "no finding's title blames the GPU: " + i.title);
+    MPI_CHECK_MSG(i.confidence_basis.find("GPU-bound") == std::string::npos,
+                  "no confidence basis rests on a GPU-bound conclusion");
+    MPI_CHECK_MSG(i.severity_rationale.find("GPU") == std::string::npos,
+                  "no severity is justified by the GPU");
+    for (const auto& m : i.metrics) {
+      MPI_CHECK_MSG(m.name.find("gpu") == std::string::npos,
+                    "no metric claims to measure the GPU: " + m.name);
+    }
+  }
+  const std::string text = r.to_json().dump();
+  MPI_CHECK_MSG(text.find("\"gpu_bound\"") == std::string::npos,
+                "nothing is labelled gpu_bound");
+}

@@ -99,6 +99,41 @@ shell or the app: through a 6 s screen-off the tick cadence never moved from
 ~710 ms and nothing was lost. That exercises a screen-off, not a suspend, so
 D15 stays open.
 
+### The collector changes the workload, measured with paired controls
+
+Spec E18 and I20 ask for this and it is the least comfortable number here.
+`io.pizzahut.hutbot.debug`, idle on `emulator-5554`, CPU read from its own
+`/proc/<pid>/stat` over matched windows:
+
+| Window | App CPU with no capture | With a live capture | Induced |
+|---|---|---|---|
+| 12 s | 650 ms | 2,430 ms | +1,780 ms |
+| 10 s | 440 ms | 2,290 ms | +1,850 ms |
+| 10 s | 450 ms | 2,010 ms | +1,560 ms |
+
+**Why:** `dumpsys` is serviced by the target process. Asking the app for its
+own memory or frame statistics makes the app do the work of answering, so
+observing it costs it CPU -- and that cost lands inside the very process the
+capture is measuring.
+
+**It does not scale with the tick rate.** A 2,500 ms tick (four ticks in ten
+seconds) induced 1,790 ms, about the same as a 700 ms tick (fourteen ticks).
+So most of the cost is per-capture rather than per-tick, and slowing the
+cadence does not buy much back.
+
+**How to read it.** The app here is idle, using 4-6% of one core, so an extra
+1.6-1.9 s is several times its own work -- a ratio that would be far smaller
+on a busy app. The honest statement is the absolute figure: expect on the
+order of 1.5-2 s of induced app CPU per capture on this emulator, and treat a
+CPU measurement taken during a tick-based capture as including the cost of
+being watched.
+
+**It is not subtracted from anything**, and must not be: it is one app on one
+emulator, and subtracting an estimate would turn a known perturbation into an
+invented number. It is reported as a limitation on
+`android.capture.streaming_overhead` instead, next to the host-side wall time
+that figure used to report alone.
+
 ### CPU time against wall time, measured on the same emulator
 
 The distinction spec E11 asks for, and the one every CPU finding is read as

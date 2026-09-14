@@ -287,6 +287,12 @@ void Det01::evaluate(const RuleContext& ctx, RuleOutput& out) const {
         "samples or scheduling evidence on the same clock domain)");
     issue.alternative_explanations.push_back(
         "GPU-side or compositor cost outside this app's CPU work");
+    issue.missing_evidence.push_back(
+        "any GPU evidence at all: no GPU timing or allocation is collected on "
+        "either platform in this build, so a frame that missed because the "
+        "GPU was busy and one that missed because this app's CPU work ran "
+        "long look identical here. A GPU-bound symptom cannot be confirmed or "
+        "ruled out (spec E09)");
     issue.alternative_explanations.push_back(
         "contention from another process or a system service");
     issue.suggested_verification.push_back(

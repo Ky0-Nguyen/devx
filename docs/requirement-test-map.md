@@ -6,8 +6,8 @@ the specification checklist ids it covers, and the framework prints them with
 so a UI behaviour that is tested appears here. Regenerate with
 `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 173 of 198 checklist items have at
-least one automated test.** The remaining 25 are listed below with a stated
+**Coverage of specification section 18: 174 of 198 checklist items have at
+least one automated test.** The remaining 24 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -19,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (173 items, 600 test-case links)
+## Covered (174 items, 601 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -286,6 +286,7 @@ Two cautions on reading this:
 | E04 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
 | E06 | `test_android_collector` | `det09_reports_waits_on_visible_threads_and_excludes_the_rest` |
 | E06 | `test_android_parsers` | `atrace_distinguishes_blocked_from_merely_preempted` |
+| E09 | `test_rules` | `a_missed_frame_is_never_called_gpu_bound` |
 | E10 | `test_android_collector` | `atrace_mapping_keeps_states_apart_and_only_calls_iowait_io` |
 | E10 | `test_android_parsers` | `atrace_distinguishes_blocked_from_merely_preempted` |
 | E10 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
@@ -748,7 +749,7 @@ Two cautions on reading this:
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (25)
+## Not yet covered (24)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -761,10 +762,9 @@ Two cautions on reading this:
 | E05 | DET-04 says in every finding that a sampled share carries no claim about user-visible harm; inducing high CPU with provably unharmed frames needs a device whose frame timing is not the host's |
 | E07 | needs a real React Native capture |
 | E08 | needs a real React Native capture |
-| E09 | GPU evidence is not collected (M5) |
-| E18 | recorder overhead needs paired controlled runs (M4) |
+| E18 | measured with paired controls on an emulator and reported as a limitation on the overhead source (1.5-2 s of induced app CPU per capture); a *test* would need the paired runs to be reproducible in CI, which needs a dedicated device |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
-| F06 | image and GPU allocation accounting has no provider on either platform |
+| F06 | no provider on either platform. `dumpsys gfxinfo` reports GPU frame-time percentiles but no allocation, and on an app that rendered nothing those percentiles read '4950ms' -- a sentinel, not a measurement |
 | F12 | in-process tooling stays in the process total by construction, and the real captures here are of a debug build that contains it; separating it would need a release build to compare against |
 | F15 | endpoint/library ambiguity needs more attribution rules |
 | G02 | the Hermes reader refuses unexpected shapes; a versioned corpus is M3 |
@@ -774,13 +774,13 @@ Two cautions on reading this:
 | G09 | the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them |
 | G12 | Expo's prerequisite is documented in samples/react-native/README.md: this SDK needs no native module, so it loads in Expo Go, and a native SDK would need a development build |
 | G13 | the architecture matrix needs RN builds (M3) |
-| I20 | overhead measurement needs paired controlled runs on hardware (M4) |
+| I20 | the same paired-control measurement; there is no declared overhead target to compare it against, and inventing one would make the comparison meaningless |
 | J12 | signing, packaging and the (empty) license inventory are documentation, in docs/packaging-and-signing.md; no test binary can assert a Developer ID this environment does not have |
 | J17 | App Store app depth needs a reachable device with such an app |
 
 ## Totals
 
 - test binaries: 20
-- test cases declaring at least one id: 459
-- checklist-item links: 600
-- section-18 coverage: 173/198 (87%)
+- test cases declaring at least one id: 460
+- checklist-item links: 601
+- section-18 coverage: 174/198 (88%)
