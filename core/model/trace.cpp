@@ -114,6 +114,9 @@ json::Value Marker::to_json() const {
         interaction.empty() ? json::Value::null() : json::Value::string(interaction));
   v.set("process_instance_id", json::Value::string(process_instance_id));
   v.set("payload", payload);
+  if (!clock_domain.empty()) {
+    v.set("clock_domain", json::Value::string(clock_domain));
+  }
   return v;
 }
 

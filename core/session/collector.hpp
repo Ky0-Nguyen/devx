@@ -165,6 +165,25 @@ class Collector {
     return r;
   }
 
+  // Maps a host instant onto the device clock.
+  //
+  // It exists for producers whose timestamps are not the device's -- the app
+  // SDK stamps markers with the app's own clock -- so the two can be related
+  // by measurement instead of by assumption. Absent when this collector
+  // anchored no device clock, in which case nothing may be mapped and the
+  // rules that need both timelines say so.
+  struct DeviceClock {
+    std::string domain;
+    model::TimeNs at_ns = 0;
+    // Half-width of the pairing, carried so a caller records a mapping with
+    // its precision rather than as an exact offset.
+    model::TimeNs uncertainty_ns = 0;
+  };
+  virtual std::optional<DeviceClock> device_clock_at(
+      std::chrono::steady_clock::time_point /*host_instant*/) const {
+    return std::nullopt;
+  }
+
   virtual bool supports_streaming() const { return false; }
 
   virtual CaptureResult begin(const model::DeviceRef& /*device*/,

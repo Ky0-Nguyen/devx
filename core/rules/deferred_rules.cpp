@@ -64,16 +64,6 @@ std::vector<RulePtr> make_deferred_rules() {
       "no validated I/O provider is wired up yet on either platform"));
 
   r.push_back(std::make_shared<DeferredRule>(
-      "DET-05", "memory", "Memory growth across screen cycles", "M5",
-      std::vector<Prerequisite>{
-          {"lifecycle_checkpoints",
-           "repeated comparable screen mount/unmount checkpoints"},
-          {"memory_counters", "a memory counter series per checkpoint"}},
-      "suspected retention -- never 'a leak' from growth alone, since caches "
-      "and GC timing produce the same shape",
-      "requires the SDK lifecycle markers from M3 plus a memory collector"));
-
-  r.push_back(std::make_shared<DeferredRule>(
       "DET-06", "memory", "Retained-object investigation", "M5",
       std::vector<Prerequisite>{
           {"heap_snapshot", "a heap snapshot with reference paths"},

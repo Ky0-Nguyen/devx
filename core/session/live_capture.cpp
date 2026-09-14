@@ -154,6 +154,11 @@ CaptureResult LiveSession::result() const {
   return result_;
 }
 
+std::shared_ptr<Collector> LiveSession::collector() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return collector_;
+}
+
 void LiveSession::run_loop() {
   auto last_analysis = std::chrono::steady_clock::now() - analysis_interval_;
 

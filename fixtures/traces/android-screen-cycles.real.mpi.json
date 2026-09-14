@@ -1,0 +1,1713 @@
+{
+  "schema_version": "2.0",
+  "session_id": "s-20260914181156-f2a8f31b",
+  "synthetic": false,
+  "synthetic_note": null,
+  "device": {
+    "platform": "android",
+    "device_id": "emulator-5554",
+    "display_name": "sdk_gphone16k_arm64",
+    "model": "sdk_gphone16k_arm64",
+    "os_version": "17",
+    "form": "emulator",
+    "trust": "authorized",
+    "connection": "usb",
+    "provider": "adb 1.0.41 (build.type=user)",
+    "observed_at": "2026-09-14T18:11:57Z",
+    "boot_id": "9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+  },
+  "target": {
+    "application_key": {
+      "platform": "android",
+      "device_id": "emulator-5554",
+      "app_identifier": "io.pizzahut.hutbot.debug",
+      "identifier_kind": "package_name",
+      "android_user_id": null,
+      "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+    },
+    "process_instances": [
+      {
+        "application_key": {
+          "platform": "android",
+          "device_id": "emulator-5554",
+          "app_identifier": "io.pizzahut.hutbot.debug",
+          "identifier_kind": "package_name",
+          "android_user_id": null,
+          "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+        },
+        "pid": 25747,
+        "process_start_time": "1371104",
+        "process_name": "io.pizzahut.hutbot.debug",
+        "uid": 10229,
+        "is_primary": true,
+        "ownership_evidence": "uid_and_process_name",
+        "ownership_note": "uid 10229 matches the installed package uid and the process name is package-owned",
+        "counts_toward_app_totals": true,
+        "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+      }
+    ],
+    "runtime_state": "running",
+    "discovery_scope": "complete_for_provider"
+  },
+  "build": {
+    "schema_version": "2.0",
+    "facts": [
+      {
+        "key": "sdk.version",
+        "value": "0.1.0",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "app.version",
+        "value": "4.2.0",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "build.configuration",
+        "value": "Debug",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "js.engine",
+        "value": "hermes",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "js.bundle_id",
+        "value": "bundle-cycles",
+        "boolean_value": null,
+        "tri_state": "unknown",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      },
+      {
+        "key": "js.__DEV__",
+        "value": "true",
+        "boolean_value": true,
+        "tri_state": "true",
+        "source": "runtime_sdk",
+        "observed_at": "",
+        "basis": "reported by the in-app SDK at handshake"
+      }
+    ],
+    "conflicts": [],
+    "symbol_bindings": []
+  },
+  "capabilities": {
+    "schema_version": "2.0",
+    "capabilities": [
+      {
+        "id": "android.toolchain.adb",
+        "human_name": "Android Platform Tools (adb)",
+        "status": "available",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "`/Users/tan4194/Library/Android/sdk/platform-tools/adb --version` reported 1.0.41",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "probed_only"
+      },
+      {
+        "id": "android.discovery.devices",
+        "human_name": "Android device discovery",
+        "status": "available",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "`adb devices -l` returned 1 device line(s)",
+        "scope": "devices visible to this host's adb server; a device claimed by another adb server or an IDE may not appear",
+        "limitations": [
+          "every discovered Android device is an emulator; discovery is not verified against physical hardware"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.installed_apps",
+        "human_name": "Installed package enumeration",
+        "status": "available",
+        "provider": "adb shell pm",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "`pm list packages -U` returned 260 package(s)",
+        "scope": "packages visible to the shell user for the queried Android user",
+        "limitations": [
+          "installed does not mean running, and does not mean profileable"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.running_processes",
+        "human_name": "Running process enumeration",
+        "status": "available",
+        "provider": "adb shell ps",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "`ps -A -o PID,PPID,USER,NAME` returned 303 parsed row(s)",
+        "scope": "processes visible to the shell user; shell has broader visibility than an ordinary app SDK would",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.discovery.process_mapping",
+        "human_name": "Process start-time / identity resolution",
+        "status": "available",
+        "provider": "adb shell /proc",
+        "provider_version": "1.0.41",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "/proc/self/stat parsed; field 22 (starttime) is readable",
+        "scope": "start time lets a process instance be distinguished across PID reuse and device reboot",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.profileable",
+        "human_name": "Permission to profile a selected app",
+        "status": "unknown",
+        "provider": "adb",
+        "provider_version": "1.0.41",
+        "prerequisites": [
+          "the target APK declares <profileable android:shell=\"true\"/> or is debuggable, or the device runs a userdebug/eng build"
+        ],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "not determinable at the device level: it depends on the selected package's manifest (<profileable> / android:debuggable) and the device build type",
+        "scope": "must be re-probed per selected package during preflight",
+        "limitations": [],
+        "recovery_action": "add <profileable android:shell=\"true\"/> to the target's manifest and reinstall",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.toolchain.xcrun",
+        "human_name": "Xcode command-line tools",
+        "status": "available",
+        "provider": "xcrun",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "xcode-select -p => /Applications/Xcode.app/Contents/Developer; devicectl 518.33; xctrace version 16.0 (17F113)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "probed_only"
+      },
+      {
+        "id": "ios.discovery.devices",
+        "human_name": "iOS device discovery",
+        "status": "available",
+        "provider": "devicectl + simctl",
+        "provider_version": "518.33",
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "`devicectl list devices --json-output` reported 2 physical device(s) (0 reachable); `simctl list devices --json` reported 23 available simulator(s) (1 booted)",
+        "scope": "devices paired with this host, plus local simulators. Simulators are reported separately and are never treated as physical devices.",
+        "limitations": [
+          "verified against simulators only: no physical iOS device was reachable at probe time",
+          "2 physical device(s) are paired but unreachable (tunnelState is not connected); they are reported as offline, not as absent"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "ios.discovery.installed_apps",
+        "human_name": "Installed app enumeration (physical device)",
+        "status": "unknown",
+        "provider": "devicectl device info apps",
+        "provider_version": "518.33",
+        "prerequisites": [
+          "a reachable, paired physical device with Developer Mode enabled",
+          "Developer Disk Image services mounted (ddiServicesAvailable = true)"
+        ],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "every paired physical device is unreachable (connectionProperties.tunnelState != connected)",
+        "scope": "",
+        "limitations": [],
+        "recovery_action": "connect and unlock a trusted iPhone or iPad with Developer Mode enabled, then re-run discovery",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.discovery.running_processes",
+        "human_name": "Running process enumeration (physical device)",
+        "status": "unknown",
+        "provider": "devicectl device info processes",
+        "provider_version": "518.33",
+        "prerequisites": [
+          "a reachable physical device with DDI services"
+        ],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "no reachable physical iOS device; not probed",
+        "scope": "",
+        "limitations": [
+          "iOS does not expose a general foreground/suspended signal, so even when this works the runtime state of an app is reported as running or unknown -- never guessed as suspended"
+        ],
+        "recovery_action": "connect and unlock a trusted device",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.discovery.simulator_apps",
+        "human_name": "Installed and running app enumeration (simulator)",
+        "status": "available",
+        "provider": "simctl",
+        "provider_version": null,
+        "prerequisites": [
+          "a booted iOS simulator",
+          "`plutil` to convert simctl's NeXTSTEP plist output to JSON"
+        ],
+        "observed_at": "2026-09-14T18:11:56Z",
+        "evidence": "simulator 456FA0D8-48C1-4BEC-B087-50E8A046EA5D: 29 app(s) listed, 5 with a launchd-attributed running process",
+        "scope": "simulator only. Simulator timing is never comparable to a physical device and is kept in a separate baseline (spec J18).",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "ios.capture.attach",
+        "human_name": "Permission to attach a profiler to a selected app",
+        "status": "unknown",
+        "provider": "xctrace",
+        "provider_version": "xctrace version 16.0 (17F113)",
+        "prerequisites": [
+          "the app is signed with a development profile by this developer, or carries get-task-allow / the debugger entitlement",
+          "a reachable device with Developer Mode enabled"
+        ],
+        "observed_at": "2026-09-14T18:11:57Z",
+        "evidence": "not determinable at the device level: it depends on the selected app's code signature and entitlements. It is re-probed per app during preflight.",
+        "scope": "an app the developer builds and signs. A third-party App Store app generally cannot be deeply attached, and this tool does not attempt to bypass that.",
+        "limitations": [
+          "no jailbreak, private API, or entitlement bypass is used or offered"
+        ],
+        "recovery_action": "build and install the target from Xcode with a development signing identity, then retry",
+        "tested": "not_tested"
+      },
+      {
+        "id": "ios.capture.live_recording",
+        "human_name": "Live trace capture from a physical iOS device",
+        "status": "unknown",
+        "provider": "xctrace",
+        "provider_version": "xctrace version 16.0 (17F113)",
+        "prerequisites": [
+          "a reachable physical device",
+          "an attachable, developer-signed app"
+        ],
+        "observed_at": "2026-09-14T18:11:57Z",
+        "evidence": "xctrace version 16.0 (17F113) is installed, but live capture has NOT been exercised against a physical device in this environment",
+        "scope": "",
+        "limitations": [
+          "UNVERIFIED: no physical iOS device was reachable during implementation, so the live capture path is implemented but not demonstrated. This blocks the M2 gate for iOS."
+        ],
+        "recovery_action": "connect a trusted physical iPhone or iPad and run `mpi preflight` to convert this from unknown to a measured result",
+        "tested": "not_tested"
+      },
+      {
+        "id": "android.capture.frames",
+        "human_name": "Frame timing",
+        "status": "limited",
+        "provider": "dumpsys gfxinfo",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:12:24Z",
+        "evidence": "streamed over 53 tick(s): 0 frame record(s)",
+        "scope": "collected in increments of 400 ms",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.memory",
+        "human_name": "Process memory counters",
+        "status": "available",
+        "provider": "dumpsys meminfo",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:12:24Z",
+        "evidence": "streamed over 53 tick(s): 265 counter point(s)",
+        "scope": "collected in increments of 400 ms",
+        "limitations": [],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "android.capture.streaming_overhead",
+        "human_name": "Collector overhead while streaming",
+        "status": "available",
+        "provider": "mpi collector",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "2026-09-14T18:12:24Z",
+        "evidence": "53 tick(s) costing 14049 ms of device interaction in total",
+        "scope": "",
+        "limitations": [
+          "each tick spawns processes on the device; a shorter tick interval means fresher numbers and more overhead",
+          "this is the collector's cost, not the app's, and must not be subtracted from the app's own measurements"
+        ],
+        "recovery_action": "",
+        "tested": "verified_on_simulator_or_emulator"
+      },
+      {
+        "id": "app.sdk.markers",
+        "human_name": "In-app SDK markers",
+        "status": "available",
+        "provider": "mpi app SDK",
+        "provider_version": null,
+        "prerequisites": [],
+        "observed_at": "",
+        "evidence": "SDK 0.1.0 sent 10 marker(s)",
+        "scope": "",
+        "limitations": [
+          "markers are the app's own account of itself, on the app's clock; they are not corroborated by the platform"
+        ],
+        "recovery_action": "",
+        "tested": "probed_only"
+      }
+    ]
+  },
+  "requested_measurement_mode": "diagnostic",
+  "clock_domains": [
+    {
+      "id": "android.boottime.ns",
+      "base": "monotonic",
+      "provider": "android.kernel.boottime",
+      "monotonic": true
+    },
+    {
+      "id": "app.performance.now.ns",
+      "base": "monotonic",
+      "provider": "app SDK",
+      "monotonic": true
+    }
+  ],
+  "clock_mappings": [
+    {
+      "from_domain": "host.steady.ns",
+      "to_domain": "android.boottime.ns",
+      "offset_ns": 17132130000000,
+      "uncertainty_ns": 10000000,
+      "method": "single read of /proc/uptime over adb, paired with the host steady clock; later instants are extrapolated from the host",
+      "measured": true
+    },
+    {
+      "from_domain": "app.performance.now.ns",
+      "to_domain": "android.boottime.ns",
+      "offset_ns": 17132841433124,
+      "uncertainty_ns": 11000000,
+      "method": "the app's clock reading in its handshake, paired with the device clock the collector anchored at capture start; the half-width covers the request latency and the anchor's own resolution",
+      "measured": true
+    }
+  ],
+  "primary_clock_domain": "android.boottime.ns",
+  "window_start_ns": 17132260599333,
+  "window_end_ns": 17154279516375,
+  "duration_ns": 22018917042,
+  "threads": [],
+  "counts": {
+    "events": 0,
+    "frames": 0,
+    "cpu_samples": 0,
+    "js_tasks": 0,
+    "markers": 10,
+    "counters": 5
+  },
+  "refresh_intervals": [],
+  "coverage": [
+    {
+      "collector": "dumpsys gfxinfo",
+      "window_start_ns": 17132260599333,
+      "window_end_ns": 17154279516375,
+      "event_count": 0,
+      "covered_ns": 0,
+      "covered_fraction": 0,
+      "gaps": [
+        {
+          "collector": "dumpsys gfxinfo",
+          "start_ns": 17132260599333,
+          "end_ns": 17154279516375,
+          "duration_ns": 22018917042,
+          "reason": "no_frames_were_reported",
+          "dropped_event_count": null
+        }
+      ]
+    },
+    {
+      "collector": "dumpsys meminfo",
+      "window_start_ns": 17132260599333,
+      "window_end_ns": 17154279516375,
+      "event_count": 265,
+      "covered_ns": 22018917042,
+      "covered_fraction": 1,
+      "gaps": []
+    }
+  ],
+  "dropped_events_by_collector": {},
+  "ingestion_warnings": [],
+  "partial": false,
+  "partial_reasons": [],
+  "events": [],
+  "frames": [],
+  "js_tasks": [],
+  "markers": [
+    {
+      "event_id": "sdk-0",
+      "timestamp_ns": 61299167,
+      "duration_ns": null,
+      "kind": "screen_mount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 1
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-1",
+      "timestamp_ns": 1463381542,
+      "duration_ns": null,
+      "kind": "screen_unmount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 2
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-2",
+      "timestamp_ns": 2167677125,
+      "duration_ns": null,
+      "kind": "screen_mount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 3
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-3",
+      "timestamp_ns": 3568634500,
+      "duration_ns": null,
+      "kind": "screen_unmount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 4
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-4",
+      "timestamp_ns": 4276060333,
+      "duration_ns": null,
+      "kind": "screen_mount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 5
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-5",
+      "timestamp_ns": 5676227167,
+      "duration_ns": null,
+      "kind": "screen_unmount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 6
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-6",
+      "timestamp_ns": 6378289625,
+      "duration_ns": null,
+      "kind": "screen_mount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 7
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-7",
+      "timestamp_ns": 7778812667,
+      "duration_ns": null,
+      "kind": "screen_unmount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 8
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-8",
+      "timestamp_ns": 8485640500,
+      "duration_ns": null,
+      "kind": "screen_mount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 9
+      },
+      "clock_domain": "app.performance.now.ns"
+    },
+    {
+      "event_id": "sdk-9",
+      "timestamp_ns": 9887687292,
+      "duration_ns": null,
+      "kind": "screen_unmount",
+      "screen": "ProductList",
+      "interaction": null,
+      "process_instance_id": "",
+      "payload": {
+        "sdk_sequence": 10
+      },
+      "clock_domain": "app.performance.now.ns"
+    }
+  ],
+  "cpu_samples": [],
+  "counters": [
+    {
+      "name": "memory.rss_total_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "rss",
+      "points": [
+        [
+          17132260599333,
+          920993792
+        ],
+        [
+          17132684392750,
+          920240128
+        ],
+        [
+          17133112089541,
+          920322048
+        ],
+        [
+          17133532895166,
+          920256512
+        ],
+        [
+          17133959303291,
+          920256512
+        ],
+        [
+          17134636938416,
+          920403968
+        ],
+        [
+          17134895381625,
+          920322048
+        ],
+        [
+          17135303996500,
+          920305664
+        ],
+        [
+          17135705295833,
+          920272896
+        ],
+        [
+          17136160641916,
+          920338432
+        ],
+        [
+          17136571309375,
+          920240128
+        ],
+        [
+          17136985602958,
+          920240128
+        ],
+        [
+          17137412279833,
+          920240128
+        ],
+        [
+          17138002786958,
+          920272896
+        ],
+        [
+          17138403506250,
+          920240128
+        ],
+        [
+          17138832151625,
+          920256512
+        ],
+        [
+          17139230094500,
+          920289280
+        ],
+        [
+          17139653020333,
+          920240128
+        ],
+        [
+          17140072578791,
+          920305664
+        ],
+        [
+          17140547622916,
+          920223744
+        ],
+        [
+          17140919119500,
+          920223744
+        ],
+        [
+          17141309639166,
+          920289280
+        ],
+        [
+          17141749243625,
+          920240128
+        ],
+        [
+          17142182216875,
+          920289280
+        ],
+        [
+          17142571220000,
+          920223744
+        ],
+        [
+          17143025499625,
+          920223744
+        ],
+        [
+          17143376522750,
+          920223744
+        ],
+        [
+          17143823842666,
+          920256512
+        ],
+        [
+          17144236501958,
+          920387584
+        ],
+        [
+          17144663483583,
+          920240128
+        ],
+        [
+          17145066429916,
+          920305664
+        ],
+        [
+          17145478415875,
+          920223744
+        ],
+        [
+          17145898379625,
+          920240128
+        ],
+        [
+          17146298664750,
+          920289280
+        ],
+        [
+          17146740162708,
+          920240128
+        ],
+        [
+          17147172249083,
+          920289280
+        ],
+        [
+          17147559300166,
+          920223744
+        ],
+        [
+          17147984223208,
+          920223744
+        ],
+        [
+          17148384583750,
+          920223744
+        ],
+        [
+          17148817795708,
+          920240128
+        ],
+        [
+          17149253029541,
+          920289280
+        ],
+        [
+          17149655053083,
+          920256512
+        ],
+        [
+          17150098399166,
+          920322048
+        ],
+        [
+          17150513231750,
+          920223744
+        ],
+        [
+          17150908872416,
+          920240128
+        ],
+        [
+          17151333295916,
+          920305664
+        ],
+        [
+          17151725323083,
+          920240128
+        ],
+        [
+          17152154103500,
+          920289280
+        ],
+        [
+          17152609532166,
+          920240128
+        ],
+        [
+          17152997306458,
+          920223744
+        ],
+        [
+          17153399617666,
+          920223744
+        ],
+        [
+          17153837933750,
+          920256512
+        ],
+        [
+          17154279516375,
+          920338432
+        ]
+      ]
+    },
+    {
+      "name": "memory.pss_total_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "pss",
+      "points": [
+        [
+          17132260599333,
+          776608768
+        ],
+        [
+          17132684392750,
+          775855104
+        ],
+        [
+          17133112089541,
+          775927808
+        ],
+        [
+          17133532895166,
+          775861248
+        ],
+        [
+          17133959303291,
+          775861248
+        ],
+        [
+          17134636938416,
+          776009728
+        ],
+        [
+          17134895381625,
+          775926784
+        ],
+        [
+          17135303996500,
+          775917568
+        ],
+        [
+          17135705295833,
+          775878656
+        ],
+        [
+          17136160641916,
+          775943168
+        ],
+        [
+          17136571309375,
+          775844864
+        ],
+        [
+          17136985602958,
+          775844864
+        ],
+        [
+          17137412279833,
+          775853056
+        ],
+        [
+          17138002786958,
+          775878656
+        ],
+        [
+          17138403506250,
+          775845888
+        ],
+        [
+          17138832151625,
+          775871488
+        ],
+        [
+          17139230094500,
+          775904256
+        ],
+        [
+          17139653020333,
+          775856128
+        ],
+        [
+          17140072578791,
+          775921664
+        ],
+        [
+          17140547622916,
+          775839744
+        ],
+        [
+          17140919119500,
+          775839744
+        ],
+        [
+          17141309639166,
+          775904256
+        ],
+        [
+          17141749243625,
+          775855104
+        ],
+        [
+          17142182216875,
+          775904256
+        ],
+        [
+          17142571220000,
+          775838720
+        ],
+        [
+          17143025499625,
+          775838720
+        ],
+        [
+          17143376522750,
+          775838720
+        ],
+        [
+          17143823842666,
+          775871488
+        ],
+        [
+          17144236501958,
+          776002560
+        ],
+        [
+          17144663483583,
+          775855104
+        ],
+        [
+          17145066429916,
+          775920640
+        ],
+        [
+          17145478415875,
+          775838720
+        ],
+        [
+          17145898379625,
+          775856128
+        ],
+        [
+          17146298664750,
+          775905280
+        ],
+        [
+          17146740162708,
+          775855104
+        ],
+        [
+          17147172249083,
+          775904256
+        ],
+        [
+          17147559300166,
+          775838720
+        ],
+        [
+          17147984223208,
+          775838720
+        ],
+        [
+          17148384583750,
+          775838720
+        ],
+        [
+          17148817795708,
+          775855104
+        ],
+        [
+          17149253029541,
+          775904256
+        ],
+        [
+          17149655053083,
+          775871488
+        ],
+        [
+          17150098399166,
+          775937024
+        ],
+        [
+          17150513231750,
+          775839744
+        ],
+        [
+          17150908872416,
+          775856128
+        ],
+        [
+          17151333295916,
+          775920640
+        ],
+        [
+          17151725323083,
+          775855104
+        ],
+        [
+          17152154103500,
+          775904256
+        ],
+        [
+          17152609532166,
+          775855104
+        ],
+        [
+          17152997306458,
+          775838720
+        ],
+        [
+          17153399617666,
+          775838720
+        ],
+        [
+          17153837933750,
+          775871488
+        ],
+        [
+          17154279516375,
+          775953408
+        ]
+      ]
+    },
+    {
+      "name": "memory.private_dirty_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "private_dirty",
+      "points": [
+        [
+          17132260599333,
+          627326976
+        ],
+        [
+          17132684392750,
+          626589696
+        ],
+        [
+          17133112089541,
+          626671616
+        ],
+        [
+          17133532895166,
+          626606080
+        ],
+        [
+          17133959303291,
+          626606080
+        ],
+        [
+          17134636938416,
+          626753536
+        ],
+        [
+          17134895381625,
+          626671616
+        ],
+        [
+          17135303996500,
+          626655232
+        ],
+        [
+          17135705295833,
+          626622464
+        ],
+        [
+          17136160641916,
+          626688000
+        ],
+        [
+          17136571309375,
+          626589696
+        ],
+        [
+          17136985602958,
+          626589696
+        ],
+        [
+          17137412279833,
+          626573312
+        ],
+        [
+          17138002786958,
+          626622464
+        ],
+        [
+          17138403506250,
+          626589696
+        ],
+        [
+          17138832151625,
+          626606080
+        ],
+        [
+          17139230094500,
+          626638848
+        ],
+        [
+          17139653020333,
+          626589696
+        ],
+        [
+          17140072578791,
+          626655232
+        ],
+        [
+          17140547622916,
+          626573312
+        ],
+        [
+          17140919119500,
+          626573312
+        ],
+        [
+          17141309639166,
+          626655232
+        ],
+        [
+          17141749243625,
+          626606080
+        ],
+        [
+          17142182216875,
+          626638848
+        ],
+        [
+          17142571220000,
+          626573312
+        ],
+        [
+          17143025499625,
+          626573312
+        ],
+        [
+          17143376522750,
+          626589696
+        ],
+        [
+          17143823842666,
+          626606080
+        ],
+        [
+          17144236501958,
+          626737152
+        ],
+        [
+          17144663483583,
+          626589696
+        ],
+        [
+          17145066429916,
+          626655232
+        ],
+        [
+          17145478415875,
+          626573312
+        ],
+        [
+          17145898379625,
+          626589696
+        ],
+        [
+          17146298664750,
+          626638848
+        ],
+        [
+          17146740162708,
+          626589696
+        ],
+        [
+          17147172249083,
+          626638848
+        ],
+        [
+          17147559300166,
+          626573312
+        ],
+        [
+          17147984223208,
+          626573312
+        ],
+        [
+          17148384583750,
+          626556928
+        ],
+        [
+          17148817795708,
+          626589696
+        ],
+        [
+          17149253029541,
+          626638848
+        ],
+        [
+          17149655053083,
+          626606080
+        ],
+        [
+          17150098399166,
+          626671616
+        ],
+        [
+          17150513231750,
+          626573312
+        ],
+        [
+          17150908872416,
+          626589696
+        ],
+        [
+          17151333295916,
+          626655232
+        ],
+        [
+          17151725323083,
+          626589696
+        ],
+        [
+          17152154103500,
+          626638848
+        ],
+        [
+          17152609532166,
+          626589696
+        ],
+        [
+          17152997306458,
+          626573312
+        ],
+        [
+          17153399617666,
+          626573312
+        ],
+        [
+          17153837933750,
+          626589696
+        ],
+        [
+          17154279516375,
+          626688000
+        ]
+      ]
+    },
+    {
+      "name": "memory.native_heap_rss_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "native_heap",
+      "points": [
+        [
+          17132260599333,
+          474349568
+        ],
+        [
+          17132684392750,
+          474349568
+        ],
+        [
+          17133112089541,
+          474349568
+        ],
+        [
+          17133532895166,
+          474349568
+        ],
+        [
+          17133959303291,
+          474349568
+        ],
+        [
+          17134636938416,
+          474349568
+        ],
+        [
+          17134895381625,
+          474349568
+        ],
+        [
+          17135303996500,
+          474349568
+        ],
+        [
+          17135705295833,
+          474349568
+        ],
+        [
+          17136160641916,
+          474349568
+        ],
+        [
+          17136571309375,
+          474349568
+        ],
+        [
+          17136985602958,
+          474349568
+        ],
+        [
+          17137412279833,
+          474349568
+        ],
+        [
+          17138002786958,
+          474349568
+        ],
+        [
+          17138403506250,
+          474349568
+        ],
+        [
+          17138832151625,
+          474349568
+        ],
+        [
+          17139230094500,
+          474349568
+        ],
+        [
+          17139653020333,
+          474349568
+        ],
+        [
+          17140072578791,
+          474349568
+        ],
+        [
+          17140547622916,
+          474349568
+        ],
+        [
+          17140919119500,
+          474349568
+        ],
+        [
+          17141309639166,
+          474349568
+        ],
+        [
+          17141749243625,
+          474349568
+        ],
+        [
+          17142182216875,
+          474349568
+        ],
+        [
+          17142571220000,
+          474349568
+        ],
+        [
+          17143025499625,
+          474349568
+        ],
+        [
+          17143376522750,
+          474349568
+        ],
+        [
+          17143823842666,
+          474349568
+        ],
+        [
+          17144236501958,
+          474349568
+        ],
+        [
+          17144663483583,
+          474349568
+        ],
+        [
+          17145066429916,
+          474349568
+        ],
+        [
+          17145478415875,
+          474349568
+        ],
+        [
+          17145898379625,
+          474349568
+        ],
+        [
+          17146298664750,
+          474349568
+        ],
+        [
+          17146740162708,
+          474349568
+        ],
+        [
+          17147172249083,
+          474349568
+        ],
+        [
+          17147559300166,
+          474349568
+        ],
+        [
+          17147984223208,
+          474349568
+        ],
+        [
+          17148384583750,
+          474349568
+        ],
+        [
+          17148817795708,
+          474349568
+        ],
+        [
+          17149253029541,
+          474349568
+        ],
+        [
+          17149655053083,
+          474349568
+        ],
+        [
+          17150098399166,
+          474349568
+        ],
+        [
+          17150513231750,
+          474349568
+        ],
+        [
+          17150908872416,
+          474349568
+        ],
+        [
+          17151333295916,
+          474349568
+        ],
+        [
+          17151725323083,
+          474349568
+        ],
+        [
+          17152154103500,
+          474349568
+        ],
+        [
+          17152609532166,
+          474349568
+        ],
+        [
+          17152997306458,
+          474349568
+        ],
+        [
+          17153399617666,
+          474349568
+        ],
+        [
+          17153837933750,
+          474349568
+        ],
+        [
+          17154279516375,
+          474349568
+        ]
+      ]
+    },
+    {
+      "name": "memory.dalvik_heap_rss_bytes",
+      "unit": "bytes",
+      "provider": "dumpsys meminfo",
+      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "family": "dalvik_heap",
+      "points": [
+        [
+          17132260599333,
+          13942784
+        ],
+        [
+          17132684392750,
+          13189120
+        ],
+        [
+          17133112089541,
+          13254656
+        ],
+        [
+          17133532895166,
+          13189120
+        ],
+        [
+          17133959303291,
+          13189120
+        ],
+        [
+          17134636938416,
+          13336576
+        ],
+        [
+          17134895381625,
+          13254656
+        ],
+        [
+          17135303996500,
+          13238272
+        ],
+        [
+          17135705295833,
+          13205504
+        ],
+        [
+          17136160641916,
+          13271040
+        ],
+        [
+          17136571309375,
+          13172736
+        ],
+        [
+          17136985602958,
+          13172736
+        ],
+        [
+          17137412279833,
+          13172736
+        ],
+        [
+          17138002786958,
+          13205504
+        ],
+        [
+          17138403506250,
+          13172736
+        ],
+        [
+          17138832151625,
+          13189120
+        ],
+        [
+          17139230094500,
+          13221888
+        ],
+        [
+          17139653020333,
+          13172736
+        ],
+        [
+          17140072578791,
+          13238272
+        ],
+        [
+          17140547622916,
+          13156352
+        ],
+        [
+          17140919119500,
+          13156352
+        ],
+        [
+          17141309639166,
+          13221888
+        ],
+        [
+          17141749243625,
+          13172736
+        ],
+        [
+          17142182216875,
+          13221888
+        ],
+        [
+          17142571220000,
+          13156352
+        ],
+        [
+          17143025499625,
+          13156352
+        ],
+        [
+          17143376522750,
+          13156352
+        ],
+        [
+          17143823842666,
+          13189120
+        ],
+        [
+          17144236501958,
+          13320192
+        ],
+        [
+          17144663483583,
+          13172736
+        ],
+        [
+          17145066429916,
+          13238272
+        ],
+        [
+          17145478415875,
+          13156352
+        ],
+        [
+          17145898379625,
+          13172736
+        ],
+        [
+          17146298664750,
+          13221888
+        ],
+        [
+          17146740162708,
+          13172736
+        ],
+        [
+          17147172249083,
+          13221888
+        ],
+        [
+          17147559300166,
+          13156352
+        ],
+        [
+          17147984223208,
+          13156352
+        ],
+        [
+          17148384583750,
+          13156352
+        ],
+        [
+          17148817795708,
+          13172736
+        ],
+        [
+          17149253029541,
+          13221888
+        ],
+        [
+          17149655053083,
+          13189120
+        ],
+        [
+          17150098399166,
+          13254656
+        ],
+        [
+          17150513231750,
+          13156352
+        ],
+        [
+          17150908872416,
+          13172736
+        ],
+        [
+          17151333295916,
+          13238272
+        ],
+        [
+          17151725323083,
+          13172736
+        ],
+        [
+          17152154103500,
+          13221888
+        ],
+        [
+          17152609532166,
+          13172736
+        ],
+        [
+          17152997306458,
+          13156352
+        ],
+        [
+          17153399617666,
+          13156352
+        ],
+        [
+          17153837933750,
+          13189120
+        ],
+        [
+          17154279516375,
+          13271040
+        ]
+      ]
+    }
+  ]
+}

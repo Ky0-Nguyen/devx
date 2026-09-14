@@ -106,6 +106,12 @@ class LiveSession {
   model::NormalizedTrace take_trace();
   CaptureResult result() const;
 
+  // The collector this session is driving, so a caller can ask it something
+  // only it knows -- the device clock it anchored, for instance. Held as a
+  // shared_ptr for the session's lifetime, so this stays valid as long as the
+  // session does.
+  std::shared_ptr<Collector> collector() const;
+
   // How often the preliminary analysis is recomputed. Analysis over a growing
   // trace is not free, so it runs less often than the collector ticks.
   void set_analysis_interval(std::chrono::milliseconds v) {

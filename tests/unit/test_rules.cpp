@@ -91,7 +91,7 @@ MPI_TEST(every_rule_declares_prerequisites_and_a_phase, {"section-10.3"}) {
 
 MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
-  for (const char* id : {"DET-03", "DET-05", "DET-06",
+  for (const char* id : {"DET-03", "DET-06",
                          "DET-09", "DET-10", "DET-11"}) {
     const auto* rec = record_for(r, id);
     MPI_CHECK_MSG(rec != nullptr, std::string("no run record for ") + id);
@@ -705,4 +705,156 @@ MPI_TEST(det07_says_a_capture_without_a_launch_has_no_startup, {"DET-07", "H05"}
   // A budget alone is not evidence: an app that was already running has no
   // startup in the capture at all.
   MPI_CHECK(contains(rec->skipped_reasons, "no startup interval was recorded"));
+}
+
+
+// --- DET-05, memory growth across screen cycles ------------------------------
+
+MPI_TEST(det05_reports_growth_as_suspected_and_never_as_a_leak,
+         {"DET-05", "F01", "F03", "F04"}) {
+  const auto r = run(load("traces/positive-memory-growth.mpi.json"));
+  const model::Issue* found = nullptr;
+  for (const auto& i : r.issues) {
+    if (i.rule_id == "DET-05") { found = &i; break; }
+  }
+  MPI_CHECK(found != nullptr);
+  if (found == nullptr) return;
+
+  // The spec caps this rule at suspected retention. The growth is measured;
+  // that it *is* retention is not.
+  MPI_CHECK(found->detection_status == model::DetectionStatus::kSuspected);
+  MPI_CHECK(found->cause_status == model::CauseStatus::kUnknown);
+  // Severity is capped so an inferred finding cannot outrank a measured one.
+  MPI_CHECK(found->severity != model::Severity::kHigh);
+  // The word this rule must never reach for.
+  MPI_CHECK(found->title.find("leak") == std::string::npos);
+  MPI_CHECK(found->confidence_basis.find("not measured") != std::string::npos);
+
+  // Every innocent explanation for the same shape travels with the finding.
+  MPI_CHECK(contains(found->alternative_explanations, "cache filling up"));
+  MPI_CHECK(contains(found->alternative_explanations, "not been collected yet"));
+  MPI_CHECK(contains(found->alternative_explanations, "allocator holding freed pages"));
+  MPI_CHECK(contains(found->missing_evidence, "reference paths"));
+  MPI_CHECK(contains(found->missing_evidence, "forced garbage collection"));
+
+  // The screen came from a marker, and the interval sits on the capture's
+  // timeline rather than the app's.
+  MPI_CHECK_EQ(found->screen, std::string("ProductList"));
+  MPI_CHECK(found->start_ns > 0);
+  MPI_CHECK(found->end_ns > found->start_ns);
+  // One evidence reference per visit, each naming its reading.
+  MPI_CHECK(found->evidence.size() >= 3);
+}
+
+MPI_TEST(det05_never_sums_memory_families_and_says_so, {"DET-05", "F08", "section-8"}) {
+  const auto r = run(load("traces/positive-memory-growth.mpi.json"));
+  std::size_t det05_issues = 0;
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-05") continue;
+    ++det05_issues;
+    MPI_CHECK_EQ(i.metrics.size(), std::size_t{1});
+    if (i.metrics.empty()) continue;
+    MPI_CHECK(contains(i.metrics.front().limitations, "never summed with another"));
+    // The mapping's own precision is carried, because the boundaries were
+    // translated from the app's clock.
+    MPI_CHECK(contains(i.metrics.front().limitations,
+                       "mapped onto the capture's timeline"));
+  }
+  // One finding per family that grew, never a combined total.
+  MPI_CHECK_MSG(det05_issues > 1,
+                "each family is judged separately, got " +
+                    std::to_string(det05_issues) + " finding(s)");
+}
+
+MPI_TEST(det05_reports_native_growth_while_the_js_heap_stays_put,
+         {"DET-05", "F05", "F08"}) {
+  // In this fixture native_heap accumulates and dalvik_heap does not. The
+  // families must not be averaged into one verdict about "memory".
+  const auto r = run(load("traces/positive-memory-growth.mpi.json"));
+  bool native = false;
+  bool dalvik = false;
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-05") continue;
+    if (i.title.find("native_heap") != std::string::npos) native = true;
+    if (i.title.find("dalvik_heap") != std::string::npos) dalvik = true;
+  }
+  MPI_CHECK_MSG(native, "native growth must be reported");
+  MPI_CHECK_MSG(!dalvik, "a flat JS heap must not be reported as growing");
+}
+
+MPI_TEST(det05_calls_warm_up_warm_up_rather_than_retention,
+         {"DET-05", "F02"}) {
+  // private_dirty in this fixture rises over the first two visits and then
+  // settles. That is the shape this rule most easily mistakes for retention,
+  // and calling it suspected retention would be wrong rather than cautious.
+  const auto r = run(load("traces/positive-memory-growth.mpi.json"));
+  for (const auto& i : r.issues) {
+    if (i.rule_id != "DET-05") continue;
+    MPI_CHECK_MSG(i.title.find("private_dirty") == std::string::npos,
+                  "warm-up then stable must not be reported as growth");
+  }
+  const auto* rec = record_for(r, "DET-05");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(contains(rec->skipped_reasons, "warm-up settling"));
+  MPI_CHECK(contains(rec->skipped_reasons, "not accumulation across cycles"));
+}
+
+MPI_TEST(det05_finds_nothing_in_a_real_capture_that_did_not_grow,
+         {"DET-05", "H02", "H11", "J14"}) {
+  // The same five cycles, from the real emulator capture the fixture above
+  // was derived from. Its RSS was flat, and the rule must run and say so.
+  const auto r = run(load("traces/android-screen-cycles.real.mpi.json"));
+  const auto* rec = record_for(r, "DET-05");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kRanFoundNothing);
+  for (const auto& i : r.issues) {
+    MPI_CHECK_MSG(i.rule_id != "DET-05",
+                  "a flat memory series must not produce a growth finding");
+  }
+}
+
+MPI_TEST(det05_refuses_to_compare_two_unmapped_clocks,
+         {"DET-05", "section-6", "section-11"}) {
+  // The markers are stamped on the app's clock and the counters on the
+  // device's. Strip the measured mapping and the rule must refuse: an assumed
+  // offset would make a correlation look real.
+  auto trace = load("traces/positive-memory-growth.mpi.json");
+  trace.clock_mappings.clear();
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(trace, symbols, opts);
+
+  const auto* rec = record_for(r, "DET-05");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "no measured mapping between them"));
+  MPI_CHECK(contains(rec->skipped_reasons, "would make a correlation look real"));
+}
+
+MPI_TEST(det05_refuses_an_unmeasured_mapping_as_well, {"DET-05", "section-6"}) {
+  // Present but not measured is the same as absent for this purpose: only a
+  // measured mapping may be applied.
+  auto trace = load("traces/positive-memory-growth.mpi.json");
+  for (auto& m : trace.clock_mappings) m.measured = false;
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(trace, symbols, opts);
+  const auto* rec = record_for(r, "DET-05");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+}
+
+MPI_TEST(det05_needs_cycles_from_the_app_and_says_where_they_come_from,
+         {"DET-05", "H05", "section-11"}) {
+  // A capture with memory but no screen markers. A screen cannot be inferred
+  // from anything else, so the skip names the SDK rather than blaming the
+  // data.
+  const auto r = run(load("traces/android-cold-launch.real.mpi.json"));
+  const auto* rec = record_for(r, "DET-05");
+  MPI_CHECK(rec != nullptr);
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "no completed screen mount/unmount cycle"));
+  MPI_CHECK(contains(rec->skipped_reasons, "--sdk"));
 }

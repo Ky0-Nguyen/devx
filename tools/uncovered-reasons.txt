@@ -43,16 +43,10 @@ E16	DET-02 sums siblings only and says so; a nested fixture would strengthen thi
 E17	external contention needs a device
 E18	recorder overhead needs paired controlled runs (M4)
 E19	DET-01 groups by surface; a multi-surface real capture would confirm
-F01	memory detectors are M5
-F02	memory detectors are M5
-F03	memory detectors are M5
-F04	memory detectors are M5
-F05	memory detectors are M5
-F06	memory detectors are M5
-F07	memory detectors are M5
-F08	CounterSeries::family keeps families distinct; a real memory collector is M2/M5
-F09	needs a memory collector
-F10	needs a memory collector
+F06	image and GPU allocation accounting has no provider on either platform
+F07	allocation volume versus retained size needs a heap provider (DET-06)
+F09	shared-page accounting across processes needs a multi-process app on hardware
+F10	owned buffer allocations need a graphics/allocator provider
 F12	in-process tooling stays in the process total by construction; a real capture would confirm
 F13	ambiguous overhead is kept unknown and IS tested via the name-only match case
 F15	endpoint/library ambiguity needs more attribution rules

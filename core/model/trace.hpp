@@ -100,6 +100,11 @@ struct Marker {
   std::string screen;
   std::string interaction;
   std::string process_instance_id;
+  // Which clock `timestamp_ns` is on. An SDK marker is stamped by the app, on
+  // the app's own clock, and comparing it against a device-clock measurement
+  // without a mapping would correlate two unrelated timelines (spec section
+  // 6, section 11). Empty means the capture's primary domain.
+  std::string clock_domain;
   json::Value payload = json::Value::object();
   json::Value to_json() const;
 };

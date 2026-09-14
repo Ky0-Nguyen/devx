@@ -23,6 +23,7 @@
 // and never used to construct a path or a command.
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <mutex>
@@ -108,6 +109,19 @@ class MarkerIngest {
   // What the SDK reported about itself, for the capability record.
   std::optional<Handshake> handshake() const;
 
+  // The pairing that makes a measured clock mapping possible: the app's own
+  // clock reading from the handshake, and the host instant it arrived at.
+  struct ClockPairing {
+    model::TimeNs app_clock_ns = 0;
+    std::chrono::steady_clock::time_point host_received;
+    // How long the host spent between reading its clock and finishing the
+    // request, which bounds how precisely the two can be paired.
+    std::chrono::nanoseconds host_uncertainty{0};
+    std::string app_domain;
+    bool valid = false;
+  };
+  ClockPairing clock_pairing() const;
+
   // Sequence gaps observed: markers the app says it sent that never arrived.
   std::int64_t missing_batches() const;
   std::int64_t duplicate_batches() const;
@@ -130,6 +144,7 @@ class MarkerIngest {
   std::int64_t markers_dropped_by_app_ = 0;
   std::int64_t markers_rejected_ = 0;
   std::vector<std::string> notes_;
+  ClockPairing pairing_;
 };
 
 // The marker kinds the SDK may send. Anything else is rejected rather than

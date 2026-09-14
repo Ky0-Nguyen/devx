@@ -16,6 +16,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <iomanip>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -285,6 +286,13 @@ ExitCode cmd_record(const Invocation& inv) {
       cfg.tick_interval = std::chrono::milliseconds(ms);
     }
 
+    // Reads the device clock for a host instant. The live path moves the
+    // collector into its session, so this is bound while that session is
+    // still alive and used afterwards.
+    std::function<std::optional<session::Collector::DeviceClock>(
+        std::chrono::steady_clock::time_point)>
+        device_clock_reader;
+
     // --live streams: the collector ticks and the numbers are printed as they
     // arrive, rather than the command blocking and reporting at the end.
     const bool live = inv.has_flag("live");
@@ -340,6 +348,12 @@ ExitCode cmd_record(const Invocation& inv) {
 
       session.stop();
       capture = session.result();
+      if (auto live_collector = session.collector()) {
+        device_clock_reader =
+            [live_collector](std::chrono::steady_clock::time_point at) {
+              return live_collector->device_clock_at(at);
+            };
+      }
       trace = session.take_trace();
       for (const auto& c : capture.source_results) trace.capabilities.upsert(c);
       if (!inv.global.quiet) {
@@ -361,6 +375,9 @@ ExitCode cmd_record(const Invocation& inv) {
                   << collector->id() << " ...\n";
       }
       capture = collector->capture(device, trace.target.processes, cfg, trace);
+      device_clock_reader = [&collector](std::chrono::steady_clock::time_point at) {
+        return collector->device_clock_at(at);
+      };
     }
 
     if (bridge) {
@@ -368,6 +385,53 @@ ExitCode cmd_record(const Invocation& inv) {
       // platform's evidence. The capability records what the SDK contributed
       // *and* what it lost, so a gap in the marker stream is visible.
       auto& ingest = bridge->ingest();
+
+      // The app stamps its markers with its own clock, so the two timelines
+      // are related by measurement or not at all. The handshake paired the
+      // app's clock reading with a host instant; the collector turns that
+      // host instant into a device time. Without both, no mapping is
+      // recorded and the rules that need one say so (spec section 6).
+      const auto pairing = ingest.clock_pairing();
+      if (pairing.valid && device_clock_reader) {
+        if (const auto device_clock =
+                device_clock_reader(pairing.host_received)) {
+          model::ClockDomain app_domain;
+          app_domain.id = pairing.app_domain;
+          app_domain.base = "monotonic";
+          app_domain.provider = "app SDK";
+          app_domain.monotonic = true;
+          trace.clock_domains.push_back(std::move(app_domain));
+
+          model::ClockMapping mapping;
+          mapping.from_domain = pairing.app_domain;
+          mapping.to_domain = device_clock->domain;
+          mapping.offset_ns = device_clock->at_ns - pairing.app_clock_ns;
+          mapping.uncertainty_ns =
+              device_clock->uncertainty_ns +
+              static_cast<model::TimeNs>(pairing.host_uncertainty.count());
+          mapping.method =
+              "the app's clock reading in its handshake, paired with the "
+              "device clock the collector anchored at capture start; the "
+              "half-width covers the request latency and the anchor's own "
+              "resolution";
+          mapping.measured = true;
+          trace.clock_mappings.push_back(std::move(mapping));
+          std::cerr << "SDK clock mapped to " << device_clock->domain << " (+/- "
+                    << (mapping.uncertainty_ns.value_or(0) / 1000000)
+                    << " ms)\n";
+        } else {
+          trace.ingestion_warnings.push_back(
+              "the app's marker clock could not be mapped to the device "
+              "clock: the collector anchored none. Markers stay on their own "
+              "timeline and cannot be compared against device measurements");
+        }
+      } else if (pairing.valid) {
+        trace.ingestion_warnings.push_back(
+            "the app's marker clock was paired with a host instant, but no "
+            "collector was available to turn that into a device time, so the "
+            "markers stay on their own timeline");
+      }
+
       for (auto& m : ingest.take_markers()) trace.markers.push_back(std::move(m));
       for (auto& f : ingest.build_facts()) trace.build.upsert(std::move(f));
       trace.capabilities.upsert(ingest.capability());

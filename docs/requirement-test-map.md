@@ -4,8 +4,8 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 127 of 198 checklist items have at
-least one automated test.** The remaining 71 are listed below with a stated
+**Coverage of specification section 18: 132 of 198 checklist items have at
+least one automated test.** The remaining 66 are listed below with a stated
 reason.
 
 Two cautions on reading this:
@@ -17,7 +17,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (127 items, 416 test-case links)
+## Covered (132 items, 427 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -240,7 +240,14 @@ Two cautions on reading this:
 | E21 | `test_trace_model` | `proxy_frame_source_is_not_presentation_truth` |
 | E22 | `test_compare` | `cross_platform_pair_cannot_gate` |
 | E22 | `test_ingestion` | `chrome_reader_refuses_to_claim_a_clock_base` |
+| F01 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
+| F02 | `test_rules` | `det05_calls_warm_up_warm_up_rather_than_retention` |
+| F03 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
+| F04 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
+| F05 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
 | F08 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
+| F08 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
+| F08 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
 | F11 | `test_process` | `process_separates_stdout_and_stderr` |
 | F14 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | F14 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
@@ -277,12 +284,14 @@ Two cautions on reading this:
 | H01 | `test_compare` | `det08_reports_a_regression_as_an_issue` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
+| H02 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
 | H02 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
 | H03 | `test_rules` | `det01_proxy_source_downgrades_to_suspected` |
 | H03 | `test_rules` | `det01_skips_when_no_frame_collector_ran` |
 | H03 | `test_rules` | `det04_skips_below_minimum_sample_population` |
 | H04 | `test_rules` | `threshold_override_changes_the_verdict` |
 | H05 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
+| H05 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
 | H05 | `test_rules` | `det07_says_a_capture_without_a_launch_has_no_startup` |
 | H05 | `test_rules` | `det08_over_a_capture_says_it_needs_two_run_sets` |
 | H05 | `test_rules` | `every_catalog_detector_is_registered` |
@@ -300,6 +309,7 @@ Two cautions on reading this:
 | H11 | `test_report` | `no_findings_is_distinguished_from_no_analysis` |
 | H11 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
 | H11 | `test_rules` | `det01_skips_when_no_frame_collector_ran` |
+| H11 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
 | H11 | `test_rules` | `det07_under_budget_runs_and_says_what_it_measured` |
 | H11 | `test_rules` | `every_catalog_detector_is_registered` |
 | H11 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
@@ -416,6 +426,7 @@ Two cautions on reading this:
 | J14 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | J14 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
 | J14 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
+| J14 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
 | J15 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J15 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
 | J15 | `test_ios_parsers` | `parses_real_devicectl_device_listing` |
@@ -438,7 +449,7 @@ Two cautions on reading this:
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 
-## Additional coverage keyed to specification sections and detector ids (20)
+## Additional coverage keyed to specification sections and detector ids (21)
 
 | Reference | Test binary | Test case |
 |---|---|---|
@@ -451,6 +462,14 @@ Two cautions on reading this:
 | DET-04 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | DET-04 | `test_rules` | `det04_refuses_to_name_a_function_without_symbols` |
 | DET-04 | `test_rules` | `obfuscated_frames_resolve_only_with_a_bound_mapping` |
+| DET-05 | `test_rules` | `det05_calls_warm_up_warm_up_rather_than_retention` |
+| DET-05 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
+| DET-05 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
+| DET-05 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
+| DET-05 | `test_rules` | `det05_refuses_an_unmeasured_mapping_as_well` |
+| DET-05 | `test_rules` | `det05_refuses_to_compare_two_unmapped_clocks` |
+| DET-05 | `test_rules` | `det05_reports_growth_as_suspected_and_never_as_a_leak` |
+| DET-05 | `test_rules` | `det05_reports_native_growth_while_the_js_heap_stays_put` |
 | DET-07 | `test_android_collector` | `am_start_w_parses_a_real_cold_launch` |
 | DET-07 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | DET-07 | `test_android_collector` | `displayed_log_parses_the_platform_first_frame_figure` |
@@ -477,6 +496,8 @@ Two cautions on reading this:
 | section-10.3 | `test_rules` | `every_rule_declares_prerequisites_and_a_phase` |
 | section-11 | `test_ingestion` | `hermes_samples_stay_on_an_unmapped_js_clock` |
 | section-11 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
+| section-11 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
+| section-11 | `test_rules` | `det05_refuses_to_compare_two_unmapped_clocks` |
 | section-11 | `test_sdk` | `sdk_absence_is_reported_as_no_evidence_not_as_a_clean_app` |
 | section-11 | `test_sdk` | `sdk_accepts_the_marker_kinds_the_spec_names` |
 | section-11 | `test_trace_model` | `screen_is_null_when_not_observed` |
@@ -505,17 +526,20 @@ Two cautions on reading this:
 | section-15 | `test_rules` | `fingerprints_are_stable_across_reanalysis` |
 | section-15 | `test_xml` | `xml_enforces_its_limits` |
 | section-2.2 | `test_android_collector` | `live_snapshot_states_that_it_is_preliminary` |
+| section-6 | `test_rules` | `det05_refuses_an_unmeasured_mapping_as_well` |
+| section-6 | `test_rules` | `det05_refuses_to_compare_two_unmapped_clocks` |
 | section-6 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
 | section-7.3 | `test_eligibility` | `eligibility_never_implies_zero_overhead` |
 | section-8 | `test_android_collector` | `am_start_w_refuses_the_zero_of_an_app_already_running` |
 | section-8 | `test_android_collector` | `meminfo_absent_fields_stay_absent` |
 | section-8 | `test_android_collector` | `uptime_is_read_or_refused_never_defaulted` |
+| section-8 | `test_rules` | `det05_never_sums_memory_families_and_says_so` |
 | section-8 | `test_trace_model` | `unknown_metric_value_serializes_as_null_not_zero` |
 | section-9 | `test_rules` | `det12_excludes_name_only_matches_from_attribution` |
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (71)
+## Not yet covered (66)
 
 | Checklist id | Why not, stated |
 |---|---|
@@ -555,15 +579,10 @@ Two cautions on reading this:
 | E17 | external contention needs a device |
 | E18 | recorder overhead needs paired controlled runs (M4) |
 | E19 | DET-01 groups by surface; a multi-surface real capture would confirm |
-| F01 | memory detectors are M5 |
-| F02 | memory detectors are M5 |
-| F03 | memory detectors are M5 |
-| F04 | memory detectors are M5 |
-| F05 | memory detectors are M5 |
-| F06 | memory detectors are M5 |
-| F07 | memory detectors are M5 |
-| F09 | needs a memory collector |
-| F10 | needs a memory collector |
+| F06 | image and GPU allocation accounting has no provider on either platform |
+| F07 | allocation volume versus retained size needs a heap provider (DET-06) |
+| F09 | shared-page accounting across processes needs a multi-process app on hardware |
+| F10 | owned buffer allocations need a graphics/allocator provider |
 | F12 | in-process tooling stays in the process total by construction; a real capture would confirm |
 | F13 | ambiguous overhead is kept unknown and IS tested via the name-only match case |
 | F15 | endpoint/library ambiguity needs more attribution rules |
@@ -594,6 +613,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 16
-- test cases declaring at least one id: 326
-- checklist-item links: 416
-- section-18 coverage: 127/198 (64%)
+- test cases declaring at least one id: 334
+- checklist-item links: 427
+- section-18 coverage: 132/198 (67%)
