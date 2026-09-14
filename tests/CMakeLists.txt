@@ -26,3 +26,9 @@ mpi_add_test(test_compare unit/test_compare.cpp)
 mpi_add_test(test_android_parsers integration/test_android_parsers.cpp)
 mpi_add_test(test_ios_parsers integration/test_ios_parsers.cpp)
 mpi_add_test(test_android_collector integration/test_android_collector.cpp)
+
+# DevX's HTTP layer lives in the app target, so its sources are compiled into
+# the test directly rather than linked from a library.
+mpi_add_test(test_devx_http unit/test_devx_http.cpp
+             ${PROJECT_SOURCE_DIR}/apps/devx-serve/http_server.cpp
+             ${PROJECT_SOURCE_DIR}/apps/devx-serve/ui.cpp)

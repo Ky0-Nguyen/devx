@@ -89,6 +89,12 @@ bool is_isolated_user(const std::string& user) {
          user[underscore + 1] == 'i';
 }
 
+model::TestedState verified_state_for(const model::DeviceRef& d) {
+  return d.form == model::DeviceForm::kPhysical
+             ? model::TestedState::kVerifiedOnPhysicalDevice
+             : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+}
+
 std::string iso_now() { return time_util::now_iso8601_utc(); }
 
 model::Capability make_cap(const char* id, const char* human,
@@ -373,8 +379,20 @@ void AdbAdapter::probe(model::CapabilityMatrix& out,
     c.scope =
         "devices visible to this host's adb server; a device claimed by "
         "another adb server or an IDE may not appear";
-    c.tested = devices.empty() ? model::TestedState::kProbedOnly
-                               : model::TestedState::kVerifiedOnPhysicalDevice;
+    bool any_physical = false;
+    for (const auto& d : devices) {
+      if (d.form == model::DeviceForm::kPhysical) any_physical = true;
+    }
+    c.tested = devices.empty()
+                   ? model::TestedState::kProbedOnly
+                   : (any_physical
+                          ? model::TestedState::kVerifiedOnPhysicalDevice
+                          : model::TestedState::kVerifiedOnSimulatorOrEmulator);
+    if (!devices.empty() && !any_physical) {
+      c.limitations.push_back(
+          "every discovered Android device is an emulator; discovery is not "
+          "verified against physical hardware");
+    }
     if (devices.empty()) {
       c.limitations.push_back(
           "no device was connected at probe time, so device discovery is "
@@ -436,7 +454,7 @@ void AdbAdapter::probe(model::CapabilityMatrix& out,
       c.scope = "packages visible to the shell user for the queried Android user";
       c.limitations.push_back(
           "installed does not mean running, and does not mean profileable");
-      c.tested = model::TestedState::kVerifiedOnPhysicalDevice;
+      c.tested = verified_state_for(*usable);
     } else {
       c.status = model::CapabilityStatus::kUnsupported;
       c.evidence = "`pm list packages -U` failed: " +
@@ -464,7 +482,7 @@ void AdbAdapter::probe(model::CapabilityMatrix& out,
       c.scope =
           "processes visible to the shell user; shell has broader visibility "
           "than an ordinary app SDK would";
-      c.tested = model::TestedState::kVerifiedOnPhysicalDevice;
+      c.tested = verified_state_for(*usable);
     } else {
       c.status = model::CapabilityStatus::kUnsupported;
       c.evidence = "`ps` failed: " + (r.spawned ? trim(r.err) : r.spawn_error);
@@ -488,7 +506,7 @@ void AdbAdapter::probe(model::CapabilityMatrix& out,
       c.scope =
           "start time lets a process instance be distinguished across PID "
           "reuse and device reboot";
-      c.tested = model::TestedState::kVerifiedOnPhysicalDevice;
+      c.tested = verified_state_for(*usable);
     } else {
       c.status = model::CapabilityStatus::kLimited;
       c.evidence = "could not read or parse /proc/self/stat";

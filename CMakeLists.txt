@@ -4,6 +4,14 @@ project(mobile_perf_inspector
         DESCRIPTION "Mobile Performance Inspector -- cross-platform profiler core"
         LANGUAGES CXX)
 
+# Pin the deployment target so the C++ objects and the Swift app agree. Without
+# this the C++ defaults to the build host's version and the linker warns on
+# every object file when DevX links them.
+if(APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0" CACHE STRING
+      "Minimum macOS version; must match the SwiftUI app's target" FORCE)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -41,7 +49,10 @@ target_include_directories(mpi_project_options INTERFACE ${PROJECT_SOURCE_DIR})
 
 add_subdirectory(core)
 add_subdirectory(adapters)
+add_subdirectory(core/capi)
 add_subdirectory(apps/cli)
+add_subdirectory(apps/devx-serve)
+add_subdirectory(apps/devx-mac)
 
 if(MPI_BUILD_TESTS)
   enable_testing()

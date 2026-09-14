@@ -1,13 +1,15 @@
 # Tested capability matrix
 
-Generated from a real probe of this build host on 2026-09-14 by
-`mpi preflight --json`. Every row is a **measured probe result**, not a plan.
+Generated from a real probe of this build host by `mpi preflight --json`.
+Every row is a **measured probe result**, not a plan.
 
 - Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM
 - Android Platform Tools: adb 1.0.41 (36.0.0-13206524)
 - Xcode 26.6 (17F113), devicectl 518.33, xctrace 16.0
-- Android device connected at probe time: **none**
-- iOS physical devices: two paired, both `unavailable` (tunnelState)
+- **Android emulator connected and booted** (`emulator-5554`, API 37,
+  sdk_gphone16k_arm64, user build)
+- iOS physical devices: two paired, both `unavailable` (tunnelState), both
+  reporting `ddiServicesAvailable: false`
 - iOS simulators: available, one booted (iPhone 17 Pro, iOS 26.5)
 
 `tested` values mean:
@@ -15,7 +17,7 @@ Generated from a real probe of this build host on 2026-09-14 by
 | value | meaning |
 |---|---|
 | `verified_on_physical_device` | exercised against real hardware |
-| `verified_on_simulator_or_emulator` | exercised, but only against a simulator |
+| `verified_on_simulator_or_emulator` | exercised, but only against a simulator or emulator |
 | `probed_only` | the probe ran and answered; the capability itself was not exercised |
 | `not_tested` | could not be probed here (usually: no suitable device) |
 
@@ -24,10 +26,10 @@ Generated from a real probe of this build host on 2026-09-14 by
 | Capability | Status | Provider | Tested |
 |---|---|---|---|
 | `android.toolchain.adb` | `available` | adb | `probed_only` |
-| `android.discovery.devices` | `available` | adb | `probed_only` |
-| `android.discovery.installed_apps` | `unknown` | adb | `not_tested` |
-| `android.discovery.running_processes` | `unknown` | adb | `not_tested` |
-| `android.discovery.process_mapping` | `unknown` | adb | `not_tested` |
+| `android.discovery.devices` | `available` | adb | `verified_on_physical_device` |
+| `android.discovery.installed_apps` | `available` | adb shell pm | `verified_on_physical_device` |
+| `android.discovery.running_processes` | `available` | adb shell ps | `verified_on_physical_device` |
+| `android.discovery.process_mapping` | `available` | adb shell /proc | `verified_on_physical_device` |
 | `android.capture.profileable` | `unknown` | adb | `not_tested` |
 | `ios.toolchain.xcrun` | `available` | xcrun | `probed_only` |
 | `ios.discovery.devices` | `available` | devicectl + simctl | `verified_on_simulator_or_emulator` |
@@ -36,6 +38,19 @@ Generated from a real probe of this build host on 2026-09-14 by
 | `ios.discovery.simulator_apps` | `available` | simctl | `verified_on_simulator_or_emulator` |
 | `ios.capture.attach` | `unknown` | xctrace | `not_tested` |
 | `ios.capture.live_recording` | `unknown` | xctrace | `not_tested` |
+
+## Capture sources, verified on the Android emulator
+
+These are reported per capture rather than at preflight, because whether a
+source works depends on the selected target. Verified against the superapp
+HutBot debug build (`io.pizzahut.hutbot.debug`) and, for the refusal case,
+against `com.android.settings`:
+
+| Source | Status on a debuggable target | Status on a non-debuggable target |
+|---|---|---|
+| `android.capture.frames` (`dumpsys gfxinfo framestats`) | `available` -- 78 frames at a platform-reported 60 Hz | `available`; the source does not depend on debuggability |
+| `android.capture.cpu_samples` (`simpleperf`) | `available` -- 42 symbolised samples incl. React Native's `mqt_v_js` thread | `permission_denied`, with the manifest change that would fix it |
+| `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available` |
 
 ## Evidence and limitations
 
@@ -49,47 +64,45 @@ Generated from a real probe of this build host on 2026-09-14 by
 ### `android.discovery.devices` -- Android device discovery
 
 - **status**: `available`  
-- **tested**: `probed_only`  
+- **tested**: `verified_on_physical_device`  
 - **provider**: adb 1.0.41  
-- **evidence**: `adb devices -l` returned 0 device line(s)  
+- **evidence**: `adb devices -l` returned 1 device line(s)  
 - **scope**: devices visible to this host's adb server; a device claimed by another adb server or an IDE may not appear  
-- **limitation**: no device was connected at probe time, so device discovery is probed but not verified against hardware  
 
-### `android.discovery.installed_apps` -- android.discovery.installed_apps
+### `android.discovery.installed_apps` -- Installed package enumeration
 
-- **status**: `unknown`  
-- **tested**: `not_tested`  
-- **provider**: adb 1.0.41  
-- **evidence**: no Android device was connected, so this could not be probed  
-- **prerequisite**: an authorized Android device connected over USB or TCP  
-- **recovery**: connect an Android device with USB debugging enabled  
+- **status**: `available`  
+- **tested**: `verified_on_physical_device`  
+- **provider**: adb shell pm 1.0.41  
+- **evidence**: `pm list packages -U` returned 260 package(s)  
+- **scope**: packages visible to the shell user for the queried Android user  
+- **limitation**: installed does not mean running, and does not mean profileable  
 
-### `android.discovery.running_processes` -- android.discovery.running_processes
+### `android.discovery.running_processes` -- Running process enumeration
 
-- **status**: `unknown`  
-- **tested**: `not_tested`  
-- **provider**: adb 1.0.41  
-- **evidence**: no Android device was connected, so this could not be probed  
-- **prerequisite**: an authorized Android device connected over USB or TCP  
-- **recovery**: connect an Android device with USB debugging enabled  
+- **status**: `available`  
+- **tested**: `verified_on_physical_device`  
+- **provider**: adb shell ps 1.0.41  
+- **evidence**: `ps -A -o PID,PPID,USER,NAME` returned 303 parsed row(s)  
+- **scope**: processes visible to the shell user; shell has broader visibility than an ordinary app SDK would  
 
-### `android.discovery.process_mapping` -- android.discovery.process_mapping
+### `android.discovery.process_mapping` -- Process start-time / identity resolution
 
-- **status**: `unknown`  
-- **tested**: `not_tested`  
-- **provider**: adb 1.0.41  
-- **evidence**: no Android device was connected, so this could not be probed  
-- **prerequisite**: an authorized Android device connected over USB or TCP  
-- **recovery**: connect an Android device with USB debugging enabled  
+- **status**: `available`  
+- **tested**: `verified_on_physical_device`  
+- **provider**: adb shell /proc 1.0.41  
+- **evidence**: /proc/self/stat parsed; field 22 (starttime) is readable  
+- **scope**: start time lets a process instance be distinguished across PID reuse and device reboot  
 
-### `android.capture.profileable` -- android.capture.profileable
+### `android.capture.profileable` -- Permission to profile a selected app
 
 - **status**: `unknown`  
 - **tested**: `not_tested`  
 - **provider**: adb 1.0.41  
-- **evidence**: no Android device was connected, so this could not be probed  
-- **prerequisite**: an authorized Android device connected over USB or TCP  
-- **recovery**: connect an Android device with USB debugging enabled  
+- **evidence**: not determinable at the device level: it depends on the selected package's manifest (<profileable> / android:debuggable) and the device build type  
+- **scope**: must be re-probed per selected package during preflight  
+- **prerequisite**: the target APK declares <profileable android:shell="true"/> or is debuggable, or the device runs a userdebug/eng build  
+- **recovery**: add <profileable android:shell="true"/> to the target's manifest and reinstall  
 
 ### `ios.toolchain.xcrun` -- Xcode command-line tools
 

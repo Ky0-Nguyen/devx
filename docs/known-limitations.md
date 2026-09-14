@@ -9,36 +9,56 @@ where one exists, a concrete remediation.
 
 ---
 
-## 1. Live on-device capture is not implemented (blocks the M2 gate on both platforms)
+## 1. iOS live capture is not implemented; Android is
 
-**What this means.** `mpi record` does not record. There is no Perfetto
-collector, no `xctrace` collector, and no session controller driving one. The
-command performs discovery, target pinning, capability preflight and
-revalidation, and then either imports a trace you supply or exits
-`unsupported` (6) with the blocker stated.
+**Android works.** `mpi record` and DevX capture for real, using the
+platform's text interfaces (ADR-0006): `dumpsys gfxinfo framestats` for frames
+with a platform-supplied deadline, `simpleperf` for symbolised stacks, `dumpsys
+meminfo` for memory. Verified against a booted emulator (API 37) on the
+superapp HutBot debug build.
 
-**Why it is not disguised.** Spec section 0.16 forbids substituting import-only
-support for the required live workflow, and section 0.5 forbids presenting a
-dashboard over synthetic data as a working profiler. Writing a session package
-with no collector output would produce a capture-shaped file containing nothing
-measured, so the command refuses instead.
+**iOS does not.** There is no `xctrace` collector wired to the session
+controller. `mpi record` and DevX both perform discovery, target pinning,
+preflight and revalidation, then say so and exit `unsupported` (6) with the
+blocker named -- stating explicitly that the blocker is the collector and not
+the target. Neither writes a session.
 
-**Consequence.** The M2 gate -- *connect -> select identifier -> record ->
-issue on one physical device of each platform* -- **is not met**. Checklist
-items J14 and J15 are open.
+**Why it is not disguised.** Spec section 0.16 forbids substituting
+import-only support for the required live workflow, and section 0.5 forbids
+presenting a dashboard over synthetic data as a working profiler. A session
+package with no collector output would be a capture-shaped file containing
+nothing measured.
 
-**Phase.** M2.
+**Consequence.** The M2 gate is **met on Android** (against an emulator, not a
+physical device -- see section 2) and **open on iOS**. Checklist item J15 is
+open; J14 is partially met.
+
+**Phase.** M2 for the iOS collector.
+
+### What the Android collector does not collect
+
+No scheduling states, no I/O, no network, and a single instantaneous memory
+reading rather than a series. DET-03, DET-05, DET-09 and DET-11 therefore stay
+registered and skipped rather than being approximated from what is available.
+Getting scheduling data means taking on Perfetto's protobuf; ADR-0006 says when
+that trade becomes the right one.
 
 ---
 
-## 2. No physical device was reachable, so the live path is UNVERIFIED
+## 2. No *physical* device was reachable; Android is verified on an emulator
 
-**Android.** No Android device was connected at any point during
-implementation. `adb` itself is present (1.0.41) and its host-side output is
-parsed and tested against real output, but `pm list packages`, `ps -A`,
-`/proc/<pid>/stat` and `dumpsys` were **never run against hardware**. Their
-parsers are tested against hand-written fixtures named `.synthetic.`, and the
-capability matrix records every one of those capabilities as `not_tested`.
+**Android: emulator, not hardware.** Everything is verified against a booted
+Android emulator -- discovery, app enumeration, process identity, and live
+capture. An emulator is not a phone: its GPU is emulated, its scheduler is the
+host's, and `perf` hardware counters are unavailable (which is why the
+collector uses the `cpu-clock` software event). The capability matrix therefore
+records these as `verified_on_simulator_or_emulator`, never as
+`verified_on_physical_device`.
+
+That distinction was itself a bug at one point: the probe hardcoded
+`verified_on_physical_device` whenever it succeeded, so an emulator-only run
+claimed hardware verification. Spec J18 and C20 forbid exactly that, and
+`test_android_parsers` now asserts it cannot recur.
 
 **iOS.** Two iPhones/iPads are paired with this host, and both reported
 `connectionProperties.tunnelState: "unavailable"` throughout. The tool
@@ -63,36 +83,37 @@ measured result.
 
 ---
 
-## 3. The 1 GiB stress fixture is processed, but with a 10x memory blowup
+## 3. The 1 GiB stress fixture costs 5 GB of memory (down from 10 GB)
 
 **Measured on this host** (macOS 26.6.2, Apple M4 Pro, 48 GB RAM), with a
-1.0 GiB normalized trace containing 2,920,000 events:
+1.0 GiB normalized trace of 2,920,000 events:
 
-| | |
-|---|---|
-| wall time, ingest + normalize + analyze + JSON export | **12.5 s** |
-| peak resident set size | **10.2 GB** |
-| events ingested | 2,920,000 (all of them) |
-| exit code | 4 (`inconclusive`) -- correctly, since this fixture has no frames, JS spans or samples, so every detector was skipped |
+| | before streaming | after |
+|---|---|---|
+| wall time, ingest + normalize + analyze + export | 12.5 s | **7.7 s** |
+| peak resident set size | 10.2 GB | **5.15 GB** |
 
-**The problem.** Roughly 10 bytes of RAM per byte of input. `json::Value` is a
-DOM node carrying a `std::string` and two `std::vector`s regardless of which
-variant it holds, and the whole document is materialised before normalization
-begins. On a 16 GB machine a 1 GiB trace would likely fail.
+`json::StreamParser` walks the document instead of materialising it, and the
+reader converts one array element at a time so each element's DOM dies before
+the next is read. Unrecognised members are skipped without being built at all.
 
-**Also note.** The default input ceiling was originally 512 MiB, which *refused*
-the specification's own 1 GiB stress fixture. It is now 2 GiB, overridable with
-`mpi analyze --max-input-mib <n>`. The refusal was correct and clearly reported;
-the default was simply wrong.
+**What remains.** About 1 GB is the file buffer, and the rest is the retained
+`model::Event` vector: `sizeof(Event)` is 416 bytes, so 2.92M of them is
+1.2 GB before their heap strings, plus allocator retention. Going lower means
+either not retaining every event or reading the file in chunks, both of which
+are larger changes than the streaming parse was.
 
-**Remediation (M2).** Replace the DOM parse on the ingest path with a streaming
-pull parser that emits `model::Event` values directly into a bounded queue. The
-`Reader` interface already hides the parse strategy, so this is contained to
-`core/ingestion` and needs no model or rule changes.
+**A measurement that disproved a guess.** I assumed `std::vector` growth
+dominated the remainder and added an exact-reserve counting pre-pass. Measured:
+27% slower for 4% less memory. Reverted.
 
-**Related checklist.** I21 (UI responsiveness under the stress fixture) cannot
-be assessed without a UI. The ingest cost above is the part that is measurable
-today.
+**Also.** The default input ceiling was 512 MiB, which *refused* the
+specification's own 1 GiB fixture. Now 2 GiB, overridable with
+`mpi analyze --max-input-mib`.
+
+**Related checklist.** I21 asks about UI responsiveness under the stress
+fixture. DevX now exists, but it has not been driven against a 1 GiB session;
+the ingest cost above is what is measured.
 
 ---
 
@@ -119,15 +140,25 @@ exist yet.
 
 ---
 
-## 5. No desktop UI
+## 5. DevX exists; some UI behaviours are still unbuilt
 
-M1 ships a CLI only. See ADR-0004 for why, and for the seam the UI will sit on.
-Spec section 13's views are all renderings of `DiscoverySnapshot`,
-`NormalizedTrace` and `AnalysisResult`, which already serialize to JSON and are
-already exercised by the CLI.
+`DevX.app` is a native SwiftUI application over the C ABI (ADR-0007), covering
+Devices, Apps, Preflight, Record, Sessions, Issues and Detectors.
 
-Checklist items that are inherently UI behaviours (A16, A23, A25, I21, J12)
-are open.
+Still open, and all inherently UI behaviours:
+
+- **A16** selection and keyboard focus preserved across a list refresh. The
+  selected *device* is preserved (and never silently switched); focus is not
+  managed.
+- **A23** favourites and recents.
+- **A25** responsiveness with a very large app list. The emulator's 266 apps
+  render fine; nothing larger has been tried.
+- **I21** responsiveness under the 1 GiB stress fixture.
+- **J12** signing and packaging for distribution. The bundle is ad-hoc signed
+  for local use only.
+- No timeline view. Spec section 13 lists one; issues currently carry their
+  interval numerically rather than on a rendered track.
+- No compare view. `mpi compare` is CLI-only.
 
 ---
 
@@ -199,3 +230,7 @@ Not limitations to be fixed -- design positions taken from spec sections 2.3,
   prose with a stated basis.
 - No estimate of release performance from a debug measurement, by any route
   including subtraction.
+- No root, and no attempt to lift Android's profiling restriction. `simpleperf`
+  is invoked through `--app`, which works only on a debuggable or profileable
+  package; anything else reports `permission_denied` with the manifest change
+  that would fix it.

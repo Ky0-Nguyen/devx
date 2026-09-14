@@ -1,6 +1,7 @@
 # ADR-0004 -- Defer the desktop UI to M2 and fix its seam now
 
-- Status: accepted
+- Status: accepted; the deferral is superseded by ADR-0007, which builds the
+  UI (DevX) on the seam this ADR defined
 - Date: 2026-09-14
 - Spec references: sections 2.2, 13, 17 (M1/M2 gates)
 
@@ -32,10 +33,18 @@ exercised now, by the CLI:
 The GUI is therefore a rendering layer over an existing, tested API rather than
 a rewrite.
 
+## Outcome
+
+The seam held. DevX (ADR-0007) was built as a rendering layer over the API
+described below -- first as a loopback web UI, then as the native SwiftUI app --
+without changing the core: the discovery service, the
+revalidation behaviour and the serialized models were already what the UI
+needed.
+
 ## Consequences
 
-- The M2 gate (connect -> select identifier -> record -> issue) is **not met**,
-  and is recorded as open in `docs/known-limitations.md`.
+- The M2 gate is now met on Android and remains open on iOS; see
+  `docs/known-limitations.md`.
 - The framework choice stays open. Because the seam is a data API and not a
   callback surface, Qt/QML, or a web shell over the CLI's JSON, are both still
   viable without touching the core.

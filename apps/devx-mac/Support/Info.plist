@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>DevX</string>
+  <key>CFBundleDisplayName</key><string>DevX</string>
+  <key>CFBundleIdentifier</key><string>com.yum.superapp.devx</string>
+  <key>CFBundleExecutable</key><string>DevX</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>0.1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSMinimumSystemVersion</key><string>14.0</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <!-- DevX runs device tooling (adb, xcrun) as child processes, so it is not
+       sandboxed. It is a developer tool that must reach the developer's own
+       toolchain; it makes no network connection of its own. -->
+  <key>NSSupportsAutomaticTermination</key><false/>
+  <key>NSPrincipalClass</key><string>NSApplication</string>
+</dict>
+</plist>

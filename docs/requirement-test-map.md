@@ -4,24 +4,25 @@ Derived from the test binaries, not maintained by hand: every test case declares
 the specification checklist ids it covers, and the framework prints them with
 `--list-requirements`. Regenerate with `python3 tools/gen-requirement-map.py`.
 
-**Coverage of specification section 18: 109 of 198 checklist items have at
-least one automated test.** The remaining 89 are listed below with a stated
+**Coverage of specification section 18: 115 of 198 checklist items have at
+least one automated test.** The remaining 83 are listed below with a stated
 reason.
 
 Two cautions on reading this:
 
 1. A checklist item having a test does **not** mean the capability is verified
    on real hardware. `docs/capabilities/tested-capability-matrix.md` is the
-   authority on that, and it marks every untested capability `not_tested`.
+   authority on that.
 2. Several covered items are covered by a test of the *negative* guarantee
    (that the tool refuses to claim something) rather than of the positive
-   behaviour. Those are noted in the reason column where it matters.
+   behaviour.
 
-## Covered (109 items, 285 test-case links)
+## Covered (115 items, 328 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
 | A01 | `test_android_parsers` | `real_adb_with_no_device_yields_an_empty_list_not_an_error` |
+| A02 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
 | A02 | `test_android_parsers` | `parses_device_states_and_forms` |
 | A02 | `test_android_parsers` | `adapter_refuses_to_enumerate_an_unauthorized_device` |
 | A02 | `test_identity` | `only_authorized_devices_are_usable` |
@@ -42,11 +43,14 @@ Two cautions on reading this:
 | A06 | `test_android_parsers` | `ps_parser_refuses_to_guess_at_an_unknown_header` |
 | A06 | `test_android_parsers` | `adapter_probe_reports_unsupported_when_adb_is_absent` |
 | A06 | `test_android_parsers` | `adapter_list_devices_reports_missing_adb_as_an_error` |
+| A06 | `test_devx_http` | `server_reports_a_bind_failure_rather_than_pretending` |
 | A06 | `test_process` | `process_reports_missing_executable_distinctly` |
 | A06 | `test_process` | `process_which_resolves_and_reports_absence` |
 | A08 | `test_ios_parsers` | `launchctl_entries_without_a_pid_are_not_running` |
 | A11 | `test_identity` | `unknown_runtime_state_serializes_as_unknown` |
 | A11 | `test_ios_parsers` | `launchctl_entries_without_a_pid_are_not_running` |
+| A12 | `test_android_collector` | `framestats_refuses_a_header_missing_required_columns` |
+| A12 | `test_android_collector` | `framestats_handles_empty_and_headerless_blocks` |
 | A12 | `test_android_parsers` | `real_adb_with_no_device_yields_an_empty_list_not_an_error` |
 | A12 | `test_android_parsers` | `ps_parser_refuses_to_guess_at_an_unknown_header` |
 | A12 | `test_android_parsers` | `ps_parser_handles_empty_input` |
@@ -64,6 +68,7 @@ Two cautions on reading this:
 | A15 | `test_identity` | `same_identifier_on_two_platforms_stays_separate` |
 | A15 | `test_identity` | `same_identifier_on_two_devices_stays_separate` |
 | A18 | `test_identity` | `installed_is_null_when_never_observed` |
+| A20 | `test_android_collector` | `collector_refuses_an_option_like_identifier` |
 | A20 | `test_android_parsers` | `adapter_rejects_an_option_like_app_identifier` |
 | A20 | `test_ios_parsers` | `adapter_refuses_an_option_like_bundle_id` |
 | A20 | `test_process` | `process_rejects_option_like_identifier` |
@@ -90,6 +95,7 @@ Two cautions on reading this:
 | B12 | `test_identity` | `same_identifier_on_two_devices_stays_separate` |
 | B12 | `test_ingestion` | `process_filter_excludes_foreign_events` |
 | B13 | `test_symbols` | `missing_symbol_artifacts_yield_unavailable_with_a_reason` |
+| B15 | `test_android_collector` | `collector_refuses_an_empty_process_set` |
 | C01 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
 | C01 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
 | C03 | `test_eligibility` | `js_dev_mode_makes_benchmark_ineligible` |
@@ -100,8 +106,10 @@ Two cautions on reading this:
 | C09 | `test_android_parsers` | `dumpsys_absent_flags_stay_unknown` |
 | C10 | `test_eligibility` | `conflicting_facts_are_recorded_and_block_certification` |
 | C10 | `test_eligibility` | `stronger_source_wins_but_conflict_is_kept` |
+| C11 | `test_android_collector` | `simpleperf_meta_info_yields_real_build_facts` |
 | C11 | `test_android_parsers` | `dumpsys_flags_parse_debuggable_and_version` |
 | C13 | `test_eligibility` | `sanitizers_invalidate_benchmark` |
+| C14 | `test_rules` | `obfuscated_frames_resolve_only_with_a_bound_mapping` |
 | C14 | `test_symbols` | `r8_map_deobfuscates_and_binds_to_a_build` |
 | C14 | `test_symbols` | `r8_map_from_another_build_is_reported_as_mismatch` |
 | C14 | `test_symbols` | `missing_file_is_an_error_not_a_silent_empty_map` |
@@ -110,6 +118,8 @@ Two cautions on reading this:
 | C15 | `test_symbols` | `absent_expected_bundle_id_downgrades_to_partial` |
 | C15 | `test_symbols` | `missing_file_is_an_error_not_a_silent_empty_map` |
 | C17 | `test_symbols` | `dirty_checkout_blocks_exact_source_claims` |
+| C18 | `test_android_collector` | `simpleperf_meta_info_yields_real_build_facts` |
+| C18 | `test_android_collector` | `meminfo_absent_fields_stay_absent` |
 | C18 | `test_android_parsers` | `dumpsys_flags_parse_debuggable_and_version` |
 | C18 | `test_android_parsers` | `dumpsys_absent_flags_stay_unknown` |
 | C18 | `test_eligibility` | `unknown_fact_yields_insufficient_evidence_not_a_pass` |
@@ -124,11 +134,13 @@ Two cautions on reading this:
 | C19 | `test_process` | `process_env_override_applies` |
 | C20 | `test_android_parsers` | `parses_device_states_and_forms` |
 | C20 | `test_identity` | `simulator_form_survives_serialization` |
+| D04 | `test_json` | `stream_parser_can_abandon_an_array_midway` |
 | D04 | `test_process` | `process_honours_cancellation` |
 | D04 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
 | D08 | `test_ingestion` | `rejects_malformed_traces_without_crashing` |
 | D08 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
 | D08 | `test_json` | `json_rejects_malformed` |
+| D08 | `test_json` | `stream_parser_reports_malformed_input` |
 | D09 | `test_ingestion` | `normalize_turns_provider_drops_into_visible_notes` |
 | D09 | `test_ingestion` | `derived_coverage_detects_late_start_and_early_stop` |
 | D09 | `test_report` | `coverage_gaps_are_reported_with_their_semantics` |
@@ -145,22 +157,34 @@ Two cautions on reading this:
 | D12 | `test_ingestion` | `chrome_reader_refuses_to_claim_a_clock_base` |
 | D12 | `test_ingestion` | `normalize_flags_unmappable_clock_domains` |
 | D12 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
+| D16 | `test_android_collector` | `framestats_handles_empty_and_headerless_blocks` |
+| D16 | `test_android_collector` | `simpleperf_handles_empty_input` |
 | D16 | `test_android_parsers` | `ps_parser_handles_empty_input` |
 | D16 | `test_ingestion` | `empty_capture_reads_but_produces_no_data` |
 | D16 | `test_ios_parsers` | `launchctl_parser_handles_empty_and_header_only_input` |
+| D16 | `test_json` | `stream_parser_handles_empty_arrays_and_objects` |
 | D17 | `test_process` | `process_times_out_and_says_so` |
+| D18 | `test_android_collector` | `framestats_reads_the_header_rather_than_fixed_columns` |
+| D18 | `test_android_collector` | `framestats_refuses_a_header_missing_required_columns` |
 | D18 | `test_ingestion` | `unsupported_schema_version_is_reported_not_guessed` |
 | D18 | `test_ios_parsers` | `devicectl_parsers_tolerate_unexpected_shapes` |
 | D18 | `test_json` | `json_bom_is_tolerated` |
+| D18 | `test_json` | `stream_parser_skips_without_materialising` |
+| D18 | `test_json` | `stream_parser_tolerates_a_bom` |
 | D18 | `test_symbols` | `source_map_rejects_wrong_version` |
 | D19 | `test_report` | `partial_capture_is_announced` |
 | D19 | `test_rules` | `partial_capture_is_surfaced_and_never_a_clean_pass` |
+| E01 | `test_android_collector` | `framestats_parses_real_emulator_output` |
+| E01 | `test_android_collector` | `framestats_yields_the_refresh_rate_from_the_platform` |
 | E01 | `test_rules` | `det01_skips_when_refresh_rate_unobserved` |
 | E01 | `test_trace_model` | `deadline_comes_from_observed_refresh_rate` |
 | E01 | `test_trace_model` | `variable_refresh_yields_no_single_deadline` |
 | E01 | `test_trace_model` | `frame_without_deadline_cannot_be_judged` |
+| E02 | `test_android_collector` | `framestats_yields_the_refresh_rate_from_the_platform` |
 | E02 | `test_trace_model` | `variable_refresh_yields_no_single_deadline` |
 | E02 | `test_trace_model` | `refresh_rate_change_mid_session_selects_the_right_interval` |
+| E03 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
+| E04 | `test_android_collector` | `framestats_skips_platform_excluded_frames` |
 | E12 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | E12 | `test_trace_model` | `cpu_percentage_declares_its_normalization` |
 | E13 | `test_ingestion` | `derived_coverage_treats_absent_collector_as_a_full_gap` |
@@ -168,6 +192,7 @@ Two cautions on reading this:
 | E13 | `test_rules` | `det04_skips_when_no_samples_and_says_it_is_not_idle` |
 | E13 | `test_trace_model` | `coverage_gap_is_not_measured_zero` |
 | E14 | `test_rules` | `det04_skips_below_minimum_sample_population` |
+| E15 | `test_android_collector` | `simpleperf_stacks_are_outermost_first` |
 | E15 | `test_ingestion` | `hermes_reader_unwinds_stacks_outermost_first` |
 | E20 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
 | E21 | `test_rules` | `det01_observed_requires_presentation_truth` |
@@ -177,6 +202,7 @@ Two cautions on reading this:
 | E21 | `test_trace_model` | `proxy_frame_source_is_not_presentation_truth` |
 | E22 | `test_compare` | `cross_platform_pair_cannot_gate` |
 | E22 | `test_ingestion` | `chrome_reader_refuses_to_claim_a_clock_base` |
+| F08 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | F11 | `test_process` | `process_separates_stdout_and_stderr` |
 | F14 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | F14 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
@@ -187,6 +213,7 @@ Two cautions on reading this:
 | F17 | `test_report` | `inclusive_stacks_are_labelled_in_the_markdown` |
 | F17 | `test_rules` | `det04_reports_self_share_as_disjoint_and_states_its_scope` |
 | F17 | `test_trace_model` | `inclusive_share_is_not_summable_as_disjoint_cost` |
+| G01 | `test_android_collector` | `simpleperf_finds_the_react_native_js_thread` |
 | G01 | `test_ingestion` | `hermes_reader_produces_samples_not_tasks` |
 | G01 | `test_rules` | `det02_refuses_sampling_only_input` |
 | G11 | `test_eligibility` | `remote_js_execution_invalidates_benchmark` |
@@ -228,9 +255,12 @@ Two cautions on reading this:
 | H11 | `test_rules` | `healthy_capture_runs_detectors_and_finds_nothing` |
 | H11 | `test_rules` | `det01_skips_when_no_frame_collector_ran` |
 | H11 | `test_trace_model` | `rule_outcome_distinguishes_skipped_from_found_nothing` |
+| H12 | `test_devx_http` | `response_error_is_machine_readable` |
+| H12 | `test_devx_http` | `request_param_lookup` |
 | H12 | `test_json` | `json_roundtrip_preserves_key_order` |
 | H12 | `test_json` | `json_non_finite_double_stays_valid_json` |
 | H12 | `test_json` | `json_large_integer_does_not_wrap` |
+| H12 | `test_json` | `stream_parser_agrees_with_the_dom_parser` |
 | H12 | `test_report` | `markdown_and_json_agree_on_issue_count` |
 | H12 | `test_report` | `json_report_is_valid_and_carries_the_schema_version` |
 | H12 | `test_report` | `comparison_report_renders_in_both_formats` |
@@ -264,9 +294,11 @@ Two cautions on reading this:
 | I16 | `test_compare` | `debug_versus_release_is_not_a_certified_comparison` |
 | I16 | `test_eligibility` | `diagnostic_mode_never_certifies_release` |
 | I16 | `test_rules` | `diagnostic_session_never_reports_a_certified_benchmark` |
+| I17 | `test_android_collector` | `capture_config_records_its_preset_and_sources` |
 | I17 | `test_compare` | `collector_sample_rate_mismatch_blocks_a_verdict` |
 | I19 | `test_compare` | `cross_platform_pair_cannot_gate` |
 | I19 | `test_compare` | `unknown_platform_blocks_equivalence` |
+| J01 | `test_devx_http` | `html_escape_neutralises_markup` |
 | J01 | `test_json` | `json_escapes_on_output` |
 | J01 | `test_report` | `source_paths_are_excluded_from_export_by_default` |
 | J01 | `test_report` | `hostile_identifiers_cannot_break_the_markdown_table` |
@@ -277,22 +309,33 @@ Two cautions on reading this:
 | J02 | `test_json` | `json_rejects_malformed` |
 | J02 | `test_json` | `json_control_characters_must_be_escaped` |
 | J02 | `test_json` | `json_unicode_surrogate_pairs` |
+| J02 | `test_json` | `stream_parser_reports_malformed_input` |
 | J02 | `test_symbols` | `source_map_rejects_malformed_vlq` |
 | J03 | `test_json` | `json_rejects_depth_bomb` |
 | J03 | `test_json` | `json_rejects_oversized_input` |
 | J03 | `test_json` | `json_rejects_container_element_bomb` |
+| J03 | `test_json` | `stream_parser_enforces_the_byte_limit` |
+| J03 | `test_json` | `stream_parser_enforces_depth_inside_a_skip` |
 | J03 | `test_process` | `process_bounds_output_size` |
 | J04 | `test_symbols` | `path_traversal_in_a_source_map_is_rejected` |
 | J04 | `test_symbols` | `path_root_containment_check` |
+| J05 | `test_android_collector` | `collector_refuses_an_option_like_identifier` |
 | J05 | `test_android_parsers` | `adapter_rejects_an_option_like_app_identifier` |
+| J05 | `test_devx_http` | `url_decode_handles_escapes_and_plus` |
+| J05 | `test_devx_http` | `url_decode_leaves_malformed_escapes_literal` |
 | J05 | `test_ios_parsers` | `adapter_refuses_an_option_like_bundle_id` |
 | J05 | `test_process` | `process_runs_and_captures_output` |
 | J05 | `test_process` | `process_argv_is_never_shell_interpreted` |
 | J05 | `test_process` | `process_rejects_nul_in_argument` |
 | J05 | `test_process` | `process_rejects_option_like_identifier` |
+| J06 | `test_devx_http` | `server_generates_a_distinct_token_per_instance` |
 | J11 | `test_json` | `json_accessors_do_not_throw_on_type_mismatch` |
 | J11 | `test_process` | `process_honours_cancellation` |
 | J11 | `test_rules` | `cancellation_stops_analysis_and_marks_rules_skipped` |
+| J14 | `test_android_collector` | `framestats_parses_real_emulator_output` |
+| J14 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
+| J14 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
+| J14 | `test_android_collector` | `meminfo_parses_real_output_and_keeps_families_distinct` |
 | J15 | `test_ios_parsers` | `parses_real_devicectl_device_listing` |
 | J15 | `test_ios_parsers` | `readiness_reports_ddi_services_state` |
 | J15 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
@@ -309,16 +352,16 @@ Two cautions on reading this:
 
 ## Additional coverage keyed to specification sections and detector ids (17)
 
-These reference a numbered section or a detector rather than a section-18
-checklist item.
-
 | Reference | Test binary | Test case |
 |---|---|---|
 | DET-01 | `test_rules` | `det01_observed_requires_presentation_truth` |
+| DET-02 | `test_android_collector` | `simpleperf_finds_the_react_native_js_thread` |
 | DET-02 | `test_ingestion` | `hermes_reader_produces_samples_not_tasks` |
 | DET-02 | `test_rules` | `det02_unmapped_clock_blocks_any_ui_claim` |
 | DET-02 | `test_rules` | `det02_refuses_sampling_only_input` |
+| DET-04 | `test_android_collector` | `simpleperf_parses_real_samples_and_callchains` |
 | DET-04 | `test_rules` | `det04_refuses_to_name_a_function_without_symbols` |
+| DET-04 | `test_rules` | `obfuscated_frames_resolve_only_with_a_bound_mapping` |
 | M0 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
 | M0 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
 | section-0.6 | `test_report` | `synthetic_data_is_announced_in_both_formats` |
@@ -335,23 +378,27 @@ checklist item.
 | section-13 | `test_report` | `unknown_values_are_shown_as_unknown_not_omitted` |
 | section-13 | `test_rules` | `issues_are_sorted_by_severity_then_stably` |
 | section-13 | `test_rules` | `issue_interval_lies_inside_the_capture_window` |
+| section-14 | `test_devx_http` | `server_generates_a_distinct_token_per_instance` |
+| section-14 | `test_devx_http` | `server_binds_loopback_on_an_ephemeral_port` |
+| section-14 | `test_devx_http` | `index_page_substitutes_the_token_once` |
 | section-14 | `test_report` | `source_paths_are_excluded_from_export_by_default` |
 | section-14 | `test_report` | `raw_events_are_excluded_from_the_export_by_default` |
+| section-15 | `test_devx_http` | `html_escape_neutralises_markup` |
 | section-15 | `test_ingestion` | `normalize_is_idempotent` |
+| section-15 | `test_json` | `stream_parser_walks_members_in_order` |
+| section-15 | `test_json` | `stream_parser_skips_without_materialising` |
 | section-15 | `test_report` | `markdown_escapes_table_breaking_and_html_characters` |
 | section-15 | `test_report` | `hostile_identifiers_cannot_break_the_markdown_table` |
 | section-15 | `test_rules` | `fingerprints_are_stable_across_reanalysis` |
 | section-6 | `test_trace_model` | `unmapped_clock_domain_is_not_silently_aligned` |
 | section-7.3 | `test_eligibility` | `eligibility_never_implies_zero_overhead` |
+| section-8 | `test_android_collector` | `meminfo_absent_fields_stay_absent` |
 | section-8 | `test_trace_model` | `unknown_metric_value_serializes_as_null_not_zero` |
 | section-9 | `test_rules` | `det12_excludes_name_only_matches_from_attribution` |
 | section-9 | `test_rules` | `det12_preserves_original_total_alongside_slices` |
 | section-9 | `test_trace_model` | `attribution_forbids_subtraction_structurally` |
 
-## Not yet covered (89)
-
-Grouped by the thing that is missing. None of these is an unknown-unknown;
-each corresponds to an entry in `docs/known-limitations.md`.
+## Not yet covered (83)
 
 | Checklist id | Why there is no test yet |
 |---|---|
@@ -370,7 +417,6 @@ each corresponds to an entry in `docs/known-limitations.md`.
 | B05 | secondary-service inclusion needs Android hardware |
 | B11 | reinstall revalidation needs a device and an install cycle |
 | B14 | profileable-vs-visible independence is modelled; asserting it needs a device |
-| B15 | a launch/exit discovery race needs a live device |
 | C02 | needs a built app with native debug and JS dev off |
 | C05 | custom configuration names need a build integration (M3) |
 | C12 | needs an iOS build with a debug entitlement and optimized code |
@@ -387,8 +433,6 @@ each corresponds to an entry in `docs/known-limitations.md`.
 | D20 | disconnect/reconnect needs hardware |
 | D21 | conflicting collector detection needs a collector (M2) |
 | D22 | cleanup scoping is implemented (delete_package refuses non-session dirs); full test needs a collector |
-| E03 | idle-display handling needs a real idle capture |
-| E04 | background-vs-foreground needs a device that reports surface state |
 | E05 | asserted in DET-04's alternative explanations; a real capture would confirm |
 | E06 | low CPU with blocked UI needs scheduling evidence (DET-09, M5) |
 | E07 | needs a real React Native capture |
@@ -407,7 +451,6 @@ each corresponds to an entry in `docs/known-limitations.md`.
 | F05 | memory detectors are M5 |
 | F06 | memory detectors are M5 |
 | F07 | memory detectors are M5 |
-| F08 | CounterSeries::family keeps families distinct; a real memory collector is M2/M5 |
 | F09 | needs a memory collector |
 | F10 | needs a memory collector |
 | F12 | in-process tooling stays in the process total by construction; a real capture would confirm |
@@ -433,22 +476,20 @@ each corresponds to an entry in `docs/known-limitations.md`.
 | I18 | the code reports median and IQR only and never a p95; a dedicated absence test would assert it |
 | I20 | overhead measurement needs paired controlled runs on hardware (M4) |
 | I21 | UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured |
-| J06 | the SDK transport is not implemented (M3) |
 | J07 | transport backpressure needs the SDK transport (M3) |
 | J08 | delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated |
 | J09 | there is no AI layer, so the core trivially works without one |
 | J10 | there is no AI layer yet; trace text is never executed |
 | J12 | desktop signing and packaging need the desktop app (M2) |
 | J13 | session migration needs more than one schema version |
-| J14 | REAL Android app discovery and live capture: NOT VERIFIED, no Android device was reachable |
 | J17 | App Store app depth needs a reachable device with such an app |
 | J19 | native-without-JS evidence needs a real mixed capture |
 | J20 | a schema_version mismatch is reported; a versioned corpus is M3 |
 
 ## Totals
 
-- test binaries: 12
-- test cases: 228
-- checklist-item links: 285
-- section-18 coverage: 109/198 (55%)
+- test binaries: 14
+- test cases: 263
+- checklist-item links: 328
+- section-18 coverage: 115/198 (58%)
 
