@@ -24,7 +24,7 @@
 #include "adapters/android/adb_adapter.hpp"
 #include "adapters/android/adb_collector.hpp"
 #include "adapters/ios/ios_adapter.hpp"
-#include "apps/devx-serve/http_server.hpp"
+#include "core/net/http_server.hpp"
 #include "apps/devx-serve/ui.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -132,14 +132,14 @@ bool session_id_is_safe(const std::string& id) {
 }
 
 int run(const Options& opts, CancellationSource& cancel) {
-  HttpServer server;
+  net::HttpServer server;
 
-  server.route("GET", "/", [&](const Request&) {
-    return Response::html(index_html(server.token(), rules::engine_version(),
+  server.route("GET", "/", [&](const net::Request&) {
+    return net::Response::html(index_html(server.token(), rules::engine_version(),
                                      rules::ruleset_version()));
   });
 
-  server.route("GET", "/api/devices", [&](const Request& req) {
+  server.route("GET", "/api/devices", [&](const net::Request& req) {
     Options o = opts;
     if (req.has_param("simulators")) {
       o.include_simulators = req.param("simulators") != "0";
@@ -147,23 +147,23 @@ int run(const Options& opts, CancellationSource& cancel) {
     auto svc = make_discovery(o, req.param("platform"));
     const auto snap = svc.snapshot(provider_options(o, cancel.token()),
                                    /*include_apps=*/false);
-    return Response::json(snap.to_json().dump(2));
+    return net::Response::json(snap.to_json().dump(2));
   });
 
-  server.route("GET", "/api/apps", [&](const Request& req) {
+  server.route("GET", "/api/apps", [&](const net::Request& req) {
     const std::string device = req.param("device");
-    if (device.empty()) return Response::error(400, "device is required");
+    if (device.empty()) return net::Response::error(400, "device is required");
     auto svc = make_discovery(opts, req.param("platform"));
     const auto snap = svc.snapshot(provider_options(opts, cancel.token()),
                                    /*include_apps=*/true);
     bool ambiguous = false;
     const model::DeviceRef* dev = find_device(snap, device, ambiguous);
     if (ambiguous) {
-      return Response::error(409, "device id '" + device +
+      return net::Response::error(409, "device id '" + device +
                                       "' matches more than one platform; pass "
                                       "platform= to disambiguate");
     }
-    if (!dev) return Response::error(404, "no device with id '" + device + "'");
+    if (!dev) return net::Response::error(404, "no device with id '" + device + "'");
 
     json::Value root = json::Value::object();
     root.set("schema_version", json::Value::string("2.0"));
@@ -178,10 +178,10 @@ int run(const Options& opts, CancellationSource& cancel) {
     for (const auto& e : snap.provider_errors) errs.push_back(json::Value::string(e));
     root.set("provider_errors", std::move(errs));
     root.set("enumeration_failed", json::Value::boolean(snap.enumeration_failed));
-    return Response::json(root.dump(2));
+    return net::Response::json(root.dump(2));
   });
 
-  server.route("GET", "/api/preflight", [&](const Request& req) {
+  server.route("GET", "/api/preflight", [&](const net::Request& req) {
     const std::string device = req.param("device");
     const std::string app = req.param("app");
     auto svc = make_discovery(opts, req.param("platform"));
@@ -231,20 +231,20 @@ int run(const Options& opts, CancellationSource& cancel) {
     root.set("benchmark_eligibility",
              model::evaluate_eligibility(build, model::MeasurementMode::kBenchmark)
                  .to_json());
-    return Response::json(root.dump(2));
+    return net::Response::json(root.dump(2));
   });
 
-  server.route("GET", "/api/rules", [&](const Request&) {
+  server.route("GET", "/api/rules", [&](const net::Request&) {
     json::Value root = json::Value::object();
     root.set("ruleset_version", json::Value::string(rules::ruleset_version()));
     root.set("engine_version", json::Value::string(rules::engine_version()));
     json::Value arr = json::Value::array();
     for (const auto& r : rules::all_rules()) arr.push_back(r->describe());
     root.set("rules", std::move(arr));
-    return Response::json(root.dump(2));
+    return net::Response::json(root.dump(2));
   });
 
-  server.route("GET", "/api/sessions", [&](const Request&) {
+  server.route("GET", "/api/sessions", [&](const net::Request&) {
     json::Value root = json::Value::object();
     json::Value arr = json::Value::array();
     for (const auto& id : list_session_dirs(opts.sessions_dir)) {
@@ -272,24 +272,24 @@ int run(const Options& opts, CancellationSource& cancel) {
     }
     root.set("sessions", std::move(arr));
     root.set("sessions_dir", json::Value::string(opts.sessions_dir));
-    return Response::json(root.dump(2));
+    return net::Response::json(root.dump(2));
   });
 
-  server.route("GET", "/api/session", [&](const Request& req) {
+  server.route("GET", "/api/session", [&](const net::Request& req) {
     const std::string id = req.param("id");
     if (!session_id_is_safe(id)) {
-      return Response::error(400, "invalid session id");
+      return net::Response::error(400, "invalid session id");
     }
     const std::string dir = opts.sessions_dir + "/" + id;
     const auto loaded = session::load_package(dir);
-    if (!loaded.ok) return Response::error(404, loaded.error);
+    if (!loaded.ok) return net::Response::error(404, loaded.error);
 
     // The stored report is served as-is: re-analysing here could disagree with
     // what the session recorded, and the session is the artefact of record.
     json::ParseError perr;
     auto report = json::parse_file(dir + "/report.json", json::Limits{}, &perr);
     if (!report) {
-      return Response::error(500, "session report is unreadable: " + perr.message);
+      return net::Response::error(500, "session report is unreadable: " + perr.message);
     }
     json::Value root = *report;
     json::Value checks = json::Value::array();
@@ -299,14 +299,14 @@ int run(const Options& opts, CancellationSource& cancel) {
     root.set("checksum_failures", std::move(checks));
     root.set("manifest_state",
              json::Value::string(session::to_string(loaded.manifest.state)));
-    return Response::json(root.dump());
+    return net::Response::json(root.dump());
   });
 
-  server.route("POST", "/api/record", [&](const Request& req) {
+  server.route("POST", "/api/record", [&](const net::Request& req) {
     json::ParseError perr;
     auto body = json::parse(req.body, json::Limits{}, &perr);
     if (!body || !body->is_object()) {
-      return Response::error(400, "body must be a JSON object: " + perr.message);
+      return net::Response::error(400, "body must be a JSON object: " + perr.message);
     }
     const auto str = [&](const char* k) {
       const json::Value* v = body->find(k);
@@ -324,7 +324,7 @@ int run(const Options& opts, CancellationSource& cancel) {
     const std::string device = str("device");
     const std::string app = str("app");
     if (device.empty() || app.empty()) {
-      return Response::error(400, "device and app are both required");
+      return net::Response::error(400, "device and app are both required");
     }
 
     auto svc = make_discovery(opts, "");
@@ -334,10 +334,10 @@ int run(const Options& opts, CancellationSource& cancel) {
 
     bool ambiguous = false;
     const model::DeviceRef* dev = find_device(snap, device, ambiguous);
-    if (ambiguous) return Response::error(409, "ambiguous device id");
-    if (!dev) return Response::error(404, "no device with id '" + device + "'");
+    if (ambiguous) return net::Response::error(409, "ambiguous device id");
+    if (!dev) return net::Response::error(404, "no device with id '" + device + "'");
     if (!dev->usable_for_capture()) {
-      return Response::error(409, "device is " +
+      return net::Response::error(409, "device is " +
                                       std::string(model::to_string(dev->trust)) +
                                       " and cannot be used for capture");
     }
@@ -351,15 +351,15 @@ int run(const Options& opts, CancellationSource& cancel) {
       target = &a;
     }
     if (matches == 0) {
-      return Response::error(404, "'" + app + "' was not found on this device");
+      return net::Response::error(404, "'" + app + "' was not found on this device");
     }
     if (matches > 1) {
-      return Response::error(409, "'" + app +
+      return net::Response::error(409, "'" + app +
                                       "' matches more than one entry on this "
                                       "device; narrow the target");
     }
     if (target->profiling == model::ProfilingAvailability::kUnavailable) {
-      return Response::error(409, "'" + app + "' cannot be profiled: " +
+      return net::Response::error(409, "'" + app + "' cannot be profiled: " +
                                       target->profiling_reason);
     }
 
@@ -376,14 +376,14 @@ int run(const Options& opts, CancellationSource& cancel) {
                   "so the blocker is the collector, not this target."));
       out.set("target_resolved", json::Value::boolean(true));
       out.set("source_results", json::Value::array());
-      return Response::json(out.dump(2), 501);
+      return net::Response::json(out.dump(2), 501);
     }
 
     const auto reval =
         svc.revalidate(*dev, target->key, target->processes, po);
     auto processes = reval.processes.empty() ? target->processes : reval.processes;
     if (processes.empty()) {
-      return Response::error(409,
+      return net::Response::error(409,
                              "no live process of '" + app +
                                  "' could be resolved; start it on the device "
                                  "and retry");
@@ -432,14 +432,14 @@ int run(const Options& opts, CancellationSource& cancel) {
 
     if (!capture.started) {
       out.set("error", json::Value::string(capture.error));
-      return Response::json(out.dump(2), 500);
+      return net::Response::json(out.dump(2), 500);
     }
     if (!capture.any_data) {
       // A capture that measured nothing is not written. Saving it would be the
       // capture-shaped-but-empty artefact spec section 0.5 forbids.
       out.set("error", json::Value::string(capture.error));
       out.set("session_written", json::Value::boolean(false));
-      return Response::json(out.dump(2), 200);
+      return net::Response::json(out.dump(2), 200);
     }
 
     const auto norm = ingest::normalize(trace, cancel.token());
@@ -468,7 +468,7 @@ int run(const Options& opts, CancellationSource& cancel) {
                                                 analysis, snap, md, js);
     if (!written.ok) {
       out.set("error", json::Value::string(written.error));
-      return Response::json(out.dump(2), 500);
+      return net::Response::json(out.dump(2), 500);
     }
     out.set("session_written", json::Value::boolean(true));
     out.set("session_id", json::Value::string(manifest.session_id));
@@ -480,7 +480,7 @@ int run(const Options& opts, CancellationSource& cancel) {
             json::Value::integer(static_cast<std::int64_t>(trace.counters.size())));
     out.set("issues",
             json::Value::integer(static_cast<std::int64_t>(analysis.issues.size())));
-    return Response::json(out.dump(2));
+    return net::Response::json(out.dump(2));
   });
 
   std::string error;

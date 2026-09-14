@@ -28,6 +28,7 @@
 #include "core/ingestion/reader.hpp"
 #include "core/report/report.hpp"
 #include "core/rules/engine.hpp"
+#include "core/sdk/sdk_bridge.hpp"
 #include "core/session/live_capture.hpp"
 #include "core/session/session_store.hpp"
 #include "core/util/time.hpp"
@@ -194,6 +195,35 @@ ExitCode cmd_record(const Invocation& inv) {
     manifest.state_transitions.push_back(
         std::string("preflight -> recording @ ") + time_util::now_iso8601_utc());
 
+    // The in-app SDK, when the operator asked for it. Its markers are the
+    // only source for screens and interactions, and the endpoint has to be
+    // up before the app starts so a launch's own markers are not missed.
+    std::unique_ptr<sdk::SdkBridge> bridge;
+    if (inv.has_flag("sdk")) {
+      std::uint16_t sdk_port = 0;
+      if (inv.has_flag("sdk-port")) {
+        const int p = std::atoi(inv.flag("sdk-port").c_str());
+        if (p < 1 || p > 65535) {
+          std::cerr << "error: --sdk-port must be between 1 and 65535\n";
+          return ExitCode::kUsage;
+        }
+        sdk_port = static_cast<std::uint16_t>(p);
+      }
+      bridge = std::make_unique<sdk::SdkBridge>();
+      std::string sdk_error;
+      if (!bridge->start(sdk_port, &sdk_error)) {
+        std::cerr << "error: cannot start the SDK endpoint: " << sdk_error
+                  << "\n";
+        return ExitCode::kCollectionError;
+      }
+      std::cerr << "SDK endpoint http://127.0.0.1:" << bridge->port()
+                << " token " << bridge->token() << "\n";
+      if (device.platform == model::Platform::kAndroid) {
+        std::cerr << "  let the device reach it: "
+                  << bridge->adb_reverse_command() << "\n";
+      }
+    }
+
     if (cfg.launch_app) {
       std::cerr << "launching " << inv.global.app << " (" << cfg.launch_class
                 << ") ...\n";
@@ -331,6 +361,19 @@ ExitCode cmd_record(const Invocation& inv) {
                   << collector->id() << " ...\n";
       }
       capture = collector->capture(device, trace.target.processes, cfg, trace);
+    }
+
+    if (bridge) {
+      // Merged after the capture so the markers sit in the same trace as the
+      // platform's evidence. The capability records what the SDK contributed
+      // *and* what it lost, so a gap in the marker stream is visible.
+      auto& ingest = bridge->ingest();
+      for (auto& m : ingest.take_markers()) trace.markers.push_back(std::move(m));
+      for (auto& f : ingest.build_facts()) trace.build.upsert(std::move(f));
+      trace.capabilities.upsert(ingest.capability());
+      for (const auto& n : ingest.notes()) trace.ingestion_warnings.push_back(n);
+      bridge->stop();
+      std::cerr << "SDK: " << ingest.capability().evidence << "\n";
     }
 
     manifest.state = session::SessionState::kProcessing;

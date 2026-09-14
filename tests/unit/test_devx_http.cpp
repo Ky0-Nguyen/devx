@@ -5,12 +5,13 @@
 // be turned into a path outside the sessions directory.
 #include <sstream>
 
-#include "apps/devx-serve/http_server.hpp"
+#include "core/net/http_server.hpp"
 #include "apps/devx-serve/ui.hpp"
 #include "core/util/json.hpp"
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
+using namespace mpi::net;
 using namespace mpi::devx;
 
 MPI_TEST(url_decode_handles_escapes_and_plus, {"J05"}) {

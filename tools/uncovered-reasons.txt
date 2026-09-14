@@ -7,7 +7,6 @@ A10	partial scope is asserted via iOS launchd-only entries; a dedicated Android 
 A14	duplicate display names need a device with two such apps installed
 A16	selection retention across refresh is a UI behaviour (M2); revalidate() is implemented and tested
 A17	needs a live app that exits between listing and record (M2)
-A19	the optional app SDK is not implemented (M3)
 A23	favourites/recents is a UI concept (M2)
 A25	large-list responsiveness is a UI concern (M2); apply_filter preserving unavailable entries is tested
 B01	multi-process grouping needs an Android device with a multi-process app
@@ -16,9 +15,7 @@ B11	reinstall revalidation needs a device and an install cycle
 B14	profileable-vs-visible independence is modelled; asserting it needs a device
 B15	a launch/exit discovery race needs a live device
 C02	needs a built app with native debug and JS dev off
-C05	custom configuration names need a build integration (M3)
 C12	needs an iOS build with a debug entitlement and optimized code
-C16	OTA identity change needs an OTA pipeline (M3)
 C20	classification is tested; end-to-end preservation through a capture needs M2
 D01	start/stop needs a collector (M2)
 D02	stop-during-startup needs a collector (M2)
@@ -65,9 +62,7 @@ G03	non-Hermes runtime needs such a build (M3)
 G04	JS reload needs a live RN app (M3)
 G05	Fast Refresh needs a live RN app (M3)
 G06	multiple runtimes needs a live RN app (M3)
-G07	cancelled navigation needs SDK markers (M3)
-G08	repeated mounts needs SDK markers (M3)
-G09	cross-runtime async needs SDK markers (M3)
+G09	the SDK sends async span markers and they are tested end to end; correlating two JS runtimes needs a live app with two of them
 G10	React profiling data is DET-10 (M5); its absence is reported as a skip
 G12	Expo prerequisites are documentation (M3)
 G13	the architecture matrix needs RN builds (M3)
@@ -79,8 +74,6 @@ I06	background workload needs a device
 I18	the code reports median and IQR only and never a p95; a dedicated absence test would assert it
 I20	overhead measurement needs paired controlled runs on hardware (M4)
 I21	UI responsiveness needs a UI (M2); the 1 GiB ingest cost IS measured
-J06	the SDK transport is not implemented (M3)
-J07	transport backpressure needs the SDK transport (M3)
 J08	delete scoping is implemented and refuses non-session directories; a destructive test is deliberately not automated
 J09	there is no AI layer, so the core trivially works without one
 J10	there is no AI layer yet; trace text is never executed

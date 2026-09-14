@@ -247,23 +247,37 @@ the safer form to script.
 
 ---
 
-## 6. No app SDK, so no markers, no build handshake, and no React data
+## 6. The app SDK exists; React render and network data depend on the app calling it
 
-`sdk/android`, `sdk/ios` and `sdk/react-native` are empty directories. Without
-an SDK:
+`sdk/react-native/mpi-sdk.js` is the in-app SDK: plain ES module JavaScript,
+no dependencies, no build step. It sends the markers spec section 11 names --
+screen mount/unmount, navigation begin/end/**cancel**, interactions, async
+spans -- plus a build/runtime handshake carrying the build configuration, the
+JS engine and version, the bundle id, the OTA update id and `__DEV__`.
 
-- **Screen and interaction names are never known.** `Issue::screen` serializes
-  to `null` unless a marker covered the interval. The tool does not guess a
-  screen from a function name (spec section 11).
-- **Build facts come only from the device and the host.** The
-  build-plugin-manifest and runtime-SDK fact sources exist in the model and are
-  honoured by `BuildProfile::upsert`, but nothing populates them, so most facts
-  are `unknown` and benchmark eligibility is usually `insufficient_evidence`.
-- **React render analysis is impossible.** DET-10 requires React profiler
-  commit data. Deriving renders from Hermes CPU samples would misreport them, so
-  it is skipped rather than approximated.
+The endpoint (`mpi record --sdk`, or `mpi sdk-bridge` on its own) binds
+127.0.0.1 and requires a token on every request. There is no wireless path.
 
-**Phase.** M3.
+**Verified end to end**: the real JavaScript client drives the real C++ ingest
+over real HTTP in `sdk/react-native/test/e2e.mjs` (33 checks, run by the smoke
+test when node is present), and a real emulator capture carries seven SDK
+markers and six runtime build facts into its session.
+
+What still depends on the app doing the work:
+
+- **DET-10 needs React commit data.** The SDK has `reactCommit(...)` and the
+  host accepts it, but a render count has to come from the app's own React
+  profiling hook. Sampling a stack that happens to be inside React is not the
+  same measurement.
+- **DET-11 needs request spans.** `networkRequest(...)` exists and redacts
+  query strings; the app has to call it from its own fetch layer.
+- **G09, cross-runtime async.** Async span markers work; correlating spans
+  across two JS runtimes needs a live app that actually has two.
+- **No native iOS/Android SDK.** `sdk/ios` and `sdk/android` are empty: a
+  native app with no JS layer has no way in yet.
+- **Markers are the app's own account of itself**, on the app's clock, and the
+  capability says so. Nothing in the platform corroborates them, and the host
+  does not silently align the app's clock to the device's.
 
 ---
 
