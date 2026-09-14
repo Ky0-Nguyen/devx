@@ -204,6 +204,8 @@ Still open, and all inherently UI behaviours:
 - No compare view. `mpi compare` is CLI-only.
 - The Live tab has no frame-timeline track either; it shows counts, source
   status and memory series.
+- Every label in the window is Menlo (or `--font=<family>`), except the window
+  title in the title bar, which AppKit draws in the system face.
 
 **Launching with arguments.** AppKit reads the process argument vector itself
 and treats anything it cannot pair with a `-flag` as a document to open. DevX

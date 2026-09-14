@@ -103,6 +103,12 @@ open -a "$PWD/build/bin/DevX.app" --args \
   --device=<id> --app=<identifier> --start-live
 ```
 
+The window is rendered entirely in **Menlo** -- the face Terminal and Xcode are
+read in, which ships with every macOS, so nothing is bundled and the licence
+inventory stays empty. `--font=<family>` switches it (`--font=Monaco` for the
+older Mac terminal face, or any coding font you have installed); a family that
+is not installed is reported on stderr and the default is kept.
+
 Write launch options as `--flag=value`. The space-separated form works too,
 but AppKit pairs arguments differently than DevX does and can be left holding
 a bare one, which it treats as a file to open -- see

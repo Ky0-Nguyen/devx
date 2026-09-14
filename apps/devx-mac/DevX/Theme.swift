@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The terminal palette.
@@ -26,13 +27,67 @@ enum Term {
     static let cyan = Color(red: 0.38, green: 0.84, blue: 0.95)
 }
 
+extension Term {
+    /// The console face.
+    ///
+    /// Menlo is the target: it ships with every macOS, it is the face Terminal
+    /// and Xcode are read in, and unlike Monaco it has a real bold rather than
+    /// a synthesised one. The rest of the chain exists only so the window can
+    /// never fall back to a proportional face, and nothing is bundled -- a font
+    /// file would be the first third-party asset in the repository (ADR-0002).
+    /// A family asked for with `--font=<family>`, set before the UI is built.
+    /// A face is a matter of taste, and Monaco or an installed coding font is
+    /// a reasonable thing to prefer; the default stays fixed so the window
+    /// looks the same on every machine.
+    static var requestedFace: String?
+
+    static let face: String? = {
+        var chain = ["Menlo", "Monaco", "PT Mono", "Courier New"]
+        if let asked = requestedFace, !asked.isEmpty {
+            if NSFont(name: asked, size: 12) != nil {
+                chain.insert(asked, at: 0)
+            } else {
+                // Said rather than silently ignored -- the window would
+                // otherwise come up in a face the operator did not ask for.
+                FileHandle.standardError.write(Data(
+                    ("DevX: no font family named '\(asked)' is installed; "
+                     + "using \(chain[0])\n").utf8))
+            }
+        }
+        for name in chain where NSFont(name: name, size: 12) != nil {
+            return name
+        }
+        return nil
+    }()
+
+    /// A face at an exact size. Sizes are fixed rather than scaled: this is a
+    /// dense instrument panel, and a grown body size reflows every column.
+    static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        guard let face else {
+            // No named face resolved, which should not happen on macOS. The
+            // system's own monospaced design is still a monospaced face.
+            return .system(size: size, weight: weight, design: .monospaced)
+        }
+        return .custom(face, fixedSize: size).weight(weight)
+    }
+
+    /// The type scale. Monospaced glyphs are wider and read larger than the
+    /// system face at the same point size, so each step sits a little below
+    /// the semantic style it replaces.
+    static var micro: Font { font(10) }
+    static var small: Font { font(11) }
+    static var body: Font { font(12) }
+    static var heading: Font { font(13, .bold) }
+    static var display: Font { font(18, .bold) }
+}
+
 /// Applies the console chrome: ground, ink, accent and a monospaced face for
 /// every label in the window. Dark is forced rather than followed, because
 /// half this palette stops meaning anything on a white ground.
 struct TerminalChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .fontDesign(.monospaced)
+            .font(Term.body)
             .foregroundStyle(Term.ink)
             .tint(Term.green)
             .background(Term.bg)
@@ -140,7 +195,7 @@ struct AsciiSpinner: View {
     @State private var index = 0
     var body: some View {
         Text(AsciiSpinner.frames[index])
-            .font(.system(size: 12, weight: .bold, design: .monospaced))
+            .font(Term.font(12, .bold))
             .foregroundStyle(color)
             .frame(width: 10)
             .task {
@@ -161,7 +216,7 @@ struct BlinkingCursor: View {
     @State private var lit = true
     var body: some View {
         Text("▊")
-            .font(.system(size: 12, design: .monospaced))
+            .font(Term.font(12))
             .foregroundStyle(color.opacity(lit ? 1 : 0.1))
             .phosphor(color, radius: lit ? 3 : 0)
             .task {
@@ -194,7 +249,7 @@ struct TermButtonStyle: ButtonStyle {
             configuration.label
             Text("]").foregroundStyle(bracket)
         }
-        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+        .font(Term.font(12, .semibold))
         .foregroundStyle(filled ? Term.bg : live)
         .padding(.horizontal, 9).padding(.vertical, 4)
         .background(filled ? live.opacity(enabled ? 0.9 : 0.4)
@@ -210,7 +265,7 @@ struct TermFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .textFieldStyle(.plain)
-            .font(.system(size: 12, design: .monospaced))
+            .font(Term.font(12))
             .padding(.horizontal, 7).padding(.vertical, 4)
             .background(Term.bg, in: RoundedRectangle(cornerRadius: 2))
             .overlay(RoundedRectangle(cornerRadius: 2)
@@ -229,19 +284,19 @@ struct TermEmpty: View {
 
     var body: some View {
         VStack(spacing: 9) {
-            Text("░▒▓").font(.system(size: 20, design: .monospaced))
+            Text("░▒▓").font(Term.font(20))
                 .foregroundStyle(Term.line)
             Text(title.uppercased())
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .font(Term.font(13, .bold))
                 .kerning(1.6)
             Text(detail)
-                .font(.system(size: 12, design: .monospaced))
+                .font(Term.font(12))
                 .foregroundStyle(Term.dim)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if let hint {
                 Text("$ \(hint)")
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Term.font(11))
                     .foregroundStyle(Term.green.opacity(0.75))
             }
         }
@@ -262,7 +317,7 @@ struct Chip: View {
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 2) }
     var body: some View {
         Text(text)
-            .font(.system(size: 11, weight: .medium, design: .monospaced))
+            .font(Term.font(11, .medium))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(tone.color.opacity(0.13), in: shape)
             .foregroundStyle(tone.color)
@@ -278,7 +333,7 @@ struct Field<Content: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(label)
-                .font(.system(size: 11, design: .monospaced))
+                .font(Term.font(11))
                 .foregroundStyle(Term.dim)
                 .frame(width: 128, alignment: .trailing)
             content
@@ -309,16 +364,16 @@ struct Banner: View {
     var body: some View {
         HStack(alignment: .top, spacing: 9) {
             Text(marker)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(Term.font(12, .bold))
                 .foregroundStyle(tone.color)
             VStack(alignment: .leading, spacing: 2) {
                 if let title {
                     Text(title.uppercased())
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(Term.font(12, .bold))
                         .kerning(0.8)
                         .foregroundStyle(tone.color)
                 }
-                Text(message).font(.callout).foregroundStyle(Term.ink.opacity(0.85))
+                Text(message).font(Term.body).foregroundStyle(Term.ink.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -343,13 +398,13 @@ struct BulletList: View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title.uppercased())
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(Term.font(11, .semibold))
                     .kerning(0.7)
                     .foregroundStyle(Term.dim)
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .top, spacing: 6) {
                         Text("-").foregroundStyle(Term.green.opacity(0.75))
-                        Text(item).font(.callout)
+                        Text(item).font(Term.body)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -369,12 +424,12 @@ struct Panel<Content: View>: View {
                 HStack(spacing: 7) {
                     Text("▌").foregroundStyle(Term.green).phosphor(Term.green, radius: 3)
                     Text(title.uppercased())
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(Term.font(12, .bold))
                         .kerning(1.1)
                     Spacer(minLength: 0)
                 }
                 if let subtitle {
-                    Text(subtitle).font(.caption).foregroundStyle(Term.dim)
+                    Text(subtitle).font(Term.small).foregroundStyle(Term.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Rectangle().fill(Term.line).frame(height: 1)

@@ -152,6 +152,11 @@ do {
     check(noSwallow.tab == DevXTab.live && noSwallow.session == "s-9",
           "a joined value does not consume the following argument")
 
+    let face = LaunchOptions.parse(["--font", "Monaco"])
+    check(face.font == "Monaco", "--font parses spaced")
+    check(LaunchOptions.parse(["--font=PT Mono"]).font == "PT Mono",
+          "--font parses joined, including a family name with a space")
+
     // Junk stays ignored rather than being guessed at.
     let junk = LaunchOptions.parse(["--live-seconds=0", "--live-seconds=abc"])
     check(junk.liveSeconds == nil,

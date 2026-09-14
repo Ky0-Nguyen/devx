@@ -19,6 +19,9 @@ struct LaunchOptions {
     /// Stop the live capture automatically after this many seconds. Without it
     /// a live session runs until stopped, which is the point of a live view.
     var liveSeconds: Int?
+    /// A monospaced family to render the window in, e.g. `--font=Monaco`. An
+    /// uninstalled family is reported on stderr and the default is kept.
+    var font: String?
 
     static func parse(_ argv: [String]) -> LaunchOptions {
         var o = LaunchOptions()
@@ -51,6 +54,8 @@ struct LaunchOptions {
                 if let v = next { o.app = v; i += step }
             case "--start-live":
                 o.startLive = true
+            case "--font":
+                if let v = next { o.font = v; i += step }
             case "--live-seconds":
                 if let v = next, let n = Int(v), n > 0 { o.liveSeconds = n; i += step }
             default: break

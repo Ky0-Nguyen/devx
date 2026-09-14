@@ -90,7 +90,7 @@ struct IssuesView: View {
                 }
                 Field(label: "target") {
                     Text(trace["target"]["application_key"]["app_identifier"].display())
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(Term.font(12))
                 }
                 Field(label: "mode") { Text(analysis["measurement_mode"].display()) }
                 Field(label: "window") {
@@ -98,14 +98,14 @@ struct IssuesView: View {
                 }
                 Field(label: "clock") {
                     Text(trace["primary_clock_domain"].display())
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(Term.font(11))
                 }
                 Field(label: "collected") {
                     Text("\(counts["frames"].display("0")) frames · "
                          + "\(counts["cpu_samples"].display("0")) samples · "
                          + "\(counts["js_tasks"].display("0")) js tasks · "
                          + "\(counts["counters"].display("0")) counters")
-                        .font(.caption)
+                        .font(Term.small)
                 }
                 Field(label: "eligibility") {
                     HStack(spacing: 5) {
@@ -151,7 +151,7 @@ struct IssuesView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
                             Text("\(r["rule_id"].text) v\(r["rule_version"].text)")
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(Term.font(11))
                             Chip(text: r["outcome"].text,
                                  tone: StatusTone.outcome(r["outcome"].text))
                             if let n = r["issues_emitted"].int, n > 0 {
@@ -163,7 +163,7 @@ struct IssuesView: View {
                         let why = r["skipped_reasons"].array.compactMap { $0.string }
                         if !why.isEmpty {
                             ForEach(Array(why.enumerated()), id: \.offset) { _, w in
-                                Text(w).font(.caption).foregroundStyle(.secondary)
+                                Text(w).font(Term.small).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -197,11 +197,11 @@ private struct IssueListRow: View {
             Chip(text: issue["severity"].text,
                  tone: StatusTone.severity(issue["severity"].text))
             VStack(alignment: .leading, spacing: 3) {
-                Text(issue["title"].text).font(.callout)
+                Text(issue["title"].text).font(Term.body)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 5) {
                     Text(issue["rule_id"].text)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(Term.font(10))
                         .foregroundStyle(.secondary)
                     // The two axes are always shown together: an observed
                     // symptom with an unknown cause is the normal result and
@@ -230,7 +230,7 @@ private struct IssueDetail: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(issue["title"].text).font(.title3.weight(.semibold))
+                Text(issue["title"].text).font(Term.font(15, .bold))
                     .fixedSize(horizontal: false, vertical: true)
 
                 if issue["suppression"]["suppressed"].bool == true {
@@ -244,14 +244,14 @@ private struct IssueDetail: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Field(label: "detector") {
                             Text("\(issue["rule_id"].text) v\(issue["rule_version"].text)")
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(Term.font(12))
                         }
                         Field(label: "severity") {
                             VStack(alignment: .leading, spacing: 2) {
                                 Chip(text: issue["severity"].text,
                                      tone: StatusTone.severity(issue["severity"].text))
                                 Text(issue["severity_rationale"].text)
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(Term.small).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -270,7 +270,7 @@ private struct IssueDetail: View {
                                  + "\(formatNs(issue["end_ns"].double ?? 0))  ("
                                  + formatNs((issue["end_ns"].double ?? 0)
                                             - (issue["start_ns"].double ?? 0)) + ")")
-                                .font(.caption)
+                                .font(Term.small)
                         }
                         Field(label: "screen") {
                             // Null means no marker covered the interval. It is
@@ -285,7 +285,7 @@ private struct IssueDetail: View {
                         Field(label: "symbols") { Text(issue["symbol_status"].display()) }
                         Field(label: "fingerprint") {
                             Text(issue["fingerprint"].text)
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(Term.font(11))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -293,7 +293,7 @@ private struct IssueDetail: View {
 
                 if let basis = issue["confidence_basis"].string, !basis.isEmpty {
                     Panel(title: "What the evidence supports") {
-                        Text(basis).font(.callout)
+                        Text(basis).font(Term.body)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -312,9 +312,9 @@ private struct IssueDetail: View {
                 if let th = issue["threshold_expression"].string, !th.isEmpty {
                     Panel(title: "Threshold") {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(th).font(.system(size: 12, design: .monospaced))
+                            Text(th).font(Term.font(12))
                             Text("origin: \(issue["threshold_origin"].text)")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(Term.small).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -358,9 +358,9 @@ private struct IssueDetail: View {
                                     Chip(text: e["kind"].text)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(e["id"].text)
-                                            .font(.system(size: 11, design: .monospaced))
+                                            .font(Term.font(11))
                                         if let n = e["note"].string, !n.isEmpty {
-                                            Text(n).font(.caption)
+                                            Text(n).font(Term.small)
                                                 .foregroundStyle(.secondary)
                                         }
                                     }
@@ -397,19 +397,19 @@ private struct MetricRow: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 7) {
                 Text(metric["name"].text)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(Term.font(12))
                 Spacer()
                 // A metric the collector never produced reads as "not
                 // measured", never as zero.
                 Text(valueText)
-                    .font(.callout.weight(.medium))
+                    .font(Term.font(12, .medium))
                     .foregroundStyle(metric["value"].isNull ? .secondary : .primary)
                 Chip(text: metric["method"].text)
             }
             let limits = metric["limitations"].array.compactMap { $0.string }
             if !limits.isEmpty {
                 ForEach(Array(limits.enumerated()), id: \.offset) { _, l in
-                    Text("· \(l)").font(.caption).foregroundStyle(.secondary)
+                    Text("· \(l)").font(Term.small).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -425,7 +425,7 @@ private struct StackView: View {
             HStack(spacing: 6) {
                 if let share = stack["sample_share"].double {
                     Text(String(format: "%.1f%%", share * 100))
-                        .font(.callout.weight(.semibold))
+                        .font(Term.font(12, .semibold))
                 }
                 // Whether a share may be summed with others is a property of
                 // the measurement, so it is stated rather than implied.
@@ -440,7 +440,7 @@ private struct StackView: View {
                 let loc = idx < locations.count ? locations[idx] : JSON.null
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
-                        Text(f.text).font(.system(size: 11, design: .monospaced))
+                        Text(f.text).font(Term.font(11))
                         if !loc.isNull {
                             Chip(text: loc["symbol_status"].text,
                                  tone: loc["safe_to_open"].bool == true
@@ -449,13 +449,13 @@ private struct StackView: View {
                     }
                     if let file = loc["file"].string, !file.isEmpty {
                         Text("\(file)\(loc["line"].int.map { ":\($0)" } ?? "")")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(Term.small).foregroundStyle(.secondary)
                     }
                     // A non-exact match explains itself, because the editor
                     // must not navigate on it.
                     if loc["safe_to_open"].bool == false,
                        let note = loc["note"].string, !note.isEmpty {
-                        Text(note).font(.caption).foregroundStyle(.secondary)
+                        Text(note).font(Term.small).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

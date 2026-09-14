@@ -12,7 +12,7 @@ struct DevicesView: View {
                      + "device reads as offline — it is not absent, and it is not usable. "
                      + "Simulators and emulators are listed separately on purpose: their "
                      + "timings are never comparable to a physical device.")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if state.devicesDoc["enumeration_failed"].bool == true {
@@ -71,25 +71,25 @@ private struct DeviceRow: View {
             Image(systemName: form == "physical"
                   ? (device["platform"].text == "ios" ? "iphone" : "candybarphone")
                   : "macwindow.on.rectangle")
-                .font(.title2)
+                .font(Term.display)
                 .foregroundStyle(StatusTone.trust(trust).color)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(device["display_name"].display("unnamed device"))
-                        .font(.body.weight(.medium))
+                        .font(Term.font(12, .medium))
                     Chip(text: device["platform"].text)
                     Chip(text: form,
                          tone: form == "physical" ? .neutral : .caution)
                     Chip(text: trust, tone: StatusTone.trust(trust))
                 }
                 Text(device["device_id"].text)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(Term.font(11))
                     .foregroundStyle(.secondary)
                 Text("OS \(device["os_version"].display("unknown"))  ·  "
                      + device["model"].display("unknown model"))
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(Term.small).foregroundStyle(.secondary)
             }
             Spacer()
             if selected { Image(systemName: "checkmark.circle.fill")
@@ -119,7 +119,7 @@ struct AppsView: View {
                      + "running. Profiling availability is independent of runtime state, "
                      + "and entries that cannot be profiled are kept and marked rather "
                      + "than hidden."))
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     TextField("filter by name or identifier", text: $state.appFilter)
@@ -128,7 +128,7 @@ struct AppsView: View {
                         .toggleStyle(.checkbox)
                     Spacer()
                     Text("\(state.filteredApps.count) of \(state.apps.count)")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(Term.small).foregroundStyle(.secondary)
                 }
                 if state.appsDoc["enumeration_failed"].bool == true {
                     Banner(kind: .bad, title: "App enumeration failed for this device",
@@ -180,9 +180,9 @@ private struct AppRow: View {
 
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 7) {
-                Text(id).font(.system(size: 12, design: .monospaced))
+                Text(id).font(Term.font(12))
                 if !name.isEmpty && name != id {
-                    Text(name).font(.caption).foregroundStyle(.secondary)
+                    Text(name).font(Term.small).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button("use", action: use).buttonStyle(TermButtonStyle())
@@ -198,10 +198,10 @@ private struct AppRow: View {
             // so it is shown inline rather than hidden behind a click.
             if profiling != "available",
                let reason = app["profiling_reason"].string, !reason.isEmpty {
-                Text(reason).font(.caption).foregroundStyle(.secondary)
+                Text(reason).font(Term.small).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let fix = app["profiling_recovery_action"].string, !fix.isEmpty {
-                    Text("fix: \(fix)").font(.caption)
+                    Text("fix: \(fix)").font(Term.small)
                         .foregroundStyle(StatusTone.caution.color)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -222,14 +222,14 @@ struct PreflightView: View {
                 Text(.init("Every row is a probe result, not a plan. **unknown** and "
                      + "**not_tested** are distinct answers from **unsupported**, and none "
                      + "of them means \"false\"."))
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack {
                     TextField("package name or bundle id (optional)",
                               text: $state.selectedApp)
                         .textFieldStyle(TermFieldStyle()).frame(maxWidth: 320)
-                    Button("Probe") { state.loadPreflight() }
+                    Button("probe") { state.loadPreflight() }
                         .buttonStyle(TermButtonStyle(filled: true))
                         .disabled(state.selectedDevice.isEmpty)
                 }
@@ -300,7 +300,7 @@ private struct TargetPanel: View {
                     Chip(text: target["visibility_scope"].text)
                 }
                 if let r = target["profiling_reason"].string, !r.isEmpty {
-                    Text(r).font(.callout).foregroundStyle(.secondary)
+                    Text(r).font(Term.body).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 ForEach(Array(target["process_instances"].array.enumerated()),
@@ -308,7 +308,7 @@ private struct TargetPanel: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text("pid \(p["pid"].display())")
-                                .font(.system(size: 12, design: .monospaced))
+                                .font(Term.font(12))
                             Chip(text: p["ownership_evidence"].text,
                                  tone: p["counts_toward_app_totals"].bool == true
                                        ? .good : .caution)
@@ -318,7 +318,7 @@ private struct TargetPanel: View {
                                        ? .good : .bad)
                         }
                         if let note = p["ownership_note"].string, !note.isEmpty {
-                            Text(note).font(.caption).foregroundStyle(.secondary)
+                            Text(note).font(Term.small).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -339,8 +339,8 @@ private struct CapabilityRow: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 7) {
                 Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                    .font(.caption2).foregroundStyle(.secondary)
-                Text(cap["id"].text).font(.system(size: 12, design: .monospaced))
+                    .font(Term.micro).foregroundStyle(.secondary)
+                Text(cap["id"].text).font(Term.font(12))
                 Spacer()
                 Chip(text: status, tone: StatusTone.capability(status))
                 Chip(text: cap["tested"].text,
@@ -353,13 +353,13 @@ private struct CapabilityRow: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if let e = cap["evidence"].string, !e.isEmpty {
                         Field(label: "evidence") {
-                            Text(e).font(.caption)
+                            Text(e).font(Term.small)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     if let s = cap["scope"].string, !s.isEmpty {
                         Field(label: "scope") {
-                            Text(s).font(.caption)
+                            Text(s).font(Term.small)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -369,7 +369,7 @@ private struct CapabilityRow: View {
                                items: cap["prerequisites"].array.compactMap { $0.string })
                     if let fix = cap["recovery_action"].string, !fix.isEmpty {
                         Field(label: "fix") {
-                            Text(fix).font(.caption)
+                            Text(fix).font(Term.small)
                                 .foregroundStyle(StatusTone.caution.color)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

@@ -52,4 +52,7 @@ private func resolveLaunchOptions() -> LaunchOptions {
 
 let devxLaunch = resolveLaunchOptions()
 
+// Set before the first view is built, which is when the face resolves.
+Term.requestedFace = devxLaunch.font
+
 DevXApp.main()
