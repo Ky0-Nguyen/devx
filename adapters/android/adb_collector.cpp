@@ -975,6 +975,106 @@ std::int64_t AdbCollector::drain_cpu_samples(model::NormalizedTrace& out) {
 // Scheduling and I/O (atrace)
 // ---------------------------------------------------------------------------
 
+std::string AdbCollector::collect_heap_dump(
+    const model::DeviceRef& device, const session::CaptureConfig& config,
+    std::int32_t pid, model::Capability& capability) {
+  proc::Options po;
+  po.cancel = config.cancel;
+
+  if (config.artifact_dir.empty()) {
+    capability.status = model::CapabilityStatus::kUnsupported;
+    capability.evidence =
+        "no directory was provided to write the dump into, so nothing was "
+        "requested from the device";
+    return {};
+  }
+
+  const std::string pid_text = std::to_string(pid);
+  // A path under /data/local/tmp, which the shell user can write and read
+  // back. The app's own directory is not usable: the shell cannot read it on
+  // a non-debuggable app, and `am dumpheap` writes as the app.
+  const std::string remote =
+      "/data/local/tmp/mpi-heap-" + pid_text + ".hprof";
+  static_cast<void>(proc::run(
+      shell_argv(device.device_id, {"rm", "-f", remote}), po));
+
+  // `am dumpheap` returns as soon as the request is made; the runtime walks
+  // the heap afterwards. Its "Waiting for dump to finish..." is printed by am
+  // itself and does not mean the file is complete, so completion is decided
+  // by watching the size settle rather than by trusting the exit.
+  po.timeout = std::chrono::milliseconds(120000);
+  const auto request = proc::run(
+      shell_argv(device.device_id, {"am", "dumpheap", pid_text, remote}), po);
+  if (!request.ok()) {
+    capability.status = model::CapabilityStatus::kPermissionDenied;
+    capability.evidence =
+        "`am dumpheap` was refused: " +
+        trim(request.err.empty() ? request.out : request.err);
+    capability.prerequisites.push_back(
+        "the target must be debuggable, or the device must run a userdebug "
+        "build; a release app on a user build cannot be dumped");
+    capability.recovery_action =
+        "install a debuggable build of the app, or use a userdebug device";
+    return {};
+  }
+
+  std::int64_t size = 0;
+  std::int64_t stable_for = 0;
+  po.timeout = std::chrono::milliseconds(10000);
+  for (int i = 0; i < 120; ++i) {
+    if (config.cancel.cancelled()) break;
+    const auto stat = proc::run(
+        shell_argv(device.device_id, {"stat", "-c", "%s", remote}), po);
+    std::int64_t now = 0;
+    if (stat.ok()) {
+      now = std::atoll(trim(stat.out).c_str());
+    }
+    // Two consecutive equal, non-zero sizes: the runtime has stopped writing.
+    if (now > 0 && now == size) {
+      if (++stable_for >= 2) break;
+    } else {
+      stable_for = 0;
+    }
+    size = now;
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+  }
+  if (size <= 0) {
+    capability.status = model::CapabilityStatus::kUnsupported;
+    capability.evidence =
+        "the dump file never appeared on the device, so no heap was captured";
+    return {};
+  }
+
+  const std::string local = config.artifact_dir + "/heap.hprof";
+  po.timeout = std::chrono::milliseconds(180000);
+  const auto pull = proc::run(
+      {adb_path_, "-s", device.device_id, "pull", remote, local}, po);
+  static_cast<void>(proc::run(
+      shell_argv(device.device_id, {"rm", "-f", remote}), po));
+  if (!pull.ok()) {
+    capability.status = model::CapabilityStatus::kUnsupported;
+    capability.evidence = "the dump could not be pulled from the device: " +
+                          trim(pull.err);
+    return {};
+  }
+
+  capability.status = model::CapabilityStatus::kAvailable;
+  capability.evidence = "`am dumpheap` wrote " +
+                        std::to_string(size / (1024 * 1024)) +
+                        " MiB, pulled to the session";
+  capability.limitations.push_back(
+      "a heap dump is one instant: it shows what was reachable then, and "
+      "nothing about how long any object had been alive");
+  capability.limitations.push_back(
+      "the runtime collects garbage before writing the dump, but an object on "
+      "a finalizer or reference queue is still present for one more cycle, so "
+      "presence is not retention");
+  capability.limitations.push_back(
+      "the app is paused while its heap is walked, so any timing measured "
+      "across this point includes the pause");
+  return local;
+}
+
 std::int64_t AdbCollector::collect_scheduling(
     const model::DeviceRef& device, const session::CaptureConfig& config,
     std::int32_t pid, model::NormalizedTrace& out,
@@ -1816,6 +1916,33 @@ session::CaptureResult AdbCollector::capture(
                    "attributed to the app";
     } else if (collect_scheduling(device, config, pid, out, c) > 0) {
       result.any_data = true;
+    }
+    result.source_results.push_back(std::move(c));
+  }
+
+  // ---- heap dump ----------------------------------------------------------
+  // Last, and opt-in. `am dumpheap` pauses the app while the runtime walks
+  // the whole heap, so doing it earlier would put that pause inside the
+  // window every other source is measuring.
+  if (config.heap_dump) {
+    auto c = make_source("android.capture.heap_dump", "Heap dump",
+                         model::CapabilityStatus::kUnknown, "am dumpheap");
+    c.tested = device.form == model::DeviceForm::kPhysical
+                   ? model::TestedState::kVerifiedOnPhysicalDevice
+                   : model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    const std::int32_t heap_pid =
+        processes.empty() ? 0 : (primary != nullptr ? primary->pid
+                                                    : processes.front().pid);
+    if (heap_pid <= 0) {
+      c.status = model::CapabilityStatus::kUnknown;
+      c.evidence = "no pid was resolved, so no process could be dumped";
+    } else {
+      const auto path = collect_heap_dump(device, config, heap_pid, c);
+      if (!path.empty()) {
+        result.artifacts.emplace_back("heap.hprof", path);
+        // A heap dump is not evidence about the capture window, so it does
+        // not make an otherwise empty capture count as having data.
+      }
     }
     result.source_results.push_back(std::move(c));
   }

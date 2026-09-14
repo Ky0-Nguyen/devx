@@ -62,13 +62,17 @@ struct WriteResult {
 // Writes a complete session package. Content is written to a sibling temp
 // directory and renamed into place, so an interrupted write never leaves a
 // half-package that looks finished (spec section 14: atomic finalization).
-WriteResult write_package(const std::string& parent_dir,
-                          const SessionManifest& manifest,
-                          const model::NormalizedTrace& trace,
-                          const model::AnalysisResult& analysis,
-                          const model::DiscoverySnapshot& discovery,
-                          const std::string& report_markdown,
-                          const std::string& report_json);
+// `extra_raw_files` are large artifacts copied into the package's `raw/`
+// directory as {name, source path} -- a heap dump, say. They are checksummed
+// with everything else, and a source that cannot be read fails the write
+// rather than producing a package whose manifest lists a file that is not
+// there.
+WriteResult write_package(
+    const std::string& parent_dir, const SessionManifest& manifest,
+    const model::NormalizedTrace& trace, const model::AnalysisResult& analysis,
+    const model::DiscoverySnapshot& discovery,
+    const std::string& report_markdown, const std::string& report_json,
+    const std::vector<std::pair<std::string, std::string>>& extra_raw_files = {});
 
 struct LoadResult {
   bool ok = false;
@@ -78,6 +82,9 @@ struct LoadResult {
   // the operator decides whether to trust the package.
   std::vector<std::string> checksum_failures;
   std::string trace_path;
+  // A heap dump inside the package, when one was captured. Empty otherwise,
+  // and empty means "this capture has none" -- not "it had none to find".
+  std::string heap_path;
 };
 
 // Reads a package's manifest and verifies its checksums.

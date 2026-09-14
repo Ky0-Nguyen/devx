@@ -53,6 +53,7 @@ against `com.android.settings`:
 | `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available`; the reading is excluded from app-scoped totals when ownership is ambiguous, which is what a shared-uid system app produces |
 | `android.capture.streaming` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
 | `android.capture.scheduling` (`atrace sched disk am view`) | `available`, **opt-in only** -- 4082 events over 64 threads in a 10 s capture | `available`; ftrace is system-wide and does not depend on the target's debuggability |
+| `android.capture.heap_dump` (`am dumpheap`) | `available`, **opt-in only** -- 49 MB, 580,140 objects, read in 1.7 s | `permission_denied`: `am dumpheap` needs a debuggable target or a userdebug build |
 
 ### Measured live, against a real emulator
 
@@ -65,6 +66,25 @@ Both verified on `emulator-5554` (Pixel 9 Pro image, API 37):
 
 Neither row is a claim about phone hardware: an emulator's GPU is emulated and
 its scheduler is the host's. Physical-device live capture is unverified.
+
+### Heap evidence, measured on the same emulator
+
+`mpi record --heap` against `io.pizzahut.hutbot.debug`: 580,140 objects,
+292,343 roots (23,161 anchored in the app's own code), 31,349 classes, zero
+unrecognised records. Android's 1.0.3 format is read directly -- `hprof-conv`
+is not used, because it collapses root kinds and drops the heap attribution.
+Objects split 246,284 app / 158,976 zygote / 139,839 boot image, which is the
+split that decides what is the app's memory to release at all.
+
+Two caveats, both stated to the operator before the dump is taken:
+
+- **It pauses the app.** The runtime walks the whole heap, so the dump is
+  taken after every other source and any timing measured across that point
+  includes the pause.
+- **It is one instant.** A dump shows what was reachable then. It says nothing
+  about how long an object had been alive, and an object on a finalizer queue
+  is legitimately present for one more collection cycle -- so presence is not
+  retention.
 
 ### Scheduling evidence, measured on the same emulator
 

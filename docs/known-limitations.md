@@ -191,22 +191,19 @@ the ingest cost above is what is measured.
 
 ---
 
-## 4. One of the twelve catalog detectors is registered but not implemented
+## 4. All twelve catalog detectors are implemented
 
-Implemented: **DET-01** (frame deadlines), **DET-02** (long JS), **DET-03**
-(synchronous main-thread I/O), **DET-04** (sampled CPU hotspot), **DET-05**
-(memory growth across screen cycles), **DET-07** (startup budget), **DET-08**
-(regression), **DET-09** (wait contention), **DET-10** (React renders),
-**DET-11** (network delay), **DET-12** (tooling attribution).
+**DET-01** (frame deadlines), **DET-02** (long JS), **DET-03** (synchronous
+main-thread I/O), **DET-04** (sampled CPU hotspot), **DET-05** (memory growth
+across screen cycles), **DET-06** (retained-object investigation), **DET-07**
+(startup budget), **DET-08** (regression), **DET-09** (wait contention),
+**DET-10** (React renders), **DET-11** (network delay), **DET-12** (tooling
+attribution).
 
-Registered and always skipped, with its prerequisites, its phase and the
-conclusion it will be allowed to reach: **DET-06** (retained-object
-investigation). It needs reference paths from a heap graph -- which object
-holds the retained one, and through what -- and no provider in this build
-produces those. Android's `am dumpheap` writes an HPROF file, so the route
-exists; parsing HPROF is the work, and it is not done. DET-06 therefore skips
-saying the heap graph is missing, rather than re-reporting DET-05's rising
-counters as if they identified an object.
+Implemented is not the same as *runnable on any capture*, and the difference
+is the point of the run record. A detector whose provider was not collected
+skips and names the evidence it wanted -- never a milestone, which a test now
+enforces across all twelve.
 
 **Implemented does not mean exercised on every platform.** DET-03 and DET-09
 read Android scheduling evidence only; on an iOS capture they skip for want of
@@ -218,6 +215,30 @@ what has been exercised against what.
 *reported as skipped* and H11 requires "no findings" to be distinguishable from
 "no analysis". A detector the engine has never heard of can satisfy neither.
 Every report therefore lists all twelve with an explicit outcome.
+
+**DET-06 never says "leak" either, and the reason is sharper.** Its evidence
+is a heap dump, which proves two things exactly: that an object existed at one
+instant, and what chain of references reached it from a GC root. Both are read
+from the file. Neither is a leak -- a cache, a singleton, an object pool and a
+framework-held instance are all reachable by design.
+
+So the rule reports what it can check: an object whose **own lifecycle state**
+says it is finished, still held by a chain. `mDestroyed` on an Activity is the
+framework's statement about itself, not this tool's opinion, which is why the
+threshold origin is `platform_contract` -- a category added for it, because
+calling a documented contract a "configurable heuristic" would have been a
+lie about where the number came from. The finding names the field it read,
+because a framework-private field is a version-dependent thing to depend on.
+
+Three refusals are built in. An object no root reaches is reported as
+**garbage awaiting collection**, which is the opposite of retention. A chain
+anchored only in runtime bookkeeping -- an interned string, a VM internal --
+says the *runtime* holds the object and the finding says so rather than
+blaming the app. And **retained size is not computed at all**: it needs a
+dominator tree, and an approximation presented as a size would be a number
+nobody could check. Shallow size is reported, named as shallow, with a note
+that an Activity holding a 40 MB bitmap has a shallow size of a few hundred
+bytes.
 
 **DET-05 will not say "leak".** The strongest conclusion the spec allows it is
 *suspected retention*, and the rule is built around that: rising memory across
@@ -315,7 +336,7 @@ Still open, and all inherently UI behaviours:
   legend above the tracks rather than below them. `mpi timeline` renders the
   same data in a terminal. An issue focuses its own interval at full
   resolution, and `--issue=<id>` opens a link to one finding. Building it
-  found three defects in the capture path, listed in section 10.
+  found three defects in the capture path, listed in section 11.
 - **The compare view exists.** DevX has a Compare tab over the same engine
   the CLI uses, and the run-set reader moved into the core rather than being
   written twice -- what an absent field means is part of the comparison's
@@ -412,8 +433,8 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 
 ## 9. Coverage of specification section 18
 
-**143 of 198** checklist items have at least one automated test
-(384 test cases in 17 binaries, plus 148 Swift). The remaining 55 are enumerated with a stated
+**145 of 198** checklist items have at least one automated test
+(384 test cases in 17 binaries, plus 148 Swift). The remaining 53 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
@@ -422,7 +443,57 @@ on hardware. The capability matrix is the authority on that.
 
 ---
 
-## 10. Sessions recorded before 2026-09-15 have two coverage defects
+## 10. The heap parser is verified against one real dump, which is not committed
+
+`mpi record --heap` runs `am dumpheap` and stores the HPROF file in the
+session. The parser reads Android's own 1.0.3 format directly rather than
+converting it with `hprof-conv`, because that conversion discards the two
+things a retention question needs: it collapses nearly every root to
+`ROOT_UNKNOWN` (269,081 of 290,000 in the dump below), and it drops the
+`HEAP_DUMP_INFO` records that separate the app's heap from the zygote and boot
+image.
+
+**What was measured.** One dump, 49 MB, from `io.pizzahut.hutbot.debug` on
+`emulator-5554`: 580,140 objects, 292,343 roots of which 23,161 are anchored
+in the app's own code, 31,349 classes, zero unrecognised records, three
+dangling references, and 246,284 objects on the app heap against 158,976 on
+the zygote heap and 139,839 on the boot image. Read in 1.7 s. It found one
+real retention chain -- a JNI global holding `ReactHostImpl`, which holds
+`MainActivity` as `defaultHardwareBackBtnHandler`.
+
+**The dump is not in the repository**, because 49 MB of one app's heap does
+not belong in one. The parser's tests build HPROF bytes in the test file
+instead, which is how the cases worth testing exist at all: a class described
+after its own instances, a truncated file, an undefined field type. Those are
+labelled synthetic in the test's own header.
+
+**Two bugs the real dump caught**, both of which the synthetic tests now pin:
+
+- **A single pass loses references silently.** HPROF does not guarantee a
+  class appears before instances of its subclasses, and in this dump it did
+  not -- `MainActivity`'s instance record preceded
+  `androidx.activity.ComponentActivity`'s class record. The chain walk stopped
+  at the first class it had not read, so 37 of that object's 59 references
+  were never read: not corrupted, just missing, which is the harder failure to
+  notice. The parser now reads every class first.
+- **A first-pass artifact reported as data loss.** With two passes, the
+  first pass was still walking field blocks and counting every not-yet-read
+  class as an incomplete chain -- 190,433 "losses" on a dump that had none.
+  Reporting a loss that did not happen is the same class of error as hiding
+  one that did.
+
+**What is unverified.** No physical device, and only one app. `mDestroyed`
+existing on `android.app.Activity` is checked on API 37 only; on a platform
+version where that field is renamed or means something else, DET-06 skips for
+want of a lifecycle state rather than reporting something wrong. The positive
+path -- a destroyed object still held -- has never been produced on a real
+device: the app under test does not retain its Activity across a rotation, so
+DET-06 correctly reported nothing, and the firing path is covered by the
+built-in-bytes tests alone.
+
+---
+
+## 11. Sessions recorded before 2026-09-15 have two coverage defects
 
 Building the timeline meant reading coverage per source for the first time,
 and it surfaced two faults in captures written before that date. Both are
@@ -450,7 +521,7 @@ coverage matters.
 
 ---
 
-## 11. Things this tool deliberately does not do
+## 12. Things this tool deliberately does not do
 
 Not limitations to be fixed -- design positions taken from spec sections 2.3,
 0.12 and 0.26:

@@ -55,15 +55,7 @@ class DeferredRule final : public Rule {
 std::vector<RulePtr> make_deferred_rules() {
   std::vector<RulePtr> r;
 
-  r.push_back(std::make_shared<DeferredRule>(
-      "DET-06", "memory", "Retained-object investigation", "M5",
-      std::vector<Prerequisite>{
-          {"heap_snapshot", "a heap snapshot with reference paths"},
-          {"lifecycle_expectation",
-           "a stated expectation of when the object should have been freed"}},
-      "supported retention, with its assumptions listed",
-      "heap capture is not implemented; allocation volume is not retained size"));
-
+  
   return r;
 }
 

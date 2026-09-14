@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "core/model/issue.hpp"
+#include "core/heap/heap_graph.hpp"
 #include "core/model/trace.hpp"
 #include "core/rules/regression_input.hpp"
 #include "core/symbols/symbol_service.hpp"
@@ -23,6 +24,12 @@ namespace mpi::rules {
 enum class ThresholdOrigin {
   kProjectBudget,
   kPlatformDeadlineObserved,  // derived from the observed refresh rate
+  // The platform's own documented contract, not a number this tool chose:
+  // "a destroyed Activity is expected to be released" is the framework's
+  // statement about itself. Distinct from a heuristic because there is
+  // nothing to tune -- and distinct from an observed deadline because it is
+  // read from documentation rather than measured on the device.
+  kPlatformContract,
   kEmpiricalBaseline,
   kConfigurableHeuristic,     // our initial default; explicitly not a standard
 };
@@ -49,6 +56,12 @@ struct RuleContext {
   // the one detector whose evidence is two run sets rather than one capture,
   // and it skips -- saying so -- when this is absent.
   const RegressionInput* regression = nullptr;
+  // Set only when a heap dump was collected. A heap graph is hundreds of
+  // megabytes of object once parsed, so it is never folded into the trace or
+  // serialized with it -- it is handed to the engine alongside, the way a
+  // comparison is. DET-06 is the one detector whose evidence is reference
+  // paths, and it skips -- saying so -- when this is absent.
+  const heap::HeapGraph* heap_graph = nullptr;
   const symbols::SymbolService* symbol_service = nullptr;
   model::MeasurementMode mode = model::MeasurementMode::kUnknownLimited;
   model::Eligibility eligibility;

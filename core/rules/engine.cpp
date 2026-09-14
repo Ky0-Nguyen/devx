@@ -69,6 +69,7 @@ model::AnalysisResult analyze(const model::NormalizedTrace& trace,
   ctx.trace = &trace;
   ctx.symbol_service = &symbol_service;
   ctx.mode = opts.mode;
+  ctx.heap_graph = opts.heap_graph;
   ctx.eligibility = result.eligibility;
   ctx.cancel = opts.cancel;
   ctx.threshold_overrides = opts.threshold_overrides;

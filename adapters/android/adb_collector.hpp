@@ -212,6 +212,17 @@ class AdbCollector final : public session::Collector {
                                   std::int32_t pid, model::NormalizedTrace& out,
                                   model::Capability& capability);
 
+  // A heap dump, pulled to `config.artifact_dir`.
+  //
+  // Returns the local path, or empty with the reason on `capability`. The file
+  // is not parsed here: parsing is analysis, and a collector that parsed its
+  // own output would make a capture fail for a reason that has nothing to do
+  // with the device.
+  std::string collect_heap_dump(const model::DeviceRef& device,
+                                const session::CaptureConfig& config,
+                                std::int32_t pid,
+                                model::Capability& capability);
+
   std::string adb_path_;
   std::vector<std::string> shell_argv(const std::string& serial,
                                       const std::vector<std::string>& args) const;

@@ -19,6 +19,7 @@ add_library(mpi_core STATIC
   ingestion/xctrace_export_reader.cpp
   ingestion/normalize.cpp
   symbols/symbol_service.cpp
+  heap/heap_graph.cpp
   timeline/timeline.cpp
   rules/rule_registry.cpp
   rules/det01_frame_deadlines.cpp
@@ -26,6 +27,7 @@ add_library(mpi_core STATIC
   rules/det04_cpu_hotspot.cpp
   rules/det03_main_thread_io.cpp
   rules/det05_memory_growth.cpp
+  rules/det06_retention.cpp
   rules/det07_startup_budget.cpp
   rules/det08_regression.cpp
   rules/det09_wait_contention.cpp

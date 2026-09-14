@@ -24,6 +24,8 @@ struct EngineOptions {
     std::string author;
   };
   std::vector<Suppression> suppressions;
+  // A parsed heap dump, when one was collected. Not owned.
+  const heap::HeapGraph* heap_graph = nullptr;
   CancellationToken cancel;
 };
 

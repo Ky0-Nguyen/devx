@@ -89,18 +89,42 @@ MPI_TEST(every_rule_declares_prerequisites_and_a_phase, {"section-10.3"}) {
   }
 }
 
-MPI_TEST(unimplemented_detectors_are_skipped_with_reasons, {"H05"}) {
+MPI_TEST(no_detector_is_unimplemented_any_more, {"H05", "H11"}) {
+  // This test used to assert that DET-06 declared itself unimplemented. All
+  // twelve are implemented now, so it asserts the stronger thing: a skip must
+  // name the *evidence* it is missing, never a milestone that has not
+  // arrived. "Scheduled for M5" tells a reader nothing they can act on, and
+  // it is indistinguishable from a detector that ran and found nothing.
   const auto r = run(load("traces/positive-frames-js-cpu.mpi.json"));
-  for (const char* id : {"DET-06"}) {
-    const auto* rec = record_for(r, id);
-    MPI_CHECK_MSG(rec != nullptr, std::string("no run record for ") + id);
-    MPI_CHECK_MSG(rec->outcome == model::RuleOutcome::kSkipped,
-                  std::string(id) + " should be skipped");
-    MPI_CHECK_MSG(!rec->skipped_reasons.empty(),
-                  std::string(id) + " must say why it was skipped");
-    MPI_CHECK_MSG(contains(rec->skipped_reasons, "not implemented"),
-                  std::string(id) + " must state that it is unimplemented");
+  MPI_CHECK_MSG(r.rule_runs.size() >= 12,
+                "every detector appears in the run record");
+  for (const auto& rec : r.rule_runs) {
+    if (rec.outcome != model::RuleOutcome::kSkipped) continue;
+    MPI_CHECK_MSG(!rec.skipped_reasons.empty(),
+                  rec.rule_id + " was skipped without saying why");
+    for (const auto& reason : rec.skipped_reasons) {
+      MPI_CHECK_MSG(reason.find("not implemented") == std::string::npos,
+                    rec.rule_id + " still claims to be unimplemented");
+      MPI_CHECK_MSG(reason.find("scheduled for") == std::string::npos,
+                    rec.rule_id + " gives a milestone instead of the missing "
+                                  "evidence");
+    }
   }
+}
+
+MPI_TEST(det06_without_a_heap_dump_says_what_is_missing, {"H05", "DET-06"}) {
+  // DET-06's evidence is a heap dump, which a capture does not carry. The
+  // skip has to name that -- and has to refuse the substitute a reader would
+  // reach for, since this trace does contain memory counters.
+  const auto r = run(load("traces/positive-memory-growth.mpi.json"));
+  const auto* rec = record_for(r, "DET-06");
+  MPI_CHECK(rec != nullptr);
+  if (rec == nullptr) return;
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "no heap dump was collected"));
+  MPI_CHECK_MSG(contains(rec->skipped_reasons, "never by what"),
+                "the skip must say why memory counters are not a substitute "
+                "for reference paths");
 }
 
 MPI_TEST(det08_over_a_capture_says_it_needs_two_run_sets, {"H05", "DET-08"}) {
