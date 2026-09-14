@@ -45,6 +45,91 @@ std::int64_t to_i64(const std::string& s, std::int64_t fallback = 0) {
   return errno == 0 ? static_cast<std::int64_t>(v) : fallback;
 }
 
+// Writes the coverage row for the two tick-collected sources.
+//
+// Shared by the streaming and the batch path, and that sharing is the point.
+// The streaming path grew these rows because "a source with no row is
+// indistinguishable from a source that measured nothing" -- H11 -- while the
+// batch path wrote rows only for sources that *failed*. So a batch capture
+// where frames ran and reported nothing came out looking exactly like one
+// where frames never ran, which is the confusion the rows exist to prevent.
+// One function now, called from both, so the next path added cannot quietly
+// skip it.
+void record_tick_source_coverage(model::NormalizedTrace& out,
+                                 const session::CaptureConfig& config,
+                                 const std::vector<model::CoverageGap>& frame_gaps,
+                                 bool check_cadence) {
+  if (config.frames) {
+    model::Coverage cov;
+    cov.collector = "dumpsys gfxinfo";
+    cov.window_start_ns = out.window_start_ns;
+    cov.window_end_ns = out.window_end_ns;
+    cov.event_count = static_cast<std::int64_t>(out.frames.size());
+    cov.gaps = frame_gaps;
+    if (out.frames.empty()) {
+      model::CoverageGap gap;
+      gap.collector = "dumpsys gfxinfo";
+      gap.start_ns = out.window_start_ns;
+      gap.end_ns = out.window_end_ns;
+      // framestats reports rendered frames; an empty buffer cannot distinguish
+      // an app that drew nothing from a source that returned nothing, so the
+      // window is uncovered either way and the source status carries which.
+      gap.reason = "no_frames_were_reported";
+      cov.gaps.push_back(std::move(gap));
+    }
+    out.coverage.push_back(std::move(cov));
+  }
+  if (config.memory) {
+    std::int64_t points = 0;
+    const model::CounterSeries* series = nullptr;
+    for (const auto& c : out.counters) {
+      points += static_cast<std::int64_t>(c.points.size());
+      if (series == nullptr && !c.points.empty()) series = &c;
+    }
+    model::Coverage cov;
+    cov.collector = "dumpsys meminfo";
+    cov.window_start_ns = out.window_start_ns;
+    cov.window_end_ns = out.window_end_ns;
+    cov.event_count = points;
+    // meminfo samples instants, not intervals, so a run of them can never
+    // claim to have watched the whole window -- the per-source limitation says
+    // so. What a gap can honestly mark here is a cadence that slipped: if two
+    // consecutive samples are further apart than twice the requested tick,
+    // memory went unobserved for a stretch the caller did not ask for.
+    if (series == nullptr) {
+      model::CoverageGap gap;
+      gap.collector = "dumpsys meminfo";
+      gap.start_ns = out.window_start_ns;
+      gap.end_ns = out.window_end_ns;
+      gap.reason = "no_memory_sample_was_recorded";
+      cov.gaps.push_back(std::move(gap));
+    }
+    // A batch capture takes one reading, so there is no cadence to have
+    // slipped and no gap to claim from the spacing of a single point.
+    if (series != nullptr && check_cadence) {
+      const auto tick_ns = static_cast<model::TimeNs>(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              config.tick_interval)
+              .count());
+      const model::TimeNs allowed = tick_ns > 0 ? tick_ns * 2 : 0;
+      if (allowed > 0) {
+        for (std::size_t i = 1; i < series->points.size(); ++i) {
+          const auto from = series->points[i - 1].first;
+          const auto to = series->points[i].first;
+          if (to - from <= allowed) continue;
+          model::CoverageGap gap;
+          gap.collector = "dumpsys meminfo";
+          gap.start_ns = from;
+          gap.end_ns = to;
+          gap.reason = "tick_interval_overrun";
+          cov.gaps.push_back(std::move(gap));
+        }
+      }
+    }
+    out.coverage.push_back(std::move(cov));
+  }
+}
+
 // Records that a source which did not run covered none of the window.
 //
 // The collectors already write a coverage row per source, so this merges into
@@ -1496,76 +1581,8 @@ session::CaptureResult AdbCollector::finish(
     }
     out.coverage.push_back(std::move(cov));
   }
-  // Frames and memory are collected on the tick, so they had no coverage row
-  // at all -- and a source with no row is indistinguishable from a source that
-  // measured nothing. Both get one, with what each can honestly claim.
-  if (config.frames) {
-    model::Coverage cov;
-    cov.collector = "dumpsys gfxinfo";
-    cov.window_start_ns = out.window_start_ns;
-    cov.window_end_ns = out.window_end_ns;
-    cov.event_count = static_cast<std::int64_t>(out.frames.size());
-    cov.gaps = stream_.frame_gaps;
-    if (out.frames.empty()) {
-      model::CoverageGap gap;
-      gap.collector = "dumpsys gfxinfo";
-      gap.start_ns = out.window_start_ns;
-      gap.end_ns = out.window_end_ns;
-      // framestats reports rendered frames; an empty buffer cannot distinguish
-      // an app that drew nothing from a source that returned nothing, so the
-      // window is uncovered either way and the source status carries which.
-      gap.reason = "no_frames_were_reported";
-      cov.gaps.push_back(std::move(gap));
-    }
-    out.coverage.push_back(std::move(cov));
-  }
-  if (config.memory) {
-    std::int64_t points = 0;
-    const model::CounterSeries* series = nullptr;
-    for (const auto& c : out.counters) {
-      points += static_cast<std::int64_t>(c.points.size());
-      if (series == nullptr && !c.points.empty()) series = &c;
-    }
-    model::Coverage cov;
-    cov.collector = "dumpsys meminfo";
-    cov.window_start_ns = out.window_start_ns;
-    cov.window_end_ns = out.window_end_ns;
-    cov.event_count = points;
-    // meminfo samples instants, not intervals, so a run of them can never
-    // claim to have watched the whole window -- the per-source limitation says
-    // so. What a gap can honestly mark here is a cadence that slipped: if two
-    // consecutive samples are further apart than twice the requested tick,
-    // memory went unobserved for a stretch the caller did not ask for.
-    if (series == nullptr) {
-      model::CoverageGap gap;
-      gap.collector = "dumpsys meminfo";
-      gap.start_ns = out.window_start_ns;
-      gap.end_ns = out.window_end_ns;
-      gap.reason = "no_memory_sample_was_recorded";
-      cov.gaps.push_back(std::move(gap));
-    }
-    if (series != nullptr) {
-      const auto tick_ns = static_cast<model::TimeNs>(
-          std::chrono::duration_cast<std::chrono::nanoseconds>(
-              config.tick_interval)
-              .count());
-      const model::TimeNs allowed = tick_ns > 0 ? tick_ns * 2 : 0;
-      if (allowed > 0) {
-        for (std::size_t i = 1; i < series->points.size(); ++i) {
-          const auto from = series->points[i - 1].first;
-          const auto to = series->points[i].first;
-          if (to - from <= allowed) continue;
-          model::CoverageGap gap;
-          gap.collector = "dumpsys meminfo";
-          gap.start_ns = from;
-          gap.end_ns = to;
-          gap.reason = "tick_interval_overrun";
-          cov.gaps.push_back(std::move(gap));
-        }
-      }
-    }
-    out.coverage.push_back(std::move(cov));
-  }
+  record_tick_source_coverage(out, config, stream_.frame_gaps,
+                              /*check_cadence=*/true);
 
   result.any_data = !out.frames.empty() || !out.cpu_samples.empty() ||
                     !out.counters.empty();
@@ -2176,6 +2193,11 @@ session::CaptureResult AdbCollector::capture(
     out.window_end_ns = hi;
   }
 
+  // A batch capture reads each source once, so there is no tick cadence to
+  // check -- but the rows still have to exist, or a source that ran and found
+  // nothing is indistinguishable from one that never ran.
+  record_tick_source_coverage(out, config, /*frame_gaps=*/{},
+                              /*check_cadence=*/false);
   record_failed_source_coverage(out, result.source_results);
 
   if (config.cancel.cancelled()) {

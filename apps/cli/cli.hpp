@@ -66,6 +66,7 @@ ExitCode cmd_apps(const Invocation& inv);
 ExitCode cmd_preflight(const Invocation& inv);
 ExitCode cmd_record(const Invocation& inv);
 ExitCode cmd_analyze(const Invocation& inv);
+ExitCode cmd_timeline(const Invocation& inv);
 ExitCode cmd_compare(const Invocation& inv);
 ExitCode cmd_export(const Invocation& inv);
 ExitCode cmd_rules(const Invocation& inv);

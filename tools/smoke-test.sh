@@ -157,6 +157,24 @@ check "a cross-platform pair exits 4, not 3" 4 "$MPI" compare fixtures/runsets/b
 check_contains "the cross-platform refusal is explained" "cannot be used as a gate" \
   "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-ios-crossplatform.json
 
+echo "== timeline =="
+# The timeline's whole job is to keep "not measured" apart from "zero" once
+# the data is shaped for drawing, so the legend that says so is asserted, not
+# assumed.
+check "timeline renders a trace" 0 "$MPI" timeline fixtures/traces/positive-frames-js-cpu.mpi.json --bins 30
+check_contains "a blank column is labelled NOT MEASURED" "(blank) NOT MEASURED" \
+  "$MPI" timeline fixtures/traces/positive-frames-js-cpu.mpi.json
+check_contains "a covered empty bin is labelled a measured zero" "measured zero" \
+  "$MPI" timeline fixtures/traces/positive-frames-js-cpu.mpi.json
+check_contains "tracks carry what they do not say" "what these tracks do not say" \
+  "$MPI" timeline fixtures/traces/positive-frames-js-cpu.mpi.json
+check_contains "a synthetic fixture says so before any track" "SYNTHETIC" \
+  "$MPI" timeline fixtures/traces/positive-frames-js-cpu.mpi.json
+check_contains "an unmeasured bin is null in JSON, never 0" '"value": null' \
+  "$MPI" timeline fixtures/traces/incomplete-evidence.mpi.json --json
+check "an out-of-range bin count is refused" 2 "$MPI" timeline fixtures/traces/positive-frames-js-cpu.mpi.json --bins 99999
+check "timeline without an argument is a usage error" 2 "$MPI" timeline
+
 echo "== rules catalog =="
 check "rules listing succeeds" 0 "$MPI" rules
 for det in DET-01 DET-02 DET-03 DET-04 DET-05 DET-06 DET-07 DET-08 DET-09 DET-10 DET-11 DET-12; do

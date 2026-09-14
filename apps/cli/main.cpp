@@ -33,6 +33,8 @@ COMMANDS
   preflight                     Probe capabilities for a device + app target.
   record                        Record a capture session.
   analyze <session|trace>       Analyze a session package or a trace file.
+  timeline <session|trace>      Draw the capture's tracks (--bins, --json).
+                                A blank column means NOT MEASURED, never zero.
   compare <baseline> <cand>     Compare two run-set JSON files.
   export <session>              Re-export a session (--format json|markdown).
   rules                         Describe every detector and its thresholds.
@@ -90,6 +92,7 @@ struct ParseResult {
 bool needs_value(const std::string& flag) {
   static const char* kWithValue[] = {
       "--app",
+      "--bins",
       "--bundle-id",
       "--device",
       "--duration-s",
@@ -409,6 +412,8 @@ int main(int argc, char** argv) {
     code = cmd_record(parsed.inv);
   } else if (cmd == "analyze") {
     code = cmd_analyze(parsed.inv);
+  } else if (cmd == "timeline") {
+    code = cmd_timeline(parsed.inv);
   } else if (cmd == "compare") {
     code = cmd_compare(parsed.inv);
   } else if (cmd == "export") {
