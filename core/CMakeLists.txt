@@ -25,6 +25,7 @@ add_library(mpi_core STATIC
   report/markdown_report.cpp
   session/session_store.cpp
   session/compare.cpp
+  session/collector.cpp
   discovery/discovery_service.cpp
 )
 target_link_libraries(mpi_core PUBLIC mpi_project_options)

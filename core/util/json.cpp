@@ -260,6 +260,86 @@ struct Parser {
     }
   }
 
+  // Walks a value without materialising it. Used by the streaming parser to
+  // discard members a caller does not want, and to skip past array elements.
+  bool skip_value(std::size_t depth) {
+    if (depth > limits.max_depth) return fail("max nesting depth exceeded");
+    skip_ws();
+    if (pos >= in.size()) return fail("unexpected end of input");
+    switch (in[pos]) {
+      case 'n': {
+        Value ignored;
+        return literal("null", Value::null(), ignored);
+      }
+      case 't': {
+        Value ignored;
+        return literal("true", Value::boolean(true), ignored);
+      }
+      case 'f': {
+        Value ignored;
+        return literal("false", Value::boolean(false), ignored);
+      }
+      case '"': {
+        std::string ignored;
+        return parse_string(ignored);
+      }
+      case '[': {
+        ++pos;
+        skip_ws();
+        if (pos < in.size() && in[pos] == ']') {
+          ++pos;
+          return true;
+        }
+        for (;;) {
+          if (!skip_value(depth + 1)) return false;
+          skip_ws();
+          if (pos >= in.size()) return fail("unterminated array");
+          if (in[pos] == ',') {
+            ++pos;
+            continue;
+          }
+          if (in[pos] == ']') {
+            ++pos;
+            return true;
+          }
+          return fail("expected ',' or ']'");
+        }
+      }
+      case '{': {
+        ++pos;
+        skip_ws();
+        if (pos < in.size() && in[pos] == '}') {
+          ++pos;
+          return true;
+        }
+        for (;;) {
+          skip_ws();
+          std::string key;
+          if (!parse_string(key)) return false;
+          skip_ws();
+          if (pos >= in.size() || in[pos] != ':') return fail("expected ':'");
+          ++pos;
+          if (!skip_value(depth + 1)) return false;
+          skip_ws();
+          if (pos >= in.size()) return fail("unterminated object");
+          if (in[pos] == ',') {
+            ++pos;
+            continue;
+          }
+          if (in[pos] == '}') {
+            ++pos;
+            return true;
+          }
+          return fail("expected ',' or '}'");
+        }
+      }
+      default: {
+        Value ignored;
+        return parse_number(ignored);
+      }
+    }
+  }
+
   bool parse_object(Value& out, std::size_t depth) {
     ++pos;  // '{'
     std::vector<Member> members;
@@ -540,6 +620,199 @@ std::optional<Value> parse_file(const std::string& path, const Limits& limits,
     return std::nullopt;
   }
   return parse(buf, limits, err);
+}
+
+// ---------------------------------------------------------------------------
+// StreamParser
+// ---------------------------------------------------------------------------
+
+struct StreamParser::Impl {
+  std::string owned;   // unused for string_view input, kept for lifetime parity
+  std::string_view text;
+  Limits limits;
+  ParseError err;
+  Parser parser;
+  bool have_error = false;
+  // Tracks whether we are positioned before the first element of an array
+  // opened with array_begin(), so next_array_element() knows not to expect a
+  // leading comma.
+  bool array_first_element = false;
+  bool array_open = false;
+  bool object_open = false;
+  bool object_first_member = false;
+
+  Impl(std::string_view t, Limits l)
+      : text(t), limits(l), parser{text, 0, limits, &err} {}
+
+  bool fail(const char* msg) {
+    if (!have_error) {
+      err.message = msg;
+      err.offset = parser.pos;
+      std::size_t line = 1;
+      for (std::size_t i = 0; i < parser.pos && i < text.size(); ++i) {
+        if (text[i] == '\n') ++line;
+      }
+      err.line = line;
+    }
+    have_error = true;
+    return false;
+  }
+};
+
+StreamParser::StreamParser(std::string_view text, Limits limits)
+    : impl_(std::make_unique<Impl>(text, limits)) {
+  if (text.size() > limits.max_bytes) {
+    impl_->fail("input exceeds max_bytes");
+    return;
+  }
+  // Tolerate a UTF-8 BOM, as parse() does.
+  if (text.size() >= 3 && static_cast<unsigned char>(text[0]) == 0xEF &&
+      static_cast<unsigned char>(text[1]) == 0xBB &&
+      static_cast<unsigned char>(text[2]) == 0xBF) {
+    impl_->parser.pos = 3;
+  }
+}
+
+StreamParser::~StreamParser() = default;
+
+bool StreamParser::failed() const { return impl_->have_error; }
+const ParseError& StreamParser::error() const { return impl_->err; }
+
+bool StreamParser::object_begin() {
+  if (impl_->have_error) return false;
+  auto& p = impl_->parser;
+  p.skip_ws();
+  if (p.pos >= impl_->text.size() || impl_->text[p.pos] != '{') {
+    return impl_->fail("expected '{' at the start of the document");
+  }
+  ++p.pos;
+  impl_->object_open = true;
+  impl_->object_first_member = true;
+  return true;
+}
+
+bool StreamParser::next_member(std::string& key) {
+  if (impl_->have_error || !impl_->object_open) return false;
+  auto& p = impl_->parser;
+  p.skip_ws();
+  if (p.pos >= impl_->text.size()) {
+    impl_->fail("unterminated object");
+    return false;
+  }
+  if (impl_->text[p.pos] == '}') {
+    ++p.pos;
+    impl_->object_open = false;
+    return false;
+  }
+  if (!impl_->object_first_member) {
+    if (impl_->text[p.pos] != ',') {
+      impl_->fail("expected ',' or '}' between members");
+      return false;
+    }
+    ++p.pos;
+    p.skip_ws();
+  }
+  impl_->object_first_member = false;
+  key.clear();
+  if (!p.parse_string(key)) {
+    impl_->have_error = true;
+    return false;
+  }
+  p.skip_ws();
+  if (p.pos >= impl_->text.size() || impl_->text[p.pos] != ':') {
+    impl_->fail("expected ':' after member name");
+    return false;
+  }
+  ++p.pos;
+  return true;
+}
+
+bool StreamParser::read_value(Value& out) {
+  if (impl_->have_error) return false;
+  out = Value::null();
+  if (!impl_->parser.parse_value(out, 0)) {
+    impl_->have_error = true;
+    return false;
+  }
+  return true;
+}
+
+bool StreamParser::skip_value() {
+  if (impl_->have_error) return false;
+  if (!impl_->parser.skip_value(0)) {
+    impl_->have_error = true;
+    return false;
+  }
+  return true;
+}
+
+bool StreamParser::array_begin() {
+  if (impl_->have_error) return false;
+  auto& p = impl_->parser;
+  p.skip_ws();
+  if (p.pos >= impl_->text.size() || impl_->text[p.pos] != '[') {
+    return impl_->fail("expected '[' for an array member");
+  }
+  ++p.pos;
+  impl_->array_open = true;
+  impl_->array_first_element = true;
+  return true;
+}
+
+bool StreamParser::next_array_element(Value& out) {
+  if (impl_->have_error || !impl_->array_open) return false;
+  auto& p = impl_->parser;
+  p.skip_ws();
+  if (p.pos >= impl_->text.size()) {
+    impl_->fail("unterminated array");
+    return false;
+  }
+  if (impl_->text[p.pos] == ']') {
+    ++p.pos;
+    impl_->array_open = false;
+    return false;
+  }
+  if (!impl_->array_first_element) {
+    if (impl_->text[p.pos] != ',') {
+      impl_->fail("expected ',' or ']' between array elements");
+      return false;
+    }
+    ++p.pos;
+  }
+  impl_->array_first_element = false;
+  // Reassigning rather than clearing in place: Value has no reset, and a fresh
+  // assignment releases the previous element's storage.
+  out = Value::null();
+  if (!p.parse_value(out, 0)) {
+    impl_->have_error = true;
+    return false;
+  }
+  return true;
+}
+
+bool StreamParser::array_skip_rest() {
+  if (impl_->have_error || !impl_->array_open) return !impl_->have_error;
+  auto& p = impl_->parser;
+  for (;;) {
+    p.skip_ws();
+    if (p.pos >= impl_->text.size()) return impl_->fail("unterminated array");
+    if (impl_->text[p.pos] == ']') {
+      ++p.pos;
+      impl_->array_open = false;
+      return true;
+    }
+    if (!impl_->array_first_element) {
+      if (impl_->text[p.pos] != ',') {
+        return impl_->fail("expected ',' or ']' between array elements");
+      }
+      ++p.pos;
+    }
+    impl_->array_first_element = false;
+    if (!p.skip_value(0)) {
+      impl_->have_error = true;
+      return false;
+    }
+  }
 }
 
 }  // namespace mpi::json

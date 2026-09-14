@@ -1,0 +1,75 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 1570916 Realtime: 1570916
+
+** MEMINFO in pid 7712 [io.pizzahut.hutbot.debug] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   171258     6208   165040   286423   172240   511280   464252    37247
+  Dalvik Heap     3072      720     1392    10552     5824    14236    10677     3559
+ Dalvik Other     1466     1056      400     6897     1632                           
+        Stack      736      672       64     2320      736                           
+    Other dev       45       16       16        0      688                           
+     .so mmap    10164      160     7088     3317    47888                           
+    .jar mmap     3259        0      560        0    51296                           
+    .apk mmap    12429        0     7456      800    25312                           
+    .ttf mmap       31        0        0        0      192                           
+    .dex mmap       80        0        0        0     1248                           
+    .oat mmap       88        0        0        0     2112                           
+    .art mmap     2811      304     2000     6938    15440                           
+   Other mmap     2681     2464        0        0     4864                           
+        Memfd       17        0        0        0      752                           
+      Unknown    34539    24512    10016     7671    35216                           
+        TOTAL   567594    36112   194032   324918   365440   525516   474929    40806
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:     3024                          21264
+         Native Heap:     6208                         172240
+                Code:    15600                         128384
+               Stack:      672                            736
+            Graphics:        0                              0
+       Private Other:   204640
+              System:   337450
+             Unknown:                                   42816
+ 
+           TOTAL PSS:   567594            TOTAL RSS:   365440       TOTAL SWAP PSS:   324918
+ 
+ Objects
+               Views:       95         ViewRootImpl:        2
+         AppContexts:       14           Activities:        1
+              Assets:       27        AssetManagers:        0
+       Local Binders:       34        Proxy Binders:       76
+       Parcel memory:       18         Parcel count:       75
+    Death Recipients:        1             WebViews:        0
+ 
+ Native Allocations
+                         Count                       Total(kB)
+                        ------                         ------
+    Other (malloced):      802                             75
+ Other (nonmalloced):      133                             89
+   Bitmap (malloced):        8                           2423
+ 
+ Shared Bitmaps
+                         Count                       Size(KB)
+                        ------                         ------
+              Mapped:        0                              0
+  (Enable debug.hwui.bitmap_ashmem_long_name sysprop to count unique bitmap allocations)
+ 
+ SQL
+         MEMORY_USED:      331
+  PAGECACHE_OVERFLOW:      105          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       20             27     3    23     2  /data/user/0/io.pizzahut.hutbot.debug/databases/RKStorage
+         4      104            111     4    35     6  /data/user/0/io.pizzahut.hutbot.debug/no_backup/androidx.work.workdb
+         4        8                    0     0     0    (attached) temp
+         4      104             32     4    18     3  /data/user/0/io.pizzahut.hutbot.debug/no_backup/androidx.work.workdb (2)
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+              3            24             2  /data/user/0/io.pizzahut.hutbot.debug/databases/RKStorage
+              8            57             9  /data/user/0/io.pizzahut.hutbot.debug/no_backup/androidx.work.workdb
+ 

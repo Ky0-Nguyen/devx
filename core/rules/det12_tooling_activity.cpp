@@ -48,6 +48,18 @@ constexpr OwnershipRule kOwnershipRules[] = {
      model::AttributionCategory::kDevelopmentTooling, "device.app",
      "react_native_inspector", true,
      "the RN inspector runs only when dev tooling is attached"},
+    {"ATTR-RN-SHAKEDETECTOR", "1", "com.facebook.react.common.ShakeDetector",
+     model::AttributionCategory::kDevelopmentTooling, "device.app",
+     "react_native_shake_detector", true,
+     "the shake-to-open-dev-menu detector is instantiated only by "
+     "DevSupportManager, so it runs only when dev support is enabled "
+     "(observed in a real RN debug capture)"},
+    {"ATTR-RN-SYSTRACE-HINT", "1", "com.facebook.systrace.Systrace",
+     model::AttributionCategory::kSharedOrUnknown, "unknown",
+     "rn_systrace_name_match", false,
+     "Systrace.beginSection is compiled into release builds as well and is a "
+     "no-op unless tracing is on, so seeing it proves nothing about whether "
+     "this work is debug-only"},
     {"ATTR-HERMES-SAMPLER", "1", "hermes::vm::SamplingProfiler",
      model::AttributionCategory::kProfiler, "device.app", "hermes_sampler",
      true, "the Hermes sampling profiler is the collector itself"},

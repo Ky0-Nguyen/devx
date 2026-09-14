@@ -13,7 +13,12 @@
 // target, resolve capabilities, and build a real session package -- and then
 // either imports a trace the caller supplies (labelled as an import, not a
 // capture) or exits `unsupported` with the blocker spelled out.
+#include <chrono>
+#include <cstdlib>
 #include <iostream>
+#include <memory>
+
+#include "adapters/android/adb_collector.hpp"
 
 #include "apps/cli/cli.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -118,32 +123,148 @@ ExitCode cmd_record(const Invocation& inv) {
   trace.target.discovery_scope = target->visibility_scope;
 
   const std::string import_path = inv.flag("import");
+
+  // A collector exists for Android. If one exists for the selected platform,
+  // capture for real; otherwise say so rather than producing a capture-shaped
+  // file with nothing measured.
+  std::unique_ptr<session::Collector> collector;
+  if (import_path.empty() && device.platform == model::Platform::kAndroid) {
+    collector = std::make_unique<android::AdbCollector>();
+  }
+
+  if (collector) {
+    session::CaptureConfig cfg;
+    cfg.cancel = inv.global.cancel;
+    cfg.preset = inv.flag("preset", "lightweight");
+    if (inv.has_flag("duration-s")) {
+      const int secs = std::atoi(inv.flag("duration-s").c_str());
+      if (secs <= 0) {
+        std::cerr << "error: --duration-s must be a positive integer\n";
+        return ExitCode::kUsage;
+      }
+      cfg.duration = std::chrono::milliseconds(secs * 1000);
+    }
+    if (inv.has_flag("sample-hz")) {
+      const int hz = std::atoi(inv.flag("sample-hz").c_str());
+      if (hz <= 0) {
+        std::cerr << "error: --sample-hz must be a positive integer\n";
+        return ExitCode::kUsage;
+      }
+      cfg.sample_frequency_hz = hz;
+    }
+    if (inv.has_flag("no-frames")) cfg.frames = false;
+    if (inv.has_flag("no-cpu")) cfg.cpu_samples = false;
+    if (inv.has_flag("no-memory")) cfg.memory = false;
+    if (inv.has_flag("no-frame-reset")) cfg.reset_frame_history = false;
+
+    manifest.state = session::SessionState::kRecording;
+    manifest.state_transitions.push_back(
+        std::string("preflight -> recording @ ") + time_util::now_iso8601_utc());
+    if (!inv.global.quiet) {
+      std::cerr << "recording " << inv.global.app << " on " << device.device_id
+                << " for " << (cfg.duration.count() / 1000) << "s via "
+                << collector->id() << " ...\n";
+    }
+
+    const auto capture = collector->capture(
+        device, trace.target.processes, cfg, trace);
+
+    manifest.state = session::SessionState::kProcessing;
+    manifest.state_transitions.push_back(
+        std::string("recording -> processing @ ") + time_util::now_iso8601_utc());
+
+    // Per-source results go into the capability matrix, so the report can show
+    // exactly which collectors ran and which could not.
+    for (const auto& c : capture.source_results) trace.capabilities.upsert(c);
+
+    if (!inv.global.quiet) {
+      std::cerr << "capture finished in " << capture.elapsed.count() << " ms\n";
+      for (const auto& c : capture.source_results) {
+        std::cerr << "  " << c.id << ": " << model::to_string(c.status);
+        if (!c.evidence.empty()) std::cerr << " -- " << c.evidence;
+        std::cerr << "\n";
+        for (const auto& l : c.limitations) {
+          std::cerr << "      limitation: " << l << "\n";
+        }
+        if (!c.recovery_action.empty()) {
+          std::cerr << "      fix: " << c.recovery_action << "\n";
+        }
+      }
+    }
+
+    if (!capture.started) {
+      std::cerr << "error: capture could not start: " << capture.error << "\n";
+      return ExitCode::kCollectionError;
+    }
+    if (!capture.any_data) {
+      // A capture that measured nothing is not written as a session: that is
+      // the capture-shaped-but-empty artefact spec section 0.5 forbids.
+      std::cerr << "error: " << capture.error << "\n"
+                << "       No session was written. Every source's status is "
+                   "above; a `permission_denied` CPU source usually means the "
+                   "target is not debuggable or profileable.\n";
+      return ExitCode::kCollectionError;
+    }
+
+    const auto norm = ingest::normalize(trace, inv.global.cancel);
+    for (const auto& n : norm.notes) trace.ingestion_warnings.push_back(n);
+
+    symbols::SymbolService symbol_service;
+    rules::EngineOptions eopts;
+    eopts.mode = manifest.requested_mode;
+    eopts.cancel = inv.global.cancel;
+    auto analysis = rules::analyze(trace, symbol_service, eopts);
+
+    report::ReportOptions rep_opts;
+    const std::string md = report::to_markdown(trace, analysis, rep_opts);
+    const std::string js = report::to_json(trace, analysis, rep_opts);
+
+    manifest.state = trace.partial ? session::SessionState::kPartial
+                                   : session::SessionState::kCompleted;
+    manifest.finalized_at = time_util::now_iso8601_utc();
+    manifest.state_transitions.push_back(
+        std::string("processing -> ") + session::to_string(manifest.state) +
+        " @ " + manifest.finalized_at);
+    manifest.synthetic = trace.synthetic;
+    manifest.partial_reasons = trace.partial_reasons;
+
+    const auto written = session::write_package(
+        inv.global.sessions_dir, manifest, trace, analysis, snap, md, js);
+    if (!written.ok) {
+      std::cerr << "error: " << written.error << "\n";
+      return ExitCode::kCollectionError;
+    }
+    std::cerr << "session written: " << written.package_dir << "\n";
+    std::cout << "session_id=" << manifest.session_id << "\n";
+    std::cout << "package=" << written.package_dir << "\n";
+    std::cout << "kind=live capture (" << collector->id() << ")\n";
+    std::cout << "frames=" << trace.frames.size()
+              << " cpu_samples=" << trace.cpu_samples.size()
+              << " counters=" << trace.counters.size() << "\n";
+    std::cout << "issues=" << analysis.issues.size() << "\n";
+    if (inv.global.cancel.cancelled()) return ExitCode::kCancelled;
+    return ExitCode::kOk;
+  }
+
   if (import_path.empty()) {
-    // The honest answer.
+    // No collector for this platform yet.
     std::cerr
-        << "\nUNSUPPORTED: live on-device capture is not implemented in this "
-           "build.\n\n"
-           "What does work right now, and was used to reach this point:\n"
-           "  - device discovery on Android and iOS\n"
-           "  - installed / running app enumeration with an explicit scope\n"
-           "  - selection by package name or bundle id, with no PID needed\n"
-           "  - process identity resolution and ownership evidence\n"
-           "  - capability preflight (`mpi preflight`)\n"
-           "  - analysis, issue detection, and reporting over an imported "
-           "trace (`mpi analyze`)\n\n"
-           "What is missing, and why this is not dressed up as a capture:\n"
-           "  - no Perfetto / xctrace collector is wired to the session "
-           "controller yet; that is the M2 deliverable\n"
-           "  - producing a session package here with no collector output "
-           "would be a capture-shaped file containing nothing measured\n\n"
-           "Supported path today:\n"
+        << "\nUNSUPPORTED: live capture is not implemented for "
+        << model::to_string(device.platform) << " in this build.\n\n"
+           "Implemented today:\n"
+           "  - Android live capture (frames via dumpsys gfxinfo framestats, "
+           "CPU samples via simpleperf, memory via dumpsys meminfo)\n"
+           "  - device discovery and app enumeration on Android and iOS\n"
+           "  - capability preflight, analysis, issues, reports, comparison\n\n"
+           "Not implemented:\n"
+           "  - iOS live capture: the xctrace collector is not wired to the "
+           "session controller yet\n\n"
+           "Supported path for this target today:\n"
            "  mpi record --device "
         << device.device_id << " --app " << inv.global.app
         << " --import <trace-file>\n"
-           "      builds a real session package from an existing trace. The "
-           "package is labelled an import, not a capture.\n"
-           "      Recognised formats: mpi.normalized.v2, "
-           "hermes.sampling_profile, chrome.trace_event.json\n\n"
+           "      builds a real session package from an existing trace, "
+           "labelled an import rather than a capture.\n\n"
            "The target resolved successfully, so the blocker is the collector, "
            "not this target:\n";
     std::cerr << "  app:     " << target->key.canonical() << "\n";

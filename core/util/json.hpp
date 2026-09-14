@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -108,5 +109,65 @@ std::optional<Value> parse_file(const std::string& path, const Limits& limits,
 
 // Escapes `in` for embedding in JSON string context.
 std::string escape(std::string_view in);
+
+// Streaming pull parser.
+//
+// `parse()` materialises the whole document, which costs roughly ten bytes of
+// DOM per byte of input -- fine for a manifest, ruinous for a multi-gigabyte
+// trace. This parser walks the document instead, so a caller can convert each
+// array element to its own compact representation and let the element's DOM
+// die immediately. Peak memory becomes one element rather than the file.
+//
+// Usage:
+//   StreamParser p(text, limits);
+//   if (!p.object_begin()) ...;
+//   std::string key;
+//   while (p.next_member(key)) {
+//     if (key == "events") {
+//       if (!p.array_begin()) break;
+//       Value element;
+//       while (p.next_array_element(element)) { convert(element); }
+//     } else {
+//       p.skip_value();          // never materialised
+//     }
+//   }
+class StreamParser {
+ public:
+  StreamParser(std::string_view text, Limits limits);
+  ~StreamParser();
+  StreamParser(const StreamParser&) = delete;
+  StreamParser& operator=(const StreamParser&) = delete;
+
+  // Consumes the opening '{' of the top-level object.
+  bool object_begin();
+
+  // Advances to the next member of the current object. Returns true and fills
+  // `key`; returns false at '}' or on error. Exactly one of read_value(),
+  // skip_value() or array_begin() must follow a true result.
+  bool next_member(std::string& key);
+
+  // Materialises the current member's value. Use for small values only.
+  bool read_value(Value& out);
+
+  // Discards the current member's value without building a DOM for it.
+  bool skip_value();
+
+  // Consumes the current member's opening '['.
+  bool array_begin();
+
+  // Fills `out` with the next array element. Returns false once the closing
+  // ']' is consumed. `out` is overwritten each call, so its storage is reused.
+  bool next_array_element(Value& out);
+
+  // Skips the remaining elements of the array opened by array_begin().
+  bool array_skip_rest();
+
+  bool failed() const;
+  const ParseError& error() const;
+
+ private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};
 
 }  // namespace mpi::json
