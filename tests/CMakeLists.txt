@@ -14,6 +14,7 @@ function(mpi_add_test name)
 endfunction()
 
 mpi_add_test(test_json unit/test_json.cpp)
+mpi_add_test(test_xml unit/test_xml.cpp)
 mpi_add_test(test_process unit/test_process.cpp)
 mpi_add_test(test_identity unit/test_identity.cpp)
 mpi_add_test(test_eligibility unit/test_eligibility.cpp)

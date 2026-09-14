@@ -730,9 +730,11 @@ std::optional<std::string> read_any(const std::string& path,
   MpiTraceReader mpi_reader;
   HermesProfileReader hermes;
   ChromeTraceReader chrome;
+  XctraceExportReader xctrace;
   // Order matters: the native format and the Hermes profile are both JSON
-  // objects, and a Hermes profile also carries "traceEvents".
-  Reader* readers[] = {&mpi_reader, &hermes, &chrome};
+  // objects, and a Hermes profile also carries "traceEvents". The xctrace
+  // export is XML, so it cannot be confused with any of them.
+  Reader* readers[] = {&mpi_reader, &hermes, &chrome, &xctrace};
   for (Reader* r : readers) {
     if (!r->can_read(path)) continue;
     if (r->read(path, opts, out, diag)) return r->id();
@@ -741,7 +743,8 @@ std::optional<std::string> read_any(const std::string& path,
   if (diag.errors.empty()) {
     diag.errors.push_back("no reader recognised " + path +
                           " (supported: mpi.normalized.v2, "
-                          "hermes.sampling_profile, chrome.trace_event.json)");
+                          "hermes.sampling_profile, chrome.trace_event.json, "
+                          "ios.xctrace.export)");
   }
   return std::nullopt;
 }

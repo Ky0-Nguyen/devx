@@ -357,3 +357,106 @@ MPI_TEST(unsupported_schema_version_is_reported_not_guessed, {"D18"}) {
   MPI_CHECK_EQ(t.schema_version, std::string("2.0"));
   MPI_CHECK(trace_has_warning(t, "collector crashed") || t.partial);
 }
+
+
+// --- xctrace export (the supported machine interface to an iOS trace) --------
+
+MPI_TEST(xctrace_toc_reads_the_run_without_claiming_a_platform,
+         {"J20", "J15", "C18"}) {
+  model::NormalizedTrace t;
+  ingest::ReadDiagnostics d;
+  const auto id = ingest::read_any(fixture("provider-output/xctrace-toc.real.xml"),
+                                   ingest::ReadOptions{}, t, d);
+  MPI_CHECK(id.has_value());
+  if (!id.has_value()) return;
+  MPI_CHECK_EQ(*id, std::string("ios.xctrace.export"));
+
+  // This real export was recorded against the host Mac. The reader must not
+  // promote it to iOS evidence just because xctrace is an iOS tool.
+  MPI_CHECK(t.device.platform == model::Platform::kUnknown);
+  MPI_CHECK(has_warning(d, "records platform 'macOS', not iOS"));
+  MPI_CHECK_EQ(t.device.model, std::string("MacBook Pro"));
+  MPI_CHECK_EQ(t.device.os_version, std::string("26.6.2 (25G83)"));
+
+  // The target is the process under `<target>`, not the last process the
+  // trace happened to observe -- a system-wide trace also sees the kernel.
+  MPI_CHECK_EQ(t.target.app.app_identifier, std::string("sh"));
+  MPI_CHECK(t.target.app.identifier_kind == model::IdentifierKind::kUnknown);
+  MPI_CHECK(has_warning(d, "not by bundle id"));
+  MPI_CHECK_EQ(t.target.processes.size(), std::size_t{1});
+  if (!t.target.processes.empty()) {
+    MPI_CHECK_EQ(t.target.processes.front().pid, 99047);
+  }
+
+  // Instruments never says whether it recorded hardware or a simulator, so
+  // the form stays unknown: keeping the two apart depends on knowing which.
+  MPI_CHECK(t.device.form == model::DeviceForm::kUnknown);
+
+  // A table of contents is metadata. Saying so stops it reading as a capture
+  // that found nothing.
+  MPI_CHECK(trace_has_warning(t, "table of contents only"));
+  MPI_CHECK(trace_has_warning(t, "A table this reader does not consume is unread"));
+  MPI_CHECK(trace_has_warning(t, "process(es) besides the target"));
+  MPI_CHECK_EQ(t.cpu_samples.size(), std::size_t{0});
+
+  const auto* tmpl = t.build.find("ios.trace_template");
+  MPI_CHECK(tmpl != nullptr);
+  if (tmpl != nullptr) MPI_CHECK_EQ(tmpl->value, std::string("Time Profiler"));
+}
+
+MPI_TEST(xctrace_time_profile_reads_samples_stacks_and_binaries,
+         {"E15", "C11", "DET-04"}) {
+  model::NormalizedTrace t;
+  ingest::ReadDiagnostics d;
+  const auto id = ingest::read_any(
+      fixture("provider-output/xctrace-time-profile.real.xml"),
+      ingest::ReadOptions{}, t, d);
+  MPI_CHECK(id.has_value());
+  MPI_CHECK_EQ(t.cpu_samples.size(), std::size_t{12});
+  MPI_CHECK_EQ(d.events_read, std::int64_t{12});
+
+  // Every reference in this export resolves. A dangling one would be counted
+  // as a dropped event, and none should be.
+  MPI_CHECK(!has_warning(d, "pointed at an id this export never defined"));
+  MPI_CHECK(t.dropped_events_by_collector.empty());
+
+  // xctrace lists the innermost frame first; the model is outermost first.
+  const model::CpuSample* with_stack = nullptr;
+  for (const auto& s : t.cpu_samples) {
+    if (s.frames.size() > 3) {
+      with_stack = &s;
+      break;
+    }
+  }
+  MPI_CHECK(with_stack != nullptr);
+  if (with_stack != nullptr) {
+    MPI_CHECK(with_stack->frames.front().find("start") != std::string::npos ||
+              with_stack->frames.front().find("dyld") != std::string::npos);
+    MPI_CHECK(with_stack->timestamp_ns > 0);
+    MPI_CHECK(with_stack->weight.has_value());
+    MPI_CHECK(!with_stack->thread_instance_id.empty());
+    MPI_CHECK_EQ(with_stack->provider, std::string("xctrace time-profile"));
+  }
+
+  // The binary UUIDs are the build identity behind those symbols.
+  const auto* uuid = t.build.find("ios.binary_uuid.libsystem_malloc.dylib");
+  MPI_CHECK(uuid != nullptr);
+  if (uuid != nullptr) {
+    MPI_CHECK_EQ(uuid->value,
+                 std::string("D969A907-3E43-3951-9365-8C2DB3812E9D"));
+  }
+  MPI_CHECK(trace_has_warning(t, "only trustworthy against the build whose UUID matches"));
+}
+
+MPI_TEST(xctrace_export_refuses_a_malformed_document, {"J02", "D19"}) {
+  // The parser's limits and refusals are covered in test_xml; what matters
+  // here is that the reader surfaces the failure instead of returning a
+  // half-populated trace that looks like a thin capture.
+  model::NormalizedTrace t;
+  ingest::ReadDiagnostics d;
+  ingest::XctraceExportReader reader;
+  const auto path = fixture("traces/malformed-not-json.bin");
+  // Not XML at all: the sniff must decline it rather than the read failing
+  // deep inside.
+  MPI_CHECK(!reader.can_read(path));
+}
