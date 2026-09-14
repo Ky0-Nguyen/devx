@@ -316,7 +316,20 @@ Still open, and all inherently UI behaviours:
   same data in a terminal. An issue focuses its own interval at full
   resolution, and `--issue=<id>` opens a link to one finding. Building it
   found three defects in the capture path, listed in section 10.
-- No compare view. `mpi compare` is CLI-only.
+- **The compare view exists.** DevX has a Compare tab over the same engine
+  the CLI uses, and the run-set reader moved into the core rather than being
+  written twice -- what an absent field means is part of the comparison's
+  honesty, not a parsing detail. Whether a pair may gate a release is stated
+  *before* the verdict, and `inconclusive` says in words that it is not "no
+  change".
+- **A file path the app was handed is probed before it is read.** macOS gates
+  Documents, Desktop and Downloads behind a consent prompt that an ad-hoc
+  signed build cannot raise, and the block happens inside the read: a run-set
+  path typed into the field or passed as `--baseline` hung the operation
+  behind a spinner that never ended. The probe has a deadline and a third
+  answer -- readable, unreadable, or *did not return* -- and the last one is
+  reported as a permission wall by name. Files chosen through the open panel
+  are unaffected: picking a file is what grants access to it.
 - The Live tab has no frame-timeline track either; it shows counts, source
   status and memory series. The Timeline tab reads a written session, so it
   cannot be pointed at a capture still in progress.
@@ -400,7 +413,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **143 of 198** checklist items have at least one automated test
-(377 test cases in 17 binaries, plus 104 Swift). The remaining 55 are enumerated with a stated
+(384 test cases in 17 binaries, plus 148 Swift). The remaining 55 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 

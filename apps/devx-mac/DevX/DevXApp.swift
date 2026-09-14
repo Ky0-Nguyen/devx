@@ -35,12 +35,20 @@ struct DevXApp: App {
         if launch.startLive { state.tab = .live }
         if let tab = launch.tab { state.tab = tab }
 
+        if let b = launch.baseline { state.baselinePath = b }
+        if let c = launch.candidate { state.candidatePath = c }
+
         state.loadVersion()
         state.loadDevices()
         if state.tab != .sessions { state.loadSessions() }
         if let id = launch.session {
             state.openSession(id, revealIn: launch.tab ?? .issues,
                               focusIssueId: launch.issue)
+        }
+
+        if launch.baseline != nil, launch.candidate != nil {
+            state.tab = .compare
+            state.runCompare()
         }
 
         guard launch.startLive else { return }
@@ -159,6 +167,7 @@ struct RootView: View {
                 case .sessions: SessionsView()
                 case .issues: IssuesView()
                 case .timeline: TimelineView()
+                case .compare: CompareView()
                 case .detectors: DetectorsView()
                 }
 

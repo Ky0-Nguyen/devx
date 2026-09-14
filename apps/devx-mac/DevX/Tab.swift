@@ -7,7 +7,7 @@ import Foundation
 /// pure layers be unit-tested on their own.
 enum DevXTab: String, CaseIterable, Identifiable {
     case devices, apps, preflight, live, record, sessions, issues, timeline,
-         detectors
+         compare, detectors
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -19,6 +19,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .sessions: return "Sessions"
         case .issues: return "Issues"
         case .timeline: return "Timeline"
+        case .compare: return "Compare"
         case .detectors: return "Detectors"
         }
     }
@@ -32,6 +33,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .sessions: return "folder"
         case .issues: return "exclamationmark.magnifyingglass"
         case .timeline: return "chart.bar.xaxis"
+        case .compare: return "arrow.left.arrow.right"
         case .detectors: return "function"
         }
     }

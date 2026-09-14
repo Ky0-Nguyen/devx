@@ -13,6 +13,10 @@ struct LaunchOptions {
     /// An issue id or fingerprint to open focused on, so a link can point at
     /// one finding rather than at a session.
     var issue: String?
+    /// A comparison to run on launch, so a CI job or a script can open the
+    /// result rather than describing where to find it.
+    var baseline: String?
+    var candidate: String?
     var tab: DevXTab?
     var device: String?
     var app: String?
@@ -49,6 +53,10 @@ struct LaunchOptions {
                 if let v = next { o.sessionsDir = (v as NSString).expandingTildeInPath; i += step }
             case "--session":
                 if let v = next { o.session = v; i += step }
+            case "--baseline":
+                if let v = next { o.baseline = (v as NSString).expandingTildeInPath; i += step }
+            case "--candidate":
+                if let v = next { o.candidate = (v as NSString).expandingTildeInPath; i += step }
             case "--issue":
                 if let v = next { o.issue = v; i += step }
             case "--tab":
