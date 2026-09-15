@@ -76,6 +76,22 @@ std::optional<DeviceReadiness> parse_devicectl_readiness(const json::Value& root
 /// assumed.
 std::string ddi_refusal_text(const DeviceReadiness& readiness);
 
+/// Turns a devicectl failure into a sentence about the device.
+///
+/// A device that is authorized at discovery and gone by the time apps are
+/// enumerated is the commonest real iOS connection event -- someone unplugs
+/// the phone -- and it produced Apple's raw text:
+///
+///     `devicectl device info apps` failed: ERROR: CoreDeviceService was
+///     unable to locate a device matching the requested device identifier.
+///     (DeviceIdentifier: ecid_2666084064886814)
+///     (com.apple.dt.CoreDeviceError error 1011 (0x3F3))
+///
+/// The meaning of 1011 was already decoded for the reachability probe and not
+/// applied here. The raw text is kept as well, because a tool's own words are
+/// evidence and paraphrasing them away loses it.
+std::string describe_devicectl_failure(const std::string& raw);
+
 /// Whether a device answers *now*.
 ///
 /// The passive listing cannot tell you this. `connectionProperties.tunnelState`

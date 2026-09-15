@@ -199,6 +199,42 @@ std::string ddi_refusal_text(const DeviceReadiness& readiness) {
   return text;
 }
 
+std::string describe_devicectl_failure(const std::string& raw) {
+  // Matched on the error numbers as well as the sentences, since Apple can
+  // reword the sentences and has.
+  if (raw.find("error 1011") != std::string::npos ||
+      raw.find("unable to locate a device") != std::string::npos) {
+    return "the device is no longer there: it was present when discovery ran "
+           "and CoreDevice could not find it for this operation, which is "
+           "what unplugging a phone mid-session looks like. Re-run discovery. "
+           "(devicectl: " + trim(raw) + ")";
+  }
+  if (raw.find("error 1000") != std::string::npos ||
+      raw.find("specified device was not found") != std::string::npos) {
+    return "devicectl does not recognise this device identifier at all, "
+           "which is what a simulator UDID or a mistyped id gives -- it is "
+           "not a statement about any phone. (devicectl: " + trim(raw) + ")";
+  }
+  if (raw.find("Developer Mode") != std::string::npos ||
+      raw.find("developer mode") != std::string::npos) {
+    return "the device refused on Developer Mode grounds: enable Settings > "
+           "Privacy & Security > Developer Mode on the device and reconnect. "
+           "(devicectl: " + trim(raw) + ")";
+  }
+  if (raw.find("passcode") != std::string::npos ||
+      raw.find("locked") != std::string::npos) {
+    return "the device is locked: unlock it and retry. (devicectl: " +
+           trim(raw) + ")";
+  }
+  if (raw.find("trust") != std::string::npos ||
+      raw.find("pairing") != std::string::npos) {
+    return "the pairing was refused: accept the trust prompt on the device "
+           "and retry. (devicectl: " + trim(raw) + ")";
+  }
+  // Unrecognised. The tool's own words, and no invented explanation on top.
+  return trim(raw);
+}
+
 const char* to_string(Reachability r) {
   switch (r) {
     case Reachability::kReachable:   return "reachable";
@@ -1071,7 +1107,8 @@ std::vector<model::DeviceRef> IosAdapter::list_devices(
       out.push_back(std::move(d));
     }
   } else {
-    errors.push_back("devicectl device listing failed: " + err);
+    errors.push_back("devicectl device listing failed: " +
+                     describe_devicectl_failure(err));
   }
 
   if (include_simulators_) {
@@ -1329,7 +1366,8 @@ std::vector<model::AppEntry> IosAdapter::list_apps(
   auto apps_doc = run_devicectl_json(
       {"device", "info", "apps", "--device", device.device_id}, opts, &err);
   if (!apps_doc) {
-    errors.push_back("`devicectl device info apps` failed: " + err);
+    errors.push_back("`devicectl device info apps` failed: " +
+                     describe_devicectl_failure(err));
     enumeration_failed = true;
     return out;
   }
@@ -1348,7 +1386,7 @@ std::vector<model::AppEntry> IosAdapter::list_apps(
     } else {
       errors.push_back(
           "`devicectl device info processes` failed, so runtime state stays "
-          "unknown: " + perr_msg);
+          "unknown: " + describe_devicectl_failure(perr_msg));
     }
   }
 
