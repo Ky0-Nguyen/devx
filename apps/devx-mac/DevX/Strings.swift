@@ -604,6 +604,9 @@ enum Strings {
         "a dimmed device cannot be captured from -- tap one to find out why":
             "thiết bị bị làm mờ thì không đo được -- bấm vào một cái để xem vì sao",
         "show unusable": "hiện cả thiết bị không dùng được",
+        "none in this list": "không có trong danh sách này",
+        "{n} hidden by the filter": "{n} bị ẩn bởi bộ lọc",
+        "platform not reported": "không rõ nền tảng",
         "watch it change, not just read it once":
             "theo dõi nó thay đổi, không chỉ đọc một lần",
         "also name the actions": "nêu luôn tên các action",

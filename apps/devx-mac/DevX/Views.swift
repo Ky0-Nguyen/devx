@@ -2,7 +2,36 @@ import SwiftUI
 
 // MARK: - Devices
 
+/// The device list's measured width, so the platform columns can be sized in
+/// proportion to how many devices each holds.
+///
+/// A preference rather than a GeometryReader wrapping the row: a
+/// GeometryReader reports no height of its own, which inside a ScrollView
+/// means either a collapsed row or a hardcoded height that cannot know how
+/// many lanes the columns split into.
+private struct DeviceListWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        // The outermost measurement wins; a zero from a not-yet-laid-out
+        // child must not clobber a real width.
+        let next = nextValue()
+        if next > 0 { value = next }
+    }
+}
+
 struct DevicesView: View {
+    /// Zero until the first layout reports back. Columns fall back to equal
+    /// shares for that one frame.
+    @State private var listWidth: CGFloat = 0
+
+    /// One column's width, from its share of the devices.
+    private func columnWidth(_ weight: Double, of count: Int) -> CGFloat {
+        let gaps = CGFloat(max(0, count - 1)) * 10
+        let usable = max(0, listWidth - gaps)
+        guard usable > 0 else { return 0 }
+        return usable * CGFloat(weight)
+    }
+
     @EnvironmentObject var state: AppState
 
     var body: some View {
@@ -38,6 +67,29 @@ struct DevicesView: View {
 
                 DeviceFilterBarView()
 
+                // Measures the width available to the list, so the platform
+                // columns can be sized in proportion to what they hold.
+                //
+                // Its own zero-height probe rather than a reader behind the
+                // columns: the columns' width comes *from* this number, so
+                // measuring them measured a width derived from the previous
+                // measurement -- circular, and it settled on a strip a few
+                // characters wide with the headings reading downwards.
+                Color.clear
+                    .frame(height: 0)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(
+                                key: DeviceListWidthKey.self,
+                                value: geo.size.width)
+                        }
+                    )
+                    .onPreferenceChange(DeviceListWidthKey.self) { w in
+                        // Zero on the first pass; the columns share the space
+                        // evenly until a real width arrives, one frame later.
+                        if w > 0 { listWidth = w }
+                    }
+
                 // Said once, above the list. A per-row version of this
                 // sentence was twenty-three copies of the same instruction on
                 // a machine with twenty-three shut-down simulators -- the
@@ -64,36 +116,35 @@ struct DevicesView: View {
                         .font(Term.small).foregroundStyle(Term.cyan)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    // Two columns once the list is long enough to need them.
-                    // Filled by row, so the reading order -- usable first,
-                    // physical before simulated -- survives the layout.
+                    // One column per platform. The previous row-major split
+                    // kept reading order but put an iPad beside a Pixel, so
+                    // "what have I got on Android" meant reading every row's
+                    // chip.
+                    let cols = DeviceFilter.byPlatform(
+                        result.shown, beforeFilter: state.devices)
+                    let weights = DeviceFilter.columnWeights(cols)
+                    // Width follows how many devices a column holds. Equal
+                    // halves left one Android emulator sitting beside a
+                    // window-height iOS list with half the width empty.
+                    //
+                    // The width is *measured* through a background reader
+                    // rather than by wrapping the row in a GeometryReader. A
+                    // GeometryReader takes all the height offered and reports
+                    // none back, so inside a ScrollView the row either
+                    // collapsed or needed a hardcoded height -- and a
+                    // hardcoded one cannot know how many lanes the columns
+                    // split into, so it reserved for the worst case and left
+                    // a screen of blank space under the list. Measuring in
+                    // the background leaves the row sizing itself.
                     HStack(alignment: .top, spacing: 10) {
-                        ForEach(Array(DeviceFilter.columns(result.shown)
-                                        .enumerated()), id: \.offset) { _, col in
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(Array(col.enumerated()),
-                                        id: \.offset) { _, d in
-                                    DeviceRow(device: d,
-                                              selected: d["device_id"].text
-                                                  == state.selectedDevice)
-                                        .onTapGesture {
-                                            // Tapping a usable device selects
-                                            // it; tapping one you cannot use
-                                            // asks why, which is the only
-                                            // question that row raises.
-                                            if d["trust"].text == "authorized" {
-                                                state.selectedDevice =
-                                                    d["device_id"].text
-                                            } else {
-                                                state.explainDevice(
-                                                    d["device_id"].text)
-                                            }
-                                        }
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                        ForEach(Array(cols.enumerated()),
+                                id: \.element.id) { i, col in
+                            DevicePlatformColumnView(
+                                column: col,
+                                width: columnWidth(weights[i], of: cols.count))
                         }
                     }
+
                 }
 
                 let errors = state.devicesDoc["provider_errors"].array
@@ -229,8 +280,13 @@ private struct DeviceRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
+                    // One line, truncated at the end. In a narrow column a
+                    // wrapping name broke mid-word -- `sdk_gphone16k_a rm64`
+                    // -- which is harder to recognise than a cut one, and it
+                    // made every row a different height.
                     Text(device["display_name"].display("unnamed device"))
                         .font(Term.font(12, .medium))
+                        .lineLimit(1)
                     Chip(text: device["platform"].text)
                     Chip(text: form,
                          tone: form == "physical" ? .neutral : .caution)
@@ -239,9 +295,21 @@ private struct DeviceRow: View {
                 Text(device["device_id"].text)
                     .font(Term.font(11))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    // The head of a UDID is what people match against when
+                    // comparing it to what a tool printed, so the cut goes in
+                    // the middle rather than at the end.
+                    .truncationMode(.middle)
                 Text("OS \(device["os_version"].display("unknown"))  ·  "
                      + device["model"].display("unknown model"))
                     .font(Term.small).foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    // A simulator's model is
+                    // `com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max`
+                    // -- forty characters of prefix shared by every row, and
+                    // the tail is the only part that distinguishes them. It
+                    // wrapped to three lines and made the grid ragged.
+                    .truncationMode(.middle)
             }
             Spacer()
             if selected { Image(systemName: "checkmark.circle.fill")
@@ -774,6 +842,108 @@ struct BootPanel: View {
                              ?? "it did not report itself ready inside the "
                               + "budget")
                           + " Recording against it now would measure the boot.")
+        }
+    }
+}
+
+/// Applies a measured width, or shares the space evenly until one arrives.
+///
+/// A modifier because `.frame` has no overload taking both `width` and
+/// `maxWidth`, and the width is zero for exactly one frame -- the layout pass
+/// before the background reader reports back. Pinning it to zero then would
+/// collapse every column to nothing and flash an empty list.
+private struct AllocatedWidth: ViewModifier {
+    let width: CGFloat
+
+    func body(content: Content) -> some View {
+        if width > 0 {
+            content.frame(width: width, alignment: .topLeading)
+        } else {
+            content.frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+}
+
+/// One platform's column in the device list.
+///
+/// Headed and counted, because the point of splitting by platform is being
+/// able to answer "what is on Android" without reading every row -- and a
+/// column with no heading would just be the old mixed list in two pieces.
+private struct DevicePlatformColumnView: View {
+    @EnvironmentObject var state: AppState
+    let column: DevicePlatformColumn
+    /// Allocated width, so a column holding most of the devices can flow
+    /// them into more than one lane instead of scrolling alone.
+    let width: CGFloat
+
+    /// The narrowest lane that still shows a device id without cutting it.
+    private static let minLane: CGFloat = 330
+
+    /// How many lanes fit in the allocated width.
+    private var lanes: Int {
+        max(1, Int(width / Self.minLane))
+    }
+
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(label).font(Term.font(11, .medium))
+                    .foregroundStyle(Term.cyan)
+                Text("\(column.devices.count)")
+                    .font(Term.micro).foregroundStyle(Term.dim)
+                Spacer(minLength: 0)
+            }
+            if column.hidEverything {
+                // A statement about the filter, for this platform only.
+                Text(DeviceFreshness.fill(
+                        tr("{n} hidden by the filter"), "{n}",
+                        column.hiddenByFilter))
+                    .font(Term.micro).foregroundStyle(Term.cyan)
+            } else if column.noneOnThisPlatform {
+                // The answer the split makes possible. Worth stating: in the
+                // mixed list, "no Android device is connected" and "the
+                // Android ones are further down" looked identical.
+                //
+                // Scoped deliberately -- it speaks for this list, not for the
+                // machine. Whether discovery itself succeeded is the banner
+                // above this view, and duplicating that claim here would let
+                // a failed provider read as an empty platform.
+                Text(tr("none in this list"))
+                    .font(Term.micro).foregroundStyle(Term.dim)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(),
+                                                         spacing: 8),
+                                     count: lanes),
+                      alignment: .leading, spacing: 8) {
+                ForEach(Array(column.devices.enumerated()), id: \.offset) { _, d in
+                DeviceRow(device: d,
+                          selected: d["device_id"].text == state.selectedDevice)
+                    .onTapGesture {
+                        // Tapping a usable device selects it; tapping one you
+                        // cannot use asks why, which is the only question
+                        // that row raises.
+                        if d["trust"].text == "authorized" {
+                            state.selectedDevice = d["device_id"].text
+                        } else {
+                            state.explainDevice(d["device_id"].text)
+                        }
+                    }
+                }
+            }
+        }
+        .modifier(AllocatedWidth(width: width))
+    }
+
+    /// The column heading. Platform names stay as the platform spells them --
+    /// "iOS", not a translation -- and an unrecognised one is shown verbatim
+    /// rather than relabelled into something a provider never said.
+    private var label: String {
+        switch column.platform {
+        case "android": return "Android"
+        case "ios": return "iOS"
+        case "unknown": return tr("platform not reported")
+        default: return column.platform
         }
     }
 }
