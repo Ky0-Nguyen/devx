@@ -349,7 +349,7 @@ bool resolve_device(const Invocation& inv, const model::DiscoverySnapshot& snap,
   if (!want.empty()) {
     std::vector<const model::DeviceRef*> hits;
     for (const auto& d : snap.devices) {
-      if (d.device_id == want) hits.push_back(&d);
+      if (d.matches_id(want)) hits.push_back(&d);
     }
     if (hits.empty()) {
       std::cerr << "error: no device with id '" << want << "'. Run `mpi devices`.\n";

@@ -103,6 +103,12 @@ json::Value DeviceRef::to_json() const {
   v.set("observed_at", json::Value::string(observed_at));
   v.set("boot_id", boot_id.empty() ? json::Value::null()
                                    : json::Value::string(boot_id));
+  // Null rather than a copy of device_id when there is nothing to
+  // distinguish: a reader must be able to tell "this device has two names"
+  // from "these two fields happen to agree".
+  v.set("hardware_udid", hardware_udid.empty()
+                             ? json::Value::null()
+                             : json::Value::string(hardware_udid));
   return v;
 }
 

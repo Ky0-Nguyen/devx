@@ -177,7 +177,10 @@ DiscoveryService::TargetResolution DiscoveryService::resolve_target(
     auto devices = p->list_devices(opts, errors);
     for (auto& e : errors) out.errors.push_back(p->name() + ": " + e);
     for (auto& d : devices) {
-      if (d.device_id == device_id) {
+      // Either name resolves. Someone who copied an id out of `xctrace list
+      // devices` has the hardware UDID and nothing else, and refusing it
+      // would be this tool insisting on a namespace only it can see.
+      if (d.matches_id(device_id)) {
         if (out.device_found) {
           // The same id on two platforms stays separate; picking one would be
           // exactly the silent retarget spec A15 forbids.
