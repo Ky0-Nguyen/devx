@@ -55,6 +55,23 @@ final class AppState: ObservableObject {
     @Published var sessionsDir = Core.defaultSessionsDir
 
     @Published var devicesDoc: JSON = .null
+    // When discovery last actually ran.
+    //
+    // This exists because a device list with no age is a lie waiting to
+    // happen: an emulator started outside this app reads as *absent*, and
+    // absent is exactly the claim the list has no evidence for. The whole
+    // project turns on `unknown != false`, and a stale snapshot presented as
+    // current is that mistake in the one view every session starts from. So
+    // the view states when it looked, and the answer is allowed to look old.
+    @Published private(set) var devicesLoadedAt: Date? = nil
+    @Published private(set) var bootTargetsLoadedAt: Date? = nil
+    /// Re-scans while the Devices tab is open. On by default: every tool that
+    /// attaches to devices does this, and the cost does not touch the device
+    /// -- `adb devices` talks to the local adb server and `simctl list` is
+    /// entirely host-side, so polling cannot perturb a measurement. It is
+    /// still suspended during a live capture, where the host's own CPU is
+    /// part of what the operator is watching.
+    @Published var watchDevices = true
     @Published var appsDoc: JSON = .null
     // Remembered targets. A note this app made on this machine -- never
     // evidence about the device, which is the whole of spec A23.
@@ -302,6 +319,7 @@ final class AppState: ObservableObject {
         let sims = includeSimulators
         run("Discovering devices…", { Core.devices(includeSimulators: sims) }) { doc in
             self.devicesDoc = doc
+            self.devicesLoadedAt = Date()
             // Selection is preserved across a refresh, and never silently
             // switched to a different device.
             if self.selectedDevice.isEmpty ||
@@ -325,6 +343,7 @@ final class AppState: ObservableObject {
     func loadBootTargets() {
         run("Listing bootable devices…", { Core.bootTargets() }) {
             self.bootTargetsDoc = $0
+            self.bootTargetsLoadedAt = Date()
         }
     }
 
@@ -346,6 +365,94 @@ final class AppState: ObservableObject {
             // have produced a device, and discovery is what settles that.
             self.loadDevices()
             self.loadBootTargets()
+        }
+    }
+
+    /// Refreshes both lists.
+    ///
+    /// The two used to be separate buttons on the same screen -- one labelled
+    /// "Refresh" next to the bootable devices, another in the toolbar -- and
+    /// they refreshed different things, with nothing saying which. Pressing
+    /// the nearer one after starting an emulator left the device list exactly
+    /// as stale as before.
+    func refreshDeviceViews() {
+        loadDevices()
+        loadBootTargets()
+    }
+
+    private var deviceWatch: Timer? = nil
+
+    /// Starts re-scanning while the Devices tab is on screen.
+    ///
+    /// Five seconds: long enough that two child processes per tick are
+    /// nothing, short enough that a device you just started appears while you
+    /// are still looking at the screen.
+    func startDeviceWatch() {
+        guard deviceWatch == nil else { return }
+        let timer = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in
+            // The timer is added to RunLoop.main below, so this closure does
+            // run on the main actor -- the compiler just cannot see it from
+            // here. Asserting it is more honest than an async hop that would
+            // let a tick land after `stopDeviceWatch`.
+            MainActor.assumeIsolated { self?.deviceWatchTick() }
+        }
+        // `.common` rather than the default mode: a timer in the default mode
+        // stops firing while a menu or a scroll is tracking, which is exactly
+        // when someone is hunting for a device that has not appeared.
+        RunLoop.main.add(timer, forMode: .common)
+        deviceWatch = timer
+    }
+
+    func stopDeviceWatch() {
+        deviceWatch?.invalidate()
+        deviceWatch = nil
+    }
+
+    private func deviceWatchTick() {
+        guard watchDevices else { return }
+        // Not during a live capture: the host's CPU is part of what is being
+        // measured then, and the operator is not device-hunting mid-capture.
+        guard !liveRunning, !liveStarting else { return }
+        // Nor on top of work already in flight -- discovery is serialised on
+        // one queue, so a tick during a slow `simctl list` would only queue up
+        // behind it and arrive in a burst.
+        guard inFlight.isEmpty else { return }
+        rescanDevicesQuietly()
+    }
+
+    /// Re-scans without touching the status line, and publishes only when the
+    /// answer actually changed.
+    ///
+    /// Quiet on purpose. A visible "Discovering devices…" every five seconds
+    /// would make the status line useless for the operations that matter, and
+    /// republishing an identical list would churn the view for no reason. What
+    /// the operator wants from a poll is the moment it *differs*.
+    private func rescanDevicesQuietly() {
+        let sims = includeSimulators
+        Self.coreQueue.async {
+            let doc = Core.devices(includeSimulators: sims)
+            DispatchQueue.main.async {
+                // A failed scan is not an empty device list. Keep what was
+                // last known, record that the attempt happened, and let the
+                // visible age carry the fact that it is no fresher.
+                if let err = doc["error"].string, !err.isEmpty {
+                    self.lastError = err
+                    return
+                }
+                let before = DeviceFreshness.fingerprint(self.devicesDoc)
+                let after = DeviceFreshness.fingerprint(doc)
+                self.devicesLoadedAt = Date()
+                guard before != after else { return }
+                self.devicesDoc = doc
+                if self.selectedDevice.isEmpty ||
+                    !self.usableDevices.contains(where: {
+                        $0["device_id"].text == self.selectedDevice }) {
+                    self.selectedDevice = self.usableDevices.first?["device_id"].text ?? ""
+                }
+                // A device appearing or leaving changes what can be started,
+                // so the boot list is no longer right either.
+                self.loadBootTargets()
+            }
         }
     }
 
