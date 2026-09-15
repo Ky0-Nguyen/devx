@@ -173,6 +173,32 @@ std::vector<model::DeviceRef> parse_devicectl_devices(
   return out;
 }
 
+std::string ddi_refusal_text(const DeviceReadiness& readiness) {
+  std::string text =
+      "device reports ddiServicesAvailable = false: the developer disk image "
+      "services are not mounted, so apps cannot be enumerated. Open Xcode "
+      "with the device connected to prepare it.";
+  if (!readiness.last_connection_date.empty()) {
+    // The reading's own date. `devicectl` answers from a cached record, so a
+    // value with no date is a claim with no timestamp -- and this particular
+    // claim sends someone to go and do something.
+    text += " This was devicectl's reading as of " +
+            readiness.last_connection_date +
+            "; if the device has been reconnected since, re-run discovery "
+            "before acting on it.";
+  }
+  if (!readiness.developer_mode_status.empty() &&
+      readiness.developer_mode_status != "enabled") {
+    // A distinct blocker, and worth naming here: someone told only about the
+    // disk image will go to Xcode when the device is asking for a setting.
+    text += " Developer Mode also reads as '" +
+            readiness.developer_mode_status +
+            "', which is a separate prerequisite: enable Settings > Privacy "
+            "& Security > Developer Mode on the device.";
+  }
+  return text;
+}
+
 const char* to_string(Reachability r) {
   switch (r) {
     case Reachability::kReachable:   return "reachable";
@@ -757,6 +783,13 @@ void IosAdapter::probe(model::CapabilityMatrix& out,
         c.evidence =
             "the device reports ddiServicesAvailable = false, so app and "
             "process enumeration services are not mounted";
+        // Same reason as the refusal in list_apps: this is a reading from a
+        // cached record, and a capability's evidence without its date is an
+        // observation presented as a standing fact.
+        if (!readiness->last_connection_date.empty()) {
+          c.evidence += " (devicectl's reading as of " +
+                        readiness->last_connection_date + ")";
+        }
         c.recovery_action =
             "open Xcode with the device connected so it prepares the "
             "developer disk image, then retry";
@@ -1148,10 +1181,7 @@ std::vector<model::AppEntry> IosAdapter::list_apps(
   if (details) readiness = parse_devicectl_readiness(*details, device.device_id);
   if (readiness && readiness->ddi_services_available.has_value() &&
       !*readiness->ddi_services_available) {
-    errors.push_back(
-        "device reports ddiServicesAvailable = false: the developer disk image "
-        "services are not mounted, so apps cannot be enumerated. Open Xcode "
-        "with the device connected to prepare it.");
+    errors.push_back(ddi_refusal_text(*readiness));
     enumeration_failed = true;
     return out;
   }
