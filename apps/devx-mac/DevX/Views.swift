@@ -36,14 +36,64 @@ struct DevicesView: View {
                                   + "this computer, and enable Developer Mode.")
                 }
 
-                ForEach(Array(state.devices.enumerated()), id: \.offset) { _, d in
-                    DeviceRow(device: d,
-                              selected: d["device_id"].text == state.selectedDevice)
-                        .onTapGesture {
-                            if d["trust"].text == "authorized" {
-                                state.selectedDevice = d["device_id"].text
+                DeviceFilterBarView()
+
+                // Said once, above the list. A per-row version of this
+                // sentence was twenty-three copies of the same instruction on
+                // a machine with twenty-three shut-down simulators -- the
+                // repetition was the noise the filter was added to remove.
+                // One line only earns its place when a row it applies to is
+                // actually on screen.
+                if state.devices.contains(where: { $0["trust"].text != "authorized" }),
+                   state.showUnusableDevices {
+                    Text(tr("a dimmed device cannot be captured from -- tap "
+                          + "one to find out why"))
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                }
+
+                let result = DeviceFilter.apply(state.devices,
+                                                needle: state.deviceFilter,
+                                                showUnusable: state.showUnusableDevices)
+                if result.hidEverything {
+                    // A filtered-empty list is a statement about the filter.
+                    // "No device discovered" has its own banner above and is
+                    // a statement about the machine; they must not look alike.
+                    Text(tr("\(result.hidden) device(s) are hidden by the "
+                          + "filter. This says nothing about what is "
+                          + "connected."))
+                        .font(Term.small).foregroundStyle(Term.cyan)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    // Two columns once the list is long enough to need them.
+                    // Filled by row, so the reading order -- usable first,
+                    // physical before simulated -- survives the layout.
+                    HStack(alignment: .top, spacing: 10) {
+                        ForEach(Array(DeviceFilter.columns(result.shown)
+                                        .enumerated()), id: \.offset) { _, col in
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(Array(col.enumerated()),
+                                        id: \.offset) { _, d in
+                                    DeviceRow(device: d,
+                                              selected: d["device_id"].text
+                                                  == state.selectedDevice)
+                                        .onTapGesture {
+                                            // Tapping a usable device selects
+                                            // it; tapping one you cannot use
+                                            // asks why, which is the only
+                                            // question that row raises.
+                                            if d["trust"].text == "authorized" {
+                                                state.selectedDevice =
+                                                    d["device_id"].text
+                                            } else {
+                                                state.explainDevice(
+                                                    d["device_id"].text)
+                                            }
+                                        }
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
                         }
+                    }
                 }
 
                 let errors = state.devicesDoc["provider_errors"].array
@@ -90,7 +140,8 @@ private struct DiscoveryAge: View {
     var body: some View {
         let s = DeviceFreshness.status(loadedAt: state.devicesLoadedAt,
                                        now: now,
-                                       watching: state.watchDevices)
+                                       watching: state.watchDevices,
+                                       suppressedBy: state.deviceWatchSuppressedBy)
         HStack(spacing: 8) {
             // Cyan is this app's colour for "no claim", and a list that has
             // never been fetched is exactly that.
@@ -137,6 +188,29 @@ private struct TickModifier: ViewModifier {
     @State private var timer: Timer? = nil
 }
 
+/// Filter and density controls for the device list.
+private struct DeviceFilterBarView: View {
+    @EnvironmentObject var state: AppState
+    var body: some View {
+        HStack(spacing: 12) {
+            TextField(tr("name, id, model, OS…"), text: $state.deviceFilter)
+                .textFieldStyle(TermFieldStyle()).frame(maxWidth: 240)
+            Toggle(tr("show unusable"), isOn: $state.showUnusableDevices)
+                .toggleStyle(.checkbox).font(Term.small)
+            if !state.deviceFilter.isEmpty || !state.showUnusableDevices {
+                Button(tr("clear")) {
+                    state.deviceFilter = ""
+                    state.showUnusableDevices = true
+                }
+                .buttonStyle(TermButtonStyle())
+            }
+            Spacer(minLength: 0)
+            Text("\(state.devices.count)")
+                .font(Term.micro).foregroundStyle(Term.dim)
+        }
+    }
+}
+
 private struct DeviceRow: View {
     @EnvironmentObject var state: AppState
     let device: JSON
@@ -176,11 +250,15 @@ private struct DeviceRow: View {
         .padding(11)
         .termCard(selected: selected)
         .contentShape(Rectangle())
-        // The answer belongs beside the row that raises the question. Only
-        // for a device that cannot be used -- a working device needs no
-        // explanation.
-        .overlay(alignment: .bottomLeading) { EmptyView() }
-        if trust != "authorized" {
+        // Only for the device being worked with, or one already asked about.
+        //
+        // This used to appear under every unusable row, which on a machine
+        // with twenty-three shut-down simulators meant twenty-three buttons
+        // -- each one doubling a row's height and burying the device actually
+        // in use. The question "why can't I use this?" is asked about one
+        // device at a time, and a row nobody has selected is not asking it.
+        if trust != "authorized",
+           state.deviceAdvice[device["device_id"].text] != nil {
             adviceSection
         }
     }
@@ -211,11 +289,6 @@ private struct DeviceRow: View {
                     Text(tr("no specific reason could be established"))
                         .font(Term.micro).foregroundStyle(Term.cyan)
                 }
-            } else {
-                Button(tr("why can't I use this?")) {
-                    state.explainDevice(id)
-                }
-                .buttonStyle(TermButtonStyle())
             }
         }
         .padding(.horizontal, 11)

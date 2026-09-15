@@ -38,12 +38,30 @@ enum DeviceFreshness {
     static func ago(_ seconds: TimeInterval) -> String {
         // A clock that moved backwards -- an NTP correction, a laptop waking
         // -- must not print "-4s ago" or a huge number. It is simply unknown.
-        if seconds < 0 { return tr("at an unknown time") }
+        //
+        // But "slightly negative" is the normal case, not a broken clock. The
+        // label's own clock ticks once a second while the watch re-scans every
+        // five, so for up to one second after each scan the timestamp sits
+        // ahead of the `now` this was called with. Reading that as a backwards
+        // clock printed "re-scanning every 5s · last looked at an unknown
+        // time" -- a list that had just been refreshed claiming it did not
+        // know when -- for roughly one second in five.
+        //
+        // So the threshold is the UI's own granularity, not zero. Beyond it,
+        // the skew is larger than anything this view can cause and is
+        // genuinely unknown.
+        if seconds < -uiClockGranularity { return tr("at an unknown time") }
         if seconds < 2 { return tr("a moment ago") }
         if seconds < 60 { return fill(tr("{n}s ago"), "{n}", Int(seconds)) }
         if seconds < 3600 { return fill(tr("{n}m ago"), "{n}", Int(seconds / 60)) }
         return fill(tr("{n}h ago"), "{n}", Int(seconds / 3600))
     }
+
+    /// How stale the `now` passed to `ago` can legitimately be: the labels
+    /// using it are redrawn on a one-second timer, and a scan can land at any
+    /// point between two ticks. Doubled, so a redraw that is merely late does
+    /// not cross the line either.
+    static let uiClockGranularity: TimeInterval = 2
 
     /// Substitutes one placeholder.
     ///
@@ -54,6 +72,32 @@ enum DeviceFreshness {
     static func fill(_ template: String, _ placeholder: String,
                      _ value: Any) -> String {
         template.replacingOccurrences(of: placeholder, with: "\(value)")
+    }
+
+    /// Why the watch is not scanning right now, when it is not.
+    ///
+    /// The label used to say "re-scanning every 5s" whenever the watch was
+    /// enabled, which is a statement of intent. A screenshot showed it
+    /// reading "re-scanning every 5s · last looked 6m ago" -- two claims that
+    /// cannot both be true, and the reader has no way to tell which one is.
+    ///
+    /// Scans are suppressed while other work is in flight, because discovery
+    /// is serialised on one queue, and a boot holds that queue for up to
+    /// three minutes. That is precisely when someone is watching for a device
+    /// to appear, so the reason has to be on screen instead of a claim that
+    /// contradicts the age beside it.
+    static func status(loadedAt: Date?, now: Date, watching: Bool,
+                       suppressedBy: String) -> DiscoveryStatus {
+        if watching && !suppressedBy.isEmpty {
+            let when = loadedAt.map { ago(now.timeIntervalSince($0)) }
+            return DiscoveryStatus(
+                text: "re-scanning is paused while \(suppressedBy)"
+                    + (when.map { " · last looked \($0)" } ?? ""),
+                // Aging, not current: the list is not being kept up to date,
+                // whatever the watch setting says.
+                confidence: .aging)
+        }
+        return status(loadedAt: loadedAt, now: now, watching: watching)
     }
 
     static func status(loadedAt: Date?, now: Date, watching: Bool) -> DiscoveryStatus {
