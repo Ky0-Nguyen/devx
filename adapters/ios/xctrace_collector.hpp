@@ -36,6 +36,30 @@ namespace mpi::ios {
 // What one `xctrace record` invocation did, read from its own output rather
 // than from its exit status alone: it exits non-zero for a partial recording
 // that still produced a usable bundle.
+/// Whether this process can read the unified log store.
+///
+/// Instruments samples through it, and a process without Full Disk Access
+/// cannot open it at all: `/var/db/diagnostics` is `drwxr-x--- root:admin`.
+/// xctrace reports that as
+///
+///     Fatal logging system error: The log archive is corrupt or incomplete
+///     and cannot be read
+///
+/// which reads as a damaged machine and is usually a permission. Every
+/// recording taken here came back with a `time-profile` table that had a
+/// schema and no rows, and the empty table was being reported as the finding
+/// -- an accurate description of the symptom that says nothing about the
+/// cause or the fix.
+///
+/// Cheap: one `log show --last 1s`, and only asked when a capture produced
+/// nothing.
+struct LogStoreAccess {
+  bool readable = false;
+  /// What the system said, when it refused.
+  std::string detail;
+};
+LogStoreAccess probe_log_store_access();
+
 /// How a recording is stopped when it runs past its budget.
 ///
 /// Named rather than inline so a test can assert that this collector asks for
