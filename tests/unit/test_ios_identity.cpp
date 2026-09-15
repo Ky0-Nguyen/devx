@@ -164,6 +164,36 @@ MPI_TEST(an_unusable_ios_device_is_explained_not_just_labelled, {}) {
   MPI_CHECK(mpi::ios::explain_unusable_device(droid, opts, false).empty());
 }
 
+MPI_TEST(a_simulator_probe_distinguishes_not_running_from_unknown, {}) {
+  using mpi::ios::Reachability;
+  mpi::discovery::ProviderOptions opts;
+
+  // A UDID that is not a simulator at all. simctl answers "Invalid device",
+  // which is a statement about the simulator and not about the probe, so it
+  // must come back as not_found rather than probe_failed -- the distinction
+  // the enum exists for, and one the first version of this got wrong by
+  // matching on wording simctl does not actually use.
+  const auto bogus = mpi::ios::probe_reachability(
+      "00000000-0000-0000-0000-000000000000", opts,
+      mpi::model::DeviceForm::kSimulator);
+  MPI_CHECK_MSG(bogus.state == Reachability::kNotFound,
+                "an unknown simulator UDID is not running, which is a "
+                "different answer from the probe failing to settle it");
+  MPI_CHECK_MSG(bogus.evidence.find("simctl") != std::string::npos,
+                "and the evidence names the simulator command, not devicectl");
+  MPI_CHECK_MSG(bogus.took < std::chrono::milliseconds(5000),
+                "and it answers quickly enough to run during discovery");
+
+  // The form selects the question: the same id asked as a physical device
+  // goes to devicectl and gets devicectl's answer.
+  const auto as_physical = mpi::ios::probe_reachability(
+      "00000000-0000-0000-0000-000000000000", opts,
+      mpi::model::DeviceForm::kPhysical);
+  MPI_CHECK_MSG(as_physical.evidence.find("devicectl") != std::string::npos,
+                "a physical device is asked through devicectl");
+  MPI_CHECK(as_physical.evidence != bogus.evidence);
+}
+
 MPI_TEST(reachability_states_are_all_distinct_answers, {}) {
   using mpi::ios::Reachability;
   // The three answers must not collapse: "not found" is about the device,
@@ -182,4 +212,54 @@ MPI_TEST(reachability_states_are_all_distinct_answers, {}) {
   MPI_CHECK(refused.state == Reachability::kProbeFailed);
   MPI_CHECK_MSG(refused.detail.find("refusing") != std::string::npos,
                 "and is refused rather than run");
+}
+
+MPI_TEST(a_booted_simulator_that_does_not_answer_is_its_own_failure, {}) {
+  // `simctl list` reports a *state*, and a state is not an answer:
+  // CoreSimulator can hold a simulator in `Booted` while its runtime is
+  // wedged. That read as usable and then failed on the first operation, with
+  // an error about the operation rather than about the simulator -- the same
+  // shape as trusting a physical device's cached `tunnelState`, left unfixed
+  // for simulators.
+  //
+  // Discovery now asks a booted simulator to run a trivial process and marks
+  // it kUnknown when it will not: neither "shut down" nor "usable", because
+  // what to do about it differs from both.
+  mpi::discovery::ProviderOptions opts;
+
+  mpi::model::DeviceRef wedged;
+  wedged.platform = mpi::model::Platform::kIos;
+  wedged.form = mpi::model::DeviceForm::kSimulator;
+  wedged.device_id = "456FA0D8-48C1-4BEC-B087-50E8A046EA5D";
+  wedged.trust = mpi::model::TrustState::kUnknown;
+  MPI_CHECK_MSG(!wedged.usable_for_capture(),
+                "an unknown-state simulator is not offered for capture");
+
+  const auto lines =
+      mpi::ios::explain_unusable_device(wedged, opts, /*probe=*/false);
+  MPI_CHECK(!lines.empty());
+  bool says_booted = false, says_reboot = false, says_boot_it = false;
+  for (const auto& l : lines) {
+    if (l.find("reports Booted") != std::string::npos) says_booted = true;
+    if (l.find("shutdown") != std::string::npos) says_reboot = true;
+    if (l.find("it is not booted") != std::string::npos) says_boot_it = true;
+  }
+  MPI_CHECK_MSG(says_booted,
+                "the explanation names the contradiction: booted, and not "
+                "answering");
+  MPI_CHECK_MSG(says_reboot, "and says to shut it down and boot it again");
+  MPI_CHECK_MSG(!says_boot_it,
+                "and never tells someone to boot a simulator that is already "
+                "booted, which is what the single simulator branch did");
+
+  // A genuinely shut-down simulator still gets the simple answer.
+  mpi::model::DeviceRef down = wedged;
+  down.trust = mpi::model::TrustState::kOffline;
+  const auto simple =
+      mpi::ios::explain_unusable_device(down, opts, /*probe=*/false);
+  MPI_CHECK(simple.size() == 1);
+  MPI_CHECK_MSG(simple.front().find("not booted") != std::string::npos,
+                "a shut-down simulator is told to boot");
+  MPI_CHECK_MSG(simple.front().find("liveness") == std::string::npos,
+                "and is not given the wedged-runtime advice");
 }

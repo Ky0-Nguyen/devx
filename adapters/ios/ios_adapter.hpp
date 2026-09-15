@@ -104,10 +104,21 @@ struct ReachabilityProbe {
   std::chrono::milliseconds took{0};
 };
 
-/// Probes one device. Costs about a tenth of a second either way, which is
-/// why it is worth doing rather than inferring.
-ReachabilityProbe probe_reachability(const std::string& device_id,
-                                     const discovery::ProviderOptions& opts);
+/// Probes one device. Costs a fraction of a second either way, which is why
+/// it is worth doing rather than inferring.
+///
+/// `form` selects the right question. A physical device is asked through
+/// `devicectl device info lockState`; a **simulator** is asked by running
+/// `/usr/bin/true` inside it, because `simctl list` reporting `Booted` is a
+/// state field and not an answer -- CoreSimulator can hold a simulator in
+/// `Booted` while its runtime is wedged, and that read as usable and then
+/// failed on the first operation.
+///
+/// Measured: 0.37 s for a booted simulator, 0.17 s to fail for a shut-down
+/// one, ~0.11 s to fail for an absent physical device.
+ReachabilityProbe probe_reachability(
+    const std::string& device_id, const discovery::ProviderOptions& opts,
+    model::DeviceForm form = model::DeviceForm::kPhysical);
 
 /// Why an unusable iOS device is unusable, and what to do about it.
 ///

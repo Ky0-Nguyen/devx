@@ -208,14 +208,86 @@ const char* to_string(Reachability r) {
   return "probe_failed";
 }
 
-ReachabilityProbe probe_reachability(const std::string& device_id,
-                                     const discovery::ProviderOptions& opts) {
+/// Asks a simulator whether it is actually running anything.
+///
+/// `simctl list` reports a *state*, and a state is not an answer: a simulator
+/// can sit in `Booted` while CoreSimulator is wedged, which read as usable
+/// here and then failed on the first operation with an error about the
+/// operation rather than about the simulator. Running `/usr/bin/true` inside
+/// it is the cheapest question that requires the runtime to respond.
+ReachabilityProbe probe_simulator(const std::string& udid,
+                                  const discovery::ProviderOptions& opts) {
   ReachabilityProbe out;
-  out.evidence = "xcrun devicectl device info lockState";
+  out.evidence = "xcrun simctl spawn <udid> /usr/bin/true";
+  const auto started = std::chrono::steady_clock::now();
+  proc::Options po;
+  // A booted simulator answers in about 0.4 s and a shut-down one fails in
+  // half that. Five seconds is generous and still bounded.
+  po.timeout = std::chrono::milliseconds(5000);
+  po.cancel = opts.cancel;
+  const proc::Result r =
+      proc::run({"xcrun", "simctl", "spawn", udid, "/usr/bin/true"}, po);
+  out.took = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - started);
+  if (!r.spawned) {
+    out.detail = "could not run simctl: " + r.spawn_error;
+    return out;
+  }
+  if (r.timed_out) {
+    // Not "absent": a simulator that does not answer within five seconds is
+    // exactly the wedged case, and calling it absent would lose the
+    // distinction that matters.
+    out.state = Reachability::kNotFound;
+    out.detail = "the simulator did not run a trivial process within 5s: its "
+                 "runtime is not responding, whatever `simctl list` reports "
+                 "about its state";
+    return out;
+  }
+  if (r.exit_code == 0) {
+    out.state = Reachability::kReachable;
+    out.detail = "the simulator ran a process on request";
+    // A simulator has no lock screen to be behind.
+    out.locked = false;
+    return out;
+  }
+  const std::string combined = r.out + r.err;
+  // "not running" is a different answer from "the probe did not settle it",
+  // and only the first is a statement about the simulator. The wording here
+  // is simctl's own, taken from what it actually prints: a shut-down
+  // simulator gives SimError 405, "Process spawn via launchd failed because
+  // device is not booted". Matched on the error number as well as the
+  // sentence, since Apple can reword the sentence.
+  if (combined.find("code=405") != std::string::npos ||
+      combined.find("is not booted") != std::string::npos ||
+      combined.find("Unable to boot") != std::string::npos ||
+      combined.find("current state: Shutdown") != std::string::npos ||
+      combined.find("Invalid device") != std::string::npos ||
+      combined.find("Unable to lookup") != std::string::npos) {
+    out.state = Reachability::kNotFound;
+    out.detail = "the simulator is not running: " +
+                 trim(r.err.empty() ? r.out : r.err);
+    return out;
+  }
+  out.detail = "the probe failed: " +
+               (r.err.empty() ? std::string("exit ") +
+                                    std::to_string(r.exit_code)
+                              : r.err);
+  return out;
+}
+
+ReachabilityProbe probe_reachability(const std::string& device_id,
+                                     const discovery::ProviderOptions& opts,
+                                     model::DeviceForm form) {
+  ReachabilityProbe out;
   if (!proc::is_safe_argument(device_id, /*reject_option_like=*/true)) {
+    out.evidence = "no command was run";
     out.detail = "refusing to pass '" + device_id + "' as a device id";
     return out;
   }
+  if (form == model::DeviceForm::kSimulator) {
+    return probe_simulator(device_id, opts);
+  }
+  out.evidence = "xcrun devicectl device info lockState";
   const auto started = std::chrono::steady_clock::now();
   proc::Options po;
   // Short: an absent device fails in about 100 ms, and a present one answers
@@ -288,6 +360,32 @@ std::vector<std::string> explain_unusable_device(
   if (device.platform != model::Platform::kIos) return out;
 
   if (device.form == model::DeviceForm::kSimulator) {
+    // Two different simulator failures, and telling someone to boot one that
+    // is already booted is worse than saying nothing.
+    if (device.trust == model::TrustState::kUnknown) {
+      out.push_back("this simulator reports Booted and did not answer a "
+                    "liveness probe: `simctl` says it is running and its "
+                    "runtime does not respond. `simctl list` reports a state "
+                    "field, not an answer, which is why the state alone is "
+                    "not trusted here.");
+      out.push_back("shut it down and boot it again -- `xcrun simctl "
+                    "shutdown " + device.device_id + "` then `mpi boot "
+                    "--device " + device.device_id +
+                    "`. If that does not settle it, CoreSimulator itself is "
+                    "wedged: `xcrun simctl shutdown all` and, failing that, "
+                    "quit the Simulator app.");
+      if (probe) {
+        // Ask again now: the earlier reading is from discovery, and a
+        // simulator can recover between the two.
+        const ReachabilityProbe again =
+            probe_simulator(device.capture_id(), opts);
+        if (again.state == Reachability::kReachable) {
+          out.push_back("it answered just now, so it has recovered since "
+                        "discovery ran -- refresh the device list.");
+        }
+      }
+      return out;
+    }
     out.push_back("this is a simulator and it is not booted. Start it from "
                   "the Devices tab, or `mpi boot --device " +
                   device.device_id + "`.");
@@ -482,7 +580,21 @@ std::vector<model::DeviceRef> parse_simctl_devices(
       // Never conflated with a physical device (spec 4.1, J18).
       ref.form = model::DeviceForm::kSimulator;
       ref.connection = model::ConnectionType::kLocal;
-      // Only a booted simulator can be inspected.
+      // Only a booted simulator can be inspected -- and `Booted` is a state
+      // field, not an answer. CoreSimulator can hold a simulator in `Booted`
+      // while its runtime is wedged, which reported as usable here and then
+      // failed on the first operation with an error about the operation
+      // rather than about the simulator.
+      //
+      // So a simulator claiming to be booted is asked to run a trivial
+      // process. The cost is bounded by the number of *booted* simulators,
+      // which is inherently small because each one holds real memory -- a
+      // shut-down simulator is never probed, so a machine with twenty of
+      // them pays nothing.
+      // `Booted` here is what simctl *reports*. Whether the runtime answers
+      // is a separate question, asked by the caller -- this function is a
+      // pure parser and spawning a process from it would make its own tests
+      // depend on a live simulator.
       ref.trust = str_at(d, "state") == "Booted" ? model::TrustState::kAuthorized
                                                  : model::TrustState::kOffline;
       ref.provider = provider_version.empty() ? "simctl"
@@ -970,7 +1082,35 @@ std::vector<model::DeviceRef> IosAdapter::list_devices(
     if (r.ok()) {
       json::ParseError perr;
       if (auto doc = json::parse(r.out, json::Limits{}, &perr)) {
-        for (auto& d : parse_simctl_devices(*doc, "")) out.push_back(std::move(d));
+        for (auto& d : parse_simctl_devices(*doc, "")) {
+          // simctl reported `Booted`, which is a state field and not an
+          // answer: CoreSimulator can hold a simulator in `Booted` while its
+          // runtime is wedged, and that read as usable here and then failed
+          // on the first operation -- with an error about the operation
+          // rather than about the simulator.
+          //
+          // Only a simulator claiming to be booted is asked, so the cost is
+          // bounded by how many are actually running. That is inherently
+          // small, because each one holds real memory; a machine with twenty
+          // shut-down simulators pays nothing. Measured: 0.37 s for one that
+          // answers.
+          if (d.trust == model::TrustState::kAuthorized) {
+            const ReachabilityProbe live =
+                probe_simulator(d.device_id, opts);
+            if (live.state != Reachability::kReachable) {
+              // kUnknown, not kOffline: "booted and not answering" is
+              // neither "shut down" nor "usable", and what to do about it
+              // differs from both. Either way it is not usable, which is the
+              // half that matters.
+              d.trust = model::TrustState::kUnknown;
+              errors.push_back(
+                  "simulator '" + d.display_name + "' (" + d.device_id +
+                  ") reports Booted and did not answer a liveness probe: " +
+                  live.detail);
+            }
+          }
+          out.push_back(std::move(d));
+        }
       } else {
         errors.push_back("simctl JSON parse failed: " + perr.message);
       }
