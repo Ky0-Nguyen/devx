@@ -248,6 +248,33 @@ else
 fi
 check "export of a missing session is an error" 5 "$MPI" export "$TMP/nope"
 
+echo "== app bundle =="
+# The icon is generated at build time, so its absence is a build wiring
+# failure rather than a missing file someone forgot to commit -- and a
+# resource added after `codesign` runs leaves a bundle that does not verify
+# against its own manifest. Both are checked here because both have happened.
+BUNDLE="$(dirname "$MPI")/DevX.app"
+if [ -d "$BUNDLE" ]; then
+  if [ -f "$BUNDLE/Contents/Resources/DevX.icns" ]; then
+    printf '  ok   the bundle carries a generated icon\n'; pass=$((pass+1))
+  else
+    printf '  FAIL the bundle has no Contents/Resources/DevX.icns\n'; fail=$((fail+1))
+  fi
+  if /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' \
+       "$BUNDLE/Contents/Info.plist" >/dev/null 2>&1; then
+    printf '  ok   Info.plist names the icon\n'; pass=$((pass+1))
+  else
+    printf '  FAIL Info.plist has no CFBundleIconFile, so the icon is ignored\n'; fail=$((fail+1))
+  fi
+  if codesign --verify "$BUNDLE" >/dev/null 2>&1; then
+    printf '  ok   the signed bundle still verifies with its resources\n'; pass=$((pass+1))
+  else
+    printf '  FAIL the bundle does not verify against its own signature\n'; fail=$((fail+1))
+  fi
+else
+  printf '  skip DevX.app was not built (no Swift toolchain)\n'
+fi
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]

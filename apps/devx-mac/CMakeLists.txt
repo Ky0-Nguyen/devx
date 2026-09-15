@@ -77,6 +77,46 @@ configure_file(${CMAKE_SOURCE_DIR}/core/capi/mpi_capi.h
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Support/module.modulemap
                ${CMAKE_CURRENT_BINARY_DIR}/modules/module.modulemap COPYONLY)
 
+# The app icon.
+#
+# Drawn by tools/gen-icon.swift at build time rather than committed as an
+# .icns, which keeps the promise ADR-0002 makes about this tree: no binary
+# asset that a reviewer cannot read. `iconutil` ships with macOS, so this adds
+# no dependency -- but it is looked up rather than assumed, and the bundle
+# simply goes without an icon if it is missing, the same way the whole app is
+# skipped without Swift.
+find_program(MPI_ICONUTIL iconutil HINTS /usr/bin)
+if(MPI_ICONUTIL)
+  set(DEVX_ICON      ${CMAKE_CURRENT_BINARY_DIR}/DevX.icns)
+  set(DEVX_ICON_TOOL ${CMAKE_CURRENT_BINARY_DIR}/gen-icon)
+  add_custom_command(
+    OUTPUT ${DEVX_ICON_TOOL}
+    COMMAND ${MPI_SWIFTC} -O -sdk ${MPI_MACOS_SDK}
+            -target arm64-apple-macos14.0
+            ${CMAKE_SOURCE_DIR}/tools/gen-icon.swift -o ${DEVX_ICON_TOOL}
+    DEPENDS ${CMAKE_SOURCE_DIR}/tools/gen-icon.swift
+    COMMENT "Building the DevX icon generator"
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${DEVX_ICON}
+    COMMAND ${DEVX_ICON_TOOL} ${DEVX_ICON}
+    DEPENDS ${DEVX_ICON_TOOL}
+    COMMENT "Drawing DevX.icns"
+    VERBATIM
+  )
+  # Placed before the signature: codesign hashes the bundle's resources, so an
+  # icon copied in afterwards would leave CodeResources describing a bundle
+  # that no longer matches itself.
+  set(DEVX_ICON_STEP COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                     ${DEVX_ICON} ${DEVX_BUNDLE}/Contents/Resources/DevX.icns)
+  set(DEVX_ICON_DEP  ${DEVX_ICON})
+else()
+  message(STATUS "DevX (SwiftUI app): no iconutil -- the bundle will have no icon")
+  set(DEVX_ICON_STEP "")
+  set(DEVX_ICON_DEP  "")
+endif()
+
 add_custom_command(
   OUTPUT ${DEVX_BINARY}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${DEVX_BUNDLE}/Contents/MacOS
@@ -98,11 +138,13 @@ add_custom_command(
           -lc++
           ${DEVX_SWIFT_SOURCES}
           -o ${DEVX_BINARY}
+  ${DEVX_ICON_STEP}
   # An ad-hoc signature is enough for local use and keeps macOS from refusing
   # to launch it. A distributed build needs a real identity; see
   # THIRD-PARTY-LICENSES.md.
   COMMAND codesign --force --sign - ${DEVX_BUNDLE}
   DEPENDS ${DEVX_SWIFT_SOURCES} mpi_capi mpi_core mpi_adapters
+          ${DEVX_ICON_DEP}
           ${CMAKE_CURRENT_SOURCE_DIR}/Support/Info.plist
           ${CMAKE_CURRENT_BINARY_DIR}/modules/mpi_capi.h
           ${CMAKE_CURRENT_BINARY_DIR}/modules/module.modulemap
@@ -111,6 +153,35 @@ add_custom_command(
 )
 
 add_custom_target(devx_app ALL DEPENDS ${DEVX_BINARY})
+
+# `cmake --build build --target devx_install` puts the bundle where the Dock
+# and Spotlight can find it.
+#
+# It is a target rather than an `install(DIRECTORY ...)` rule because the app
+# is assembled by a custom command, and because the destination is deliberately
+# a user-owned directory: ~/Applications needs no privilege escalation, and an
+# unsigned, un-notarized build (see docs/packaging-and-signing.md) has no
+# business in the system-wide /Applications. The copy is a replace, not a
+# merge -- a stale file left behind from an older layout would still be inside
+# the signature's scope.
+set(DEVX_INSTALL_DIR "$ENV{HOME}/Applications" CACHE PATH
+    "Where devx_install copies DevX.app")
+add_custom_target(devx_install
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${DEVX_INSTALL_DIR}
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${DEVX_INSTALL_DIR}/DevX.app
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${DEVX_BUNDLE} ${DEVX_INSTALL_DIR}/DevX.app
+  # copy_directory does not preserve the executable bit on every CMake
+  # version, and an app whose binary is not executable fails to launch with a
+  # message that says nothing useful.
+  COMMAND chmod +x ${DEVX_INSTALL_DIR}/DevX.app/Contents/MacOS/DevX
+  # Re-sign in place: the copy has new inode metadata, and a bundle whose
+  # signature no longer verifies is quarantined by Gatekeeper on first launch.
+  COMMAND codesign --force --sign - ${DEVX_INSTALL_DIR}/DevX.app
+  COMMAND codesign --verify --verbose=1 ${DEVX_INSTALL_DIR}/DevX.app
+  DEPENDS ${DEVX_BINARY}
+  COMMENT "Installing DevX.app to ${DEVX_INSTALL_DIR}"
+  VERBATIM
+)
 
 # Swift-side tests. Built as a plain executable so ctest can run it without a
 # test-bundle host, matching how the C++ tests run. Only the pure layers are
