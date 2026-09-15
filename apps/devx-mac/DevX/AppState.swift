@@ -258,6 +258,14 @@ final class AppState: ObservableObject {
     @Published var liveStopping = false
     @Published var liveTickMs = 500
     @Published var liveCpuWindowMs = 5000
+    /// Seconds of stack profiling at the *end* of a live capture, 0 for none.
+    ///
+    /// Opt-in for two reasons, and the second matters more: `/usr/bin/sample`
+    /// blocks for the seconds it samples, so this delays the stop; and what
+    /// it returns is an aggregate with no timestamps, which answers where the
+    /// time went and can never answer when. Folding that into a live view by
+    /// default would invite reading it as part of the timeline.
+    @Published var liveStackProfileSeconds = 0
     // Per-counter history for the sparklines, capped so a long session cannot
     // grow the UI's memory without bound.
     @Published var liveSeries: [String: [Double]] = [:]
@@ -1004,6 +1012,7 @@ final class AppState: ObservableObject {
         let dir = sessionsDir, dev = selectedDevice, app = selectedApp
         let hz = recordHz, f = recordFrames, c = recordCpu, m = recordMemory
         let r = recordResetFrames, tick = liveTickMs, win = liveCpuWindowMs
+        let stackSecs = liveStackProfileSeconds
 
         liveStarting = true
         lastError = nil
@@ -1015,7 +1024,8 @@ final class AppState: ObservableObject {
             let started = Core.liveStart(dir: dir, device: dev, app: app,
                                          sampleHz: hz, frames: f, cpu: c,
                                          memory: m, resetFrames: r,
-                                         tickMs: tick, cpuWindowMs: win)
+                                         tickMs: tick, cpuWindowMs: win,
+                                         stackProfileSeconds: stackSecs)
             DispatchQueue.main.async {
                 self.liveStarting = false
                 if let err = started["error"].string, !err.isEmpty {

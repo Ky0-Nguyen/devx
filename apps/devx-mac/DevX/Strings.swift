@@ -1139,6 +1139,14 @@ enum Strings {
         "not looked yet":
             "chưa quét",
         "watch live": "xem trực tiếp",
+        "profile stacks at the end": "lấy stack khi kết thúc",
+        "iOS simulator only. It runs `sample` for that long when you stop, "
+        + "so the stop waits — and what it returns is an aggregate with no "
+        + "timestamps: where the samples were, never when.":
+            "chỉ dành cho iOS simulator. Khi bạn dừng, nó chạy `sample` "
+            + "trong khoảng thời gian đó nên việc dừng sẽ phải chờ — và kết "
+            + "quả là số liệu tổng hợp không có dấu thời gian: cho biết mẫu "
+            + "nằm ở đâu, không bao giờ cho biết khi nào.",
         "capture headers and response bodies":
             "thu headers và response body",
         "this is the data in flight, including Authorization headers and "
