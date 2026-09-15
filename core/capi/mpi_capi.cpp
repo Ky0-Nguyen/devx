@@ -126,7 +126,7 @@ const model::DeviceRef* find_device(const model::DiscoverySnapshot& snap,
   const model::DeviceRef* hit = nullptr;
   ambiguous = false;
   for (const auto& d : snap.devices) {
-    if (d.device_id != id) continue;
+    if (!d.matches_id(id)) continue;
     if (hit != nullptr) {
       ambiguous = true;
       return nullptr;

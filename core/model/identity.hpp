@@ -57,6 +57,42 @@ struct DeviceRef {
   // process identity across a reboot (spec B04).
   std::string boot_id;
 
+  // The hardware's own UDID, when the provider that found the device uses a
+  // *different* identifier from the one the capture tools accept.
+  //
+  // This exists because iOS has two identifier namespaces and they are not
+  // interchangeable. `devicectl` -- which is how physical iOS devices are
+  // discovered, and what app listing and launching go through -- reports a
+  // CoreDevice record id like `3FF46431-775C-59BB-AD26-D316DFAFA5A6`.
+  // `xctrace`, which performs the actual recording, knows the same phone only
+  // as `00008101-000978CA11A1001E`. Handing the first to the second produced
+  // a device-not-found failure on every physical-device capture, and the
+  // symptom looked like a broken connection rather than a mismatched name.
+  //
+  // Empty when there is nothing to distinguish: an Android serial and a
+  // simulator UDID are the same string in every tool that accepts them.
+  std::string hardware_udid;
+
+  /// The identifier to hand to a tool that talks to the hardware.
+  ///
+  /// Prefer this over `device_id` for anything that records. `device_id`
+  /// remains what the provider's own commands accept and what the operator
+  /// types, so neither moves under the other.
+  const std::string& capture_id() const {
+    return hardware_udid.empty() ? device_id : hardware_udid;
+  }
+
+  /// Whether `id` names this device, under either of its identifiers.
+  ///
+  /// Every resolution site goes through this. There were four of them --
+  /// the CLI, the C ABI, the HTTP surface and the discovery service -- and
+  /// teaching them one at a time is how a device ends up findable by one
+  /// command and not the next.
+  bool matches_id(const std::string& id) const {
+    if (id.empty()) return false;
+    return id == device_id || (!hardware_udid.empty() && id == hardware_udid);
+  }
+
   bool usable_for_capture() const {
     return trust == TrustState::kAuthorized;
   }

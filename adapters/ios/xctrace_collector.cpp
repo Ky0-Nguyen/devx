@@ -159,7 +159,7 @@ session::CaptureResult XctraceCollector::capture(
     if (p.is_primary) primary = &p;
   }
   const std::string pid = std::to_string(primary->pid);
-  if (!proc::is_safe_argument(device.device_id, /*reject_option_like=*/true) ||
+  if (!proc::is_safe_argument(device.capture_id(), /*reject_option_like=*/true) ||
       !proc::is_safe_argument(pid, /*reject_option_like=*/true)) {
     result.error = "refusing to pass '" + device.device_id + "' / '" + pid +
                    "' to xctrace: it would be read as a command-line option";
@@ -189,7 +189,9 @@ session::CaptureResult XctraceCollector::capture(
   const std::vector<std::string> record_argv = {
       "xcrun",   "xctrace",   "record",
       "--no-prompt",  // never wait on a prompt: there is no operator here
-      "--device", device.device_id,
+      // The hardware UDID, not the CoreDevice id: xctrace does not know
+      // the latter. See DeviceRef::capture_id().
+      "--device", device.capture_id(),
       "--template", "Time Profiler",
       "--attach", pid,
       "--output", bundle.string(),

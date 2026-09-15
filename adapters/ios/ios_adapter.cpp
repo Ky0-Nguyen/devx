@@ -101,6 +101,13 @@ std::vector<model::DeviceRef> parse_devicectl_devices(
     ref.device_id = str_at(d, "identifier");
     if (ref.device_id.empty() && hw) ref.device_id = str_at(*hw, "udid");
     if (ref.device_id.empty()) continue;
+    // ...and the hardware UDID alongside it, because xctrace knows the device
+    // by that and by nothing else. See DeviceRef::hardware_udid: passing the
+    // CoreDevice id to xctrace failed every physical-device capture.
+    if (hw) {
+      const std::string udid = str_at(*hw, "udid");
+      if (!udid.empty() && udid != ref.device_id) ref.hardware_udid = udid;
+    }
 
     if (hw) {
       ref.model = str_at(*hw, "marketingName");
