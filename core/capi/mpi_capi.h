@@ -75,6 +75,29 @@ char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
 /* What is attachable right now, without holding the debugger slot. */
 char* mpi_inspect_targets_json(int metro_port);
 
+/* Live observation, so the data arrives while it happens.
+ *
+ * `mpi_inspect_json` returns when its window closes, which is fine for a
+ * script and wrong for a person: the interesting API calls happen when you
+ * tap something, and a report that appears fifteen seconds later cannot be
+ * connected to what you just did.
+ *
+ * Start once, poll as often as you like, stop when done. Each poll returns
+ * the whole observation to date, not a delta -- a network exchange is
+ * assembled from three separate events, and a caller stitching deltas would
+ * have to re-implement that.
+ *
+ * Only one stream at a time: the debugger slot is single-occupancy, and so is
+ * this. Starting a second returns an error rather than displacing the first.
+ */
+char* mpi_inspect_stream_start(const char* app_id, int metro_port, int flags,
+                               const char* device_id,
+                               const char* screenshot_dir);
+/* Reads for up to `budget_ms`, then returns the observation so far. */
+char* mpi_inspect_stream_poll(int budget_ms);
+/* Stops and returns the final observation. */
+char* mpi_inspect_stream_stop(void);
+
 /* Session packages under `sessions_dir`, newest first. */
 char* mpi_sessions_json(const char* sessions_dir);
 

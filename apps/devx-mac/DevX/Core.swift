@@ -138,6 +138,31 @@ enum Core {
         call { mpi_inspect_targets_json(Int32(metroPort)) }
     }
 
+    /// Opens a live observation. One at a time.
+    static func inspectStreamStart(appId: String, metroPort: Int,
+                                   redux: Bool, reduxValues: Bool,
+                                   screenshots: Bool, deviceId: String,
+                                   screenshotDir: String) -> JSON {
+        var flags: Int32 = 0
+        if redux { flags |= 1 }
+        if reduxValues { flags |= 3 }
+        if screenshots { flags |= 4 }
+        return call {
+            mpi_inspect_stream_start(appId, Int32(metroPort), flags, deviceId,
+                                     screenshotDir)
+        }
+    }
+
+    /// Reads for up to `budgetMs`, then returns the observation so far.
+    /// Cumulative, not a delta.
+    static func inspectStreamPoll(budgetMs: Int) -> JSON {
+        call { mpi_inspect_stream_poll(Int32(budgetMs)) }
+    }
+
+    static func inspectStreamStop() -> JSON {
+        call { mpi_inspect_stream_stop() }
+    }
+
     /// Reads a running app's network calls, console output and Redux state
     /// through the inspector the app already runs. Blocks for the whole
     /// window, so the caller runs it off the main thread.
