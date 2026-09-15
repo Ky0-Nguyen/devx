@@ -763,6 +763,22 @@ do {
     check(DeviceFreshness.ago(3599) == "59m ago", "and 59m stays minutes")
     check(DeviceFreshness.ago(3600) == "1h ago", "an hour is an hour")
 
+    // A scan that lands between two redraws is stamped slightly ahead of the
+    // `now` the label was given. That is this view's own one-second tick, not
+    // a broken clock -- reading it as one printed "re-scanning every 5s ·
+    // last looked at an unknown time" about a list refreshed a moment
+    // earlier, for about one second in five.
+    check(DeviceFreshness.ago(-0.4) == "a moment ago",
+          "a timestamp a fraction ahead of the UI clock is 'a moment ago'")
+    check(DeviceFreshness.ago(-2) == "a moment ago",
+          "and so is one a full tick ahead")
+    let justScanned = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(0.4),
+                                             now: t0, watching: true)
+    check(justScanned.text.contains("a moment ago"),
+          "so a watched list that just refreshed says when it looked")
+    check(!justScanned.text.contains("unknown"),
+          "rather than claiming not to know")
+
     // A clock that jumps backwards -- NTP, or a laptop waking -- must not
     // produce "-4s ago" or a number from 1970.
     check(DeviceFreshness.ago(-4) == "at an unknown time",
@@ -771,6 +787,131 @@ do {
                                         now: t0, watching: false)
     check(!future.text.contains("-"),
           "a scan stamped in the future prints no negative age")
+}
+
+do {
+    // The contradiction a screenshot caught: "re-scanning every 5s · last
+    // looked 6m ago". Both halves were true -- the watch was on, and the scan
+    // was six minutes old -- because every tick was being skipped while a
+    // boot held the in-flight slot for up to 180s. A label that promises a
+    // five-second refresh while nothing refreshes is worse than no label.
+    let t0 = Date(timeIntervalSince1970: 2_000_000)
+    let sixMinutesAgo = t0.addingTimeInterval(-360)
+
+    let paused = DeviceFreshness.status(loadedAt: sixMinutesAgo, now: t0,
+                                        watching: true,
+                                        suppressedBy: "starting a simulator")
+    check(paused.confidence == .aging,
+          "a watch that is not actually running is not 'current'")
+    check(!paused.text.contains("every"),
+          "and must not keep promising an interval it is not keeping")
+    check(paused.text.contains("paused"), "it says it is paused")
+    check(paused.text.contains("starting a simulator"),
+          "and names what is holding it, so the wait is explainable")
+    check(paused.text.contains("6m ago"),
+          "while still stating the real age of what is on screen")
+
+    // Nothing holding it: identical to the plain watching case, so the
+    // suppression wording cannot leak into the normal label.
+    let running = DeviceFreshness.status(loadedAt: sixMinutesAgo, now: t0,
+                                         watching: true, suppressedBy: "")
+    check(running.text == DeviceFreshness.status(loadedAt: sixMinutesAgo,
+                                                 now: t0, watching: true).text,
+          "an empty reason leaves the watching label untouched")
+
+    // Not watching at all: the reason is irrelevant and must not appear.
+    let off = DeviceFreshness.status(loadedAt: sixMinutesAgo, now: t0,
+                                     watching: false,
+                                     suppressedBy: "starting a simulator")
+    check(!off.text.contains("paused"),
+          "a watch that is switched off is not 'paused'")
+
+    // Age unknown but a reason present: still says why, without inventing a
+    // time.
+    let neverScanned = DeviceFreshness.status(loadedAt: nil, now: t0,
+                                              watching: true,
+                                              suppressedBy: "reading a report")
+    check(neverScanned.text.contains("reading a report"), "the reason survives")
+    check(!neverScanned.text.contains("last looked"),
+          "but no age is claimed when there has never been a scan")
+}
+
+do {
+    // Twenty-three simulators, each with an advice button under it, buried
+    // the one device being worked with. Filtering is the fix -- and a
+    // filtered-empty list must not be readable as a machine with no devices.
+    func dev(_ name: String, _ id: String, _ trust: String,
+             model: String = "", os: String = "", platform: String = "ios",
+             form: String = "simulator") -> JSON {
+        parse("{\"display_name\":\"\(name)\",\"device_id\":\"\(id)\","
+              + "\"trust\":\"\(trust)\",\"model\":\"\(model)\","
+              + "\"os_version\":\"\(os)\",\"platform\":\"\(platform)\","
+              + "\"form\":\"\(form)\"}")
+    }
+    let devices = [
+        dev("Pixel 7", "emulator-5554", "authorized", model: "Pixel 7",
+            os: "34", platform: "android", form: "emulator"),
+        dev("iPhone 17 Pro", "B11AD99F", "authorized", model: "iPhone 17 Pro",
+            os: "26.0"),
+        dev("iPhone 15", "9C2E1180", "offline", model: "iPhone 15", os: "18.4"),
+        dev("iPad Air", "77A0C431", "unknown", model: "iPad Air", os: "17.2"),
+    ]
+
+    // The usability filter: by default the list hides what cannot be
+    // captured from.
+    let usable = DeviceFilter.apply(devices, needle: "", showUnusable: false)
+    check(usable.shown.count == 2, "two of the four are usable")
+    check(usable.hidden == 2, "and it reports how many it removed")
+    check(!usable.hidEverything && !usable.nothingToShow,
+          "a non-empty result claims neither empty state")
+
+    // Free text matches the fields someone would actually type.
+    check(DeviceFilter.apply(devices, needle: "pixel",
+                             showUnusable: false).shown.count == 1,
+          "a name matches")
+    check(DeviceFilter.apply(devices, needle: "b11ad",
+                             showUnusable: false).shown.count == 1,
+          "so does part of an id, case-insensitively")
+    check(DeviceFilter.apply(devices, needle: "android",
+                             showUnusable: false).shown.count == 1,
+          "and the platform")
+    check(DeviceFilter.apply(devices, needle: "18.4",
+                             showUnusable: true).shown.count == 1,
+          "and an OS version, which is how you pick between two iPhones")
+    check(DeviceFilter.apply(devices, needle: "  pixel  ",
+                             showUnusable: false).shown.count == 1,
+          "surrounding space is trimmed, not treated as part of the needle")
+
+    // The trap: trust is deliberately not searchable.
+    check(DeviceFilter.apply(devices, needle: "offline",
+                             showUnusable: true).shown.isEmpty,
+          "typing a trust state matches nothing rather than hiding what works")
+
+    // The two empties are distinguishable, which is the whole point.
+    let noMatch = DeviceFilter.apply(devices, needle: "zzz", showUnusable: true)
+    check(noMatch.hidEverything, "nothing matched, but there were devices")
+    check(!noMatch.nothingToShow, "which is not an empty machine")
+    let empty = DeviceFilter.apply([], needle: "", showUnusable: true)
+    check(empty.nothingToShow, "an empty machine is its own answer")
+    check(!empty.hidEverything, "and is not blamed on the filter")
+
+    // Columns keep reading order: the list is sorted by relevance, so a
+    // straight split down the middle would push the second-best device to
+    // the top of the right column, far from the first.
+    let cols = DeviceFilter.columns(devices)
+    check(cols.count == 2, "four devices fill two columns")
+    check(cols[0].map { $0["device_id"].text } == ["emulator-5554", "9C2E1180"],
+          "the left column takes rows 1 and 3")
+    check(cols[1].map { $0["device_id"].text } == ["B11AD99F", "77A0C431"],
+          "so the top two devices sit side by side, not a column apart")
+    check(DeviceFilter.columns(Array(devices.prefix(2))).count == 1,
+          "two devices are not worth splitting")
+    check(DeviceFilter.columns([]).count == 1,
+          "and an empty list is one empty column, not two")
+    let odd = DeviceFilter.columns(Array(devices.prefix(3)))
+    check(odd[0].count == 2 && odd[1].count == 1,
+          "an odd count leaves the shortfall on the right")
+    check(odd.flatMap { $0 }.count == 3, "no device is lost or duplicated")
 }
 
 do {
@@ -1035,6 +1176,54 @@ do {
         check(InspectKind(rawValue: kind.rawValue) == kind,
               "and a rawValue that round-trips")
     }
+}
+
+do {
+    // "clear" on the three lists. A watermark, not a delete -- partly
+    // because throwing rows away would make what is on screen a claim about
+    // the app, and partly because it would not work: the assembler is
+    // cumulative and hands back the whole observation on every poll.
+    func row(_ i: Int) -> JSON { parse("{\"url\":\"https://x/\(i)\"}") }
+    let rows = (1...5).map(row)
+
+    check(InspectFilter.afterClear(rows, clearedCount: 0).count == 5,
+          "no clear keeps everything")
+    let kept = InspectFilter.afterClear(rows, clearedCount: 2)
+    check(kept.count == 3, "a clear of 2 holds back the first two")
+    check(kept.first?["url"].text == "https://x/3",
+          "and the ones kept are the newest, not the oldest")
+
+    // The case that would look like a bug: a mark left over from before the
+    // app reloaded, when the new observation is shorter than the mark.
+    check(InspectFilter.afterClear(rows, clearedCount: 5).isEmpty,
+          "a mark at the end holds everything back")
+    check(InspectFilter.afterClear(rows, clearedCount: 900).isEmpty,
+          "and a stale mark past the end does not crash on dropFirst")
+    check(InspectFilter.afterClear([], clearedCount: 3).isEmpty,
+          "nor does an empty list with a mark on it")
+
+    // Redux marks are sequence-based, because the in-app buffer drops its
+    // oldest records under load: the list shortens from the front, and a
+    // count would then hide the wrong rows.
+    func rec(_ seq: Int) -> JSON { parse("{\"seq\":\(seq)}") }
+    let recs = [rec(11), rec(12), rec(13)]
+    check(InspectFilter.afterClear(reduxRecords: recs, clearedSeq: 0).count == 3,
+          "no clear keeps every record")
+    let after = InspectFilter.afterClear(reduxRecords: recs, clearedSeq: 12)
+    check(after.count == 1 && after.first?["seq"].int == 13,
+          "a clear at seq 12 keeps only what came after it")
+    // The buffer dropped 11 and 12 between the clear and now. A count-based
+    // mark of 2 would have hidden 13 and 14; the seq mark does not.
+    let dropped = [rec(13), rec(14)]
+    check(InspectFilter.afterClear(reduxRecords: dropped, clearedSeq: 12).count == 2,
+          "records the buffer dropped do not shift the mark onto newer ones")
+    check(InspectFilter.afterClear(reduxRecords: [], clearedSeq: 12).isEmpty,
+          "an empty record list stays empty")
+    // A record with no seq at all must not be silently kept as if it were
+    // newer than the mark.
+    check(InspectFilter.afterClear(reduxRecords: [parse("{}")],
+                                   clearedSeq: 1).isEmpty,
+          "a record with no seq is not treated as newer than the mark")
 }
 
 if listingRequirements { exit(0) }

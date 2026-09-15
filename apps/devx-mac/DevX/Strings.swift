@@ -600,7 +600,39 @@ enum Strings {
         "Could not start it": "Không khởi động được",
         "Ready": "Sẵn sàng",
         "No device discovered": "Không phát hiện thiết bị nào",
-        "why can't I use this?": "vì sao không dùng được?",
+        "name, id, model, OS…": "tên, id, model, OS…",
+        "a dimmed device cannot be captured from -- tap one to find out why":
+            "thiết bị bị làm mờ thì không đo được -- bấm vào một cái để xem vì sao",
+        "show unusable": "hiện cả thiết bị không dùng được",
+        "watch it change, not just read it once":
+            "theo dõi nó thay đổi, không chỉ đọc một lần",
+        "also name the actions": "nêu luôn tên các action",
+        "this wraps dispatch inside the running app for the duration and puts it back afterwards -- the only setting here that modifies the app":
+            "việc này bọc dispatch bên trong app đang chạy trong suốt phiên rồi trả lại nguyên trạng sau đó -- đây là lựa chọn duy nhất ở đây có sửa vào app",
+        "without it, changes are seen through store.subscribe, which names no action":
+            "không bật thì thay đổi được thấy qua store.subscribe, và nó không nêu tên action nào",
+        "Redux activity": "Hoạt động Redux",
+        "record(s)": "bản ghi",
+        "expand all": "mở hết",
+        "show them": "hiện lại",
+        "{n} held back by clear — still captured, still exported":
+            "{n} mục đang được ẩn bởi clear — vẫn thu được, vẫn xuất ra",
+        "the slice was replaced with an equal value: subscribers re-rendered and nothing changed":
+            "slice bị thay bằng một giá trị y như cũ: subscriber render lại mà không có gì đổi",
+        "no-op": "vô ích",
+        "collapse all": "thu hết",
+        "state change": "trạng thái đổi",
+        "no action named": "không rõ action nào",
+        "slices:": "các slice:",
+        "(absent)": "(không có)",
+        "the store was found and nothing has dispatched yet":
+            "đã tìm thấy store và chưa có gì được dispatch",
+        "dispatched through a reference the wrapper does not sit on -- a thunk is handed one -- so the change is real and the action is not named":
+            "được dispatch qua một tham chiếu mà wrapper không nằm trên đó -- thunk được đưa đúng loại đó -- nên thay đổi là thật còn action thì không rõ tên",
+        "values were not captured, so the slice names above are the whole finding":
+            "không thu giá trị, nên tên các slice ở trên là toàn bộ những gì biết được",
+        "{n} record(s) were dropped by the in-app buffer: this list is the tail, not the whole capture":
+            "{n} bản ghi đã bị bộ đệm trong app bỏ đi: danh sách này là phần cuối, không phải toàn bộ phiên",
         "last seen": "lần cuối nhìn thấy",
         "no specific reason could be established":
             "không xác định được lý do cụ thể",

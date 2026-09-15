@@ -33,20 +33,59 @@ std::string elide(const std::string& s, std::size_t width) {
   return ".." + s.substr(s.size() - (width - 2));
 }
 
+
+/// The name Metro would publish for a device id, or empty when discovery
+/// cannot say.
+///
+/// Only runs when there is an id to translate and no explicit Metro target,
+/// because it costs a discovery pass. A failure here is not fatal: the id is
+/// then used as the hint and the mismatch is reported against what was typed.
+std::string metro_name_for_device(const Invocation& inv,
+                                  const std::string& device_id) {
+  if (device_id.empty() || inv.has_flag("target-device")) return "";
+  // Through the CLI's own factory, which is what registers the providers and
+  // honours --no-simulators. A bare DiscoveryService has none registered, so
+  // it returns an empty snapshot and every id silently fails to resolve.
+  auto svc = make_discovery(inv.global);
+  const auto snap = svc.snapshot(provider_options(inv.global),
+                                 /*include_apps=*/false);
+  for (const auto& d : snap.devices) {
+    if (d.matches_id(device_id)) return d.display_name;
+  }
+  return "";
+}
+
 }  // namespace
 
 ExitCode cmd_inspect(const Invocation& inv) {
   rn::InspectOptions opts;
   opts.app_id = inv.global.app;
   // Metro publishes a device *name* and nothing else -- no adb serial, no
-  // simulator UDID -- so this is matched against that name. `--device` is
-  // accepted too, since someone who has it to hand should not have to look
-  // up a second identifier; it is matched the same way and reported honestly
-  // when it does not match.
-  opts.device_hint = inv.flag("target-device", inv.global.device);
+  // simulator UDID -- so that is what a hint can match. `--device` carries an
+  // id, so it is translated to the name discovery holds for that id rather
+  // than passed through; see rn::metro_device_hint for why that mattered.
+  // `--target-device` is the way to name a Metro target directly.
+  opts.device_hint = rn::metro_device_hint(
+      inv.flag("target-device"), inv.global.device,
+      metro_name_for_device(inv, inv.global.device));
   opts.read_redux_state = inv.has_flag("redux");
   opts.include_state_values = inv.has_flag("redux-values");
   if (opts.include_state_values) opts.read_redux_state = true;
+  // Watching the store, rather than reading it once. `--redux-actions` also
+  // wraps `dispatch`, which is the only thing here that modifies the running
+  // app -- so it is its own flag and not implied by anything else.
+  opts.watch_redux = inv.has_flag("redux-watch") ||
+                     inv.has_flag("redux-actions");
+  opts.redux_watch.wrap_dispatch = inv.has_flag("redux-actions");
+  if (opts.watch_redux) opts.read_redux_state = true;
+  if (inv.has_flag("redux-buffer")) {
+    const int cap = std::atoi(inv.flag("redux-buffer").c_str());
+    if (cap <= 0) {
+      std::cerr << "error: --redux-buffer must be a positive count\n";
+      return ExitCode::kUsage;
+    }
+    opts.redux_watch.buffer = cap;
+  }
 
   if (inv.has_flag("metro-port")) {
     const int port = std::atoi(inv.flag("metro-port").c_str());
@@ -272,6 +311,89 @@ ExitCode cmd_inspect(const Invocation& inv) {
       }
       if (!report.state.note.empty()) {
         std::cout << "  note: " << report.state.note << "\n";
+      }
+    }
+
+    if (opts.watch_redux) {
+      std::cout << "\nREDUX ACTIVITY (" << report.redux.records.size()
+                << " record(s))\n";
+      if (report.redux.dispatch_wrapped) {
+        std::cout << "  dispatch was wrapped for the duration and restored "
+                     "afterwards. The wrapper sits on store.dispatch, so it\n"
+                     "  sees calls made through it and misses any reference "
+                     "captured earlier -- a thunk's injected dispatch\n"
+                     "  among them, which is why some changes below name no "
+                     "action.\n";
+      } else {
+        std::cout << "  read-only: state changes seen through "
+                     "store.subscribe, which names no action. Pass "
+                     "--redux-actions\n  to see action types, which wraps "
+                     "dispatch in the running app\n";
+      }
+      if (report.redux.dropped > 0) {
+        std::cout << "  " << report.redux.dropped
+                  << " record(s) were dropped by the in-app buffer: the list "
+                     "below is the tail, not the whole capture\n";
+      }
+      if (!report.redux.restore_error.empty()) {
+        std::cout << "  ! " << report.redux.restore_error << "\n";
+      }
+      for (const auto& rec : report.redux.records) {
+        std::cout << "  " << std::setw(4) << rec.seq << "  ";
+        if (rec.action_type.has_value()) {
+          // Printed whole. An action type is identified by its head, and
+          // `elide` keeps the tail -- right for a URL, and it turned
+          // GET_ANNOUCEMENT_TIPS_REQUEST@ANNOUNCEMENT into a string starting
+          // with two dots.
+          std::cout << *rec.action_type;
+        } else if (rec.dispatch_bypassed) {
+          std::cout << "(no action named: dispatched through a reference the "
+                       "wrapper does not sit on,\n        such as the dispatch "
+                       "a thunk is handed)";
+        } else {
+          std::cout << "(state change, no action named)";
+        }
+        std::cout << "\n";
+        if (!rec.changed_slices.empty()) {
+          std::cout << "        slices:";
+          for (std::size_t i = 0; i < rec.changed_slices.size(); i++) {
+            std::cout << (i == 0 ? " " : ", ") << rec.changed_slices[i];
+          }
+          std::cout << "\n";
+        }
+        for (const auto& d : rec.deltas) {
+          const char* mark = d.kind == observe::StateDelta::Kind::kAdded
+                                 ? "+"
+                                 : (d.kind == observe::StateDelta::Kind::kRemoved
+                                        ? "-"
+                                        : "~");
+          std::cout << "        " << mark << " " << d.path;
+          if (d.before.has_value() || d.after.has_value()) {
+            std::cout << "   " << d.before.value_or("(absent)") << " -> "
+                      << d.after.value_or("(absent)");
+          }
+          std::cout << "\n";
+        }
+        if (rec.action_payload.has_value()) {
+          std::cout << "        payload: " << elide(*rec.action_payload, 100)
+                    << "\n";
+        }
+        if (rec.equal_replacement) {
+          std::cout << "        ^ the slice was replaced with an equal value: "
+                       "subscribers re-rendered and nothing changed\n";
+        }
+        if (!rec.truncated.empty()) {
+          std::cout << "        (" << rec.truncated << ")\n";
+        }
+      }
+      if (report.redux.records.empty() && report.redux.store_found) {
+        // An empty list here is a real answer, and it is not the same answer
+        // as a missing store.
+        std::cout << "  the store was found and nothing dispatched during "
+                     "the window\n";
+      }
+      if (!report.redux.note.empty()) {
+        std::cout << "  note: " << report.redux.note << "\n";
       }
     }
 

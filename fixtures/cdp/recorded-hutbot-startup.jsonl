@@ -3,6 +3,14 @@
 // nothing added to the app. Real capture, NOT synthetic: it is here
 // so the parser is tested against the shapes the wire actually
 // produces rather than the ones it was written to expect.
+//
+// ONE value is redacted: the app logs its auth configuration at startup,
+// which included a real AWS Cognito app client id. It is replaced by a
+// placeholder of the same length, so the bytes the parser walks are
+// unchanged and nothing about what this fixture tests is different. The
+// redaction is recorded here rather than done quietly, because "real
+// capture" is the claim this file rests on and a silent edit would weaken
+// it. Nothing else is altered.
 {"params":{"type":"info","timestamp":1789446429075.563,"context":"main#InstanceAgent","args":[{"type":"string","value":"\u001b[48;2;253;247;231m\u001b[30m\u001b[1mNOTE: \u001b[22mYou are using an unsupported debugging client. Use the Dev Menu in your app (or type `j` in the Metro terminal) to open React Native DevTools."}],"executionContextId":1},"method":"Runtime.consoleAPICalled"}
 {"params":{"context":{"name":"main","origin":"","id":1}},"method":"Runtime.executionContextCreated"}
 {"params":{"entry":{"timestamp":1789446429075,"source":"other","args":[],"level":"info","text":"\u001b[48;2;253;247;231m\u001b[30mDebugger integration: Android Bridgeless (ReactHostImpl)"}},"method":"Log.entryAdded"}

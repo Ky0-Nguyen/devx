@@ -113,6 +113,7 @@ struct InspectView: View {
                     networkPanel
                     consolePanel
                     if state.inspectRedux { reduxPanel }
+                    if state.inspectReduxWatch { reduxActivityPanel }
                     if !state.inspectDoc["screenshots"].array.isEmpty {
                         screenshotsPanel
                     }
@@ -207,6 +208,31 @@ struct InspectView: View {
                           + "values are left out unless asked for"))
                         .font(Term.micro).foregroundStyle(Term.amber)
                         .padding(.leading, 18)
+                    Toggle(tr("watch it change, not just read it once"),
+                           isOn: $state.inspectReduxWatch)
+                        .toggleStyle(.checkbox).font(Term.small)
+                        .padding(.leading, 18)
+                    if state.inspectReduxWatch {
+                        Toggle(tr("also name the actions"),
+                               isOn: $state.inspectReduxActions)
+                            .toggleStyle(.checkbox).font(Term.small)
+                            .padding(.leading, 36)
+                        // The one setting here that changes the running app,
+                        // so it says so where it is switched on rather than
+                        // only in the report afterwards.
+                        Text(state.inspectReduxActions
+                             ? tr("this wraps dispatch inside the running app "
+                                + "for the duration and puts it back "
+                                + "afterwards -- the only setting here that "
+                                + "modifies the app")
+                             : tr("without it, changes are seen through "
+                                + "store.subscribe, which names no action"))
+                            .font(Term.micro)
+                            .foregroundStyle(state.inspectReduxActions
+                                             ? Term.amber : Term.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.leading, 36)
+                    }
                 }
                 Toggle(tr("capture headers and response bodies"),
                        isOn: $state.inspectDetail)
@@ -324,13 +350,16 @@ struct InspectView: View {
     }
 
     @ViewBuilder private var networkPanel: some View {
-        let all = state.inspectDoc["network"].array
+        let captured = state.inspectDoc["network"].array
+        let all = InspectFilter.afterClear(captured,
+                                           clearedCount: state.clearedNetwork)
         let result = InspectFilter.network(all, kinds: state.inspectKinds,
                                            needle: state.inspectNeedle)
         let rows = result.shown
         Panel(title: tr("Network") + " (\(rows.count)"
                      + (result.hidden > 0 ? " / \(all.count)" : "") + ")",
               subtitle: "the JavaScript side only") {
+            ClearBar(kind: .network, held: captured.count - all.count)
             // An empty list because of a filter is a statement about the
             // filter. An empty list with nothing hidden is a statement about
             // the app. They must not look the same.
@@ -385,13 +414,16 @@ struct InspectView: View {
     }
 
     @ViewBuilder private var consolePanel: some View {
-        let all = state.inspectDoc["console"].array
+        let captured = state.inspectDoc["console"].array
+        let all = InspectFilter.afterClear(captured,
+                                           clearedCount: state.clearedConsole)
         let result = InspectFilter.console(all, kinds: state.inspectKinds,
                                            needle: state.inspectNeedle)
         let rows = result.shown
         Panel(title: tr("Console") + " (\(rows.count)"
                      + (result.hidden > 0 ? " / \(all.count)" : "") + ")",
               subtitle: "whatever the app chose to log") {
+            ClearBar(kind: .log, held: captured.count - all.count)
             if result.hidEverything {
                 Text(tr("\(result.hidden) line(s) are hidden by the filter. "
                       + "This says nothing about the app."))
@@ -451,6 +483,71 @@ struct InspectView: View {
         }
     }
 
+    /// What happened to the store, one row per change.
+    ///
+    /// Collapsed by default, and that is the point: a single dispatch on a
+    /// real app cleared a profile slice and produced thirty deltas, which
+    /// printed inline would push everything else off the screen. The row says
+    /// what happened; the deltas are there when the answer is "what exactly
+    /// did it change".
+    @ViewBuilder private var reduxActivityPanel: some View {
+        let rx = state.inspectDoc["redux"]
+        let captured = rx["records"].array
+        let records = InspectFilter.afterClear(
+            reduxRecords: captured, clearedSeq: state.clearedReduxSeq)
+        Panel(title: "Redux activity",
+              subtitle: rx["dispatch_wrapped"].bool == true
+                        ? "dispatch is wrapped; it is put back when this stops"
+                        : "state changes, read-only") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Text("\(records.count) " + tr("record(s)"))
+                        .font(Term.body)
+                    Spacer(minLength: 0)
+                    if !records.isEmpty {
+                        // One control for the whole list. Opening thirty rows
+                        // one at a time to find a field is not reading, it is
+                        // clicking.
+                        Button(state.reduxExpandAll
+                               ? tr("collapse all") : tr("expand all")) {
+                            state.reduxExpandAll.toggle()
+                            state.reduxOpenRecords.removeAll()
+                        }
+                        .buttonStyle(TermButtonStyle())
+                    }
+                }
+                ClearBar(kind: .redux, held: captured.count - records.count)
+                if let dropped = rx["dropped"].int, dropped > 0 {
+                    Text(DeviceFreshness.fill(
+                            tr("{n} record(s) were dropped by the in-app "
+                             + "buffer: this list is the tail, not the whole "
+                             + "capture"), "{n}", dropped))
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if !rx["restore_error"].text.isEmpty {
+                    Text(rx["restore_error"].text)
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if records.isEmpty && rx["store_found"].bool == true {
+                    // Not the same answer as a missing store.
+                    Text(tr("the store was found and nothing has dispatched "
+                          + "yet"))
+                        .font(Term.small).foregroundStyle(Term.dim)
+                }
+                ForEach(Array(records.enumerated()), id: \.offset) { _, rec in
+                    ReduxRecordRow(record: rec)
+                }
+                if !rx["note"].text.isEmpty {
+                    Text(rx["note"].text).font(Term.micro)
+                        .foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
     @ViewBuilder private var screenshotsPanel: some View {
         Panel(title: tr("Screenshots"),
               subtitle: "each shows the moment it was taken, and nothing else") {
@@ -494,6 +591,190 @@ struct InspectView: View {
         Panel(title: "What this does not show") {
             BulletList(title: "",
                        items: state.inspectDoc["caveats"].array.map { $0.text })
+        }
+    }
+}
+
+/// One change to the store: a heading that fits on a line, and the detail
+/// underneath when asked for.
+private struct ReduxRecordRow: View {
+    @EnvironmentObject var state: AppState
+    let record: JSON
+
+    private var isOpen: Bool {
+        let seq = record["seq"].int ?? 0
+        // Expand-all sets the baseline and the set holds the exceptions, so
+        // one row can still be closed while everything else is open.
+        return state.reduxExpandAll != state.reduxOpenRecords.contains(seq)
+    }
+
+    var body: some View {
+        let deltas = record["deltas"].array
+        let slices = record["changed_slices"].array.map { $0.text }
+        VStack(alignment: .leading, spacing: 3) {
+            Button {
+                let seq = record["seq"].int ?? 0
+                if state.reduxOpenRecords.contains(seq) {
+                    state.reduxOpenRecords.remove(seq)
+                } else {
+                    state.reduxOpenRecords.insert(seq)
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: isOpen ? "chevron.down" : "chevron.right")
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                    if let type = record["action_type"].string {
+                        // Printed whole. An action type is identified by its
+                        // head, so cutting the end of it loses the name.
+                        Text(type).font(Term.font(11, .medium))
+                            .foregroundStyle(Term.cyan)
+                    } else if record["dispatch_bypassed"].bool == true {
+                        Text(tr("no action named"))
+                            .font(Term.font(11, .medium))
+                            .foregroundStyle(Term.dim)
+                    } else {
+                        Text(tr("state change")).font(Term.font(11, .medium))
+                            .foregroundStyle(Term.dim)
+                    }
+                    Text(slices.prefix(3).joined(separator: ", ")
+                         + (slices.count > 3
+                            ? " +\(slices.count - 3)" : ""))
+                        .font(Term.micro).foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                    if !deltas.isEmpty {
+                        Text("\(deltas.count) Δ").font(Term.micro)
+                            .foregroundStyle(Term.dim)
+                    } else if record["equal_replacement"].bool == true {
+                        // Visible while collapsed: this is the row worth
+                        // finding, and requiring a click to see it would hide
+                        // the one finding the list can offer on its own.
+                        Text(tr("no-op")).font(Term.micro)
+                            .foregroundStyle(Term.amber)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            if isOpen {
+                VStack(alignment: .leading, spacing: 2) {
+                    if record["dispatch_bypassed"].bool == true {
+                        Text(tr("dispatched through a reference the wrapper "
+                              + "does not sit on -- a thunk is handed one -- "
+                              + "so the change is real and the action is not "
+                              + "named"))
+                            .font(Term.micro).foregroundStyle(Term.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if slices.count > 3 {
+                        Text(tr("slices:") + " " + slices.joined(separator: ", "))
+                            .font(Term.micro).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    ForEach(Array(deltas.enumerated()), id: \.offset) { _, d in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text(mark(d["kind"].text))
+                                .font(Term.micro)
+                                .foregroundStyle(tone(d["kind"].text))
+                                .frame(width: 8)
+                            Text(d["path"].text).font(Term.micro)
+                            if d["before"].string != nil || d["after"].string != nil {
+                                Text((d["before"].string ?? tr("(absent)"))
+                                     + "  ->  "
+                                     + (d["after"].string ?? tr("(absent)")))
+                                    .font(Term.micro).foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                    if let payload = record["action_payload"].string {
+                        Text(tr("payload:") + " " + payload)
+                            .font(Term.micro).foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if !record["truncated"].text.isEmpty {
+                        Text(record["truncated"].text)
+                            .font(Term.micro).foregroundStyle(Term.amber)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if record["equal_replacement"].bool == true {
+                        // Not an empty row: the slice came back as a new
+                        // object holding the same values, so everything
+                        // watching it re-rendered for nothing.
+                        Text(tr("the slice was replaced with an equal value: "
+                              + "subscribers re-rendered and nothing changed"))
+                            .font(Term.micro).foregroundStyle(Term.amber)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else if deltas.isEmpty && !state.inspectReduxValues {
+                        Text(tr("values were not captured, so the slice names "
+                              + "above are the whole finding"))
+                            .font(Term.micro).foregroundStyle(Term.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.leading, 16)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func mark(_ kind: String) -> String {
+        switch kind {
+        case "added": return "+"
+        case "removed": return "-"
+        default: return "~"
+        }
+    }
+
+    private func tone(_ kind: String) -> Color {
+        switch kind {
+        case "added": return Term.green
+        case "removed": return Term.amber
+        default: return Term.cyan
+        }
+    }
+}
+
+/// The `clear` control for one list, plus what the clear is holding.
+///
+/// Shown inside the list it acts on rather than as one global control: the
+/// three lists answer different questions, and a reason to clear the console
+/// is rarely a reason to throw away the API calls next to it.
+///
+/// The count and the way back are not optional extras. A clear that silently
+/// hid rows would turn "what is on screen" into a claim about the app, which
+/// is the one thing every other filter here is careful not to do.
+private struct ClearBar: View {
+    @EnvironmentObject var state: AppState
+    let kind: InspectKind
+    /// How many rows the clear is currently holding back.
+    let held: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(tr("clear")) { state.clearInspect(kind) }
+                .buttonStyle(TermButtonStyle())
+                .disabled(held == 0 && nothingToClear)
+            if held > 0 {
+                Text(DeviceFreshness.fill(
+                        tr("{n} held back by clear — still captured, still "
+                         + "exported"), "{n}", held))
+                    .font(Term.micro).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(tr("show them")) { state.unclearInspect(kind) }
+                    .buttonStyle(TermButtonStyle())
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Nothing captured yet, so there is nothing a clear could do.
+    private var nothingToClear: Bool {
+        switch kind {
+        case .network: return state.inspectDoc["network"].array.isEmpty
+        case .log: return state.inspectDoc["console"].array.isEmpty
+        case .redux: return state.inspectDoc["redux"]["records"].array.isEmpty
         }
     }
 }

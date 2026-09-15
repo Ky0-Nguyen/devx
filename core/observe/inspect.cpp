@@ -462,9 +462,16 @@ InspectReport InspectAssembler::finish(std::int64_t wall_ms) {
       "covers most SSO and payment flows -- and neither does a native "
       "networking module or the platform image loader. An empty list does "
       "not mean the app made no requests.",
-      "Redux actions are not observable without modifying the running app. "
-      "The store's state can be read; the stream of dispatched actions "
-      "cannot, and nothing here infers actions from state changes.",
+      "Redux state changes are observed through store.subscribe, which is a "
+      "read-only API and names no action -- Redux passes subscribers none. "
+      "Action types and payloads require wrapping dispatch, which modifies "
+      "the running app and is therefore opt-in; a record says which of the "
+      "two it came from, and no action is ever inferred from a state change. "
+      "Even while wrapping, only dispatches made through `store.dispatch` "
+      "carry a type: a reference captured before the wrapper was installed "
+      "reaches the reducers without passing it, and Redux Toolkit hands "
+      "thunks exactly such a reference. A change with no action named is "
+      "marked as that rather than as an unwatched one.",
       "A debugger was attached for the duration. That changes what the "
       "runtime does -- Hermes may deoptimise -- so nothing in this report is "
       "a performance measurement.",
@@ -579,6 +586,7 @@ json::Value InspectReport::to_json() const {
   }
   if (!state.note.empty()) st.set("note", json::Value::string(state.note));
   out.set("redux_state", std::move(st));
+  out.set("redux", redux.to_json());
 
   json::Value shots = json::Value::array();
   for (const Screenshot& s : screenshots) shots.push_back(s.to_json());
@@ -588,6 +596,381 @@ json::Value InspectReport::to_json() const {
   for (const std::string& c : caveats) cav.push_back(json::Value::string(c));
   out.set("caveats", std::move(cav));
   return out;
+}
+
+const char* to_string(ReduxAttribution a) {
+  switch (a) {
+    case ReduxAttribution::kStateSubscription: return "state subscription";
+    case ReduxAttribution::kDispatchWrapper:   return "dispatch wrapper";
+  }
+  return "unknown";
+}
+
+const char* attribution_note(ReduxAttribution a) {
+  switch (a) {
+    case ReduxAttribution::kStateSubscription:
+      return "seen through store.subscribe: the state change is observed, and "
+             "no action is named because Redux passes subscribers none";
+    case ReduxAttribution::kDispatchWrapper:
+      return "seen through a temporary wrapper around store.dispatch: the "
+             "action is the one the app dispatched";
+  }
+  return "obtained by an unrecorded means";
+}
+
+std::string render_delta_value(const json::Value& v, std::size_t max_chars) {
+  // Shape, not contents, for a container: the path is the finding, and an
+  // inlined subtree buries it.
+  if (v.is_object()) {
+    return "{" + std::to_string(v.members().size()) + " keys}";
+  }
+  if (v.is_array()) {
+    return "[" + std::to_string(v.items().size()) + " items]";
+  }
+  std::string out;
+  if (v.is_string()) {
+    out = "\"" + v.as_string() + "\"";
+  } else {
+    out = v.dump();
+  }
+  // Single line: a delta sits in a list, and an embedded newline would break
+  // the row it is in.
+  for (char& c : out) {
+    if (c == '\n' || c == '\r' || c == '\t') c = ' ';
+  }
+  if (max_chars >= 3 && out.size() > max_chars) {
+    // Said, not silent: a cut value must not read as the whole value.
+    out = out.substr(0, max_chars - 3) + "...";
+  }
+  return out;
+}
+
+namespace {
+
+/// Whether two scalars are the same value. Objects and arrays are walked
+/// rather than compared here.
+bool same_scalar(const json::Value& a, const json::Value& b) {
+  if (a.is_null() && b.is_null()) return true;
+  if (a.is_bool() && b.is_bool()) return a.as_bool() == b.as_bool();
+  if (a.is_number() && b.is_number()) {
+    // Through double for both, so 1 and 1.0 are one value. A store that
+    // holds a count as an int on one dispatch and a double on the next has
+    // not changed the count.
+    return a.as_double() == b.as_double();
+  }
+  if (a.is_string() && b.is_string()) return a.as_string() == b.as_string();
+  return false;
+}
+
+struct DiffState {
+  std::vector<StateDelta>* out;
+  bool include_values;
+  std::size_t max_deltas;
+  std::size_t max_depth;
+  bool hit_count_cap = false;
+  bool hit_depth_cap = false;
+};
+
+/// Records one delta, or notes that the cap was reached.
+///
+/// Returns false once full, so the walk can stop rather than keep descending
+/// into a subtree whose findings would all be discarded.
+bool emit(DiffState& st, StateDelta::Kind kind, const std::string& path,
+          const json::Value* before, const json::Value* after) {
+  if (st.out->size() >= st.max_deltas) {
+    st.hit_count_cap = true;
+    return false;
+  }
+  StateDelta d;
+  d.kind = kind;
+  // The root has no path segments, and a blank cell in a list of paths reads
+  // as a rendering fault rather than as an answer.
+  d.path = path.empty() ? "(whole state)" : path;
+  if (st.include_values) {
+    // A missing side is left absent rather than rendered as "null": an added
+    // key has no previous value, and `null` is a value a store can hold.
+    if (before != nullptr) d.before = render_delta_value(*before, 120);
+    if (after != nullptr) d.after = render_delta_value(*after, 120);
+  }
+  st.out->push_back(std::move(d));
+  return true;
+}
+
+std::string child_path(const std::string& base, const std::string& key) {
+  return base.empty() ? key : base + "." + key;
+}
+
+std::string index_path(const std::string& base, std::size_t i) {
+  return base + "[" + std::to_string(i) + "]";
+}
+
+bool walk(DiffState& st, const json::Value& before, const json::Value& after,
+          const std::string& path, std::size_t depth) {
+  if (depth >= st.max_depth) {
+    // As deep as we agreed to look, so `max_depth` is the number of path
+    // segments a reported path can have -- stopping *after* exceeding it
+    // would report one segment more than asked for.
+    //
+    // The path is reported as changed, which is known to be true since the
+    // caller only descends into unequal values, and the diff is marked
+    // bounded rather than letting this read as the leaf.
+    st.hit_depth_cap = true;
+    return emit(st, StateDelta::Kind::kChanged, path, &before, &after);
+  }
+
+  if (before.is_object() && after.is_object()) {
+    for (const auto& m : before.members()) {
+      const json::Value* b = &m.second;
+      const json::Value* a = after.find(m.first);
+      if (a == nullptr) {
+        if (!emit(st, StateDelta::Kind::kRemoved, child_path(path, m.first),
+                  b, nullptr)) {
+          return false;
+        }
+        continue;
+      }
+      if (!walk(st, *b, *a, child_path(path, m.first), depth + 1)) return false;
+    }
+    for (const auto& m : after.members()) {
+      if (before.find(m.first) != nullptr) continue;
+      if (!emit(st, StateDelta::Kind::kAdded, child_path(path, m.first),
+                nullptr, &m.second)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (before.is_array() && after.is_array()) {
+    const std::size_t n = std::min(before.items().size(), after.items().size());
+    for (std::size_t i = 0; i < n; i++) {
+      if (!walk(st, before.items()[i], after.items()[i], index_path(path, i),
+                depth + 1)) {
+        return false;
+      }
+    }
+    for (std::size_t i = n; i < before.items().size(); i++) {
+      if (!emit(st, StateDelta::Kind::kRemoved, index_path(path, i),
+                &before.items()[i], nullptr)) {
+        return false;
+      }
+    }
+    for (std::size_t i = n; i < after.items().size(); i++) {
+      if (!emit(st, StateDelta::Kind::kAdded, index_path(path, i), nullptr,
+                &after.items()[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (same_scalar(before, after)) return true;
+  // Different shapes, or different scalars: one change at this path.
+  return emit(st, StateDelta::Kind::kChanged, path, &before, &after);
+}
+
+}  // namespace
+
+std::vector<StateDelta> diff_state(const json::Value& before,
+                                   const json::Value& after,
+                                   bool include_values,
+                                   std::size_t max_deltas,
+                                   std::size_t max_depth,
+                                   std::string* truncated_out) {
+  std::vector<StateDelta> out;
+  if (truncated_out != nullptr) truncated_out->clear();
+  DiffState st{&out, include_values, max_deltas, max_depth, false, false};
+  walk(st, before, after, "", 0);
+  if (truncated_out != nullptr) {
+    // Both caps can be hit in one walk, and each changes what the list means,
+    // so both are said.
+    if (st.hit_count_cap && st.hit_depth_cap) {
+      *truncated_out = "stopped at " + std::to_string(max_deltas) +
+                       " differences, and some paths were deeper than " +
+                       std::to_string(max_depth) +
+                       " levels: this list is partial";
+    } else if (st.hit_count_cap) {
+      *truncated_out = "stopped at " + std::to_string(max_deltas) +
+                       " differences: there were more";
+    } else if (st.hit_depth_cap) {
+      *truncated_out = "some paths were deeper than " +
+                       std::to_string(max_depth) +
+                       " levels and are reported at that depth, not at the "
+                       "leaf that changed";
+    }
+  }
+  return out;
+}
+
+void ingest_redux_drain(const json::Value& drain_result, bool include_values,
+                        ReduxObservation* out) {
+  if (out == nullptr) return;
+
+  if (const json::Value* watching = drain_result.find("watching");
+      watching != nullptr && !watching->as_bool()) {
+    // The watcher is gone. Nearly always a reload, which also means the
+    // records we already hold are from a runtime that no longer exists --
+    // worth saying, because the list stops growing and silence would read as
+    // an idle app.
+    if (const json::Value* note = drain_result.find("note");
+        note != nullptr && note->is_string() && out->note.empty()) {
+      out->note = note->as_string();
+    }
+    return;
+  }
+
+  if (const json::Value* dropped = drain_result.find("dropped");
+      dropped != nullptr && dropped->is_number()) {
+    out->dropped += dropped->as_int();
+  }
+
+  const json::Value* records = drain_result.find("records");
+  if (records == nullptr || !records->is_array()) return;
+
+  for (const json::Value& r : records->items()) {
+    if (!r.is_object()) continue;
+    ReduxRecord rec;
+    if (const json::Value* v = r.find("seq"); v != nullptr && v->is_number()) {
+      rec.seq = v->as_int();
+    }
+    if (const json::Value* v = r.find("at"); v != nullptr && v->is_number()) {
+      rec.at_unix_ms = v->as_int();
+    }
+    // An action type is what separates the two attributions, so it decides
+    // this rather than the `how` string travelling alongside it: a record
+    // that carries a type was seen at dispatch by construction.
+    const json::Value* type = r.find("action_type");
+    if (type != nullptr && type->is_string()) {
+      rec.how = ReduxAttribution::kDispatchWrapper;
+      rec.action_type = type->as_string();
+    } else {
+      rec.how = ReduxAttribution::kStateSubscription;
+      if (const json::Value* how = r.find("how");
+          how != nullptr && how->is_string() && how->as_string() == "bypassed") {
+        rec.dispatch_bypassed = true;
+      }
+    }
+    if (const json::Value* p = r.find("payload");
+        p != nullptr && p->is_string() && include_values) {
+      rec.action_payload = p->as_string();
+    }
+    if (const json::Value* changed = r.find("changed");
+        changed != nullptr && changed->is_array()) {
+      for (const json::Value& c : changed->items()) {
+        if (c.is_string()) rec.changed_slices.push_back(c.as_string());
+      }
+    }
+    if (const json::Value* t = r.find("truncated");
+        t != nullptr && t->is_string()) {
+      rec.truncated = t->as_string();
+    }
+    // A value the app declined to send is not an empty value.
+    for (const char* key : {"values_omitted", "payload_omitted"}) {
+      if (const json::Value* o = r.find(key);
+          o != nullptr && o->is_string() && !o->as_string().empty()) {
+        if (!rec.truncated.empty()) rec.truncated += "; ";
+        rec.truncated += "values not sent: " + o->as_string();
+      }
+    }
+
+    const json::Value* before = r.find("before");
+    const json::Value* after = r.find("after");
+    if (include_values && before != nullptr && after != nullptr &&
+        before->is_string() && after->is_string()) {
+      json::ParseError berr;
+      json::ParseError aerr;
+      auto b = json::parse(before->as_string(), &berr);
+      auto a = json::parse(after->as_string(), &aerr);
+      if (b.has_value() && a.has_value()) {
+        std::string truncated;
+        // Depth 6 and 200 deltas: deep enough to reach through a normalised
+        // slice to the field that changed, bounded enough that one pathological
+        // dispatch cannot fill a report.
+        rec.deltas = diff_state(*b, *a, /*include_values=*/true,
+                                /*max_deltas=*/200, /*max_depth=*/6,
+                                &truncated);
+        if (!truncated.empty()) {
+          if (!rec.truncated.empty()) rec.truncated += "; ";
+          rec.truncated += truncated;
+        }
+        // Compared, and equal. Distinct from "not compared": the slice was
+        // handed back as a new object holding the same values, which wakes
+        // every subscriber watching it for nothing.
+        if (rec.deltas.empty() && truncated.empty() &&
+            !rec.changed_slices.empty()) {
+          rec.equal_replacement = true;
+        }
+      } else {
+        if (!rec.truncated.empty()) rec.truncated += "; ";
+        rec.truncated = "the app's state snapshot did not parse: " +
+                        (b.has_value() ? aerr.message : berr.message);
+      }
+    }
+    out->records.push_back(std::move(rec));
+  }
+}
+
+json::Value StateDelta::to_json() const {
+  json::Value v = json::Value::object();
+  const char* k = "changed";
+  if (kind == Kind::kAdded) k = "added";
+  if (kind == Kind::kRemoved) k = "removed";
+  v.set("kind", json::Value::string(k));
+  v.set("path", json::Value::string(path));
+  if (before.has_value()) v.set("before", json::Value::string(*before));
+  if (after.has_value()) v.set("after", json::Value::string(*after));
+  return v;
+}
+
+json::Value ReduxRecord::to_json() const {
+  json::Value v = json::Value::object();
+  v.set("seq", json::Value::integer(seq));
+  v.set("at_unix_ms", json::Value::integer(at_unix_ms));
+  v.set("how", json::Value::string(to_string(how)));
+  v.set("how_note", json::Value::string(attribution_note(how)));
+  if (action_type.has_value()) {
+    v.set("action_type", json::Value::string(*action_type));
+  }
+  if (action_payload.has_value()) {
+    v.set("action_payload", json::Value::string(*action_payload));
+  }
+  if (dispatch_bypassed) {
+    v.set("dispatch_bypassed", json::Value::boolean(true));
+  }
+  if (equal_replacement) {
+    v.set("equal_replacement", json::Value::boolean(true));
+  }
+  json::Value slices = json::Value::array();
+  for (const auto& s : changed_slices) slices.push_back(json::Value::string(s));
+  v.set("changed_slices", std::move(slices));
+  json::Value ds = json::Value::array();
+  for (const auto& d : deltas) ds.push_back(d.to_json());
+  v.set("deltas", std::move(ds));
+  if (!truncated.empty()) v.set("truncated", json::Value::string(truncated));
+  return v;
+}
+
+json::Value ReduxObservation::to_json() const {
+  json::Value v = json::Value::object();
+  v.set("store_found", json::Value::boolean(store_found));
+  v.set("basis", json::Value::string(basis));
+  json::Value names = json::Value::array();
+  for (const auto& n : slice_names) names.push_back(json::Value::string(n));
+  v.set("slice_names", std::move(names));
+  v.set("fibers_scanned", json::Value::integer(fibers_scanned));
+  if (initial_state_json.has_value()) {
+    v.set("initial_state", json::Value::string(*initial_state_json));
+  }
+  json::Value recs = json::Value::array();
+  for (const auto& r : records) recs.push_back(r.to_json());
+  v.set("records", std::move(recs));
+  v.set("dropped", json::Value::integer(dropped));
+  v.set("dispatch_wrapped", json::Value::boolean(dispatch_wrapped));
+  if (!restore_error.empty()) {
+    v.set("restore_error", json::Value::string(restore_error));
+  }
+  if (!note.empty()) v.set("note", json::Value::string(note));
+  return v;
 }
 
 }  // namespace mpi::observe

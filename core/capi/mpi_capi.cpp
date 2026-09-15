@@ -213,6 +213,12 @@ rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
   opts.read_redux_state = (flags & 1) != 0;
   opts.include_state_values = (flags & 2) != 0;
   if (opts.include_state_values) opts.read_redux_state = true;
+  // Watching the store rather than reading it once, and -- separately --
+  // wrapping `dispatch`, which is the one setting here that modifies the
+  // running app.
+  opts.watch_redux = (flags & 16) != 0 || (flags & 32) != 0;
+  opts.redux_watch.wrap_dispatch = (flags & 32) != 0;
+  if (opts.watch_redux) opts.read_redux_state = true;
   opts.screenshot_device_id = safe(device_id);
   opts.screenshots = (flags & 4) != 0 && !opts.screenshot_device_id.empty();
   opts.screenshot_dir = safe(screenshot_dir);
@@ -528,6 +534,12 @@ char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
     opts.read_redux_state = (flags & 1) != 0;
     opts.include_state_values = (flags & 2) != 0;
     if (opts.include_state_values) opts.read_redux_state = true;
+    // Watching the store rather than reading it once, and -- separately --
+    // wrapping `dispatch`, which is the one setting here that modifies the
+    // running app.
+    opts.watch_redux = (flags & 16) != 0 || (flags & 32) != 0;
+    opts.redux_watch.wrap_dispatch = (flags & 32) != 0;
+    if (opts.watch_redux) opts.read_redux_state = true;
     // Screenshots need a device id. Metro's inspector knows the app but not
     // which device it is on, so without one there is nothing safe to
     // photograph -- and the wrong device is worse than none.

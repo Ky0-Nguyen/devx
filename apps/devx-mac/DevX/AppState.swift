@@ -142,6 +142,20 @@ final class AppState: ObservableObject {
     /// still suspended during a live capture, where the host's own CPU is
     /// part of what the operator is watching.
     @Published var watchDevices = true
+    /// What stopped the last watch tick from scanning, or empty if it scanned.
+    ///
+    /// Recorded because the alternative is a label that states intent: it said
+    /// "re-scanning every 5s" while a boot held the discovery queue for three
+    /// minutes, next to an age of six minutes. Both cannot be true, and the
+    /// reader cannot tell which is.
+    @Published private(set) var deviceWatchSuppressedBy: String = ""
+    /// Free-text filter over the device list, and whether to show the
+    /// unusable ones.
+    ///
+    /// Twenty-three simulators is the normal case on a developer's machine,
+    /// and a list that long buries the one device being worked with.
+    @Published var deviceFilter: String = ""
+    @Published var showUnusableDevices: Bool = true
     @Published var appsDoc: JSON = .null
     // Remembered targets. A note this app made on this machine -- never
     // evidence about the device, which is the whole of spec A23.
@@ -178,6 +192,37 @@ final class AppState: ObservableObject {
     /// and personal data, so including its values is a decision made per
     /// capture rather than a setting that quietly stays on.
     @Published var inspectReduxValues: Bool = false
+    /// Watch the store while attached, rather than reading it once.
+    ///
+    /// On by default when observing live: a list of slice names answers "is
+    /// Redux here", and the question people actually bring is "what just
+    /// happened, and what did it change".
+    @Published var inspectReduxWatch: Bool = true
+    /// Also wrap `dispatch`, so action types and payloads are seen.
+    ///
+    /// Off by default and deliberately not remembered: this is the one
+    /// setting in the whole feature that modifies the running app, so it is
+    /// chosen per observation rather than left on.
+    @Published var inspectReduxActions: Bool = false
+    /// Whether the activity list is expanded, and which rows differ from it.
+    ///
+    /// Two pieces rather than one set of open rows: "expand all" has to keep
+    /// working as new records stream in, and a set of ids collected before
+    /// they arrived would leave every new row closed.
+    @Published var reduxExpandAll: Bool = false
+    @Published var reduxOpenRecords: Set<Int> = []
+    /// Watermarks set by the per-list "clear" controls.
+    ///
+    /// Marks rather than deletions: the rows stay in the observation and in
+    /// an export, and the view says how many it is holding back. A delete
+    /// would also be undone on the next poll -- the assembler is cumulative
+    /// and returns the whole observation every time.
+    @Published var clearedNetwork: Int = 0
+    @Published var clearedConsole: Int = 0
+    /// A seq, not a count: the in-app buffer drops its oldest records under
+    /// load, so the list shortens from the front and a count would hide the
+    /// wrong rows.
+    @Published var clearedReduxSeq: Int = 0
     @Published var inspectScreenshots: Bool = false
     /// Capture request/response headers and bodies. Off by default and
     /// deliberately not remembered: this is the data in flight, including
@@ -527,13 +572,23 @@ final class AppState: ObservableObject {
 
     private func deviceWatchTick() {
         guard watchDevices else { return }
-        // Not during a live capture: the host's CPU is part of what is being
-        // measured then, and the operator is not device-hunting mid-capture.
-        guard !liveRunning, !liveStarting else { return }
-        // Nor on top of work already in flight -- discovery is serialised on
-        // one queue, so a tick during a slow `simctl list` would only queue up
-        // behind it and arrive in a burst.
-        guard inFlight.isEmpty else { return }
+        // Every reason a tick does not scan is named, because a silent skip
+        // leaves the label claiming a scan that is not happening.
+        if liveRunning || liveStarting {
+            // The host's CPU is part of what is being measured then, and
+            // nobody hunts for devices mid-capture.
+            deviceWatchSuppressedBy = "a live capture is running"
+            return
+        }
+        if let busy = inFlight.last {
+            // Discovery is serialised on one queue, so a tick would only
+            // queue behind this and arrive in a burst. A boot holds the queue
+            // for up to three minutes, which is exactly when someone is
+            // watching for a device to appear -- so it is said, not hidden.
+            deviceWatchSuppressedBy = busy.lowercased()
+            return
+        }
+        deviceWatchSuppressedBy = ""
         rescanDevicesQuietly()
     }
 
@@ -610,6 +665,8 @@ final class AppState: ObservableObject {
         let seconds = inspectSeconds
         let redux = inspectRedux
         let values = inspectReduxValues
+        let watch = inspectReduxWatch
+        let actions = inspectReduxActions
         let shots = inspectScreenshots
         let device = selectedDevice
         let hint = inspectTargetDevice
@@ -623,6 +680,7 @@ final class AppState: ObservableObject {
         run("Observing \(app) for \(seconds)s…", {
             Core.inspect(appId: app, seconds: seconds, metroPort: 8081,
                          redux: redux, reduxValues: values,
+                         reduxWatch: watch, reduxActions: actions,
                          screenshots: shots, deviceId: device,
                          screenshotDir: dir, targetDevice: hint,
                          detail: detail)
@@ -631,6 +689,34 @@ final class AppState: ObservableObject {
             // A capture changes what is attachable -- the app may have
             // reloaded and taken a new target id with it.
             self.loadInspectTargets()
+        }
+    }
+
+    /// Hides everything currently in one of the three lists.
+    ///
+    /// Nothing is discarded; see InspectFilter.afterClear. Each list is
+    /// marked separately because they answer different questions and the
+    /// reason to clear one is rarely a reason to clear the others.
+    func clearInspect(_ kind: InspectKind) {
+        switch kind {
+        case .network:
+            clearedNetwork = inspectDoc["network"].array.count
+        case .log:
+            clearedConsole = inspectDoc["console"].array.count
+        case .redux:
+            // The highest seq present, so a record that arrives mid-clear is
+            // kept rather than silently swallowed.
+            clearedReduxSeq = inspectDoc["redux"]["records"].array
+                .compactMap { $0["seq"].int }.max() ?? clearedReduxSeq
+        }
+    }
+
+    /// Puts back what a clear is holding.
+    func unclearInspect(_ kind: InspectKind) {
+        switch kind {
+        case .network: clearedNetwork = 0
+        case .log: clearedConsole = 0
+        case .redux: clearedReduxSeq = 0
         }
     }
 
@@ -647,6 +733,8 @@ final class AppState: ObservableObject {
         let app = selectedApp
         let redux = inspectRedux
         let values = inspectReduxValues
+        let watch = inspectReduxWatch
+        let actions = inspectReduxActions
         let shots = inspectScreenshots
         let device = selectedDevice
         let hint = inspectTargetDevice
@@ -660,6 +748,7 @@ final class AppState: ObservableObject {
         run("Attaching to \(app)…", {
             Core.inspectStreamStart(appId: app, metroPort: 8081,
                                     redux: redux, reduxValues: values,
+                                    reduxWatch: watch, reduxActions: actions,
                                     screenshots: shots, deviceId: device,
                                     screenshotDir: dir,
                                     targetDevice: hint, detail: detail)

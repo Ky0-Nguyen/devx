@@ -674,3 +674,287 @@ MPI_TEST(no_body_by_construction_is_not_a_retrieval_failure, {}) {
                     .find("Internal error") != std::string::npos,
                 "a real retrieval failure is reported as one");
 }
+
+// --- the state diff ---------------------------------------------------------
+//
+// This is the half of Redux detail that is observable read-only, so it is
+// also the half that has to be right: it is what a reader will believe about
+// what an action did.
+
+namespace {
+
+mpi::json::Value jv(const std::string& text) {
+  mpi::json::ParseError err;
+  auto v = mpi::json::parse(text, &err);
+  MPI_CHECK_MSG(v.has_value(),
+                "the test's own fixture must parse: " + err.message);
+  return *v;
+}
+
+using Deltas = std::vector<mpi::observe::StateDelta>;
+
+const mpi::observe::StateDelta* at(const Deltas& ds, const std::string& path) {
+  for (const auto& d : ds) {
+    if (d.path == path) return &d;
+  }
+  return nullptr;
+}
+
+Deltas diff(const std::string& before, const std::string& after,
+            bool values = true, std::size_t max_deltas = 200,
+            std::size_t max_depth = 12, std::string* trunc = nullptr) {
+  std::string sink;
+  return mpi::observe::diff_state(jv(before), jv(after), values, max_deltas,
+                                  max_depth, trunc != nullptr ? trunc : &sink);
+}
+
+}  // namespace
+
+MPI_TEST(an_unchanged_state_has_no_deltas, {}) {
+  // The common case by a wide margin: most dispatches touch one slice, and a
+  // diff that reported the other twelve would bury the one that matters.
+  const std::string s = R"({"cart":{"items":[1,2]},"user":{"id":"u1"}})";
+  MPI_CHECK(diff(s, s).empty());
+}
+
+MPI_TEST(a_changed_leaf_is_reported_at_its_full_path, {}) {
+  const auto ds = diff(R"({"cart":{"items":[{"qty":1}]}})",
+                       R"({"cart":{"items":[{"qty":3}]}})");
+  MPI_CHECK_MSG(ds.size() == 1, "one change is one delta");
+  const auto* d = at(ds, "cart.items[0].qty");
+  MPI_CHECK_MSG(d != nullptr, "and the path names the leaf, not the slice");
+  MPI_CHECK(d->kind == mpi::observe::StateDelta::Kind::kChanged);
+  MPI_CHECK(d->before.has_value() && *d->before == "1");
+  MPI_CHECK(d->after.has_value() && *d->after == "3");
+}
+
+MPI_TEST(added_and_removed_keys_carry_only_the_side_that_exists, {}) {
+  // `null` is a value a Redux store can hold, so an added key must not render
+  // its absent side as one -- that would be indistinguishable from a key
+  // whose value really did change from null.
+  const auto ds = diff(R"({"a":1,"gone":"x"})", R"({"a":1,"fresh":null})");
+  const auto* added = at(ds, "fresh");
+  const auto* removed = at(ds, "gone");
+  MPI_CHECK(added != nullptr && removed != nullptr);
+  MPI_CHECK(added->kind == mpi::observe::StateDelta::Kind::kAdded);
+  MPI_CHECK_MSG(!added->before.has_value(),
+                "an added key has no previous value at all");
+  MPI_CHECK_MSG(added->after.has_value() && *added->after == "null",
+                "and its new value is the null it actually holds");
+  MPI_CHECK(removed->kind == mpi::observe::StateDelta::Kind::kRemoved);
+  MPI_CHECK_MSG(!removed->after.has_value(),
+                "a removed key has no new value at all");
+}
+
+MPI_TEST(values_are_omitted_entirely_when_not_requested, {}) {
+  // A store holds bearer tokens and personal data. With values off, the path
+  // is the whole finding -- and no value may leak into the record.
+  const auto ds = diff(R"({"auth":{"token":"old-secret"}})",
+                       R"({"auth":{"token":"new-secret"}})", /*values=*/false);
+  MPI_CHECK(ds.size() == 1 && ds.front().path == "auth.token");
+  MPI_CHECK_MSG(!ds.front().before.has_value() && !ds.front().after.has_value(),
+                "neither side of a redacted diff carries a value");
+}
+
+MPI_TEST(a_longer_array_reports_the_appended_elements, {}) {
+  const auto ds = diff(R"({"items":[1]})", R"({"items":[1,2,3]})");
+  MPI_CHECK(ds.size() == 2);
+  MPI_CHECK(at(ds, "items[1]") != nullptr && at(ds, "items[2]") != nullptr);
+  MPI_CHECK(at(ds, "items[1]")->kind
+            == mpi::observe::StateDelta::Kind::kAdded);
+}
+
+MPI_TEST(an_insertion_at_the_front_reports_every_later_index, {}) {
+  // Index comparison, stated in the header as the honest cheap answer. A
+  // person would call this one insertion; index 0 really does hold something
+  // different, so reporting it is true even though it is verbose. This test
+  // exists so the behaviour is a decision rather than a surprise.
+  const auto ds = diff(R"({"q":[1,2,3]})", R"({"q":[0,1,2,3]})");
+  MPI_CHECK(ds.size() == 4);
+  MPI_CHECK(at(ds, "q[3]")->kind == mpi::observe::StateDelta::Kind::kAdded);
+  MPI_CHECK(at(ds, "q[0]")->kind == mpi::observe::StateDelta::Kind::kChanged);
+}
+
+MPI_TEST(a_type_change_is_one_delta_not_a_walk_of_both_shapes, {}) {
+  const auto ds = diff(R"({"v":{"a":1,"b":2}})", R"({"v":[1,2]})");
+  MPI_CHECK(ds.size() == 1 && ds.front().path == "v");
+  MPI_CHECK_MSG(ds.front().before.has_value() && *ds.front().before == "{2 keys}",
+                "a container is summarised by shape, not dumped inline");
+  MPI_CHECK(ds.front().after.has_value() && *ds.front().after == "[2 items]");
+}
+
+MPI_TEST(an_int_and_the_same_value_as_a_double_is_not_a_change, {}) {
+  // A reducer that divides and lands on a whole number hands back 3 where it
+  // held 3.0. Reporting that as a change would fill the list with noise on
+  // every dispatch.
+  MPI_CHECK(diff(R"({"n":3})", R"({"n":3.0})").empty());
+  MPI_CHECK_MSG(diff(R"({"n":3})", R"({"n":3.5})").size() == 1,
+                "while a real numeric change is still a change");
+}
+
+MPI_TEST(the_delta_cap_is_reported_rather_than_silently_shortening, {}) {
+  std::string trunc;
+  const auto ds = diff(R"({"a":1,"b":2,"c":3,"d":4})",
+                       R"({"a":9,"b":9,"c":9,"d":9})", true, 2, 12, &trunc);
+  MPI_CHECK(ds.size() == 2);
+  MPI_CHECK_MSG(trunc.find("there were more") != std::string::npos,
+                "a capped list says it is capped");
+  MPI_CHECK(trunc.find("2 differences") != std::string::npos);
+}
+
+MPI_TEST(the_depth_cap_reports_the_path_it_stopped_at, {}) {
+  std::string trunc;
+  const auto ds = diff(R"({"a":{"b":{"c":{"d":1}}}})",
+                       R"({"a":{"b":{"c":{"d":2}}}})", true, 200, 2, &trunc);
+  MPI_CHECK_MSG(ds.size() == 1, "the change is still reported");
+  MPI_CHECK_MSG(ds.front().path == "a.b",
+                "at the depth the walk stopped, not at the leaf");
+  MPI_CHECK_MSG(trunc.find("not at the leaf") != std::string::npos,
+                "and the report says the path is not the leaf that changed");
+}
+
+MPI_TEST(a_clean_diff_reports_no_truncation, {}) {
+  std::string trunc = "left over from a previous call";
+  diff(R"({"a":1})", R"({"a":2})", true, 200, 12, &trunc);
+  MPI_CHECK_MSG(trunc.empty(), "a complete diff must not claim to be partial");
+}
+
+MPI_TEST(a_rendered_value_is_single_line_and_cut_visibly, {}) {
+  // Deltas sit in rows. A newline inside one breaks the row it is in, and a
+  // value cut without a marker reads as the whole value.
+  const auto multi = mpi::observe::render_delta_value(
+      mpi::json::Value::string("line one\nline two"), 120);
+  MPI_CHECK(multi.find('\n') == std::string::npos);
+  MPI_CHECK(multi == "\"line one line two\"");
+  const auto cut = mpi::observe::render_delta_value(
+      mpi::json::Value::string(std::string(400, 'x')), 20);
+  MPI_CHECK(cut.size() == 20);
+  MPI_CHECK_MSG(cut.substr(cut.size() - 3) == "...",
+                "a cut value says it was cut");
+}
+
+MPI_TEST(attribution_separates_an_observed_action_from_an_observed_change, {}) {
+  // "the cart slice changed" and "ADD_TO_CART changed the cart slice" are
+  // different claims. The record carries which one it is, and the note is
+  // what stops a reader promoting the first into the second.
+  const std::string sub = mpi::observe::attribution_note(
+      mpi::observe::ReduxAttribution::kStateSubscription);
+  MPI_CHECK_MSG(sub.find("no action is named") != std::string::npos,
+                "a subscription record says why it names no action");
+  const std::string wrap = mpi::observe::attribution_note(
+      mpi::observe::ReduxAttribution::kDispatchWrapper);
+  MPI_CHECK(wrap.find("the app dispatched") != std::string::npos);
+  MPI_CHECK(sub != wrap);
+}
+
+MPI_TEST(a_slice_replaced_with_an_equal_value_is_a_finding_not_an_empty_row, {}) {
+  // The classic Redux waste: a reducer returns `{...state}` on an action it
+  // does not handle, so the reference changes, every subscriber watching the
+  // slice re-renders, and nothing is different. It is invisible in a list of
+  // action types and shows up here as a change with no differences.
+  std::string err;
+  mpi::json::ParseError perr;
+  auto drain = mpi::json::parse(
+      R"({"watching":true,"dropped":0,"records":[
+           {"seq":1,"at":1000,"how":"dispatch","action_type":"PING",
+            "changed":["cart"],
+            "before":"{\"cart\":{\"items\":[1,2]}}",
+            "after":"{\"cart\":{\"items\":[1,2]}}"}]})", &perr);
+  MPI_CHECK(drain.has_value());
+  mpi::observe::ReduxObservation out;
+  mpi::observe::ingest_redux_drain(*drain, /*include_values=*/true, &out);
+  MPI_CHECK(out.records.size() == 1);
+  const auto& r = out.records.front();
+  MPI_CHECK_MSG(r.changed_slices.size() == 1,
+                "the slice's reference did change, and the app said so");
+  MPI_CHECK_MSG(r.deltas.empty(), "and nothing inside it differs");
+  MPI_CHECK_MSG(r.equal_replacement,
+                "which is reported as a wasted replacement");
+  MPI_CHECK(r.action_type.has_value() && *r.action_type == "PING");
+}
+
+MPI_TEST(a_real_change_is_not_called_an_equal_replacement, {}) {
+  mpi::json::ParseError perr;
+  auto drain = mpi::json::parse(
+      R"({"watching":true,"records":[
+           {"seq":1,"at":1000,"changed":["cart"],
+            "before":"{\"cart\":{\"n\":1}}",
+            "after":"{\"cart\":{\"n\":2}}"}]})", &perr);
+  MPI_CHECK(drain.has_value());
+  mpi::observe::ReduxObservation out;
+  mpi::observe::ingest_redux_drain(*drain, true, &out);
+  MPI_CHECK(out.records.front().deltas.size() == 1);
+  MPI_CHECK(!out.records.front().equal_replacement);
+}
+
+MPI_TEST(without_values_an_empty_delta_list_claims_nothing, {}) {
+  // Nobody compared anything, so calling this a wasted replacement would be
+  // inventing a finding out of a setting that was switched off.
+  mpi::json::ParseError perr;
+  auto drain = mpi::json::parse(
+      R"({"watching":true,"records":[
+           {"seq":1,"at":1000,"changed":["cart"],
+            "before":"{\"cart\":1}","after":"{\"cart\":2}"}]})", &perr);
+  MPI_CHECK(drain.has_value());
+  mpi::observe::ReduxObservation out;
+  mpi::observe::ingest_redux_drain(*drain, /*include_values=*/false, &out);
+  MPI_CHECK(out.records.front().deltas.empty());
+  MPI_CHECK_MSG(!out.records.front().equal_replacement,
+                "an uncompared change is not an equal one");
+}
+
+MPI_TEST(a_bypassed_dispatch_is_not_read_as_an_unwatched_one, {}) {
+  // Wrapped, and the change still arrived with no action: a thunk's injected
+  // dispatch does not pass through `store.dispatch`. Reporting it as a plain
+  // subscription record would imply nothing was wrapped.
+  mpi::json::ParseError perr;
+  auto drain = mpi::json::parse(
+      R"({"watching":true,"records":[
+           {"seq":1,"at":1000,"how":"bypassed","changed":["profile"]},
+           {"seq":2,"at":1001,"how":"subscribe","changed":["cart"]}]})", &perr);
+  MPI_CHECK(drain.has_value());
+  mpi::observe::ReduxObservation out;
+  mpi::observe::ingest_redux_drain(*drain, false, &out);
+  MPI_CHECK(out.records.size() == 2);
+  MPI_CHECK_MSG(out.records[0].dispatch_bypassed,
+                "a bypassed dispatch is marked as one");
+  MPI_CHECK_MSG(!out.records[1].dispatch_bypassed,
+                "and a read-only record is not");
+  MPI_CHECK_MSG(!out.records[0].action_type.has_value(),
+                "neither carries an invented action type");
+}
+
+MPI_TEST(a_watcher_that_is_gone_does_not_read_as_an_idle_store, {}) {
+  // The app reloaded. The records already held came from a runtime that no
+  // longer exists, and the list stops growing -- silence would read as an
+  // app that stopped dispatching.
+  mpi::json::ParseError perr;
+  auto drain = mpi::json::parse(
+      R"({"watching":false,"note":"no watcher is installed -- the app reloaded"})",
+      &perr);
+  MPI_CHECK(drain.has_value());
+  mpi::observe::ReduxObservation out;
+  out.records.push_back({});
+  mpi::observe::ingest_redux_drain(*drain, true, &out);
+  MPI_CHECK_MSG(out.records.size() == 1,
+                "what was already collected is kept, not discarded");
+  MPI_CHECK_MSG(out.note.find("reloaded") != std::string::npos,
+                "and the reason the list stopped growing is stated");
+}
+
+MPI_TEST(the_in_app_buffers_overflow_is_carried_not_hidden, {}) {
+  mpi::json::ParseError perr;
+  auto first = mpi::json::parse(
+      R"({"watching":true,"dropped":7,"records":[{"seq":1,"at":1,"changed":[]}]})",
+      &perr);
+  auto second = mpi::json::parse(
+      R"({"watching":true,"dropped":5,"records":[{"seq":2,"at":2,"changed":[]}]})",
+      &perr);
+  MPI_CHECK(first.has_value() && second.has_value());
+  mpi::observe::ReduxObservation out;
+  mpi::observe::ingest_redux_drain(*first, false, &out);
+  mpi::observe::ingest_redux_drain(*second, false, &out);
+  MPI_CHECK_MSG(out.dropped == 12,
+                "drops accumulate across drains rather than being replaced");
+  MPI_CHECK(out.records.size() == 2);
+}

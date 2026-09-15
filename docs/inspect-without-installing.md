@@ -152,24 +152,127 @@ is refused on a production build (`adbd cannot run as root in production
 builds`), so packet capture is not available either, and a proxy would mean
 installing a certificate on the device.
 
-**Redux actions are not observable read-only.** The store's state can be read;
-the stream of dispatched actions cannot, because nothing broadcasts it. Seeing
-actions would mean wrapping `dispatch` inside the running app — modifying it,
-which is the thing this feature exists to avoid. So it is not done, and the
-gap is reported rather than filled by inferring actions from state diffs.
-
-The one exception is honest about itself: an app using `redux-logger` prints
-its actions to the console, and those lines are recognised. They are reported
-as `inferred_redux_action_type` with the basis "the app printed it in
-redux-logger's format; the store did not report it" — never as an action the
-store reported.
-
 **Attaching is not free.** A debugger session changes what the runtime does;
 Hermes may deoptimise. Nothing in an inspect report is offered as a
 performance measurement, which is also why this is a separate command from
 `record` rather than another source inside it.
 
+## Redux: two tiers, claiming different things
+
+A list of slice names answers "is Redux here". The question people actually
+bring to Reactotron is "what just happened, and what did it change" — and
+getting there means being exact about which half of that is observable
+without touching the app.
+
+**State changes are observable read-only.** `store.subscribe` is a public API
+— it is how react-redux itself watches the store — and it fires after every
+dispatch. `--redux-watch` installs one listener, compares the top-level keys
+by reference on each notification, and removes the listener at the end.
+
+Reference comparison is Redux's own contract, not a shortcut: a reducer that
+did not touch a slice returns the same object, which is exactly the signal
+react-redux relies on. An app whose reducers mutate state in place breaks that
+contract and its changes are invisible here; that is a limit of the app's
+reducers, and it is stated rather than papered over.
+
+What a subscriber does **not** receive is the action. Redux passes subscribers
+no arguments at all, so a read-only record names a change and never an action.
+
+**Action types and payloads require wrapping `dispatch`.** There is no
+read-only route to them. `--redux-actions` replaces `store.dispatch` with a
+wrapper that records the action and calls through, and puts the original back
+when the capture stops. This modifies the running app for the duration, which
+is the one thing the rest of this feature avoids — so it is opt-in, it is
+stated in the report, and the report says whether the removal was confirmed.
+
+Two honest limits on it:
+
+- The wrapper sits on the `dispatch` **property** of the store object, so it
+  sees calls made through it and misses any reference captured beforehand.
+  Redux Toolkit hands thunks a `dispatch` from the middleware chain built when
+  the store was created, so everything a thunk dispatches reaches the reducers
+  without passing the wrapper. Such a change is recorded as
+  `dispatch_bypassed` — a real change whose action is not named — rather than
+  as a record that looks like the read-only case.
+- If the socket dies before the capture stops, the wrapper is still installed.
+  The buffer it writes into is bounded for that reason, and the next capture
+  removes what it finds before installing its own. Verified: a run that was
+  kicked off its debugger slot left a wrapper behind, and the next run
+  reported "a watcher from an earlier run was still installed and was removed
+  first".
+
+### Verifying this against a real app
+
+Worth writing down, because it cost an hour: **Metro's inspector proxy allows
+one debugger per device, not per page.** Opening a second CDP connection --
+even to the sibling `UI` page of the same runtime -- takes the slot and the
+first client is disconnected. The report says so honestly ("the app closed the
+debugger connection ... It ran for 4194ms of the 12000ms asked for"), which is
+what made the cause findable.
+
+So a capture cannot be driven from a second socket. Drive the app itself
+instead:
+
+    xcrun simctl openurl <udid> <scheme>://
+
+A deep link triggers real navigation and real dispatches while `mpi inspect`
+keeps its slot. The app's URL schemes are in its bundle:
+
+    /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" \
+      "$(xcrun simctl get_app_container <udid> <bundle-id>)/Info.plist"
+
+### What a record carries
+
+The app sends the changed slices as two JSON strings and the differences are
+computed here, in C++, because a diff is exactly the kind of logic that needs
+tests and the running app is not a place that can have any. Paths are dotted
+with bracketed indices (`profile.visitAccessBrands[1].code`), bounded to 200
+differences and 6 path segments, and hitting either bound is reported rather
+than shortening the list silently.
+
+Arrays are compared by index. An element inserted at the front therefore
+reports every later index as changed — true, since index 3 really does hold
+something different, even though a person would call it one insertion. That is
+the honest cheap answer and it is pinned by a test so it stays a decision.
+
+**A change with no differences under it is a finding, not an empty row.**
+Subscribers are woken by reference inequality, so a reducer returning
+`{...state}` on an action it does not handle re-renders everything watching
+that slice while changing nothing. That is the classic source of wasted
+renders in a Redux app, it is invisible in a list of action types, and it is
+reported as `equal_replacement`. It is only claimed when values were actually
+captured: without them nothing was compared, and an empty delta list says only
+that nobody looked.
+
+Measured against the real app: 52 slices located through React's devtools hook
+after walking 23 fibers, and a deep link produced a record with 30 deltas
+showing a profile slice being cleared field by field.
+
+The console route still exists alongside this and is still labelled as
+inference: an app using `redux-logger` prints its actions, and those lines are
+recognised and reported as `inferred_redux_action_type` with the basis "the
+app printed it in redux-logger's format; the store did not report it" — never
+as an action the store reported.
+
 ## Screenshots
+
+`--screenshot` needs `--device`, because Metro's inspector knows the app but
+not which device it is on, and photographing the wrong one is worse than
+photographing none.
+
+That requirement collided with target selection and made the two flags
+mutually exclusive for a while: `--device` carries a device id, Metro
+publishes a device *name*, and the id was being passed straight through as
+the target hint. Every screenshot run failed with
+
+    no attached device matches '456FA0D8-48C1-4BEC-B087-50E8A046EA5D'
+    What is attached: [iPhone 17 Pro] [iPhone 17 Pro]
+
+— naming, in the same sentence, the device it had just refused to match. A
+device id is now translated to the name discovery holds for it, which is a
+real identity mapping rather than a guess: both come from the same device
+record. `--target-device` still names a Metro target directly and wins when
+given.
 
 `--screenshot` takes a picture of the screen before and after the window
 (`adb exec-out screencap -p`, or `xcrun simctl io … screenshot` for a
