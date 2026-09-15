@@ -169,10 +169,8 @@ class Det03 final : public Rule {
             "this app's threads. An uninterruptible state on its own is not "
             "promoted to an I/O claim");
       } else {
-        unmet.push_back(
-            "no scheduling or I/O evidence was collected. This needs "
-            "`atrace` on Android, which is off by default because it traces "
-            "the whole device: record with --scheduling");
+        unmet.push_back("no scheduling or I/O evidence was collected. " +
+                        rules::scheduling_advice(*ctx.trace));
       }
     }
     return unmet;

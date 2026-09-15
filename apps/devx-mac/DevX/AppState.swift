@@ -59,6 +59,9 @@ final class AppState: ObservableObject {
     // Remembered targets. A note this app made on this machine -- never
     // evidence about the device, which is the whole of spec A23.
     @Published var recents = RecentTargets()
+    // What could be started, and the result of the last attempt.
+    @Published var bootTargetsDoc: JSON = .null
+    @Published var lastBoot: JSON = .null
     @Published var preflightDoc: JSON = .null
     @Published var sessionsDoc: JSON = .null
     @Published var sessionDoc: JSON = .null
@@ -306,6 +309,43 @@ final class AppState: ObservableObject {
                     $0["device_id"].text == self.selectedDevice }) {
                 self.selectedDevice = self.usableDevices.first?["device_id"].text ?? ""
             }
+        }
+    }
+
+    var bootTargets: [JSON] { bootTargetsDoc["boot_targets"].array }
+
+    /// Loads the list once. Listing spawns `emulator -list-avds` and asks
+    /// simctl, so it is not something to redo on every tab visit -- but a
+    /// panel that shows nothing until clicked is a feature nobody finds.
+    func loadBootTargetsIfNeeded() {
+        guard bootTargetsDoc.isNull else { return }
+        loadBootTargets()
+    }
+
+    func loadBootTargets() {
+        run("Listing bootable devices…", { Core.bootTargets() }) {
+            self.bootTargetsDoc = $0
+        }
+    }
+
+    /// Starts a simulator or emulator, then refreshes discovery so the new
+    /// device appears -- or does not, which the result says either way.
+    func bootTarget(_ identifier: String) {
+        guard !identifier.isEmpty else { return }
+        lastBoot = .null
+        Core.resetCancel()
+        run("Starting \(identifier)…", {
+            // Three minutes: a cold emulator boot took about 30 s on the
+            // machine this was built on, and a second one did not finish in
+            // 150 s. A budget that is too short reports a working boot as a
+            // failure.
+            Core.boot(identifier: identifier, readyTimeoutSeconds: 180)
+        }) { doc in
+            self.lastBoot = doc
+            // Refresh regardless: a boot that did not confirm ready may still
+            // have produced a device, and discovery is what settles that.
+            self.loadDevices()
+            self.loadBootTargets()
         }
     }
 

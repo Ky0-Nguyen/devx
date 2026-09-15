@@ -374,6 +374,23 @@ Export/settings. Two of the eleven are panels rather than tabs, which is worth
 stating rather than leaving to be inferred -- the issue detail and the
 stack/source view live inside Issues, next to the finding they describe.
 
+Two views beyond that list. **Threads** shows the JS-versus-native split,
+which matters because "the main thread" means a different thread depending on
+which one you mean: a React Native app has a UI thread that draws, a JS thread
+running the app's own code, and native-module threads between them, and a
+blocking read means something different on each. The view leads with how the
+split was decided, because that is its weakest part -- on Android the JS
+thread is identified by its *name* (`mqt_v_js`, `mqt_js`, anything containing
+`hermes`), since no platform signal says which thread runs JavaScript. Every
+row carries its basis, and only the UI main thread gets to claim a platform
+signal. Measured on a real capture: UI main 34%, JS 17%, renderer 0.4%, and
+48.6% on threads no rule could name -- reported as `other` rather than
+guessed into a role.
+
+**Start a simulator or emulator** is on the Devices tab, and `mpi boot` is the
+CLI form. It keeps "started" and "ready" apart, which is the whole point: see
+section 11.
+
 The Live tab streams a capture alongside the running app: counters, memory
 sparklines, per-source status, and the preliminary banner over everything
 until the window closes.
@@ -424,7 +441,7 @@ Still open, and all inherently UI behaviours:
   legend above the tracks rather than below them. `mpi timeline` renders the
   same data in a terminal. An issue focuses its own interval at full
   resolution, and `--issue=<id>` opens a link to one finding. Building it
-  found three defects in the capture path, listed in section 11.
+  found three defects in the capture path, listed in section 12.
 - **The compare view exists.** DevX has a Compare tab over the same engine
   the CLI uses, and the run-set reader moved into the core rather than being
   written twice -- what an absent field means is part of the comparison's
@@ -546,7 +563,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **177 of 198** checklist items have at least one automated test
-(451 test cases in 19 binaries, plus 210 Swift, both harnesses declaring the checklist ids they cover). The remaining 21 are enumerated with a stated
+(457 test cases in 19 binaries, plus 250 Swift, both harnesses declaring the checklist ids they cover). The remaining 21 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
@@ -628,7 +645,38 @@ built-in-bytes tests alone.
 
 ---
 
-## 11. Sessions recorded before 2026-09-15 have two coverage defects
+## 11. Starting a device is not the same as having one
+
+`mpi boot` and the Devices tab's panel start a simulator or emulator. Two
+distinctions are load-bearing, and both were measured rather than assumed.
+
+**An AVD name is not a device id.** `emulator -avd Pixel_9_Pro` produces
+something adb calls `emulator-5554` -- unless something is already on that
+port, in which case it is `emulator-5556`. So a boot reports the device id it
+*observed* afterwards, taken as the difference against the serials present
+before, and reports `null` rather than guessing when it could not confirm one.
+
+**"Started" is not "ready".** Measured on this machine: a cold AVD came up in
+about 30 s, and a second one started and never reported `sys.boot_completed`
+inside a 150 s budget -- adb saw it as `offline` the whole time. That is
+reported as `started: true, ready: false` with the serial that appeared and
+the state adb last saw, because a capture taken against that device would have
+measured the boot. An iOS simulator booted in 781 ms and re-booting one
+already running is a no-op that says so.
+
+**What booting does not change.** A booted emulator is still an emulator:
+nothing here touches the device form, and every measurement taken on it stays
+labelled that way. Timings from it are never comparable to a physical device,
+which is the same rule the device list states at the top.
+
+**Not covered.** Whether a *listed* AVD will actually boot -- the listing
+comes from `emulator -list-avds`, which reports names, not health. And the
+Android path assumes the new serial is the one this boot produced; two
+emulators started at once within the same poll would be indistinguishable.
+
+---
+
+## 12. Sessions recorded before 2026-09-15 have two coverage defects
 
 Building the timeline meant reading coverage per source for the first time,
 and it surfaced two faults in captures written before that date. Both are
@@ -656,7 +704,7 @@ coverage matters.
 
 ---
 
-## 12. Things this tool deliberately does not do
+## 13. Things this tool deliberately does not do
 
 Not limitations to be fixed -- design positions taken from spec sections 2.3,
 0.12 and 0.26:

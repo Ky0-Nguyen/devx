@@ -60,6 +60,57 @@ bool is_safe_argument(const std::string& arg, bool reject_option_like) {
   return true;
 }
 
+DetachedResult spawn_detached(const std::vector<std::string>& argv) {
+  DetachedResult res;
+  if (argv.empty()) {
+    res.error = "no program to run";
+    return res;
+  }
+
+  const pid_t first = ::fork();
+  if (first < 0) {
+    res.error = "fork failed";
+    return res;
+  }
+  if (first == 0) {
+    // Intermediate child: leave the parent's session so the grandchild is not
+    // killed when the caller's terminal goes away, then fork again so the
+    // grandchild is reparented to init and nobody has to reap it.
+    ::setsid();
+    const pid_t second = ::fork();
+    if (second < 0) ::_exit(127);
+    if (second > 0) ::_exit(0);
+
+    // Grandchild: detach from the caller's stdio. A long-running emulator
+    // writing into a pipe nobody drains would eventually block on a full
+    // buffer, which would look like the emulator hanging.
+    const int devnull = ::open("/dev/null", O_RDWR);
+    if (devnull >= 0) {
+      ::dup2(devnull, STDIN_FILENO);
+      ::dup2(devnull, STDOUT_FILENO);
+      ::dup2(devnull, STDERR_FILENO);
+      if (devnull > STDERR_FILENO) ::close(devnull);
+    }
+    std::vector<char*> raw;
+    raw.reserve(argv.size() + 1);
+    for (const auto& a : argv) raw.push_back(const_cast<char*>(a.c_str()));
+    raw.push_back(nullptr);
+    ::execvp(raw[0], raw.data());
+    ::_exit(127);
+  }
+
+  // Parent: reap the intermediate child immediately. It has already exited or
+  // is about to, so this does not wait on the program itself.
+  int status = 0;
+  ::waitpid(first, &status, 0);
+  if (WIFEXITED(status) && WEXITSTATUS(status) == 127) {
+    res.error = "the program could not be started (exec failed)";
+    return res;
+  }
+  res.spawned = true;
+  return res;
+}
+
 std::optional<std::string> which(const std::string& exe) {
   if (exe.find('/') != std::string::npos) {
     return ::access(exe.c_str(), X_OK) == 0 ? std::optional<std::string>(exe)

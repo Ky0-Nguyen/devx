@@ -19,6 +19,7 @@
 #include "adapters/android/adb_collector.hpp"
 #include "adapters/android/hprof_parser.hpp"
 #include "adapters/ios/ios_adapter.hpp"
+#include "core/discovery/boot.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/ingestion/normalize.hpp"
 #include "core/ingestion/reader.hpp"
@@ -328,6 +329,50 @@ char* mpi_rules_json(void) {
     for (const auto& r : rules::all_rules()) arr.push_back(r->describe());
     root.set("rules", std::move(arr));
     return root;
+  });
+}
+
+char* mpi_boot_targets_json(void) {
+  return guard([&] {
+    discovery::BootOptions opts;
+    opts.cancel = cancel_registry().token();
+    return discovery::list_boot_targets(opts).to_json();
+  });
+}
+
+char* mpi_boot_json(const char* identifier, int ready_timeout_s) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    const std::string id = safe(identifier);
+    if (id.empty()) {
+      out.set("error", json::Value::string("no target identifier was given"));
+      return out;
+    }
+    discovery::BootOptions opts;
+    opts.cancel = cancel_registry().token();
+    if (ready_timeout_s > 0) {
+      opts.ready_timeout = std::chrono::milliseconds(ready_timeout_s * 1000);
+    }
+    // Resolved against the live list rather than trusted: a stale identifier
+    // from a UI that has not refreshed should be an error, not an attempt to
+    // boot something that is no longer there.
+    const auto targets = discovery::list_boot_targets(opts);
+    const discovery::BootTarget* chosen = nullptr;
+    for (const auto& t : targets.targets) {
+      if (t.identifier == id) chosen = &t;
+    }
+    if (chosen == nullptr) {
+      out.set("error",
+              json::Value::string("'" + id +
+                                  "' is not a bootable target on this host"));
+      json::Value errs = json::Value::array();
+      for (const auto& e : targets.errors) errs.push_back(json::Value::string(e));
+      out.set("provider_errors", std::move(errs));
+      return out;
+    }
+    out = discovery::boot(*chosen, opts).to_json();
+    out.set("target", chosen->to_json());
+    return out;
   });
 }
 

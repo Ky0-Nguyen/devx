@@ -54,6 +54,27 @@ inline Result run(const std::vector<std::string>& argv) {
   return run(argv, Options{});
 }
 
+// Starts a process that outlives this one, and does not wait for it.
+//
+// For the one case `run` cannot serve: a program that is *meant* to keep
+// running -- an emulator, a simulator runtime -- where waiting for exit means
+// waiting for the device to be shut down. `run` would block until its timeout
+// and then report a failure for a process that is working correctly.
+//
+// Still argv-only: no shell, for the same reason as everywhere else here. The
+// child is double-forked into its own session, so it is reparented away and
+// leaves no zombie for a long-lived caller to accumulate -- which matters
+// because the desktop app may boot several devices in one run.
+//
+// Returns false with `error` set when the fork or exec failed. It cannot
+// report anything about what the program then did: that is the caller's to
+// observe, and `discovery::boot` does it by watching for the device.
+struct DetachedResult {
+  bool spawned = false;
+  std::string error;
+};
+DetachedResult spawn_detached(const std::vector<std::string>& argv);
+
 // Resolves an executable on PATH. Returns nullopt when absent, which the
 // capability contract reports as `unsupported` with a recovery action rather
 // than as a failure.

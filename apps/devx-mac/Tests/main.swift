@@ -599,6 +599,126 @@ do {
     check(o.tab == .settings, "and is addressable from the command line")
 }
 
+
+// --- the JS / native thread split -------------------------------------------
+// "The main thread" means a different thread depending on which one you mean,
+// and in a React Native app a finding can land on at least three. The role is
+// the claim this view makes, so how it is established is what gets tested.
+do {
+    // The UI thread is the only role with a platform signal behind it.
+    var r = classifyThread(name: "io.pizzahut.hutbot.debug", isMainUi: true, isJs: false)
+    check(r.role == .uiMain && r.basis == .platformSignal,
+          "the UI main thread comes from a platform signal", req: ["E20"])
+
+    // `is_js_thread` is itself derived from the name in the Android
+    // collector, so a thread carrying it is reported as name-derived. Calling
+    // this a platform signal would overstate what was measured.
+    r = classifyThread(name: "mqt_v_js", isMainUi: false, isJs: true)
+    check(r.role == .js, "mqt_v_js is the JS thread")
+    check(r.basis == .threadName,
+          "and its role is reported as name-derived, not observed", req: ["E20"])
+
+    // Both React Native JS thread names, and the Hermes case.
+    for name in ["mqt_js", "mqt_v_js", "com.facebook.hermes.worker", "JavaScriptCore"] {
+        let c = classifyThread(name: name, isMainUi: false, isJs: false)
+        check(c.role == .js, "\(name) classifies as JS")
+        check(c.basis == .threadName, "\(name) is name-derived")
+    }
+    for name in ["mqt_native_modules", "mqt_v_native_modules"] {
+        check(classifyThread(name: name, isMainUi: false, isJs: false).role
+                == .nativeModules,
+              "\(name) is a native-module thread")
+    }
+    check(classifyThread(name: "RenderThread", isMainUi: false, isJs: false).role
+            == .renderer,
+          "the platform's render thread is not the app's code")
+
+    // A thread nothing identifies lands in `other` with no basis -- never
+    // guessed into a role it might not have.
+    r = classifyThread(name: "binder:21854_6", isMainUi: false, isJs: false)
+    check(r.role == .other && r.basis == RoleBasis.none,
+          "an unrecognised thread is 'other', not guessed", req: ["E20", "H01"])
+    r = classifyThread(name: "", isMainUi: false, isJs: false)
+    check(r.role == .other && r.basis == RoleBasis.none,
+          "an unnamed thread is 'other' too")
+    check(RoleBasis.threadName.caution && RoleBasis.none.caution,
+          "both weak bases are flagged as cautions in the view")
+    check(!RoleBasis.platformSignal.caution, "a platform signal is not")
+}
+
+do {
+    // Shares, from the per-thread counts the report carries. The numbers are
+    // the real ones measured on emulator-5554.
+    let session = parse(#"""
+    {"trace":{"threads":[
+      {"thread_instance_id":"t1","name":"io.pizzahut.hutbot.debug","tid":21854,
+       "is_main_ui_thread":true,"is_js_thread":false,"sample_count":96},
+      {"thread_instance_id":"t2","name":"mqt_v_js","tid":22105,
+       "is_main_ui_thread":false,"is_js_thread":true,"sample_count":48},
+      {"thread_instance_id":"t3","name":"binder:21854_6","tid":23971,
+       "is_main_ui_thread":false,"is_js_thread":false,"sample_count":136},
+      {"thread_instance_id":"t4","name":"RenderThread","tid":21893,
+       "is_main_ui_thread":false,"is_js_thread":false,"sample_count":1}]}}
+    """#)
+    let split = threadSplit(from: session)
+    check(split.totalSamples == 281, "the total is the sum: got \(split.totalSamples ?? -1)")
+    check(split.threads.first?.name == "binder:21854_6", "busiest first")
+    check(split.anyRoleFromName, "the JS role rests on a name here")
+
+    let js = split.threads.first { $0.role == .js }
+    check(js?.samples == 48, "the JS thread's samples")
+    if let share = js?.share {
+        check(abs(share - 48.0/281.0) < 0.0001, "and its share of the app's samples")
+    } else {
+        check(false, "the JS thread has a share")
+    }
+    let ui = split.threads.first { $0.role == .uiMain }
+    check(ui?.basis == .platformSignal, "the UI thread keeps its stronger basis")
+
+    // Roles aggregate, and the shares sum to one -- a share of this app's
+    // samples, which is the only thing they are a share of.
+    let total = split.byRole.compactMap { $0.share }.reduce(0, +)
+    check(abs(total - 1.0) < 0.0001, "role shares sum to 1: got \(total)")
+}
+
+do {
+    // A capture that named threads but collected no samples: every share must
+    // be ABSENT, not zero. A thread with no samples attributed is not a
+    // thread that used no CPU, and 0% would read as the second.
+    let session = parse(#"""
+    {"trace":{"threads":[
+      {"thread_instance_id":"t1","name":"main","tid":1,
+       "is_main_ui_thread":true,"is_js_thread":false,"sample_count":null},
+      {"thread_instance_id":"t2","name":"mqt_v_js","tid":2,
+       "is_main_ui_thread":false,"is_js_thread":true,"sample_count":null}]}}
+    """#)
+    let split = threadSplit(from: session)
+    check(split.totalSamples == nil, "no total when nothing was sampled",
+          req: ["H01"])
+    check(split.threadsWithoutSamples,
+          "and the view is told to say so rather than showing zeroes")
+    for t in split.threads {
+        check(t.samples == nil, "\(t.name): samples absent, not zero")
+        check(t.share == nil, "\(t.name): share absent, not zero")
+    }
+    // The roles are still known: a split with no shares is still a split.
+    check(split.threads.contains { $0.role == .js }, "roles survive with no samples")
+}
+
+do {
+    // A capture with no threads at all is a missing provider, not a
+    // single-threaded app.
+    let split = threadSplit(from: parse(#"{"trace":{"threads":[]}}"#))
+    check(split.threads.isEmpty, "no threads recorded")
+    check(!split.threadsWithoutSamples,
+          "and that is not reported as 'threads with no samples', which is a "
+          + "different thing")
+    for role in ThreadRole.allCases {
+        check(!role.label.isEmpty && !role.detail.isEmpty,
+              "role \(role.rawValue) is described")
+    }
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

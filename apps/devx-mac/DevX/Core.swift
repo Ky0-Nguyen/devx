@@ -124,6 +124,14 @@ enum Core {
 
     static func rules() -> JSON { call { mpi_rules_json() } }
 
+    static func bootTargets() -> JSON { call { mpi_boot_targets_json() } }
+
+    /// Starts a simulator or emulator. Blocks until the device answers or the
+    /// budget runs out, which is why the caller runs it off the main thread.
+    static func boot(identifier: String, readyTimeoutSeconds: Int) -> JSON {
+        call { mpi_boot_json(identifier, Int32(readyTimeoutSeconds)) }
+    }
+
     static func sessions(dir: String) -> JSON { call { mpi_sessions_json(dir) } }
 
     static func session(dir: String, id: String) -> JSON {

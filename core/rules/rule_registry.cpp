@@ -84,6 +84,25 @@ std::vector<model::MeasurementMode> Rule::supported_modes() const {
           model::MeasurementMode::kUnknownLimited};
 }
 
+std::string scheduling_advice(const model::NormalizedTrace& trace) {
+  switch (trace.device.platform) {
+    case model::Platform::kIos:
+      return "there is no iOS provider for scheduling or I/O evidence in this "
+             "build. On Android it comes from `atrace`; the equivalent here "
+             "would be an Instruments System Trace, which is not wired up -- "
+             "so this detector cannot run on an iOS capture at all, and that "
+             "is a missing provider rather than a quiet app";
+    case model::Platform::kAndroid:
+      return "this needs `atrace`, which is off by default because it traces "
+             "the whole device: record with --scheduling";
+    case model::Platform::kUnknown:
+      break;
+  }
+  return "this needs scheduling evidence: `atrace` on Android (record with "
+         "--scheduling). This capture does not say which platform it came "
+         "from, so no flag is suggested for it";
+}
+
 MappedInterval map_producer_interval(const model::NormalizedTrace& trace,
                                      const std::string& producer_domain,
                                      model::TimeNs start_ns,

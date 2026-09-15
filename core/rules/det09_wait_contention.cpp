@@ -110,10 +110,8 @@ class Det09 final : public Rule {
                  e.duration_ns.has_value();
         });
     if (!any) {
-      unmet.push_back(
-          "no scheduling intervals were collected. This needs `atrace` on "
-          "Android, which is off by default because it traces the whole "
-          "device: record with --scheduling");
+      unmet.push_back("no scheduling intervals were collected. " +
+                      rules::scheduling_advice(*ctx.trace));
     }
     return unmet;
   }

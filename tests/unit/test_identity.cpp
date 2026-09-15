@@ -1,5 +1,6 @@
 #include <sstream>
 
+#include "core/discovery/boot.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/model/capability.hpp"
 #include "core/model/identity.hpp"
@@ -522,4 +523,101 @@ MPI_TEST(a_restarted_app_is_not_silently_retargeted, {"A17", "B03"}) {
   MPI_CHECK_MSG(again.process_set_changed,
                 "a process with the same pid but a different start time is a "
                 "different instance, and the change is reported");
+}
+
+// --- starting a simulator or emulator ---------------------------------------
+
+MPI_TEST(a_boot_refuses_an_unusable_identifier, {"A02", "J05"}) {
+    // The identifier reaches a command line, so it goes through the same
+    // argument check as every other external input. An AVD called `--help`
+    // would otherwise be handed to the emulator as a flag.
+    discovery::BootOptions opts;
+    discovery::BootTarget t;
+    t.platform = model::Platform::kAndroid;
+
+    t.identifier = "";
+    auto r = discovery::boot(t, opts);
+    MPI_CHECK(!r.started);
+    MPI_CHECK(r.error.find("no target identifier") != std::string::npos);
+
+    t.identifier = "--help";
+    r = discovery::boot(t, opts);
+    MPI_CHECK(!r.started);
+    MPI_CHECK_MSG(r.error.find("read as a command-line option") !=
+                      std::string::npos,
+                  "an option-like identifier is refused: " + r.error);
+    MPI_CHECK(r.device_id.empty());
+}
+
+MPI_TEST(a_boot_on_an_unknown_platform_is_refused_not_attempted, {"A02"}) {
+    discovery::BootOptions opts;
+    discovery::BootTarget t;
+    t.platform = model::Platform::kUnknown;
+    t.identifier = "something";
+    const auto r = discovery::boot(t, opts);
+    MPI_CHECK(!r.started);
+    MPI_CHECK(r.error.find("no way to boot") != std::string::npos);
+}
+
+MPI_TEST(a_boot_result_keeps_started_and_ready_apart, {"A02", "H01"}) {
+    // The distinction the whole command turns on. A process that launched and
+    // a device that answers are two facts, and collapsing them would report a
+    // half-booted device as ready -- which is measured on this machine: a
+    // second AVD started and never reported `sys.boot_completed` inside
+    // 150 s, with adb seeing it as `offline` throughout.
+    discovery::BootResult r;
+    r.started = true;
+    r.ready = false;
+    r.waited = std::chrono::milliseconds(150655);
+    r.notes.push_back("the emulator started and emulator-5556 appeared, but "
+                      "it never reported sys.boot_completed");
+    const auto doc = r.to_json();
+    const json::Value* started = doc.find("started");
+    const json::Value* ready = doc.find("ready");
+    const json::Value* id = doc.find("device_id");
+    MPI_CHECK(started != nullptr && started->as_bool());
+    MPI_CHECK(ready != nullptr && !ready->as_bool());
+    // Null, not "": an unconfirmed device id is not an empty one, and a
+    // caller that treats "" as a device id would try to record against it.
+    MPI_CHECK_MSG(id != nullptr && id->is_null(),
+                  "an unconfirmed device id serializes as null");
+
+    // And the ready case carries the id that was observed.
+    r.ready = true;
+    r.device_id = "emulator-5556";
+    const auto ok = r.to_json();
+    const json::Value* id2 = ok.find("device_id");
+    MPI_CHECK(id2 != nullptr && id2->is_string());
+    MPI_CHECK_EQ(id2->as_string(), std::string("emulator-5556"));
+}
+
+MPI_TEST(a_boot_target_is_not_a_device, {"A02", "A15"}) {
+    // An AVD name is not a device id: the device id exists only once it runs,
+    // and a second emulator lands on 5556 rather than the 5554 everyone
+    // assumes. So a target carries an `identifier` and no device id at all.
+    discovery::BootTarget t;
+    t.platform = model::Platform::kAndroid;
+    t.identifier = "Pixel_9_Pro";
+    t.display_name = "Pixel_9_Pro";
+    const auto doc = t.to_json();
+    MPI_CHECK(doc.find("identifier") != nullptr);
+    MPI_CHECK_MSG(doc.find("device_id") == nullptr,
+                  "a bootable target has no device id to report");
+    // An AVD's API level is not in `emulator -list-avds` output, so the field
+    // stays empty rather than being filled with a guess.
+    const json::Value* os = doc.find("os_version");
+    MPI_CHECK(os != nullptr && os->as_string().empty());
+}
+
+MPI_TEST(an_empty_boot_list_with_a_provider_error_is_not_nothing, {"A12"}) {
+    // The same rule as device discovery: a provider that could not be asked
+    // is reported, because an empty list plus a silent failure reads as "this
+    // machine has no simulators".
+    discovery::BootTargets t;
+    t.errors.push_back("`emulator -list-avds` failed: not found");
+    const auto doc = t.to_json();
+    const json::Value* arr = doc.find("boot_targets");
+    const json::Value* errs = doc.find("errors");
+    MPI_CHECK(arr != nullptr && arr->items().empty());
+    MPI_CHECK(errs != nullptr && errs->items().size() == 1);
 }

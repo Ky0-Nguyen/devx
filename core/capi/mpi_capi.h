@@ -41,6 +41,22 @@ char* mpi_preflight_json(const char* device_id, const char* app_identifier,
 /* Every registered detector with its prerequisites and thresholds. */
 char* mpi_rules_json(void);
 
+/* ---- starting a simulator or emulator -----------------------------------
+ *
+ * Discovery lists what is there; these start something that is not. "Started"
+ * and "ready" come back as separate booleans, because a device that was asked
+ * to boot and never came up is a real outcome -- and a capture taken against
+ * a half-booted device measures the boot. */
+
+/* What could be started: Android AVDs and iOS simulators. */
+char* mpi_boot_targets_json(void);
+
+/* Starts one and waits until it answers. `identifier` is an AVD name or a
+ * simulator UDID, exactly as `mpi_boot_targets_json` reported it. The device
+ * id in the result is the one *observed* afterwards, or null when none could
+ * be confirmed -- an AVD name is not a device id. */
+char* mpi_boot_json(const char* identifier, int ready_timeout_s);
+
 /* Session packages under `sessions_dir`, newest first. */
 char* mpi_sessions_json(const char* sessions_dir);
 

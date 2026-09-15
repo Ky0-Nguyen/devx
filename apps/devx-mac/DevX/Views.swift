@@ -21,6 +21,12 @@ struct DevicesView: View {
                                   + "connected\".")
                 }
 
+                // Loaded on arrival even though the list starts collapsed:
+                // the summary line is the discoverable part, and it needs the
+                // counts.
+                BootPanel()
+                    .onAppear { state.loadBootTargetsIfNeeded() }
+
                 if state.devices.isEmpty && !state.devicesDoc.isNull {
                     Banner(kind: .info, title: "No device discovered",
                            message: "Android: enable USB debugging and accept the "
@@ -457,6 +463,127 @@ struct RecentTargetsPanel: View {
             Text(presence.detail)
                 .font(Term.font(10)).foregroundStyle(Term.dim)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// Starting a simulator or emulator.
+///
+/// Kept below the device list rather than mixed into it, because these are
+/// not devices: an AVD name is not a device id, and the id only exists once
+/// the thing is running. A boot therefore reports the device id it
+/// *observed*, and says it could not confirm one rather than guessing --
+/// which matters because a second emulator lands on `emulator-5556`, not on
+/// the 5554 everyone assumes.
+///
+/// "Started" and "ready" are shown separately. Measured on this machine: a
+/// cold AVD came up in about 30 s, and a second one started and never
+/// reported `sys.boot_completed` inside 150 s -- adb saw it as `offline` the
+/// whole time. A capture taken against that device would have measured the
+/// boot.
+struct BootPanel: View {
+    @EnvironmentObject var state: AppState
+    // Collapsed by default. This machine offers 27 bootable targets across two
+    // iOS runtimes, and expanded they pushed the device list -- which is what
+    // the tab is for -- off the bottom of the window.
+    @State private var expanded = false
+
+    private var summary: String {
+        let all = state.bootTargets
+        let android = all.filter { $0["platform"].text == "android" }.count
+        let ios = all.count - android
+        let running = all.filter { $0["already_running"].bool == true }.count
+        if all.isEmpty { return "nothing bootable was found" }
+        var s = "\(android) AVD(s), \(ios) simulator(s)"
+        if running > 0 { s += " — \(running) already running" }
+        return s
+    }
+
+    var body: some View {
+        Panel(title: "Start a simulator or emulator",
+              subtitle: "not devices yet: a device id exists only once one is "
+                      + "running") {
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(spacing: 10) {
+                    Button(expanded ? "Hide" : "Show \(summary)") {
+                        expanded.toggle()
+                        if expanded { state.loadBootTargetsIfNeeded() }
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    Button("Refresh") { state.loadBootTargets() }
+                        .buttonStyle(TermButtonStyle())
+                    Spacer(minLength: 0)
+                }
+
+                // The result of the last attempt stays visible whether or not
+                // the list is expanded: a boot that did not come up is the
+                // thing most worth not hiding.
+                if !state.lastBoot.isNull { bootResult(state.lastBoot) }
+
+                ForEach(Array((expanded ? state.bootTargets : []).enumerated()),
+                        id: \.offset) { _, t in
+                    let running = t["already_running"].bool == true
+                    HStack(spacing: 8) {
+                        Chip(text: t["platform"].display(), tone: .neutral)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(t["display_name"].text.isEmpty
+                                 ? t["identifier"].display()
+                                 : t["display_name"].text)
+                                .font(Term.font(12)).foregroundStyle(Term.ink)
+                            Text(t["identifier"].display())
+                                .font(Term.font(10)).foregroundStyle(Term.dim)
+                        }
+                        .frame(width: 260, alignment: .leading)
+                        if !t["os_version"].text.isEmpty {
+                            Text(t["os_version"].text)
+                                .font(Term.font(11)).foregroundStyle(Term.dim)
+                        }
+                        Spacer(minLength: 0)
+                        if running {
+                            Chip(text: "already running", tone: .good)
+                        } else {
+                            Button("Start") { state.bootTarget(t["identifier"].text) }
+                                .buttonStyle(TermButtonStyle())
+                        }
+                    }
+                }
+
+                let errs = expanded
+                    ? state.bootTargetsDoc["errors"].array.compactMap { $0.string }
+                    : []
+                ForEach(errs, id: \.self) { e in
+                    // A provider that could not be asked is reported: an empty
+                    // list with a failed provider is not "nothing exists".
+                    Text("· " + e)
+                        .font(Term.font(10)).foregroundStyle(Term.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func bootResult(_ r: JSON) -> some View {
+        if !r["error"].text.isEmpty {
+            Banner(kind: .bad, title: "Could not start it",
+                   message: r["error"].display())
+        } else if r["was_already_running"].bool == true {
+            Banner(kind: .info, title: "Already running",
+                   message: "Nothing was started. Device id "
+                          + r["device_id"].display("(not reported)") + ".")
+        } else if r["ready"].bool == true {
+            Banner(kind: .info, title: "Ready",
+                   message: "Device id " + r["device_id"].display("(not confirmed)")
+                          + ", after " + String(r["waited_ms"].stamp) + " ms. "
+                          + "It is still a simulator or emulator: its timings "
+                          + "are never comparable to a physical device.")
+        } else if r["started"].bool == true {
+            // The outcome that matters most, and the one a convenience
+            // wrapper would have called success.
+            Banner(kind: .caution, title: "Started, NOT confirmed ready",
+                   message: (r["notes"].array.compactMap { $0.string }.first
+                             ?? "it did not report itself ready inside the "
+                              + "budget")
+                          + " Recording against it now would measure the boot.")
         }
     }
 }

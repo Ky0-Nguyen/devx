@@ -19,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (177 items, 604 test-case links)
+## Covered (177 items, 619 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -27,6 +27,10 @@ Two cautions on reading this:
 | A02 | `test_android_collector` | `simpleperf_handles_the_not_debuggable_refusal` |
 | A02 | `test_android_parsers` | `adapter_refuses_to_enumerate_an_unauthorized_device` |
 | A02 | `test_android_parsers` | `parses_device_states_and_forms` |
+| A02 | `test_identity` | `a_boot_on_an_unknown_platform_is_refused_not_attempted` |
+| A02 | `test_identity` | `a_boot_refuses_an_unusable_identifier` |
+| A02 | `test_identity` | `a_boot_result_keeps_started_and_ready_apart` |
+| A02 | `test_identity` | `a_boot_target_is_not_a_device` |
 | A02 | `test_identity` | `only_authorized_devices_are_usable` |
 | A03 | `test_identity` | `only_authorized_devices_are_usable` |
 | A03 | `test_ios_parsers` | `adapter_reports_unreachable_device_as_enumeration_failure` |
@@ -61,6 +65,7 @@ Two cautions on reading this:
 | A12 | `test_android_parsers` | `real_adb_with_no_device_yields_an_empty_list_not_an_error` |
 | A12 | `test_compare` | `a_missing_file_is_an_error_not_an_empty_set` |
 | A12 | `test_heap` | `a_non_hprof_file_is_refused` |
+| A12 | `test_identity` | `an_empty_boot_list_with_a_provider_error_is_not_nothing` |
 | A12 | `test_identity` | `empty_list_differs_from_enumeration_failure` |
 | A12 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
 | A12 | `test_ios_parsers` | `adapter_reports_unreachable_device_as_enumeration_failure` |
@@ -71,6 +76,7 @@ Two cautions on reading this:
 | A13 | `test_ios_parsers` | `devicectl_apps_parser_reads_bundle_identifiers` |
 | A13 | `test_ios_parsers` | `parses_real_simctl_listapps_output` |
 | A14 | `test_identity` | `two_apps_sharing_a_display_name_stay_distinct` |
+| A15 | `test_identity` | `a_boot_target_is_not_a_device` |
 | A15 | `test_identity` | `same_identifier_on_two_devices_stays_separate` |
 | A15 | `test_identity` | `same_identifier_on_two_platforms_stays_separate` |
 | A16 | `test_identity` | `an_app_that_exits_before_record_is_caught_by_revalidation` |
@@ -316,6 +322,9 @@ Two cautions on reading this:
 | E15 | `test_ingestion` | `xctrace_time_profile_reads_samples_stacks_and_binaries` |
 | E16 | `test_rules` | `nested_js_spans_are_not_double_counted` |
 | E17 | `test_android_collector` | `atrace_mapping_attributes_only_the_apps_threads` |
+| E20 | `devx_swift_tests` | `an unrecognised thread is 'other', not guessed` |
+| E20 | `devx_swift_tests` | `and its role is reported as name-derived, not observed` |
+| E20 | `devx_swift_tests` | `the UI main thread comes from a platform signal` |
 | E20 | `test_rules` | `det02_overlap_is_a_candidate_cause_never_proven` |
 | E20 | `test_rules` | `det11_observes_the_delay_and_blames_nobody` |
 | E21 | `test_rules` | `det01_excludes_unjudgeable_frames_from_the_denominator` |
@@ -390,7 +399,9 @@ Two cautions on reading this:
 | H01 | `devx_swift_tests` | `an issue with no screen does not match a screen filter` |
 | H01 | `devx_swift_tests` | `an unmeasured bin stays flat even with a value attached` |
 | H01 | `devx_swift_tests` | `an unrecognised state claims nothing rather than guessing` |
+| H01 | `devx_swift_tests` | `an unrecognised thread is 'other', not guessed` |
 | H01 | `devx_swift_tests` | `never labelled 'not running': a listing that could not see an app and an app that is gone are different facts` |
+| H01 | `devx_swift_tests` | `no total when nothing was sampled` |
 | H01 | `test_android_collector` | `det03_reports_a_main_thread_block_with_its_slice` |
 | H01 | `test_compare` | `a_run_with_no_value_keeps_its_place` |
 | H01 | `test_compare` | `an_unstated_eligibility_is_insufficient_evidence` |
@@ -400,6 +411,7 @@ Two cautions on reading this:
 | H01 | `test_heap` | `an_unreachable_object_is_garbage_not_retention` |
 | H01 | `test_heap` | `det06_calls_an_unrooted_destroyed_object_garbage` |
 | H01 | `test_heap` | `det06_qualifies_a_dump_taken_without_a_collection` |
+| H01 | `test_identity` | `a_boot_result_keeps_started_and_ready_apart` |
 | H01 | `test_rules` | `det01_observed_requires_presentation_truth` |
 | H01 | `test_rules` | `det07_reports_a_real_launch_over_budget` |
 | H01 | `test_session_lifecycle` | `a_collector_that_refuses_to_begin_writes_nothing` |
@@ -418,6 +430,7 @@ Two cautions on reading this:
 | H04 | `test_rules` | `threshold_override_changes_the_verdict` |
 | H05 | `test_heap` | `det06_without_a_dump_refuses_the_substitute` |
 | H05 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
+| H05 | `test_rules` | `a_skip_does_not_send_an_ios_user_to_an_android_flag` |
 | H05 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
 | H05 | `test_rules` | `det06_without_a_heap_dump_says_what_is_missing` |
 | H05 | `test_rules` | `det07_says_a_capture_without_a_launch_has_no_startup` |
@@ -570,6 +583,7 @@ Two cautions on reading this:
 | J05 | `test_android_parsers` | `adapter_rejects_an_option_like_app_identifier` |
 | J05 | `test_devx_http` | `url_decode_handles_escapes_and_plus` |
 | J05 | `test_devx_http` | `url_decode_leaves_malformed_escapes_literal` |
+| J05 | `test_identity` | `a_boot_refuses_an_unusable_identifier` |
 | J05 | `test_ios_parsers` | `adapter_refuses_an_option_like_bundle_id` |
 | J05 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
 | J05 | `test_process` | `process_argv_is_never_shell_interpreted` |
@@ -624,6 +638,7 @@ Two cautions on reading this:
 | J18 | `test_ios_parsers` | `adapter_lists_real_devices_including_simulators` |
 | J18 | `test_ios_parsers` | `parses_real_simctl_device_listing` |
 | J18 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
+| J18 | `test_rules` | `a_skip_does_not_send_an_ios_user_to_an_android_flag` |
 | J19 | `test_rules` | `native_evidence_without_js_evidence_invents_none` |
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
 | J20 | `test_ios_parsers` | `xctrace_export_xpath_is_built_in_one_place` |
@@ -781,6 +796,6 @@ Two cautions on reading this:
 ## Totals
 
 - test binaries: 20
-- test cases declaring at least one id: 463
-- checklist-item links: 604
+- test cases declaring at least one id: 473
+- checklist-item links: 619
 - section-18 coverage: 177/198 (89%)
