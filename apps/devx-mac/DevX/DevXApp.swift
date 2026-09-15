@@ -96,6 +96,13 @@ struct DevXApp: App {
             CommandGroup(after: .newItem) {
                 Button(tr("Refresh Devices")) { state.loadDevices() }
                     .keyboardShortcut("r")
+                // Where a macOS user looks for a preference, and reachable
+                // from any tab.
+                Menu(tr("Language")) {
+                    ForEach(DevXLanguage.allCases) { lang in
+                        Button(lang.label) { state.language = lang }
+                    }
+                }
                 Button(tr("Cancel Running Operation")) { state.cancel() }
                     .keyboardShortcut(".", modifiers: .command)
             }

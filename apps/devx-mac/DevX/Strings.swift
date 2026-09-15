@@ -68,10 +68,483 @@ enum Strings {
     /// Looks up `text`, or returns it unchanged.
     static func translate(_ text: String, into language: DevXLanguage) -> String {
         switch language {
-        case .vi: return vietnamese[text] ?? text
+        // Two catalogs, checked in order. `vietnamese` is this app's own
+        // chrome; `vietnameseCore` is text the C++ core emits.
+        case .vi: return vietnamese[text] ?? vietnameseCore[text] ?? text
         case .en, .system: return text
         }
     }
+
+    /// Text the analysis core emits, translated **for display only**.
+    ///
+    /// This started as a deliberate exclusion: findings, coverage notes and
+    /// threshold origins are written into the session package, exported, and
+    /// compared across runs, so translating them would leave two captures of
+    /// the same app incomparable because the machines were configured
+    /// differently.
+    ///
+    /// That reasoning was about the *stored* text, and it still holds -- so
+    /// nothing here changes what is written to disk. The session package, the
+    /// JSON and Markdown exports and everything `mpi compare` reads stay in
+    /// one language. This is a lookup applied when a string is drawn on
+    /// screen, and a reader who chose Vietnamese should not have to read the
+    /// detector catalog in English to use the tool.
+    ///
+    /// Identifiers are **not** here and must not be: `frames_responsiveness`,
+    /// `configurable_heuristic`, `DET-01`, `frame_records`. Those are values,
+    /// not prose -- they appear in the exported document, in
+    /// `--suppressions` files and in the specification, and a translated
+    /// identifier would not match any of them.
+    static let vietnameseCore: [String: String] = [
+        "Expensive development-tooling or profiler activity":
+            "Hoạt động tốn kém của công cụ phát triển hoặc profiler",
+        "JS execution spans with measured durations (a sampling profile "
+        + "alone does not contain task boundaries)":
+            "các span thực thi JS có thời lượng đo được (một sampling "
+            + "profile đơn thuần không chứa ranh giới tác vụ)",
+        "Long JS execution":
+            "Tác vụ JS chạy dài",
+        "Memory growth across screen cycles":
+            "Bộ nhớ tăng qua các vòng vào/ra màn hình",
+        "Missed frame deadlines / UI responsiveness":
+            "Frame trễ hạn / độ phản hồi của UI",
+        "Network delay affecting an interaction":
+            "Độ trễ mạng ảnh hưởng tới một tương tác",
+        "Performance regression":
+            "Hồi quy hiệu năng",
+        "React commit markers from the app's own profiling data, "
+        + "reported through the SDK; sampled stacks are not a substitute":
+            "các marker React commit từ dữ liệu profiling của chính ứng "
+            + "dụng, báo về qua SDK; stack lấy mẫu không thay thế được",
+        "Repeated React renders":
+            "React render lặp lại",
+        "Retained-object investigation":
+            "Điều tra đối tượng bị giữ lại",
+        "Sampled CPU hotspot":
+            "Điểm nóng CPU theo lấy mẫu",
+        "Startup budget exceedance":
+            "Vượt ngân sách thời gian khởi động",
+        "Synchronous I/O on a user-visible thread":
+            "I/O đồng bộ trên luồng người dùng thấy được",
+        "Wait / lock contention":
+            "Tranh chấp chờ / khoá",
+        "a background surface's frames are not a foreground animation (E04)":
+            "frame của một surface chạy nền không phải là animation ở tiền "
+            + "cảnh (E04)",
+        "a baseline and a candidate run set for the same scenario version":
+            "một run set bản nền và một run set bản ứng viên cho cùng một "
+            + "phiên bản tình huống",
+        "a block this long is very likely to be user-visible; still an "
+        + "impact ordering, not a standard":
+            "một lần chặn dài như vậy rất có thể người dùng thấy được; vẫn "
+            + "chỉ là xếp thứ tự ảnh hưởng, không phải tiêu chuẩn",
+        "a bound on the search, not a claim: a longer chain is not "
+        + "reported rather than being reported as absent":
+            "một giới hạn cho việc tìm kiếm, không phải một khẳng định: một "
+            + "chuỗi dài hơn sẽ không được báo, chứ không phải được báo là "
+            + "không có",
+        "a cache filling up on purpose produces exactly this shape, and "
+        + "this rule cannot tell a cache from a retention":
+            "một cache đang được làm đầy có chủ đích tạo ra đúng hình dạng "
+            + "này, và quy tắc này không phân biệt được cache với việc bị giữ "
+            + "lại",
+        "a component that commits cheaply many times can cost less than "
+        + "one that commits once expensively; a count is not a cost":
+            "một component commit nhiều lần nhưng nhẹ có thể tốn ít hơn một "
+            + "component chỉ commit một lần nhưng nặng; số lần không phải là "
+            + "chi phí",
+        "a debug build's startup includes work the shipped build does "
+        + "not do, and this rule never subtracts an estimate for it":
+            "khởi động của bản debug bao gồm công việc mà bản phát hành "
+            + "không làm, và quy tắc này không bao giờ trừ đi một con số ước "
+            + "lượng cho phần đó",
+        "a debug build's tooling -- LeakCanary, an instrumentation "
+        + "hook, a profiler -- holds a reference precisely to watch it":
+            "công cụ trong bản debug -- LeakCanary, một instrumentation "
+            + "hook, một profiler -- giữ tham chiếu chính là để theo dõi đối "
+            + "tượng đó",
+        "a declared clock domain for the JS spans":
+            "một clock domain được khai báo cho các span JS",
+        "a deliberate cache keyed on the object, where retention is the "
+        + "feature and not the fault":
+            "một cache có chủ đích lấy đối tượng làm khoá, nơi việc giữ lại "
+            + "là tính năng chứ không phải lỗi",
+        "a display-callback proxy can report a late callback while the "
+        + "frame was still presented on time (E21)":
+            "một display-callback proxy có thể báo callback muộn trong khi "
+            + "frame vẫn được trình chiếu đúng hạn (E21)",
+        "a heap dump with reference paths, from `mpi record --heap` on "
+        + "Android; memory counters cannot substitute, because a counter "
+        + "says how much is held and never by what":
+            "một heap dump kèm đường dẫn tham chiếu, từ `mpi record --heap` "
+            + "trên Android; counter bộ nhớ không thay thế được, vì counter "
+            + "chỉ nói giữ bao nhiêu chứ không bao giờ nói bị giữ bởi cái gì",
+        "a kernel-reported I/O wait (`sched_blocked_reason` with "
+        + "iowait=1) attributed to one of the app's threads":
+            "một lần chờ I/O do kernel báo (`sched_blocked_reason` với "
+            + "iowait=1) được quy cho một trong các luồng của ứng dụng",
+        "a list that streams rows, a progress indicator, or an animated "
+        + "value commits often by design, and this rule cannot tell that "
+        + "from a redundant re-render":
+            "một danh sách đang stream từng dòng, một chỉ báo tiến trình, "
+            + "hay một giá trị đang animate thì commit thường xuyên theo "
+            + "thiết kế, và quy tắc này không phân biệt được điều đó với việc "
+            + "render lại dư thừa",
+        "a long task on a background JS runtime or worker may do no UI "
+        + "harm (spec E07, G06)":
+            "một tác vụ dài trên một JS runtime chạy nền hoặc worker có thể "
+            + "không gây hại gì cho UI (spec E07, G06)",
+        "a memory counter series with a reading inside each cycle":
+            "một chuỗi counter bộ nhớ có ít nhất một số đọc trong mỗi vòng",
+        "a page-cache read that would have been served from memory on a "
+        + "warmer device: a cold first run blocks where a later one does "
+        + "not":
+            "một lần đọc page-cache mà trên máy đã 'ấm' hơn thì sẽ được "
+            + "phục vụ từ bộ nhớ: lần chạy nguội đầu tiên bị chặn ở nơi mà "
+            + "lần sau thì không",
+        "a per-frame deadline, either provider-reported or derived from "
+        + "an observed refresh rate":
+            "một hạn chót cho mỗi frame, do provider báo về hoặc suy ra từ "
+            + "tần số làm mới quan sát được",
+        "a project startup budget: there is no platform standard to "
+        + "default to, so one must be configured as DET-07.budget_ms":
+            "một ngân sách thời gian khởi động của dự án: không có tiêu "
+            + "chuẩn nền tảng nào để lấy làm mặc định, nên phải cấu hình một "
+            + "giá trị ở DET-07.budget_ms",
+        "a reading older than this relative to the cycle boundary is "
+        + "not treated as that cycle's memory":
+            "một số đọc cũ hơn khoảng này so với ranh giới vòng sẽ không "
+            + "được coi là bộ nhớ của vòng đó",
+        "a real difference between two configurations that says nothing "
+        + "about release performance, when either side is not "
+        + "benchmark-eligible (spec I16)":
+            "một khác biệt thật giữa hai cấu hình nhưng không nói lên điều "
+            + "gì về hiệu năng bản phát hành, khi một trong hai bên không đủ "
+            + "điều kiện làm benchmark (spec I16)",
+        "a regression at or above this relative size is ranked high; it "
+        + "orders impact and is not a platform standard":
+            "một hồi quy ở mức tương đối này trở lên được xếp mức cao; nó "
+            + "xếp thứ tự ảnh hưởng và không phải tiêu chuẩn của nền tảng",
+        "a request that was slow because the app queued it behind "
+        + "others, which is the app's scheduling and not the network":
+            "một request chậm vì ứng dụng xếp nó sau các request khác, đó "
+            + "là việc lập lịch của ứng dụng chứ không phải của mạng",
+        "a request the interaction did not actually wait on: "
+        + "overlapping in time is not the same as blocking, and "
+        + "prefetching looks identical from here":
+            "một request mà tương tác thực ra không chờ: trùng nhau về thời "
+            + "gian không đồng nghĩa với bị chặn, và prefetch nhìn từ đây thì "
+            + "y như vậy",
+        "a run of consecutive misses is more likely to be user-visible "
+        + "than the same count scattered":
+            "một chuỗi frame trễ liên tiếp dễ bị người dùng thấy hơn là "
+            + "cùng số đó nhưng rải rác",
+        "a sampler misses functions shorter than its interval, so an "
+        + "absent leaf is not proof of absent work (E14)":
+            "bộ lấy mẫu bỏ sót các hàm ngắn hơn chu kỳ lấy mẫu, nên một "
+            + "leaf không xuất hiện không chứng minh là không có công việc "
+            + "(E14)",
+        "a scenario that changed meaning between the two versions while "
+        + "keeping its id, which no amount of run repetition detects":
+            "một tình huống đã đổi ý nghĩa giữa hai phiên bản nhưng vẫn giữ "
+            + "nguyên id, điều mà lặp lại bao nhiêu lần chạy cũng không phát "
+            + "hiện được",
+        "a screen that legitimately keeps more state after being "
+        + "visited, such as a list that has loaded more pages":
+            "một màn hình giữ lại nhiều trạng thái hơn một cách chính đáng "
+            + "sau khi được vào, ví dụ một danh sách đã tải thêm trang",
+        "a shared allocator, GC, or scheduler effect caused by tooling "
+        + "cannot be cleanly separated and stays unclassified (section 9 "
+        + "rule 5)":
+            "một ảnh hưởng dùng chung ở allocator, GC hoặc scheduler do "
+            + "công cụ gây ra thì không tách bạch được và vẫn để không phân "
+            + "loại (mục 9 quy tắc 5)",
+        "a single launch is one sample. A cold start on a device that "
+        + "was busy with something else looks identical to a slow app "
+        + "(spec section 12 requires repeated runs before a startup "
+        + "claim)":
+            "một lần khởi động là một mẫu. Một lần khởi động nguội trên máy "
+            + "đang bận việc khác nhìn y như một ứng dụng chậm (spec mục 12 "
+            + "yêu cầu lặp lại nhiều lần chạy trước khi khẳng định về khởi "
+            + "động)",
+        "a single long task is reportable; unlike a rate, it needs no "
+        + "sample population":
+            "một tác vụ dài đơn lẻ vẫn báo được; khác với một tỷ lệ, nó "
+            + "không cần một tập mẫu",
+        "a startup interval from a launch this tool performed, with a "
+        + "named endpoint":
+            "một khoảng thời gian khởi động từ lần khởi chạy do chính công "
+            + "cụ này thực hiện, với một điểm kết thúc được nêu rõ",
+        "a stated expectation of when the object should have been "
+        + "freed. Without one, a reachable object is just a reachable "
+        + "object":
+            "một kỳ vọng được nêu rõ về thời điểm đối tượng lẽ ra phải được "
+            + "giải phóng. Không có kỳ vọng đó thì một đối tượng còn tham "
+            + "chiếu chỉ là một đối tượng còn tham chiếu",
+        "a task measured while a debugger was paused has an invalid "
+        + "duration (spec C08) -- the eligibility model records the "
+        + "pause, but a mid-capture attach can still contaminate one "
+        + "interval":
+            "một tác vụ được đo trong lúc debugger đang tạm dừng thì có "
+            + "thời lượng không hợp lệ (spec C08) -- mô hình điều kiện hợp lệ "
+            + "ghi nhận lần tạm dừng, nhưng việc attach giữa lúc ghi vẫn có "
+            + "thể làm nhiễu một khoảng",
+        "a thread sleeping because it has nothing to do is waiting, not "
+        + "contending, and this rule cannot always tell them apart":
+            "một luồng đang ngủ vì không có việc gì làm là đang chờ, không "
+            + "phải đang tranh chấp, và quy tắc này không luôn phân biệt được "
+            + "hai điều đó",
+        "an I/O wait during startup, when the app is legitimately "
+        + "reading its own code and assets":
+            "một lần chờ I/O trong lúc khởi động, khi ứng dụng đang đọc mã "
+            + "và tài nguyên của chính nó một cách chính đáng",
+        "an allocator holding freed pages instead of returning them to "
+        + "the OS, which raises RSS while the app's live set is unchanged":
+            "allocator giữ lại các page đã giải phóng thay vì trả về cho "
+            + "OS, làm RSS tăng trong khi live set của ứng dụng không đổi",
+        "an emulator's I/O behaviour is not a phone's, and neither is a "
+        + "device with a full disk":
+            "hành vi I/O của emulator không phải của điện thoại, và một máy "
+            + "sắp hết dung lượng cũng vậy",
+        "an emulator's startup is not a phone's: the CPU, the storage "
+        + "and the thermal behaviour all differ":
+            "khởi động trên emulator không phải khởi động trên điện thoại: "
+            + "CPU, bộ lưu trữ và hành vi nhiệt đều khác",
+        "an environmental change the run conditions do not capture -- a "
+        + "background update, a thermal state that drifted between the "
+        + "two sets -- looks identical to a code regression at this level "
+        + "(I04, I06)":
+            "một thay đổi môi trường mà điều kiện chạy không ghi lại -- một "
+            + "bản cập nhật chạy nền, trạng thái nhiệt thay đổi giữa hai tập "
+            + "-- nhìn ở mức này thì y như một hồi quy do mã (I04, I06)",
+        "an idle surface legitimately producing few frames can look "
+        + "like a low frame rate without any jank (spec E03)":
+            "một surface đang rảnh và tạo ra ít frame một cách chính đáng "
+            + "có thể trông như tần số frame thấp mà chẳng có jank nào (spec "
+            + "E03)",
+        "an initial default for a dominant leaf":
+            "giá trị mặc định ban đầu cho một leaf chiếm phần lớn",
+        "an initial default for a leaf worth investigating; there is no "
+        + "universal 'CPU > 80% is a bug' rule":
+            "mặc định ban đầu cho một leaf đáng để điều tra; không có quy "
+            + "tắc phổ quát nào kiểu 'CPU > 80% là lỗi'",
+        "an initial heuristic for a task likely to be noticed "
+        + "regardless of frame evidence":
+            "một heuristic ban đầu cho một tác vụ có khả năng bị để ý bất "
+            + "kể có bằng chứng về frame hay không",
+        "an initial heuristic for a task long enough to be worth "
+        + "looking at; it is not a platform deadline and not a mobile OS "
+        + "standard":
+            "một heuristic ban đầu cho một tác vụ dài đủ để đáng xem; đây "
+            + "không phải hạn chót của nền tảng và không phải tiêu chuẩn của "
+            + "hệ điều hành di động",
+        "an interaction that was already complete for the user while a "
+        + "request finished in the background":
+            "một tương tác mà với người dùng thì đã xong, trong khi một "
+            + "request vẫn kết thúc ở chạy nền",
+        "an interaction with a begin and an end, so there is something "
+        + "the request could have delayed":
+            "một tương tác có điểm bắt đầu và điểm kết thúc, để có một thứ "
+            + "mà request có thể đã làm chậm",
+        "an optimized, inlined, or tail-called frame may be attributed "
+        + "to its caller (E15)":
+            "một frame đã được tối ưu, inline hoặc tail-call có thể bị quy "
+            + "cho hàm gọi nó (E15)",
+        "at least one conclusive ownership rule matched; a library name "
+        + "alone is not sufficient":
+            "có ít nhất một quy tắc quy chủ mang tính kết luận khớp; chỉ "
+            + "một tên thư viện là chưa đủ",
+        "at least one frame record for the target process":
+            "ít nhất một frame record của tiến trình mục tiêu",
+        "at least three completed mount/unmount cycles of the same "
+        + "screen, from the app's own SDK markers":
+            "ít nhất ba vòng mount/unmount hoàn tất của cùng một màn hình, "
+            + "từ marker SDK của chính ứng dụng",
+        "background computation that does not affect the UI can "
+        + "dominate the sample population (E04)":
+            "tính toán chạy nền không ảnh hưởng tới UI có thể chiếm phần "
+            + "lớn tập mẫu (E04)",
+        "below this many frames the miss rate is too noisy to report; "
+        + "raise it for steadier results":
+            "dưới số frame này thì tỷ lệ trễ quá nhiễu để báo; hãy tăng lên "
+            + "để có kết quả ổn định hơn",
+        "below this population a share is not distinguishable from "
+        + "sampling noise":
+            "dưới cỡ mẫu này thì một tỷ lệ không phân biệt được với nhiễu "
+            + "lấy mẫu",
+        "below three visits a rise is one difference, not a trend; "
+        + "raise it for a stronger claim":
+            "dưới ba lần vào màn hình thì một mức tăng chỉ là một khác "
+            + "biệt, không phải một xu hướng; hãy tăng lên để có khẳng định "
+            + "mạnh hơn",
+        "caps how many hotspots one capture reports":
+            "giới hạn số điểm nóng mà một lần ghi báo về",
+        "commits driven by real incoming data are not the component's fault":
+            "các commit do dữ liệu thật đi vào gây ra thì không phải lỗi "
+            + "của component",
+        "each commit must name the component it belongs to":
+            "mỗi commit phải nêu rõ component mà nó thuộc về",
+        "enough completed runs on both sides for a median and a spread":
+            "đủ số lần chạy hoàn tất ở cả hai bên để tính trung vị và độ trải",
+        "enough samples that a share is meaningful rather than noise":
+            "đủ số mẫu để một tỷ lệ có ý nghĩa thay vì chỉ là nhiễu",
+        "exceeding the budget by this much or more is ranked high; it "
+        + "orders impact, it is not a standard":
+            "vượt ngân sách từ mức này trở lên được xếp mức cao; nó xếp thứ "
+            + "tự ảnh hưởng, không phải một tiêu chuẩn",
+        "for any claim about who unblocked a thread, a `sched_waking` "
+        + "event emitted by the waker itself":
+            "để khẳng định bất cứ điều gì về việc ai đã bỏ chặn một luồng, "
+            + "cần một sự kiện `sched_waking` do chính luồng đánh thức phát "
+            + "ra",
+        "garbage that exists but has not been collected yet: without a "
+        + "forced collection before each reading, the rise may be "
+        + "entirely collectable":
+            "rác đã tồn tại nhưng chưa được thu hồi: nếu không buộc thu gom "
+            + "trước mỗi lần đọc, mức tăng có thể hoàn toàn là phần thu hồi "
+            + "được",
+        "high CPU without any user-visible harm is not a defect (spec E05)":
+            "CPU cao mà không gây hại gì người dùng thấy được thì không "
+            + "phải một lỗi (spec E05)",
+        "impact ordering, not a standard":
+            "chỉ để xếp thứ tự mức ảnh hưởng, không phải một tiêu chuẩn",
+        "in-process dev tooling is genuinely part of the app process "
+        + "total in a debug build; reporting it is about measurement "
+        + "validity, not a product defect (spec F12)":
+            "công cụ phát triển chạy trong tiến trình thực sự là một phần "
+            + "tổng của tiến trình ứng dụng trong bản debug; báo về nó là "
+            + "chuyện tính hợp lệ của phép đo, không phải một lỗi sản phẩm "
+            + "(spec F12)",
+        "initial default only, near one frame at 60 Hz; no platform "
+        + "publishes a wait budget":
+            "chỉ là mặc định ban đầu, xấp xỉ một frame ở 60 Hz; không nền "
+            + "tảng nào công bố ngân sách cho việc chờ",
+        "initial default only. Chosen to be near a frame at 120 Hz, not "
+        + "because any platform publishes an I/O budget":
+            "chỉ là mặc định ban đầu. Chọn xấp xỉ một frame ở 120 Hz, không "
+            + "phải vì có nền tảng nào công bố ngân sách I/O",
+        "initial default only. There is no correct number of renders: a "
+        + "streaming list legitimately commits far more than this":
+            "chỉ là mặc định ban đầu. Không có con số render nào là đúng: "
+            + "một danh sách đang stream commit nhiều hơn thế một cách chính "
+            + "đáng",
+        "initial default only. There is no universal memory ceiling and "
+        + "this is not one: it is the smallest per-cycle rise worth "
+        + "reporting for a typical app":
+            "chỉ là mặc định ban đầu. Không có ngưỡng bộ nhớ phổ quát nào "
+            + "và đây cũng không phải một ngưỡng như vậy: nó là mức tăng mỗi "
+            + "vòng nhỏ nhất đáng báo với một ứng dụng thông thường",
+        "initial default only; a request faster than this is rarely "
+        + "what a user notices":
+            "chỉ là mặc định ban đầu; một request nhanh hơn mức này thì "
+            + "người dùng ít khi để ý",
+        "initial default only; tune per project":
+            "chỉ là mặc định ban đầu; hãy điều chỉnh theo từng dự án",
+        "initial default only; tune per project, it is not a platform "
+        + "standard":
+            "chỉ là mặc định ban đầu; hãy điều chỉnh theo từng dự án, đây "
+            + "không phải tiêu chuẩn của nền tảng",
+        "matching device, OS, refresh policy, collector preset, launch "
+        + "class and input state":
+            "trùng thiết bị, hệ điều hành, chính sách làm mới, preset "
+            + "collector, loại khởi động và trạng thái nhập liệu",
+        "network request markers with durations, reported by the app":
+            "các marker request mạng kèm thời lượng, do ứng dụng báo về",
+        "one destroyed-but-held instance is already the thing the "
+        + "platform says should not be there, so the default does not "
+        + "wait for a pattern":
+            "một instance đã bị destroy mà vẫn bị giữ thì bản thân đã là "
+            + "điều nền tảng nói rằng không nên có, nên mặc định không chờ "
+            + "thành một mẫu hình",
+        "presentation timestamps, or a clearly labelled "
+        + "display-callback proxy":
+            "dấu thời gian trình chiếu, hoặc một display-callback proxy "
+            + "được ghi nhãn rõ ràng",
+        "resolved symbols before any function name is attributed; "
+        + "without them the hotspot is reported by raw frame only":
+            "các ký hiệu đã được giải trước khi quy bất cứ tên hàm nào; "
+            + "không có chúng thì điểm nóng chỉ được báo theo frame thô",
+        "runnable-but-not-running on a busy emulator reflects the "
+        + "host's scheduler as much as the app's own contention":
+            "trạng thái sẵn sàng-nhưng-chưa-chạy trên một emulator đang bận "
+            + "phản ánh scheduler của máy host ngang với tranh chấp của chính "
+            + "ứng dụng",
+        "sampled stacks for the target process":
+            "các stack đã lấy mẫu của tiến trình mục tiêu",
+        "sampled stacks, or events a collector explicitly attributed to "
+        + "tooling":
+            "các stack đã lấy mẫu, hoặc các sự kiện mà collector quy rõ "
+            + "ràng cho công cụ",
+        "scheduling intervals with a state and a duration, so a wait is "
+        + "measured rather than inferred":
+            "các khoảng lập lịch có trạng thái và thời lượng, để một lần "
+            + "chờ được đo chứ không phải suy ra",
+        "share above which the capture likely misrepresents the app's "
+        + "own behavior":
+            "tỷ lệ mà vượt qua nó thì lần ghi có khả năng phản ánh sai hành "
+            + "vi của chính ứng dụng",
+        "share of a thread's samples above which the diagnostic "
+        + "configuration is worth reporting as a measurement problem":
+            "tỷ lệ mẫu của một luồng mà vượt qua nó thì cấu hình chẩn đoán "
+            + "đáng được báo như một vấn đề của phép đo",
+        "startup bundle evaluation is expected to be long and is not by "
+        + "itself a defect":
+            "việc đánh giá bundle lúc khởi động vốn được cho là dài và bản "
+            + "thân điều đó không phải một lỗi",
+        "the blocked thread must be the UI main thread or the JS "
+        + "thread; a background thread blocking on I/O is usually its job":
+            "luồng bị chặn phải là luồng UI chính hoặc luồng JS; một luồng "
+            + "chạy nền bị chặn do I/O thường là đúng việc của nó",
+        "the cycles must be of the same screen in the same process, so "
+        + "the readings are comparable":
+            "các vòng phải thuộc cùng một màn hình trong cùng một tiến "
+            + "trình, để các số đọc so sánh được với nhau",
+        "the dump was taken while the object was on a finalizer or "
+        + "reference queue, where it is legitimately held for one more "
+        + "collection cycle":
+            "bản dump được lấy khi đối tượng đang nằm trên finalizer hoặc "
+            + "reference queue, nơi nó bị giữ một cách chính đáng thêm một "
+            + "vòng thu gom",
+        "the framework itself keeps the last destroyed Activity for a "
+        + "configuration change or for its recents entry, which is by "
+        + "design":
+            "bản thân framework giữ lại Activity bị destroy gần nhất cho "
+            + "một lần đổi cấu hình hoặc cho mục recents, và đó là theo thiết "
+            + "kế",
+        "the project's own startup budget; no default exists because no "
+        + "platform publishes one, so the rule does not run until this is "
+        + "configured":
+            "ngân sách khởi động của chính dự án; không có mặc định vì "
+            + "không nền tảng nào công bố, nên quy tắc không chạy cho tới khi "
+            + "giá trị này được cấu hình",
+        "the rate matters more than the total, since a long session "
+        + "accumulates commits honestly":
+            "tốc độ quan trọng hơn tổng số, vì một phiên dài thì tích luỹ "
+            + "commit một cách chính đáng",
+        "the request must cover this much of the interaction before the "
+        + "interaction is said to have waited on it":
+            "request phải chiếm ít nhất phần này của tương tác trước khi "
+            + "nói rằng tương tác đã chờ nó",
+        "the request must overlap the interaction; happening nearby is "
+        + "not the same as being waited on":
+            "request phải chồng lấn với tương tác; xảy ra gần đó không đồng "
+            + "nghĩa với bị chờ",
+        "the rise must also be this large relative to the first "
+        + "reading, so a big app is not flagged for noise":
+            "mức tăng cũng phải lớn chừng này so với số đọc đầu tiên, để "
+            + "một ứng dụng lớn không bị gắn cờ vì nhiễu",
+        "the uninterruptible interval that wait belongs to, so the "
+        + "block has a duration and not just an instant":
+            "khoảng không thể ngắt mà lần chờ đó thuộc về, để lần chặn có "
+            + "một thời lượng chứ không chỉ là một thời điểm",
+        "the waker is not necessarily the holder: a thread can be woken "
+        + "by a timer, by unrelated I/O completing, or by whichever "
+        + "thread signalled a shared condition":
+            "luồng đánh thức không nhất thiết là luồng đang giữ khoá: một "
+            + "luồng có thể bị đánh thức bởi timer, bởi một I/O không liên "
+            + "quan hoàn tất, hoặc bởi luồng nào đã signal một condition dùng "
+            + "chung",
+    ]
 
     /// Words that are not words.
     ///
