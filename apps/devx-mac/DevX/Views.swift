@@ -21,6 +21,8 @@ struct DevicesView: View {
                                   + "connected\".")
                 }
 
+                DiscoveryAge()
+
                 // Loaded on arrival even though the list starts collapsed:
                 // the summary line is the discoverable part, and it needs the
                 // counts.
@@ -55,15 +57,84 @@ struct DevicesView: View {
             .padding(16)
         }
         .navigationTitle("~/devices")
+        // The watch runs only while this tab is on screen. Leaving it running
+        // behind the other eleven tabs would spawn child processes nobody is
+        // looking at.
+        .onAppear { state.startDeviceWatch() }
+        .onDisappear { state.stopDeviceWatch() }
         .toolbar {
+            Toggle("watch", isOn: $state.watchDevices)
+                .toggleStyle(.checkbox)
+                .help("Re-scan every 5s while this tab is open")
             Toggle("simulators", isOn: $state.includeSimulators)
                 .toggleStyle(.checkbox)
                 .onChange(of: state.includeSimulators) { _, _ in state.loadDevices() }
-            Button { state.loadDevices() } label: {
+            Button { state.refreshDeviceViews() } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
         }
     }
+}
+
+/// The age of the device list, stated where the list is read.
+///
+/// Deliberately above the device rows rather than in a corner: the question it
+/// answers -- "is this current?" -- is asked at the moment of reading a row,
+/// and an answer in the toolbar is an answer nobody sees.
+private struct DiscoveryAge: View {
+    @EnvironmentObject var state: AppState
+    // Drives the countdown. Without it the text would be written once and
+    // then quietly age on screen, which is the same bug one level up.
+    @State private var now = Date()
+
+    var body: some View {
+        let s = DeviceFreshness.status(loadedAt: state.devicesLoadedAt,
+                                       now: now,
+                                       watching: state.watchDevices)
+        HStack(spacing: 8) {
+            // Cyan is this app's colour for "no claim", and a list that has
+            // never been fetched is exactly that.
+            Circle()
+                .fill(colour(s.confidence))
+                .frame(width: 5, height: 5)
+            Text(s.text)
+                .font(Term.small)
+                .foregroundStyle(colour(s.confidence))
+            Spacer(minLength: 0)
+        }
+        .onReceive(every: 1) { now = Date() }
+    }
+
+    private func colour(_ c: DiscoveryConfidence) -> Color {
+        switch c {
+        case .noClaim: return Term.cyan
+        case .current: return Term.dim
+        case .aging:   return Term.amber
+        }
+    }
+}
+
+private extension View {
+    /// A ticking clock for views whose text is about elapsed time.
+    func onReceive(every seconds: TimeInterval, _ action: @escaping () -> Void) -> some View {
+        modifier(TickModifier(seconds: seconds, action: action))
+    }
+}
+
+private struct TickModifier: ViewModifier {
+    let seconds: TimeInterval
+    let action: () -> Void
+    func body(content: Content) -> some View {
+        content.onAppear {
+            // `.common` mode, so the label keeps counting while a scroll or a
+            // menu is tracking.
+            let t = Timer(timeInterval: seconds, repeats: true) { _ in action() }
+            RunLoop.main.add(t, forMode: .common)
+            timer = t
+        }
+        .onDisappear { timer?.invalidate(); timer = nil }
+    }
+    @State private var timer: Timer? = nil
 }
 
 private struct DeviceRow: View {
@@ -510,7 +581,7 @@ struct BootPanel: View {
                         if expanded { state.loadBootTargetsIfNeeded() }
                     }
                     .buttonStyle(TermButtonStyle())
-                    Button("Refresh") { state.loadBootTargets() }
+                    Button("Refresh") { state.refreshDeviceViews() }
                         .buttonStyle(TermButtonStyle())
                     Spacer(minLength: 0)
                 }

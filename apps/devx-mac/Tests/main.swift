@@ -719,6 +719,118 @@ do {
     }
 }
 
+do {
+    // The bug this file exists for: an emulator started outside the app, and
+    // a device list that went on presenting a launch-time snapshot as the
+    // current state of the machine.
+    let t0 = Date(timeIntervalSince1970: 1_000_000)
+
+    // Never scanned is not "nothing is connected".
+    let none = DeviceFreshness.status(loadedAt: nil, now: t0, watching: false)
+    check(none.confidence == .noClaim,
+          "a list that was never fetched makes no claim")
+    check(none.text.contains("not yet a claim"),
+          "and says so rather than reading as an empty machine")
+
+    // A fresh scan reads as current.
+    let fresh = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(-3),
+                                       now: t0, watching: false)
+    check(fresh.confidence == .current, "a 3s-old scan is current")
+    check(fresh.text.contains("3s ago"), "and states its age")
+
+    // The case that actually misled someone: old, unwatched, and silent.
+    let old = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(-600),
+                                     now: t0, watching: false)
+    check(old.confidence == .aging, "a 10-minute-old scan is called out")
+    check(old.text.contains("10m ago"), "with its real age, not 'a while'")
+    check(old.text.contains("started since then"),
+          "and names the inference it must not let the reader make")
+
+    // Watching changes what the age means: it is a countdown, not a warning.
+    let watched = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(-600),
+                                         now: t0, watching: true)
+    check(watched.confidence == .current,
+          "the same age while watching is not a warning")
+    check(watched.text.contains("re-scanning"),
+          "because the list is being kept up to date")
+
+    // Wording at the boundaries.
+    check(DeviceFreshness.ago(0) == "a moment ago", "zero is not '0s ago'")
+    check(DeviceFreshness.ago(1.4) == "a moment ago", "nor is 1.4s")
+    check(DeviceFreshness.ago(2) == "2s ago", "2s is stated")
+    check(DeviceFreshness.ago(59) == "59s ago", "59s stays in seconds")
+    check(DeviceFreshness.ago(60) == "1m ago", "60s becomes a minute")
+    check(DeviceFreshness.ago(3599) == "59m ago", "and 59m stays minutes")
+    check(DeviceFreshness.ago(3600) == "1h ago", "an hour is an hour")
+
+    // A clock that jumps backwards -- NTP, or a laptop waking -- must not
+    // produce "-4s ago" or a number from 1970.
+    check(DeviceFreshness.ago(-4) == "at an unknown time",
+          "a backwards clock is unknown, not negative")
+    let future = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(120),
+                                        now: t0, watching: false)
+    check(!future.text.contains("-"),
+          "a scan stamped in the future prints no negative age")
+}
+
+do {
+    // The poll publishes only when the answer changed, so what counts as a
+    // change is load-bearing: too strict and the view churns every five
+    // seconds, too loose and the moment a device becomes usable is missed.
+    func doc(_ body: String) -> JSON { parse(body) }
+    let two = doc(#"""
+      {"devices":[
+        {"device_id":"emulator-5554","trust":"authorized","os_version":"17"},
+        {"device_id":"ABC","trust":"offline","os_version":"26.5"}]}
+    """#)
+
+    check(DeviceFreshness.fingerprint(two) == DeviceFreshness.fingerprint(two),
+          "an unchanged list fingerprints the same, so the view is not churned")
+
+    let reordered = doc(#"""
+      {"devices":[
+        {"device_id":"ABC","trust":"offline","os_version":"26.5"},
+        {"device_id":"emulator-5554","trust":"authorized","os_version":"17"}]}
+    """#)
+    check(DeviceFreshness.fingerprint(reordered) == DeviceFreshness.fingerprint(two),
+          "provider ordering is not mistaken for the machine changing")
+
+    // The transition that matters most: a device becoming usable.
+    let trusted = doc(#"""
+      {"devices":[
+        {"device_id":"emulator-5554","trust":"authorized","os_version":"17"},
+        {"device_id":"ABC","trust":"authorized","os_version":"26.5"}]}
+    """#)
+    check(DeviceFreshness.fingerprint(trusted) != DeviceFreshness.fingerprint(two),
+          "offline becoming authorized counts as a change")
+
+    // Arrival and departure, which is the case that started all this.
+    let one = doc(#"""
+      {"devices":[
+        {"device_id":"emulator-5554","trust":"authorized","os_version":"17"}]}
+    """#)
+    check(DeviceFreshness.fingerprint(one) != DeviceFreshness.fingerprint(two),
+          "a device appearing or leaving counts as a change")
+
+    // An OS upgrade on the same device id is a different device to profile
+    // against, so it must not be absorbed.
+    let upgraded = doc(#"""
+      {"devices":[
+        {"device_id":"emulator-5554","trust":"authorized","os_version":"18"},
+        {"device_id":"ABC","trust":"offline","os_version":"26.5"}]}
+    """#)
+    check(DeviceFreshness.fingerprint(upgraded) != DeviceFreshness.fingerprint(two),
+          "an OS version change counts as a change")
+
+    // An empty document and an empty device list fingerprint alike -- both
+    // say "no devices in this answer" -- but neither is confused with the
+    // two-device list.
+    check(DeviceFreshness.fingerprint(doc("{}")) == DeviceFreshness.fingerprint(doc(#"{"devices":[]}"#)),
+          "a missing devices array and an empty one fingerprint alike")
+    check(DeviceFreshness.fingerprint(doc("{}")) != DeviceFreshness.fingerprint(two),
+          "and neither is confused with a populated list")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
