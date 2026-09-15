@@ -1,5 +1,7 @@
 #include "adapters/ios/ios_adapter.hpp"
 
+#include "adapters/ios/xctrace_collector.hpp"
+
 #include <unistd.h>
 
 #include <algorithm>
@@ -858,6 +860,41 @@ void IosAdapter::probe(model::CapabilityMatrix& out,
     c.evidence = "xcode-select -p => " + trim(sel.out) +
                  "; devicectl " + (dc_version.empty() ? "absent" : dc_version) +
                  "; " + (xt_version.empty() ? "xctrace absent" : xt_version);
+    c.tested = model::TestedState::kProbedOnly;
+    out.upsert(std::move(c));
+  }
+
+  {
+    // A host prerequisite, not a device one, and the reason a capture can
+    // come back with an empty table on a perfectly good device: Instruments
+    // samples through the unified log store, and a process without Full Disk
+    // Access cannot open it. The capture path learned to say this; preflight
+    // did not, so someone would see a clean preflight and then hit
+    // permission_denied on the capture -- which is the one thing preflight
+    // exists to prevent.
+    const LogStoreAccess access = probe_log_store_access();
+    auto c = make_cap("ios.capture.log_store",
+                      "Unified log store access (Instruments sampling)",
+                      access.readable ? model::CapabilityStatus::kAvailable
+                                      : model::CapabilityStatus::kPermissionDenied,
+                      "log");
+    c.prerequisites.push_back(
+        "Full Disk Access for whatever runs this tool, or running the capture "
+        "from Xcode");
+    c.evidence = access.readable
+                     ? "`log show --last 1s` opened the local log store"
+                     : "`log show --last 1s` was refused: " + access.detail;
+    if (!access.readable) {
+      c.limitations.push_back(
+          "xctrace reports this as \"the log archive is corrupt or incomplete "
+          "and cannot be read\", which describes a damaged machine and is "
+          "usually this permission. Every recording here came back with a "
+          "time-profile table that had a schema and no rows.");
+      c.recovery_action =
+          "System Settings > Privacy & Security > Full Disk Access, and add "
+          "the terminal or app that runs this tool; or run the capture from "
+          "Xcode, which already has it";
+    }
     c.tested = model::TestedState::kProbedOnly;
     out.upsert(std::move(c));
   }

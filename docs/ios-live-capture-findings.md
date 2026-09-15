@@ -214,3 +214,31 @@ authorized at discovery can still fail at enumeration: the phone was unplugged
 in between. `describe_devicectl_failure` names that case rather than printing
 Apple's raw error, and distinguishes it from error 1000, which means the
 identifier is not a CoreDevice device at all.
+
+## Instruments needs Full Disk Access, and says "corrupt" when it lacks it
+
+Worth knowing before concluding anything about a machine's ability to
+profile. Every recording taken in this environment produced a `time-profile`
+table with a schema and zero rows, and xctrace explained it as:
+
+    Fatal logging system error: The log archive is corrupt or incomplete and
+    cannot be read
+
+Nothing is corrupt. Instruments samples through the unified log store, and a
+process without Full Disk Access cannot open it:
+
+    $ /usr/bin/log show --last 5s
+    log: Could not open local log store: Operation not permitted
+    $ ls -ld /var/db/diagnostics
+    drwxr-x---  17 root  admin
+
+So an empty capture on a perfectly good device can be a checkbox rather than a
+fault, and the wording actively misdirects. Two places now say so: a capture
+that comes back with an empty table probes `log show --last 1s` and reports
+`permission_denied` with the fix, and `mpi preflight` carries
+`ios.capture.log_store` so the permission is found before a capture is
+attempted rather than after.
+
+This also means every "unverified on a physical device" note in this document
+is a statement about *this execution context* as much as about the absence of
+hardware. With Full Disk Access granted, sampling may simply work.
