@@ -14,6 +14,8 @@
 #include "adapters/ios/ios_adapter.hpp"
 #include "adapters/ios/xctrace_collector.hpp"
 #include "core/session/live_capture.hpp"
+#include <csignal>
+
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
@@ -627,4 +629,23 @@ MPI_TEST(the_ios_collector_is_wired_but_cannot_stream, {"J18", "H05"}) {
                 "the refusal is about streaming: " + snap.error);
   MPI_CHECK_MSG(snap.error.find("not wired") == std::string::npos,
                 "and never claims the collector is unwired");
+}
+
+MPI_TEST(xctrace_is_stopped_with_the_signal_it_responds_to, {"J15"}) {
+  // test_process proves `proc::run` honours a stop signal and a grace
+  // period. This proves *this collector* asks for the right ones, which is
+  // the half that actually prevents the data loss: Instruments ignores a
+  // polite SIGTERM and finalises its trace bundle on SIGINT, taking seconds
+  // over it.
+  MPI_CHECK_MSG(ios::xctrace_stop_signal() == SIGINT,
+                "a recording is interrupted, not terminated: SIGTERM does "
+                "not make Instruments write its bundle");
+  MPI_CHECK_MSG(ios::xctrace_stop_signal() != SIGTERM,
+                "and specifically not the default, which is what lost "
+                "captures that had already succeeded");
+  MPI_CHECK_MSG(ios::xctrace_stop_grace() >= std::chrono::milliseconds(5000),
+                "with seconds to finish writing, not the default 500ms");
+  MPI_CHECK_MSG(ios::xctrace_stop_grace() <= std::chrono::milliseconds(60000),
+                "and still bounded, because a collector that hangs on "
+                "shutdown is worse than a lost bundle");
 }

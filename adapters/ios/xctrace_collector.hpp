@@ -24,6 +24,7 @@
 #pragma once
 
 #include <optional>
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,18 @@ namespace mpi::ios {
 // What one `xctrace record` invocation did, read from its own output rather
 // than from its exit status alone: it exits non-zero for a partial recording
 // that still produced a usable bundle.
+/// How a recording is stopped when it runs past its budget.
+///
+/// Named rather than inline so a test can assert that this collector asks for
+/// them: `proc::run` honouring a stop signal is one thing, and this collector
+/// actually choosing the right one is another, and only the second prevents
+/// the data loss. Instruments finalises its trace bundle on **SIGINT** -- it
+/// prints "Ctrl-C to stop the recording" -- and needs seconds to write it, so
+/// the default SIGTERM-then-SIGKILL-in-500ms destroyed captures that had
+/// already succeeded.
+int xctrace_stop_signal();
+std::chrono::milliseconds xctrace_stop_grace();
+
 struct RecordOutcome {
   /// Whether xctrace got as far as actually recording.
   ///

@@ -154,6 +154,25 @@ the default SIGTERM-then-SIGKILL-in-500ms was destroying any recording that
 had completed but not exited. That is a real data-loss path on a physical
 device even though it does not rescue the simulator case.
 
+That fix is tested without hardware, because the behaviour that caused the
+loss can be reproduced exactly. `tests/helpers/fake_finalising_tool.cpp`
+ignores SIGTERM and writes its output only on SIGINT, after a delay, which is
+what Instruments does. Four cases pin it:
+
+- with the **default** stop signal the output is lost -- a demonstration that
+  the bug was real rather than theoretical;
+- with SIGINT and a grace period the output survives;
+- a grace period shorter than the child's work still ends the child, because
+  a collector that hangs on shutdown is worse than a lost bundle;
+- a child that exits promptly is not delayed by a long grace period, so the
+  twelve-second budget costs nothing when it is not needed.
+
+A fifth case asserts that the xctrace collector asks for those settings.
+`proc::run` honouring a stop signal and this collector choosing the right one
+are two different things, and only the second prevents the loss -- so the
+policy is exposed as `ios::xctrace_stop_signal()` and
+`ios::xctrace_stop_grace()` and pinned directly.
+
 And a timeout no longer refuses on its own. The question "is there a usable
 trace?" is now answered by trying to read one -- `xctrace export --toc`
 rejects a stub in well under a second -- rather than by how the process ended.

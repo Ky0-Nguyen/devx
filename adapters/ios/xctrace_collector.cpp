@@ -48,6 +48,11 @@ std::filesystem::path scratch_dir(const std::string& session_hint,
 
 }  // namespace
 
+int xctrace_stop_signal() { return SIGINT; }
+std::chrono::milliseconds xctrace_stop_grace() {
+  return std::chrono::milliseconds(12000);
+}
+
 RecordOutcome interpret_record_output(const std::string& stdout_text,
                                       const std::string& stderr_text,
                                       int exit_code, bool timed_out) {
@@ -221,8 +226,8 @@ session::CaptureResult XctraceCollector::capture(
   // taken and reported it as a provider failure. Measured: xctrace honours
   // --time-limit and exits by itself against a macOS process, and against a
   // simulator process it attaches and never reaches its limit at all.
-  po.stop_signal = SIGINT;
-  po.stop_grace = std::chrono::milliseconds(12000);
+  po.stop_signal = xctrace_stop_signal();
+  po.stop_grace = xctrace_stop_grace();
 
   const std::vector<std::string> record_argv = {
       "xcrun",   "xctrace",   "record",
