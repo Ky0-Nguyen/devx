@@ -19,6 +19,7 @@
 #pragma once
 
 #include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -66,6 +67,25 @@ struct BootOptions {
   std::string emulator_path;  // empty: resolved from ANDROID_HOME / PATH
   CancellationToken cancel;
 };
+/// The timeout to give the next poll, so `ready_timeout` is the real bound.
+///
+/// The wait loops used to check the budget *before* each call and then give
+/// that call its own fixed timeout. With a 180 s budget and a 60 s per-call
+/// cap, a poll starting at 179 s ran until 239 s -- a third longer than the
+/// number the caller set, and the overshoot grew with how badly the tooling
+/// was behaving. The observed case is a wedged `CoreSimulatorService`, where
+/// every `simctl list` hangs for its full timeout: the budget bought three
+/// polls instead of ninety, and took four minutes to do it.
+///
+/// So each call is given whatever is left, capped. Returns `std::nullopt`
+/// when too little remains to be worth spawning a process for -- starting a
+/// 40 ms poll cannot learn anything and the spawn costs more than that.
+std::optional<std::chrono::milliseconds> poll_budget(
+    std::chrono::milliseconds elapsed,
+    std::chrono::milliseconds ready_timeout,
+    std::chrono::milliseconds per_call_cap,
+    std::chrono::milliseconds floor);
+
 
 struct BootResult {
   bool started = false;

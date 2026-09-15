@@ -9,7 +9,7 @@ function(mpi_add_test name)
   set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                         "${CMAKE_BINARY_DIR}/bin")
   add_test(NAME ${name} COMMAND ${name})
-  add_dependencies(${name} fake_finalising_tool)
+  add_dependencies(${name} fake_finalising_tool hanging_tool)
   set_tests_properties(${name} PROPERTIES ENVIRONMENT
                        "MPI_FIXTURE_DIR=${PROJECT_SOURCE_DIR}/fixtures;MPI_TEST_BIN_DIR=${CMAKE_BINARY_DIR}/bin")
 endfunction()
@@ -18,6 +18,13 @@ endfunction()
 # used by test_process to pin how a child is stopped. See the source.
 add_executable(fake_finalising_tool helpers/fake_finalising_tool.cpp)
 set_target_properties(fake_finalising_tool PROPERTIES
+                      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+# A tool that never answers, used by test_identity to pin that a wait loop's
+# budget is an upper bound even when the device tooling has stopped
+# responding. See the source.
+add_executable(hanging_tool helpers/hanging_tool.cpp)
+set_target_properties(hanging_tool PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 mpi_add_test(test_json unit/test_json.cpp)

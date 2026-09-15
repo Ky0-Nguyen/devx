@@ -1,5 +1,9 @@
 #include <sstream>
 
+#include <cstdlib>
+#include <string>
+#include <unistd.h>
+
 #include "core/discovery/boot.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/model/capability.hpp"
@@ -620,4 +624,163 @@ MPI_TEST(an_empty_boot_list_with_a_provider_error_is_not_nothing, {"A12"}) {
     const json::Value* errs = doc.find("errors");
     MPI_CHECK(arr != nullptr && arr->items().empty());
     MPI_CHECK(errs != nullptr && errs->items().size() == 1);
+}
+
+// --- the wait loops' budget -------------------------------------------------
+//
+// "the boot feature errors and takes a long time" turned out not to be the
+// boot: a cold simulator boot measures 1176 ms. It was the wait loop, which
+// checked the budget before each poll and then handed that poll its own fixed
+// timeout -- so the number the caller set was a lower bound on how long the
+// call could take, not an upper one.
+
+MPI_TEST(a_poll_gets_the_cap_while_there_is_plenty_of_budget, {}) {
+  using ms = std::chrono::milliseconds;
+  const auto b = mpi::discovery::poll_budget(ms(1000), ms(180000), ms(15000),
+                                             ms(250));
+  MPI_CHECK(b.has_value());
+  MPI_CHECK_MSG(*b == ms(15000), "early on, the per-call cap is the bound");
+}
+
+MPI_TEST(a_poll_near_the_deadline_gets_only_what_is_left, {}) {
+  using ms = std::chrono::milliseconds;
+  // The bug: at 179 s of a 180 s budget this used to hand the call a fixed
+  // 60 s, so `--ready-timeout-s 180` ran for 239 s.
+  const auto b = mpi::discovery::poll_budget(ms(179000), ms(180000), ms(15000),
+                                             ms(250));
+  MPI_CHECK(b.has_value());
+  MPI_CHECK_MSG(*b == ms(1000),
+                "the last poll may not outlive the budget it was given");
+}
+
+MPI_TEST(the_budget_is_an_upper_bound_across_the_whole_loop, {}) {
+  using ms = std::chrono::milliseconds;
+  // Walk a loop the way boot() does and add up the worst case. Every poll
+  // takes its full grant, so this is the longest the loop can run.
+  const ms budget(30000);
+  const ms cap(15000);
+  ms at(0);
+  ms spent(0);
+  int polls = 0;
+  while (const auto grant =
+             mpi::discovery::poll_budget(at, budget, cap, ms(250))) {
+    spent += *grant;
+    at += *grant;
+    polls++;
+    MPI_CHECK_MSG(polls < 1000, "the loop must terminate");
+  }
+  MPI_CHECK_MSG(spent <= budget,
+                "the worst case never exceeds the budget the caller set");
+  MPI_CHECK_MSG(polls >= 2, "and it still gets more than one look");
+}
+
+MPI_TEST(an_exhausted_budget_starts_no_further_call, {}) {
+  using ms = std::chrono::milliseconds;
+  MPI_CHECK(!mpi::discovery::poll_budget(ms(180000), ms(180000), ms(15000),
+                                         ms(250)).has_value());
+  MPI_CHECK_MSG(!mpi::discovery::poll_budget(ms(200000), ms(180000), ms(15000),
+                                             ms(250)).has_value(),
+                "overshooting the budget does not wrap into a huge timeout");
+}
+
+MPI_TEST(a_sliver_of_budget_is_not_worth_a_process_spawn, {}) {
+  using ms = std::chrono::milliseconds;
+  // 40 ms cannot learn anything and the spawn costs more than that.
+  MPI_CHECK(!mpi::discovery::poll_budget(ms(179960), ms(180000), ms(15000),
+                                         ms(250)).has_value());
+  MPI_CHECK_MSG(mpi::discovery::poll_budget(ms(179000), ms(180000), ms(15000),
+                                            ms(250)).has_value(),
+                "while a second still is");
+}
+
+MPI_TEST(a_zero_budget_polls_nothing_rather_than_polling_forever, {}) {
+  using ms = std::chrono::milliseconds;
+  MPI_CHECK(!mpi::discovery::poll_budget(ms(0), ms(0), ms(15000),
+                                         ms(250)).has_value());
+}
+
+MPI_TEST(tooling_that_never_answers_stops_the_boot_rather_than_guessing, {}) {
+  // adb is wedged before anything is started. The baseline list of serials
+  // is therefore unknown -- and an *empty* baseline is the dangerous answer,
+  // not a harmless one: every emulator already running would look like it
+  // had just appeared, and this would report someone else's device as the
+  // one it started.
+  const char* bin = std::getenv("MPI_TEST_BIN_DIR");
+  if (bin == nullptr) return;
+  const std::string hanging = std::string(bin) + "/hanging_tool";
+
+  mpi::discovery::BootTarget target;
+  target.platform = mpi::model::Platform::kAndroid;
+  target.identifier = "test-avd";
+  mpi::discovery::BootOptions opts;
+  opts.adb_path = hanging;
+  opts.emulator_path = hanging;
+  opts.ready_timeout = std::chrono::milliseconds(2000);
+  opts.poll_interval = std::chrono::milliseconds(200);
+
+  const auto began = std::chrono::steady_clock::now();
+  const auto res = mpi::discovery::boot(target, opts);
+  const auto took = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - began);
+
+  MPI_CHECK_MSG(took < std::chrono::milliseconds(6000),
+                "the budget bounds this even when adb never answers; took " +
+                    std::to_string(took.count()) + " ms of 2000 ms");
+  MPI_CHECK_MSG(!res.started,
+                "nothing is started when the result could not be attributed");
+  MPI_CHECK_MSG(!res.ready, "and nothing is claimed ready");
+  MPI_CHECK_MSG(res.error.find("adb did not answer") != std::string::npos,
+                "the failure names the tool, not the emulator: " + res.error);
+}
+
+MPI_TEST(tooling_that_wedges_after_the_boot_starts_blames_the_tool, {}) {
+  // The other shape, and the one the 27-second boot looked like: the baseline
+  // succeeds, the boot is started, and then the tooling goes away. There *is*
+  // something started here, so the answer is "started, and I cannot tell you
+  // whether it came up" -- not "it never appeared".
+  const char* bin = std::getenv("MPI_TEST_BIN_DIR");
+  if (bin == nullptr) return;
+  const std::string hanging = std::string(bin) + "/hanging_tool";
+  const std::string marker =
+      std::string(std::getenv("TMPDIR") != nullptr ? std::getenv("TMPDIR")
+                                                   : "/tmp") +
+      "/mpi-hanging-tool-" + std::to_string(::getpid());
+  ::unlink(marker.c_str());
+  ::setenv("MPI_HANGING_TOOL_MARKER", marker.c_str(), 1);
+
+  mpi::discovery::BootTarget target;
+  target.platform = mpi::model::Platform::kAndroid;
+  target.identifier = "test-avd";
+  mpi::discovery::BootOptions opts;
+  opts.adb_path = hanging;
+  opts.emulator_path = hanging;
+  opts.ready_timeout = std::chrono::milliseconds(3000);
+  opts.poll_interval = std::chrono::milliseconds(200);
+
+  const auto began = std::chrono::steady_clock::now();
+  const auto res = mpi::discovery::boot(target, opts);
+  const auto took = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - began);
+  ::unsetenv("MPI_HANGING_TOOL_MARKER");
+  ::unlink(marker.c_str());
+
+  // The defect: before the fix, each poll got its own fixed 15 s regardless
+  // of the 3 s budget.
+  MPI_CHECK_MSG(took < std::chrono::milliseconds(9000),
+                "the budget is an upper bound even when every poll hangs; "
+                "took " + std::to_string(took.count()) + " ms of 3000 ms");
+  MPI_CHECK_MSG(res.started, "the emulator was spawned");
+  MPI_CHECK_MSG(!res.ready, "and nothing ever reported it ready");
+  MPI_CHECK_MSG(res.error.find("adb stopped answering") != std::string::npos,
+                "a tool that stopped answering is reported as that: " +
+                    res.error);
+  bool says_not_about_device = false;
+  for (const auto& n : res.notes) {
+    if (n.find("not an answer about the emulator") != std::string::npos) {
+      says_not_about_device = true;
+    }
+  }
+  MPI_CHECK_MSG(says_not_about_device,
+                "and the note says so, because a slow emulator and a broken "
+                "adb need different things done about them");
 }
