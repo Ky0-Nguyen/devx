@@ -1659,3 +1659,60 @@ MPI_TEST(a_high_cpu_share_carries_no_claim_about_harm, {"E05"}) {
                 "a sampled share alone does not reach the top severity: "
                 "nothing here measured a cost to the user");
 }
+
+MPI_TEST(a_skip_does_not_send_an_ios_user_to_an_android_flag, {"H05", "J18"}) {
+  // DET-03 and DET-09 read `atrace`, which is Android's. Telling an iOS user
+  // to "record with --scheduling" sends them to a flag that does nothing on
+  // their platform: they would try it, get the same skip, and conclude the
+  // tool was broken rather than unimplemented for iOS.
+  const auto advice_for = [](model::Platform p) {
+    model::NormalizedTrace t;
+    t.device.platform = p;
+    return rules::scheduling_advice(t);
+  };
+
+  const auto ios = advice_for(model::Platform::kIos);
+  MPI_CHECK_MSG(ios.find("--scheduling") == std::string::npos,
+                "an iOS reader is not pointed at --scheduling: " + ios);
+  MPI_CHECK(ios.find("no iOS provider") != std::string::npos);
+  MPI_CHECK_MSG(ios.find("missing provider rather than a quiet app") !=
+                    std::string::npos,
+                "and the absence is named as a missing provider");
+
+  const auto android = advice_for(model::Platform::kAndroid);
+  MPI_CHECK(android.find("--scheduling") != std::string::npos);
+  MPI_CHECK(android.find("traces the whole device") != std::string::npos);
+
+  // A capture that does not state its platform gets neither claim.
+  const auto unknown = advice_for(model::Platform::kUnknown);
+  MPI_CHECK(unknown.find("does not say which platform") != std::string::npos);
+
+  // And the reason reaches the run record on a real iOS-labelled capture.
+  model::NormalizedTrace t;
+  t.session_id = "ios-capture";
+  t.device.platform = model::Platform::kIos;
+  t.primary_clock_domain = "ios.mach_absolute.ns";
+  t.window_start_ns = 0;
+  t.window_end_ns = 1'000'000'000;
+  symbols::SymbolService symbols;
+  rules::EngineOptions opts;
+  opts.mode = model::MeasurementMode::kDiagnostic;
+  const auto r = rules::analyze(t, symbols, opts);
+  for (const char* id : {"DET-03", "DET-09"}) {
+    const auto* rec = record_for(r, id);
+    MPI_CHECK(rec != nullptr);
+    if (rec == nullptr) continue;
+    MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+    bool no_android_flag = true;
+    bool says_ios = false;
+    for (const auto& reason : rec->skipped_reasons) {
+      if (reason.find("--scheduling") != std::string::npos) {
+        no_android_flag = false;
+      }
+      if (reason.find("no iOS provider") != std::string::npos) says_ios = true;
+    }
+    MPI_CHECK_MSG(no_android_flag,
+                  std::string(id) + " must not offer --scheduling on iOS");
+    MPI_CHECK_MSG(says_ios, std::string(id) + " names the missing iOS provider");
+  }
+}

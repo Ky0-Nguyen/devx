@@ -210,7 +210,34 @@ json::Value NormalizedTrace::to_json(bool include_events) const {
   v.set("duration_ns", json::Value::integer(duration_ns()));
 
   json::Value th = json::Value::array();
-  for (const auto& t : threads) th.push_back(t.to_json());
+  {
+    // Samples per thread, counted once and attached to each thread.
+    //
+    // A report carries the thread list but not the samples -- they are in the
+    // raw trace, which for a large capture is gigabytes. Without a count
+    // here, a reader of the report can see which threads existed and nothing
+    // about which one did the work, so any per-thread view has to re-read the
+    // whole trace to say anything. One integer per thread is bounded by the
+    // thread count, not by the capture's size.
+    std::map<std::string, std::int64_t> per_thread;
+    for (const auto& s : cpu_samples) {
+      if (s.thread_instance_id.empty()) continue;
+      ++per_thread[s.thread_instance_id];
+    }
+    for (const auto& t : threads) {
+      json::Value entry = t.to_json();
+      const auto it = per_thread.find(t.thread_instance_id);
+      // Null when this capture collected no samples at all: a thread with no
+      // samples attributed is not a thread that used no CPU, and 0 would read
+      // as the second.
+      entry.set("sample_count",
+                cpu_samples.empty()
+                    ? json::Value::null()
+                    : json::Value::integer(it == per_thread.end() ? 0
+                                                                  : it->second));
+      th.push_back(std::move(entry));
+    }
+  }
   v.set("threads", std::move(th));
 
   json::Value counts = json::Value::object();

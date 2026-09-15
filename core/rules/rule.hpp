@@ -131,6 +131,16 @@ struct MappedInterval {
   // The clock the returned values are on.
   std::string domain;
 };
+// What to tell a reader who has no scheduling evidence, for the platform the
+// capture came from.
+//
+// `atrace` is Android's. Telling an iOS user to "record with --scheduling"
+// sends them to a flag that does nothing on their platform, which is worse
+// than saying plainly that this build has no iOS provider for it -- the
+// reader would go and try, and conclude the tool was broken rather than
+// unimplemented.
+std::string scheduling_advice(const model::NormalizedTrace& trace);
+
 MappedInterval map_producer_interval(const model::NormalizedTrace& trace,
                                      const std::string& producer_domain,
                                      model::TimeNs start_ns,

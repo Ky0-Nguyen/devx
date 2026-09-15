@@ -6,8 +6,8 @@ import Foundation
 /// reference it without pulling in the observable object, which lets the
 /// pure layers be unit-tested on their own.
 enum DevXTab: String, CaseIterable, Identifiable {
-    case devices, apps, preflight, live, record, sessions, issues, timeline,
-         compare, detectors, settings
+    case devices, apps, preflight, live, record, sessions, issues, threads,
+         timeline, compare, detectors, settings
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -18,6 +18,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .record: return "Record"
         case .sessions: return "Sessions"
         case .issues: return "Issues"
+        case .threads: return "Threads"
         case .timeline: return "Timeline"
         case .compare: return "Compare"
         case .detectors: return "Detectors"
@@ -33,6 +34,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .record: return "record.circle"
         case .sessions: return "folder"
         case .issues: return "exclamationmark.magnifyingglass"
+        case .threads: return "square.stack.3d.up"
         case .timeline: return "chart.bar.xaxis"
         case .compare: return "arrow.left.arrow.right"
         case .detectors: return "function"

@@ -62,6 +62,7 @@ discovery::ProviderOptions provider_options(const GlobalOptions& opts);
 
 // Subcommands.
 ExitCode cmd_devices(const Invocation& inv);
+ExitCode cmd_boot(const Invocation& inv);
 ExitCode cmd_apps(const Invocation& inv);
 ExitCode cmd_preflight(const Invocation& inv);
 ExitCode cmd_record(const Invocation& inv);

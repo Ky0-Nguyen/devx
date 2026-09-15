@@ -168,6 +168,18 @@ check "a cross-platform pair exits 4, not 3" 4 "$MPI" compare fixtures/runsets/b
 check_contains "the cross-platform refusal is explained" "cannot be used as a gate" \
   "$MPI" compare fixtures/runsets/baseline-android.json fixtures/runsets/candidate-ios-crossplatform.json
 
+echo "== starting a simulator or emulator =="
+# Listing is safe to run anywhere; booting is not, so only the refusals and
+# the listing are asserted here.
+check "boot --list succeeds" 0 "$MPI" boot --list
+check_contains "an AVD name is not a device id" "not a device id" \
+  "$MPI" boot
+check "an unknown target is refused" 9 "$MPI" boot --device no-such-avd-or-udid
+check_contains "and the refusal points at the listing" "boot --list" \
+  "$MPI" boot --device no-such-avd-or-udid
+check "a bad ready timeout is a usage error" 2 \
+  "$MPI" boot --device whatever --ready-timeout-s 0
+
 echo "== suppressions =="
 # A suppression is a project decision, so the CLI and the desktop app read the
 # same file. The three behaviours that make one auditable are asserted here.

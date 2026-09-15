@@ -29,6 +29,10 @@ USAGE
 
 COMMANDS
   devices                       List connected Android and iOS devices.
+  boot                          Start a simulator or emulator and wait for it
+                                (--list, --device <avd|udid>,
+                                --ready-timeout-s). "started" and "ready" are
+                                reported separately.
   apps                          List apps on a device (--running / --installed).
   preflight                     Probe capabilities for a device + app target.
   record                        Record a capture session.
@@ -108,6 +112,7 @@ bool needs_value(const std::string& flag) {
   static const char* kWithValue[] = {
       "--app",
       "--bins",
+      "--ready-timeout-s",
       "--heap-dump",
       "--bundle-id",
       "--device",
@@ -160,6 +165,7 @@ bool is_boolean_flag(const std::string& flag) {
   static const char* kBoolean[] = {
       "--ci",           "--include-events", "--include-source-paths",
       "--installed",    "--json",           "--launch",
+      "--list",
       "--live",
       "--heap",
       "--no-cpu",       "--no-frame-reset", "--no-frames",
@@ -420,7 +426,9 @@ int main(int argc, char** argv) {
 
   ExitCode code = ExitCode::kUsage;
   const std::string& cmd = parsed.inv.command;
-  if (cmd == "devices") {
+  if (cmd == "boot") {
+    code = cmd_boot(parsed.inv);
+  } else if (cmd == "devices") {
     code = cmd_devices(parsed.inv);
   } else if (cmd == "apps") {
     code = cmd_apps(parsed.inv);

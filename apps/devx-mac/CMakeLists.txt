@@ -44,6 +44,8 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsModel.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/SettingsView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LaunchOptions.swift
@@ -62,6 +64,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsModel.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)
