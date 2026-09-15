@@ -38,6 +38,7 @@ struct DevXApp: App {
         if let b = launch.baseline { state.baselinePath = b }
         if let c = launch.candidate { state.candidatePath = c }
 
+        state.loadLanguage()
         state.loadRecents()
         state.loadVersion()
         state.loadDevices()
@@ -92,9 +93,9 @@ struct DevXApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(after: .newItem) {
-                Button("Refresh Devices") { state.loadDevices() }
+                Button(tr("Refresh Devices")) { state.loadDevices() }
                     .keyboardShortcut("r")
-                Button("Cancel Running Operation") { state.cancel() }
+                Button(tr("Cancel Running Operation")) { state.cancel() }
                     .keyboardShortcut(".", modifiers: .command)
             }
         }

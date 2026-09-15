@@ -286,16 +286,16 @@ struct TermEmpty: View {
         VStack(spacing: 9) {
             Text("░▒▓").font(Term.font(20))
                 .foregroundStyle(Term.line)
-            Text(title.uppercased())
+            Text(tr(title).uppercased())
                 .font(Term.font(13, .bold))
                 .kerning(1.6)
-            Text(detail)
+            Text(tr(detail))
                 .font(Term.font(12))
                 .foregroundStyle(Term.dim)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if let hint {
-                Text("$ \(hint)")
+                Text("$ \(tr(hint))")
                     .font(Term.font(11))
                     .foregroundStyle(Term.green.opacity(0.75))
             }
@@ -368,12 +368,12 @@ struct Banner: View {
                 .foregroundStyle(tone.color)
             VStack(alignment: .leading, spacing: 2) {
                 if let title {
-                    Text(title.uppercased())
+                    Text(tr(title).uppercased())
                         .font(Term.font(12, .bold))
                         .kerning(0.8)
                         .foregroundStyle(tone.color)
                 }
-                Text(message).font(Term.body).foregroundStyle(Term.ink.opacity(0.85))
+                Text(tr(message)).font(Term.body).foregroundStyle(Term.ink.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -397,14 +397,14 @@ struct BulletList: View {
     var body: some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title.uppercased())
+                Text(tr(title).uppercased())
                     .font(Term.font(11, .semibold))
                     .kerning(0.7)
                     .foregroundStyle(Term.dim)
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .top, spacing: 6) {
                         Text("-").foregroundStyle(Term.green.opacity(0.75))
-                        Text(item).font(Term.body)
+                        Text(tr(item)).font(Term.body)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -423,13 +423,13 @@ struct Panel<Content: View>: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 7) {
                     Text("▌").foregroundStyle(Term.green).phosphor(Term.green, radius: 3)
-                    Text(title.uppercased())
+                    Text(tr(title).uppercased())
                         .font(Term.font(12, .bold))
                         .kerning(1.1)
                     Spacer(minLength: 0)
                 }
                 if let subtitle {
-                    Text(subtitle).font(Term.small).foregroundStyle(Term.dim)
+                    Text(tr(subtitle)).font(Term.small).foregroundStyle(Term.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Rectangle().fill(Term.line).frame(height: 1)

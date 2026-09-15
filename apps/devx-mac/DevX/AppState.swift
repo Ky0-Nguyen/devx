@@ -51,6 +51,28 @@ final class AppState: ObservableObject {
         if let at = inFlight.lastIndex(of: label) { inFlight.remove(at: at) }
     }
 
+    /// The interface language.
+    ///
+    /// A plain UI preference, so it lives in UserDefaults rather than in a
+    /// file of its own: unlike Recents -- which is a note about what was
+    /// profiled and therefore has to survive as data -- this says nothing
+    /// about any device or measurement.
+    @Published var language: DevXLanguage = .system {
+        didSet {
+            Strings.active = Strings.resolve(
+                language, preferredLanguages: Locale.preferredLanguages)
+            UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey)
+        }
+    }
+    static let languageKey = "devx.language"
+
+    /// Applies the stored preference before the first frame is drawn, so the
+    /// window does not appear in English and then change under the reader.
+    func loadLanguage() {
+        let stored = UserDefaults.standard.string(forKey: Self.languageKey)
+        language = stored.flatMap(DevXLanguage.init(rawValue:)) ?? .system
+    }
+
     @Published var includeSimulators = true
     @Published var sessionsDir = Core.defaultSessionsDir
 

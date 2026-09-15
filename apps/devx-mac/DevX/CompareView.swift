@@ -73,7 +73,7 @@ struct CompareView: View {
                         }
                     }
                     .frame(width: 130)
-                    Button("Compare") { state.runCompare() }
+                    Button(tr("Compare")) { state.runCompare() }
                         .buttonStyle(TermButtonStyle())
                     Spacer(minLength: 0)
                 }
@@ -88,7 +88,7 @@ struct CompareView: View {
                 .frame(width: 70, alignment: .trailing)
             TextField("", text: path)
                 .textFieldStyle(TermFieldStyle())
-            Button("Choose…") {
+            Button(tr("Choose…")) {
                 let p = NSOpenPanel()
                 p.allowsMultipleSelection = false
                 p.canChooseDirectories = false
@@ -156,11 +156,11 @@ struct CompareView: View {
                             Text(key)
                                 .font(Term.font(10)).foregroundStyle(Term.dim)
                                 .frame(width: 170, alignment: .trailing)
-                            Text(bv.isEmpty ? "not stated" : bv)
+                            Text(bv.isEmpty ? tr("not stated") : bv)
                                 .font(Term.font(11))
                                 .foregroundStyle(bv.isEmpty ? Term.cyan : Term.ink)
                                 .frame(width: 210, alignment: .leading)
-                            Text(cv.isEmpty ? "not stated" : cv)
+                            Text(cv.isEmpty ? tr("not stated") : cv)
                                 .font(Term.font(11))
                                 // A difference is marked, not merely shown:
                                 // scanning two columns for a changed string is
@@ -183,9 +183,9 @@ struct CompareView: View {
                     MetricComparisonRow(metric: m)
                 }
                 if cmp["metrics"].array.isEmpty {
-                    Text("No metric appears in both run sets, so there is "
+                    Text(tr("No metric appears in both run sets, so there is "
                          + "nothing to compare. That is not a result of zero "
-                         + "change.")
+                         + "change."))
                         .font(Term.font(11)).foregroundStyle(Term.cyan)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -285,7 +285,7 @@ struct MetricComparisonRow: View {
                     Fmt.value($0, unit: metric["unit"].text) } ?? "no value")
                 .font(Term.font(12))
                 .foregroundStyle(median.double == nil ? Term.cyan : Term.ink)
-            Text("spread " + (spread.double.map {
+            Text(tr("spread ") + (spread.double.map {
                     Fmt.value($0, unit: metric["unit"].text) } ?? "unknown"))
                 .font(Term.font(10)).foregroundStyle(Term.dim)
             Text("\(runs.int ?? 0) valid run(s)")

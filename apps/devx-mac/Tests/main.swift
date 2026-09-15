@@ -831,6 +831,113 @@ do {
           "and neither is confused with a populated list")
 }
 
+do {
+    // Language resolution. The interesting cases are all in the tags.
+    check(Strings.resolve(.vi, preferredLanguages: ["en-US"]) == .vi,
+          "an explicit choice ignores the system's preference")
+    check(Strings.resolve(.en, preferredLanguages: ["vi-VN"]) == .en,
+          "and in the other direction too")
+    check(Strings.resolve(.system, preferredLanguages: ["vi-VN", "en-US"]) == .vi,
+          "a regional tag resolves on its language subtag")
+    check(Strings.resolve(.system, preferredLanguages: ["vi-Hani-VN"]) == .vi,
+          "so does a tag carrying a script")
+    check(Strings.resolve(.system, preferredLanguages: ["VI"]) == .vi,
+          "case in a tag does not decide the language")
+    check(Strings.resolve(.system, preferredLanguages: ["fr-FR", "vi-VN"]) == .vi,
+          "a language this app lacks falls through to the next preference")
+    check(Strings.resolve(.system, preferredLanguages: ["fr-FR"]) == .en,
+          "and English is the last resort")
+    check(Strings.resolve(.system, preferredLanguages: []) == .en,
+          "an empty preference list does not crash or pick at random")
+
+    // The point of keying on English: a miss returns usable text, never a key.
+    let notInCatalog = "DET-04 did not run: no frame provider on this capture"
+    check(Strings.translate(notInCatalog, into: .vi) == notInCatalog,
+          "an untranslated string comes back unchanged, not as a key")
+    check(Strings.translate(notInCatalog, into: .en) == notInCatalog,
+          "and English is a pass-through by construction")
+    check(Strings.translate("", into: .vi) == "",
+          "an empty string survives translation")
+
+    // Core-emitted evidence must pass through. This is the boundary the
+    // Settings panel describes, and it holds because those strings are simply
+    // not in the catalog.
+    for evidence in ["unknown", "not_tested", "unsupported", "offline",
+                     "kRanFoundNothing", "authorized"] {
+        check(Strings.translate(evidence, into: .vi) == evidence,
+              "the core's value '\(evidence)' is never translated")
+    }
+
+    // Tokens quoted inside translated prose stay verbatim, or the sentence
+    // would explain a word that appears nowhere on screen.
+    let apps = Strings.translate(
+        "**running** does not mean foreground. **unknown** means the provider "
+        + "could not observe the state — it does not mean not running. "
+        + "Profiling availability is independent of runtime state, and entries "
+        + "that cannot be profiled are kept and marked rather than hidden.",
+        into: .vi)
+    check(apps.contains("**running**") && apps.contains("**unknown**"),
+          "the values a sentence explains are left untranslated inside it")
+    check(!apps.contains("foreground.  "), "and the prose is not mangled")
+
+    // A tab's rawValue is an identifier -- `--tab=` parses it -- so it must
+    // not move when the interface language does.
+    Strings.active = .vi
+    for tab in DevXTab.allCases {
+        check(DevXTab(rawValue: tab.rawValue) == tab,
+              "tab '\(tab.rawValue)' still round-trips in Vietnamese")
+    }
+    check(DevXTab.devices.title == "Thiết bị", "and its title is translated")
+    Strings.active = .en
+    check(DevXTab.devices.title == "Devices", "and back again")
+
+    // Every language is offered and names itself.
+    check(DevXLanguage.allCases.count == 3, "three choices are offered")
+    for lang in DevXLanguage.allCases {
+        check(!lang.label.isEmpty, "language '\(lang.rawValue)' has a label")
+        check(DevXLanguage(rawValue: lang.rawValue) == lang,
+              "and a rawValue that round-trips, which is what is persisted")
+    }
+    check(DevXLanguage.vi.label == "Tiếng Việt",
+          "Vietnamese is named in Vietnamese, for the reader looking for it")
+}
+
+do {
+    // Placeholders, which are the part a translation can silently break.
+    check(DeviceFreshness.fill("{n}s ago", "{n}", 7) == "7s ago",
+          "a placeholder is substituted")
+    check(DeviceFreshness.fill("{n}s trước", "{n}", 7) == "7s trước",
+          "in either language")
+    check(DeviceFreshness.fill("no placeholder", "{n}", 7) == "no placeholder",
+          "a template that dropped its placeholder loses the value rather "
+          + "than gaining a stray number")
+
+    // The freshness line in Vietnamese, end to end.
+    Strings.active = .vi
+    let t0 = Date(timeIntervalSince1970: 2_000_000)
+    let watched = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(-90),
+                                         now: t0, watching: true)
+    check(watched.text.contains("đang quét lại"),
+          "the watched line is Vietnamese")
+    check(watched.text.contains("1 phút trước"),
+          "and its age is Vietnamese too, with the number in place")
+    check(!watched.text.contains("{when}"),
+          "no placeholder survives into the rendered text")
+    let aging = DeviceFreshness.status(loadedAt: t0.addingTimeInterval(-600),
+                                       now: t0, watching: false)
+    check(!aging.text.contains("{"), "nor in the aging warning")
+    check(aging.confidence == .aging,
+          "and translating does not change what is being claimed")
+    let never = DeviceFreshness.status(loadedAt: nil, now: t0, watching: false)
+    check(never.confidence == .noClaim && never.text.contains("chưa quét"),
+          "a list that makes no claim says so in Vietnamese")
+    Strings.active = .en
+    check(DeviceFreshness.status(loadedAt: t0.addingTimeInterval(-90),
+                                 now: t0, watching: true).text
+            .contains("re-scanning"),
+          "and English still works afterwards")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

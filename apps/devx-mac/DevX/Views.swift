@@ -8,10 +8,10 @@ struct DevicesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Android and iOS are discovered together. A paired-but-unreachable "
+                Text(tr("Android and iOS are discovered together. A paired-but-unreachable "
                      + "device reads as offline — it is not absent, and it is not usable. "
                      + "Simulators and emulators are listed separately on purpose: their "
-                     + "timings are never comparable to a physical device.")
+                     + "timings are never comparable to a physical device."))
                     .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -70,7 +70,7 @@ struct DevicesView: View {
                 .toggleStyle(.checkbox)
                 .onChange(of: state.includeSimulators) { _, _ in state.loadDevices() }
             Button { state.refreshDeviceViews() } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
+                Label(tr("Refresh"), systemImage: "arrow.clockwise")
             }
         }
     }
@@ -191,11 +191,11 @@ struct AppsView: View {
                 // are joined with `+`, so the emphasis markers were printed
                 // verbatim -- "**running** does not mean foreground" -- until
                 // the result was wrapped back into a LocalizedStringKey.
-                Text(.init("**running** does not mean foreground. **unknown** means the "
+                Text(.init(tr("**running** does not mean foreground. **unknown** means the "
                      + "provider could not observe the state — it does not mean not "
                      + "running. Profiling availability is independent of runtime state, "
                      + "and entries that cannot be profiled are kept and marked rather "
-                     + "than hidden."))
+                     + "than hidden.")))
                     .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
@@ -239,7 +239,7 @@ struct AppsView: View {
         .navigationTitle("~/apps")
         .toolbar {
             Button { state.loadApps() } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
+                Label(tr("Refresh"), systemImage: "arrow.clockwise")
             }
         }
     }
@@ -297,9 +297,9 @@ struct PreflightView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(.init("Every row is a probe result, not a plan. **unknown** and "
+                Text(.init(tr("Every row is a probe result, not a plan. **unknown** and "
                      + "**not_tested** are distinct answers from **unsupported**, and none "
-                     + "of them means \"false\"."))
+                     + "of them means \"false\".")))
                     .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -348,7 +348,7 @@ struct PreflightView: View {
 
                 let caps = state.preflightDoc["capabilities"]["capabilities"].array
                 if !caps.isEmpty {
-                    Panel(title: "Capabilities (\(caps.count))") {
+                    Panel(title: tr("Capabilities") + " (\(caps.count))") {
                         VStack(alignment: .leading, spacing: 9) {
                             ForEach(Array(caps.enumerated()), id: \.offset) { _, c in
                                 CapabilityRow(cap: c)
@@ -515,8 +515,8 @@ struct RecentTargetsPanel: View {
                         Text(target.appIdentifier)
                             .font(Term.font(12)).foregroundStyle(Term.ink)
                         if target.lastKnownName != target.appIdentifier {
-                            Text(target.lastKnownName + "  (the name when it "
-                                 + "was last profiled)")
+                            Text(target.lastKnownName + tr("  (the name when it "
+                                 + "was last profiled)"))
                                 .font(Term.font(10)).foregroundStyle(Term.dim)
                         }
                     }
@@ -576,12 +576,13 @@ struct BootPanel: View {
                       + "running") {
             VStack(alignment: .leading, spacing: 9) {
                 HStack(spacing: 10) {
-                    Button(expanded ? "Hide" : "Show \(summary)") {
+                    Button(expanded ? tr("Hide")
+                                    : tr("Show") + " \(summary)") {
                         expanded.toggle()
                         if expanded { state.loadBootTargetsIfNeeded() }
                     }
                     .buttonStyle(TermButtonStyle())
-                    Button("Refresh") { state.refreshDeviceViews() }
+                    Button(tr("Refresh")) { state.refreshDeviceViews() }
                         .buttonStyle(TermButtonStyle())
                     Spacer(minLength: 0)
                 }
@@ -613,7 +614,7 @@ struct BootPanel: View {
                         if running {
                             Chip(text: "already running", tone: .good)
                         } else {
-                            Button("Start") { state.bootTarget(t["identifier"].text) }
+                            Button(tr("Start")) { state.bootTarget(t["identifier"].text) }
                                 .buttonStyle(TermButtonStyle())
                         }
                     }

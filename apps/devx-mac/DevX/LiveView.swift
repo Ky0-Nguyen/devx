@@ -78,7 +78,7 @@ struct LiveView: View {
                         Button {
                             state.stopLive()
                         } label: {
-                            Text("stop and save")
+                            Text(tr("stop and save"))
                         }
                         .buttonStyle(TermButtonStyle(tone: Term.red, filled: true))
                         AsciiSpinner()
@@ -87,17 +87,17 @@ struct LiveView: View {
                         BlinkingCursor()
                     } else if state.liveStarting {
                         AsciiSpinner(color: Term.amber)
-                        Text("resolving the target…").font(Term.body)
+                        Text(tr("resolving the target…")).font(Term.body)
                             .foregroundStyle(Term.dim)
                     } else if state.liveStopping {
                         AsciiSpinner(color: Term.amber)
-                        Text("stopping and saving…").font(Term.body)
+                        Text(tr("stopping and saving…")).font(Term.body)
                             .foregroundStyle(Term.dim)
                     } else {
                         Button {
                             state.startLive()
                         } label: {
-                            Text("start live capture")
+                            Text(tr("start live capture"))
                         }
                         .buttonStyle(TermButtonStyle(filled: true))
                         .disabled(state.selectedDevice.isEmpty || state.selectedApp.isEmpty)
@@ -207,9 +207,9 @@ struct LiveView: View {
             VStack(alignment: .leading, spacing: 6) {
                 if issues.isEmpty {
                     Text(state.liveRunning
-                         ? "No detector that can run has found anything yet. That is not "
+                         ? tr("No detector that can run has found anything yet. That is not "
                            + "the same as nothing being wrong: several detectors cannot "
-                           + "run until more evidence arrives."
+                           + "run until more evidence arrives.")
                          : "No detector that ran produced a finding.")
                         .font(Term.body).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -253,7 +253,7 @@ struct LiveView: View {
                               + "the saved session is final, not preliminary.")
                 if let id = stop["session_id"].string {
                     Button { state.openSession(id) } label: {
-                        Label("Open in Issues", systemImage: "arrow.right.circle")
+                        Label(tr("Open in Issues"), systemImage: "arrow.right.circle")
                     }
                     .buttonStyle(TermButtonStyle(filled: true))
                 }

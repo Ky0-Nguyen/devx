@@ -24,6 +24,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                languagePanel
                 exportPanel
                 pathsPanel
                 privacyPanel
@@ -33,12 +34,50 @@ struct SettingsView: View {
         .navigationTitle("~/export")
     }
 
+    /// The interface language, and the boundary of what it changes.
+    ///
+    /// The note is not boilerplate. A Vietnamese reader who sees the tabs and
+    /// panels in Vietnamese will reasonably read the English left in the
+    /// Issues tab as an unfinished translation, when in fact it is deliberate:
+    /// that text is written into the session package and compared across runs,
+    /// so it has to be the same text on every machine.
+    @ViewBuilder private var languagePanel: some View {
+        Panel(title: "Language",
+              subtitle: "the app's own interface only") {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    Text(tr("Interface language"))
+                        .font(Term.body).foregroundStyle(Term.dim)
+                    Picker("", selection: $state.language) {
+                        ForEach(DevXLanguage.allCases) { lang in
+                            // Each language named in itself, so it is legible
+                            // to the person looking for it.
+                            Text(lang.label).tag(lang)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 180)
+                    Spacer(minLength: 0)
+                }
+                Text(tr("Findings, coverage notes and refusal messages come "
+                     + "from the analysis core and stay in English. They are "
+                     + "written into the session package and compared across "
+                     + "runs, so they are evidence rather than interface: "
+                     + "translating them would make two captures of the same "
+                     + "app incomparable because the machines were configured "
+                     + "differently."))
+                    .font(Term.small).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     @ViewBuilder private var exportPanel: some View {
         Panel(title: "Export the open session",
               subtitle: "the package's own report, copied unchanged") {
             VStack(alignment: .leading, spacing: 8) {
                 if state.selectedSession.isEmpty {
-                    Text("No session is open. Open one from Sessions first.")
+                    Text(tr("No session is open. Open one from Sessions first."))
                         .font(Term.font(11)).foregroundStyle(Term.cyan)
                 } else {
                     Field(label: "session") {
@@ -59,9 +98,9 @@ struct SettingsView: View {
                                       + "with them applied.")
                     }
                     HStack(spacing: 10) {
-                        Button("Export Markdown…") { save(format: "markdown") }
+                        Button(tr("Export Markdown…")) { save(format: "markdown") }
                             .buttonStyle(TermButtonStyle())
-                        Button("Export JSON…") { save(format: "json") }
+                        Button(tr("Export JSON…")) { save(format: "json") }
                             .buttonStyle(TermButtonStyle())
                         Spacer(minLength: 0)
                     }
@@ -70,9 +109,9 @@ struct SettingsView: View {
                             .font(Term.font(11)).foregroundStyle(Term.green)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    Text("A suppressed finding stays in the exported document, "
+                    Text(tr("A suppressed finding stays in the exported document, "
                          + "with its reason: that is what makes a suppression "
-                         + "auditable rather than a deletion.")
+                         + "auditable rather than a deletion."))
                         .font(Term.font(10)).foregroundStyle(Term.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -89,9 +128,9 @@ struct SettingsView: View {
                         HStack(spacing: 8) {
                             TextField("", text: $state.sessionsDir)
                                 .textFieldStyle(TermFieldStyle())
-                            Button("Choose…") { chooseSessionsDir() }
+                            Button(tr("Choose…")) { chooseSessionsDir() }
                                 .buttonStyle(TermButtonStyle())
-                            Button("Reload") {
+                            Button(tr("Reload")) {
                                 // The remembered targets and the suppression
                                 // list both live beside the sessions, so a
                                 // changed directory changes all three.
@@ -101,11 +140,11 @@ struct SettingsView: View {
                             }
                             .buttonStyle(TermButtonStyle())
                         }
-                        Text("Use Choose… rather than typing a path into "
+                        Text(tr("Use Choose… rather than typing a path into "
                              + "Documents, Desktop or Downloads: macOS gates "
                              + "those and an ad-hoc signed build cannot raise "
                              + "the prompt, so a typed path there cannot be "
-                             + "read at all.")
+                             + "read at all."))
                             .font(Term.font(10)).foregroundStyle(Term.dim)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -137,17 +176,17 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Nothing.")
                     .font(Term.font(13, .bold)).foregroundStyle(Term.green)
-                Text("Spec section 13 asks for no source or trace upload "
+                Text(tr("Spec section 13 asks for no source or trace upload "
                      + "without configured consent. There is no consent "
                      + "control here because there is nothing to consent to: "
                      + "this build has no upload path. Exporting writes a "
-                     + "local file and that is the whole of it.")
+                     + "local file and that is the whole of it."))
                     .font(Term.font(11)).foregroundStyle(Term.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("The SDK transport is the only network listener, it binds "
+                Text(tr("The SDK transport is the only network listener, it binds "
                      + "127.0.0.1 only, it requires a token, and it receives "
                      + "markers rather than sending anything. There is no "
-                     + "wireless path, on purpose.")
+                     + "wireless path, on purpose."))
                     .font(Term.font(10)).foregroundStyle(Term.dim)
                     .fixedSize(horizontal: false, vertical: true)
             }

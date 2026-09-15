@@ -142,7 +142,7 @@ struct IssuesView: View {
                           + "exists\".")
         } else {
             filters
-            Panel(title: "Issues (\(shown.count)\(hidden > 0 ? " of \(issues.count)" : ""))",
+            Panel(title: tr("Issues") + " (\(shown.count)\(hidden > 0 ? " / \(issues.count)" : ""))",
                   subtitle: hidden > 0
                     ? "\(hidden) hidden by the filters above. An empty list "
                     + "under a filter says nothing about the app."
@@ -221,7 +221,7 @@ struct IssuesView: View {
                 // "none recorded" rather than "any" when the session has no
                 // values for this field: an empty menu labelled "any" implies
                 // there is something to choose.
-                Text(options.isEmpty ? "none recorded" : "any")
+                Text(options.isEmpty ? tr("none recorded") : "any")
                     .font(Term.font(11)).tag("")
                 ForEach(options, id: \.self) { o in
                     Text(o).font(Term.font(11)).tag(o)
@@ -248,12 +248,12 @@ struct IssuesView: View {
         let entries = state.suppressionEntries
         let rejected = state.suppressionsDoc["rejected"].array
             .compactMap { $0.string }
-        return Panel(title: "Suppressions (\(entries.count))",
+        return Panel(title: tr("Suppressions") + " (\(entries.count))",
                      subtitle: "shared with `mpi analyze --suppressions`; a "
                              + "suppressed finding stays in the export") {
             VStack(alignment: .leading, spacing: 8) {
                 if entries.isEmpty {
-                    Text("Nothing is suppressed in this project.")
+                    Text(tr("Nothing is suppressed in this project."))
                         .font(Term.font(11)).foregroundStyle(Term.dim)
                 }
                 ForEach(Array(entries.enumerated()), id: \.offset) { _, e in
@@ -310,7 +310,10 @@ struct IssuesView: View {
         let runs = state.ruleRuns
         let ran = runs.filter { $0["outcome"].text != "skipped" }.count
         return Panel(title: "Detector execution",
-                     subtitle: "\(ran) ran, \(runs.count - ran) could not.") {
+                     subtitle: DeviceFreshness.fill(
+                         DeviceFreshness.fill(tr("{a} ran, {b} could not."),
+                                              "{a}", ran),
+                         "{b}", runs.count - ran)) {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(runs.enumerated()), id: \.offset) { _, r in
                     VStack(alignment: .leading, spacing: 3) {
@@ -405,7 +408,7 @@ private struct IssueDetail: View {
                 // and the timeline says so when the evidence is an instant
                 // that had to be widened to be clickable.
                 HStack(spacing: 8) {
-                    Button("Focus on timeline") { state.focusIssue(issue) }
+                    Button(tr("Focus on timeline")) { state.focusIssue(issue) }
                         .buttonStyle(TermButtonStyle())
                     if issue["start_ns"].int == issue["end_ns"].int {
                         Chip(text: "evidence is an instant", tone: .caution)
@@ -532,7 +535,7 @@ private struct IssueDetail: View {
 
                 let evidence = issue["evidence_refs"].array
                 if !evidence.isEmpty {
-                    Panel(title: "Evidence (\(evidence.count))") {
+                    Panel(title: tr("Evidence") + " (\(evidence.count))") {
                         VStack(alignment: .leading, spacing: 5) {
                             ForEach(Array(evidence.prefix(20).enumerated()),
                                     id: \.offset) { _, e in
@@ -664,7 +667,7 @@ private struct SuppressControl: View {
         Panel(title: "Suppress this finding") {
             VStack(alignment: .leading, spacing: 7) {
                 if issue["suppression"]["suppressed"].bool == true {
-                    Text("Already suppressed: "
+                    Text(tr("Already suppressed: ")
                          + issue["suppression"]["reason"].display("(no reason)"))
                         .font(Term.font(11)).foregroundStyle(Term.amber)
                         .fixedSize(horizontal: false, vertical: true)
@@ -684,11 +687,11 @@ private struct SuppressControl: View {
                             TextField("YYYY-MM-DD (optional)",
                                       text: $state.suppressExpiry)
                                 .textFieldStyle(TermFieldStyle())
-                            Text("An expiry is honoured: once it passes the "
+                            Text(tr("An expiry is honoured: once it passes the "
                                  + "finding comes back and the report says "
                                  + "which suppression lapsed. Leave it empty "
                                  + "to accept the finding until someone "
-                                 + "removes the entry.")
+                                 + "removes the entry."))
                                 .font(Term.font(10)).foregroundStyle(Term.dim)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -722,9 +725,9 @@ private struct SuppressControl: View {
                             .buttonStyle(TermButtonStyle())
                         Spacer(minLength: 0)
                     }
-                    Text("Written to the project's suppressions.json, which "
+                    Text(tr("Written to the project's suppressions.json, which "
                          + "`mpi analyze --suppressions` reads too. The "
-                         + "session on disk is not modified.")
+                         + "session on disk is not modified."))
                         .font(Term.font(10)).foregroundStyle(Term.dim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
