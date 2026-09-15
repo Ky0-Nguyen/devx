@@ -213,14 +213,14 @@ Result run(const std::vector<std::string>& argv, const Options& opts) {
   while (out_open || err_open) {
     if (opts.cancel.cancelled()) {
       r.cancelled = true;
-      ::kill(pid, SIGTERM);
+      ::kill(pid, opts.stop_signal);
       break;
     }
     const auto elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(now() - started);
     if (opts.timeout.count() > 0 && elapsed >= opts.timeout) {
       r.timed_out = true;
-      ::kill(pid, SIGTERM);
+      ::kill(pid, opts.stop_signal);
       break;
     }
 
@@ -287,12 +287,17 @@ Result run(const std::vector<std::string>& argv, const Options& opts) {
   // Reap. If we signalled the child, give it a brief window then SIGKILL so a
   // cancelled or timed-out capture cannot leave an orphan collector behind.
   if (r.timed_out || r.cancelled || over_limit) {
-    for (int i = 0; i < 50; ++i) {
+    // Poll in 20 ms steps for the caller's grace period, SIGKILL at the end
+    // of it. A child that writes a file on shutdown needs the whole window;
+    // one that does not is reaped on the first poll either way.
+    const long steps =
+        opts.stop_grace.count() > 0 ? opts.stop_grace.count() / 20 : 25;
+    for (long i = 0; i <= steps + 5; ++i) {
       const pid_t w = ::waitpid(pid, &status, WNOHANG);
       if (w == pid) break;
       struct timespec ts {0, 20 * 1000 * 1000};
       ::nanosleep(&ts, nullptr);
-      if (i == 25) ::kill(pid, SIGKILL);
+      if (i == steps) ::kill(pid, SIGKILL);
     }
   } else {
     while (::waitpid(pid, &status, 0) < 0 && errno == EINTR) {

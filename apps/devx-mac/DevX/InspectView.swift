@@ -255,8 +255,9 @@ struct InspectView: View {
             } else if rows.isEmpty {
                 Text(tr("Nothing was reported. The domain was enabled, so "
                       + "this is the app making no JavaScript HTTP calls in "
-                      + "the window — a native module's own HTTP would not "
-                      + "appear here either way."))
+                      + "the window. A WebView's requests never appear here "
+                      + "— which covers most SSO and payment screens — and "
+                      + "neither do a native module's."))
                     .font(Term.small).foregroundStyle(Term.dim)
                     .fixedSize(horizontal: false, vertical: true)
             } else {

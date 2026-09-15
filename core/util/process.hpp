@@ -41,6 +41,20 @@ struct Options {
   // Extra environment entries, each "KEY=VALUE". The parent environment is
   // inherited; entries here override.
   std::vector<std::string> env_overrides;
+
+  // How to stop a child that has run past its timeout, and how long to let it
+  // finish before SIGKILL.
+  //
+  // The defaults -- SIGTERM, then SIGKILL half a second later -- are right for
+  // a tool that prints and exits. They destroyed real data for one that
+  // writes a file on the way out: `xctrace` finalises its trace bundle on
+  // **SIGINT** (it says so: "Ctrl-C to stop the recording") and needs seconds
+  // to do it, so a capture it had actually taken was being killed mid-write
+  // and reported as a provider failure.
+  //
+  // A caller that knows its child writes something on shutdown sets both.
+  int stop_signal = 15;               // SIGTERM
+  std::chrono::milliseconds stop_grace{500};
 };
 
 // Validates that `arg` contains no NUL and no leading '-' when

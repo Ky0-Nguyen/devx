@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <csignal>
 #include <filesystem>
 
 #include "core/ingestion/reader.hpp"
@@ -55,6 +56,10 @@ RecordOutcome interpret_record_output(const std::string& stdout_text,
 
   out.attached = contains(both, "Starting recording") ||
                  contains(both, "Attaching to:");
+  // The line that separates "it started recording" from "it is still trying
+  // to attach". xctrace prints this once the recording is actually running,
+  // and its absence is the signature of the simulator hang below.
+  out.began_recording = contains(both, "Ctrl-C to stop the recording");
 
   // xctrace announces the file it wrote, and it is not always the path that
   // was requested -- a relative --output lands in the working directory.
@@ -77,16 +82,38 @@ RecordOutcome interpret_record_output(const std::string& stdout_text,
 
   if (timed_out) {
     out.timed_out = true;
-    // The measured failure mode on this host: attached, then never finished.
-    out.refusal =
-        out.attached
-            ? "`xctrace record` attached to the target and did not finish "
-              "within the time budget. Measured against a booted simulator on "
-              "this host, where it attaches and then runs indefinitely even "
-              "with --time-limit and --no-prompt. No recording was produced, "
-              "which is not the same as a recording that found nothing"
-            : "`xctrace record` did not finish within the time budget and "
-              "never reported attaching to the target";
+    if (out.attached && !out.began_recording) {
+      // The measured signature of a broken simulator target: xctrace accepts
+      // the target, never prints "Ctrl-C to stop the recording", never
+      // reaches its own --time-limit, and does not respond to SIGINT. The
+      // bundle it leaves is a stub that `xctrace export --toc` rejects with
+      // "Document Missing Template Error".
+      //
+      // Isolated by comparison rather than assumed. Against a plain macOS
+      // process the same command honours --time-limit, exits by itself and
+      // writes a bundle that exports. Against a simulator target it hangs --
+      // whether by --attach or --launch -- and it completes only when the
+      // launch *fails* and there is nothing to record. So the fault is in
+      // recording a simulator target, not in the invocation.
+      out.refusal =
+          "`xctrace record` accepted the target and never started recording: "
+          "it did not print \"Ctrl-C to stop the recording\", did not reach "
+          "its own --time-limit, and did not respond to SIGINT. Measured on "
+          "this host, Instruments cannot record an iOS **simulator** target; "
+          "the same command works against a macOS process. Use live capture "
+          "instead, which reads the simulator app as a host process and needs "
+          "no Instruments, or record on a physical device";
+    } else if (out.attached) {
+      // It did start recording, so there may be a real trace to salvage --
+      // the caller tries the export before believing this.
+      out.refusal =
+          "`xctrace record` started recording and then did not exit within "
+          "the time budget";
+    } else {
+      out.refusal =
+          "`xctrace record` did not finish within the time budget and never "
+          "reported accepting the target";
+    }
     return out;
   }
 
@@ -183,8 +210,19 @@ session::CaptureResult XctraceCollector::capture(
                           ? config.duration
                           : std::chrono::milliseconds(5000);
   proc::Options po;
-  po.timeout = window + std::chrono::milliseconds(45000);
+  // 20s of slack rather than 45: the failure mode this guards
+  // against is unbounded, so a longer budget buys nothing except a
+  // longer wait before the diagnosis.
+  po.timeout = window + std::chrono::milliseconds(20000);
   po.cancel = config.cancel;
+  // Instruments finalises its trace bundle on SIGINT -- it prints "Ctrl-C to
+  // stop the recording" -- and needs seconds to write it. The default
+  // SIGTERM-then-SIGKILL-in-500ms killed a capture that had actually been
+  // taken and reported it as a provider failure. Measured: xctrace honours
+  // --time-limit and exits by itself against a macOS process, and against a
+  // simulator process it attaches and never reaches its limit at all.
+  po.stop_signal = SIGINT;
+  po.stop_grace = std::chrono::milliseconds(12000);
 
   const std::vector<std::string> record_argv = {
       "xcrun",   "xctrace",   "record",
@@ -214,16 +252,46 @@ session::CaptureResult XctraceCollector::capture(
     result.error = "capture cancelled";
     return finish(model::CapabilityStatus::kUnknown, result.error);
   }
-  if (!outcome.refusal.empty()) {
-    result.error = outcome.refusal;
-    return finish(model::CapabilityStatus::kUnsupported, outcome.refusal,
-                  {"no trace was produced, so nothing about the app was "
-                   "measured; this is a provider failure and not an absence "
-                   "of findings"});
-  }
-
   const std::string bundle_path =
       outcome.output_path.empty() ? bundle.string() : outcome.output_path;
+
+  // A refusal used to end the capture here. It does not any more, because one
+  // of the refusals is "xctrace did not exit", and a recording it had already
+  // finished was being thrown away on the strength of an exit code. The
+  // question "is there a usable trace?" is answered by trying to read one,
+  // not by how the process ended.
+  //
+  // `--toc` is the cheap form of that question: a stub bundle fails it with
+  // "Document Missing Template Error" in well under a second.
+  bool salvageable = false;
+  if (!outcome.refusal.empty() && std::filesystem::exists(bundle_path)) {
+    proc::Options probe_opts;
+    probe_opts.timeout = std::chrono::milliseconds(20000);
+    probe_opts.cancel = config.cancel;
+    const auto toc = proc::run(
+        {"xcrun", "xctrace", "export", "--input", bundle_path, "--toc"},
+        probe_opts);
+    salvageable = toc.ok() && toc.out.find("<trace-toc>") != std::string::npos;
+    if (salvageable) {
+      out.partial = true;
+      out.partial_reasons.push_back(
+          "xctrace did not exit on its own (" + outcome.refusal +
+          ") but the trace bundle it wrote is readable, so this capture is "
+          "what it managed to record rather than nothing");
+    }
+  }
+  if (!outcome.refusal.empty() && !salvageable) {
+    result.error = outcome.refusal;
+    return finish(model::CapabilityStatus::kUnsupported, outcome.refusal,
+                  {"no readable trace was produced, so nothing about the app "
+                   "was measured; this is a provider failure and not an "
+                   "absence of findings",
+                   std::filesystem::exists(bundle_path)
+                       ? "a bundle exists at " + bundle_path +
+                             " but `xctrace export --toc` could not read it, "
+                             "which is what an unfinished recording looks like"
+                       : "no bundle was written at all"});
+  }
   if (!std::filesystem::exists(bundle_path)) {
     result.error = "xctrace reported success but no trace bundle exists at " +
                    bundle_path;
