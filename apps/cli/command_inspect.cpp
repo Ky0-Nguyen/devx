@@ -38,6 +38,12 @@ std::string elide(const std::string& s, std::size_t width) {
 ExitCode cmd_inspect(const Invocation& inv) {
   rn::InspectOptions opts;
   opts.app_id = inv.global.app;
+  // Metro publishes a device *name* and nothing else -- no adb serial, no
+  // simulator UDID -- so this is matched against that name. `--device` is
+  // accepted too, since someone who has it to hand should not have to look
+  // up a second identifier; it is matched the same way and reported honestly
+  // when it does not match.
+  opts.device_hint = inv.flag("target-device", inv.global.device);
   opts.read_redux_state = inv.has_flag("redux");
   opts.include_state_values = inv.has_flag("redux-values");
   if (opts.include_state_values) opts.read_redux_state = true;
@@ -120,6 +126,19 @@ ExitCode cmd_inspect(const Invocation& inv) {
       std::cout << std::left << std::setw(41) << elide(t.app_id, 40)
                 << std::setw(26) << elide(t.device_name, 25)
                 << t.description << "\n";
+    }
+    // Only worth saying when there is actually a choice to make.
+    std::vector<std::string> devices;
+    for (const auto& t : list.targets) {
+      bool seen = false;
+      for (const auto& d : devices) if (d == t.device_name) seen = true;
+      if (!seen) devices.push_back(t.device_name);
+    }
+    if (devices.size() > 1) {
+      std::cout << "\n" << devices.size()
+                << " devices are attached. Pass --target-device with part of "
+                   "a DEVICE name above\n(for example --target-device iPhone) "
+                   "to say which one to observe.\n";
     }
     return ExitCode::kOk;
   }

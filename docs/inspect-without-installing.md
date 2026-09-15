@@ -35,6 +35,31 @@ The walk is **read-only** and bounded to 4000 fibers. Nothing is assigned,
 wrapped or dispatched: a profiler that stalls the app it is measuring has
 failed at its own job.
 
+## Choosing which device
+
+One Metro serves every device you have running, so the same bundle id is
+routinely attached from several at once -- an Android emulator and an iOS
+simulator, say. `--target-device` names which, matched case-insensitively
+against Metro's own device name (the only device identity Metro publishes; it
+reports no adb serial and no simulator UDID):
+
+```bash
+mpi inspect --targets                                  # see the device names
+mpi inspect --app <id> --target-device iPhone          # the iOS one
+mpi inspect --app <id> --target-device sdk_gphone      # the Android one
+```
+
+With several devices attached and no name given, the command **refuses and
+lists them** rather than choosing. That is not pedantry: before this existed,
+asking for an app attached from both an emulator and a simulator always
+observed the Android one, silently, and the iOS device could not be reached at
+all. Reporting one device's traffic under the right app's name is exactly the
+kind of quiet substitution this tool exists not to make.
+
+A name that matches nothing is also refused, with the attached devices listed,
+rather than falling back to the only device and presenting it as the one
+asked for.
+
 ## Using it
 
 ```bash

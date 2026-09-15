@@ -43,17 +43,45 @@ struct TargetList {
 /// Asks Metro what is attached. Loopback only.
 TargetList list_targets(std::uint16_t metro_port = 8081);
 
+/// The outcome of choosing a target.
+///
+/// Ambiguity is a distinct answer from "found" and from "not found", because
+/// the same app id commonly runs on several devices at once against one Metro
+/// -- an Android emulator and an iOS simulator, say -- and picking one of
+/// them silently reports the wrong device's traffic under the right app's
+/// name. That happened: with the app on an emulator and two iOS targets,
+/// asking for it always attached to Android, and there was no way to reach
+/// iOS at all.
+struct TargetChoice {
+  const InspectorTarget* target = nullptr;
+  /// Set when several devices offer the app and nothing said which.
+  bool ambiguous = false;
+  /// The device names to choose between, when ambiguous, or the ones that
+  /// were available when a hint matched nothing.
+  std::vector<std::string> device_names;
+  std::string error;
+};
+
 /// Picks the target to attach to.
 ///
+/// `device_hint` is matched case-insensitively as a substring of Metro's own
+/// `deviceName`, which is the only device identity Metro publishes -- it does
+/// not report an adb serial or a simulator UDID. Empty means "whichever, as
+/// long as there is only one".
+///
 /// Prefers a full runtime connection over the auxiliary pages Metro also
-/// lists, then an exact app id match. Pure, so the preference is testable
-/// without Metro.
-const InspectorTarget* choose_target(const std::vector<InspectorTarget>& targets,
-                                     const std::string& wanted_app_id);
+/// lists for the same device. Pure, so the preference and the ambiguity rule
+/// are testable without Metro.
+TargetChoice choose_target(const std::vector<InspectorTarget>& targets,
+                           const std::string& wanted_app_id,
+                           const std::string& device_hint = {});
 
 struct InspectOptions {
   std::uint16_t metro_port = 8081;
   std::string app_id;              // empty: whatever is attached
+  /// Which device, matched against Metro's `deviceName`. Empty is only valid
+  /// when one device offers the app.
+  std::string device_hint;
   int seconds = 15;
   /// Read the Redux store's slice names and, if asked, its contents.
   bool read_redux_state = false;
