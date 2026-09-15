@@ -837,3 +837,23 @@ MPI_TEST(preflight_does_not_contradict_the_live_capture_it_can_do, {"J15"}) {
                   "with nothing to probe, unknown is the honest status");
   }
 }
+
+MPI_TEST(an_unreadable_log_store_is_named_as_a_permission, {"J15", "D07"}) {
+  // Instruments samples through the unified log store, and a process without
+  // Full Disk Access cannot open it: /var/db/diagnostics is
+  // drwxr-x--- root:admin. xctrace reports that as "the log archive is
+  // corrupt or incomplete", which sends people looking for corruption that is
+  // not there, and the capture reported only the symptom -- an empty table.
+  const auto access = ios::probe_log_store_access();
+
+  // Whichever this host is, the answer has to be definite and say why.
+  if (!access.readable) {
+    MPI_CHECK_MSG(!access.detail.empty(),
+                  "a refusal carries the system's own words, so the reader "
+                  "can tell a permission from a missing binary");
+  }
+  // The probe must not be slow enough to matter: it runs only after a capture
+  // has already come back empty, but it runs inside that capture.
+  MPI_CHECK_MSG(access.readable || !access.detail.empty(),
+                "the probe always produces an answer rather than silence");
+}

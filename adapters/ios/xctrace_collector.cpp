@@ -95,6 +95,36 @@ BundleReadability bundle_is_readable(const std::string& bundle_path,
   return out;
 }
 
+LogStoreAccess probe_log_store_access() {
+  LogStoreAccess out;
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(5000);
+  // The smallest question that requires opening the store.
+  const proc::Result r =
+      proc::run({"/usr/bin/log", "show", "--last", "1s", "--style", "compact"},
+                po);
+  if (!r.spawned) {
+    out.detail = "could not run `log`: " + r.spawn_error;
+    return out;
+  }
+  if (r.timed_out) {
+    out.detail = "`log show` did not answer within 5s";
+    return out;
+  }
+  if (r.exit_code == 0) {
+    out.readable = true;
+    return out;
+  }
+  std::string message = r.err.empty() ? r.out : r.err;
+  while (!message.empty() &&
+         (message.back() == '\n' || message.back() == '\r' ||
+          message.back() == ' ')) {
+    message.pop_back();
+  }
+  out.detail = message;
+  return out;
+}
+
 int xctrace_stop_signal() { return SIGINT; }
 std::chrono::milliseconds xctrace_stop_grace() {
   return std::chrono::milliseconds(12000);
@@ -387,10 +417,33 @@ session::CaptureResult XctraceCollector::capture(
     result.error = diag.errors.empty()
                        ? "the exported table held no samples"
                        : diag.errors.front();
+    std::vector<std::string> limits = {
+        "the recording and the export both succeeded, so this is an empty or "
+        "unreadable table rather than a missing provider"};
+    // An empty table is the symptom. The commonest cause is not a damaged
+    // trace: Instruments samples through the unified log store, and a process
+    // without Full Disk Access cannot open it -- xctrace calls that "the log
+    // archive is corrupt or incomplete", which sends people looking for
+    // corruption that is not there. Asked only now, when something already
+    // came back empty, so a working capture pays nothing.
+    const LogStoreAccess log_access = probe_log_store_access();
+    if (!log_access.readable) {
+      limits.push_back(
+          "this process cannot read the unified log store, which is what "
+          "Instruments samples through: `log show` said \"" +
+          log_access.detail +
+          "\". That is the likely cause of the empty table, and it is a "
+          "permission rather than a damaged machine -- grant Full Disk Access "
+          "to whatever runs this tool (System Settings > Privacy & Security > "
+          "Full Disk Access), or run the capture from Xcode, which already has "
+          "it.");
+      // Permission-denied rather than limited: the distinction decides
+      // whether someone goes looking for a broken trace or a checkbox.
+      return finish(model::CapabilityStatus::kPermissionDenied, result.error,
+                    std::move(limits));
+    }
     return finish(model::CapabilityStatus::kLimited, result.error,
-                  {"the recording and the export both succeeded, so this is "
-                   "an empty or unreadable table rather than a missing "
-                   "provider"});
+                  std::move(limits));
   }
 
   result.any_data = !out.cpu_samples.empty() || !out.events.empty();

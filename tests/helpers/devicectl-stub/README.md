@@ -84,15 +84,31 @@ working directory rather than where it was asked to go.
 
 ### Why the populated-ingest path is still unexercised here
 
-This host's Instruments cannot produce samples at all:
+Every recording taken here comes back with a `time-profile` table that has a
+schema and zero rows, for a plain macOS process as much as for anything else,
+and xctrace says:
 
     [Error] Data stream: Fatal logging system error: The log archive is corrupt
             or incomplete and cannot be read
 
-Every `time-profile` table it records has a schema and zero rows, for a macOS
-process as much as for anything else. So ingesting a *populated* export is the
-one part of the path that cannot be reached from this machine, and it is an
-environment fault rather than a missing capability.
+**That wording is misleading and I believed it at first.** The archive is not
+corrupt. Instruments samples through the unified log store, and this process
+cannot open it:
+
+    $ /usr/bin/log show --last 5s
+    log: Could not open local log store: Operation not permitted
+
+    $ ls -ld /var/db/diagnostics
+    drwxr-x---  17 root  admin  /var/db/diagnostics
+
+It is a **permission**: no Full Disk Access. Granting it to whatever runs the
+tool -- or running the capture from Xcode, which already has it -- is very
+likely to make sampling work, which means "iOS capture cannot be verified
+here" was a statement about this execution context and not about the machine.
+
+The collector now says this itself: an empty table triggers one
+`log show --last 1s`, and when that is refused the capability is reported as
+`permission_denied` with the fix, rather than as an empty table.
 
 ## What it cannot tell you
 
