@@ -51,13 +51,31 @@ bool file_exists(const std::string& path) {
 // slow cold boot looks like. Measured on this host: a second AVD produced
 // `emulator-5556 offline` and stayed there past a 150 s budget.
 std::vector<std::pair<std::string, std::string>> adb_devices_with_state(
-    const BootOptions& opts) {
+    const BootOptions& opts,
+    std::chrono::milliseconds timeout = std::chrono::milliseconds(15000),
+    std::string* tool_error = nullptr) {
   proc::Options po;
-  po.timeout = std::chrono::milliseconds(15000);
+  po.timeout = timeout;
   po.cancel = opts.cancel;
   const auto r = proc::run({opts.adb_path, "devices"}, po);
   std::vector<std::pair<std::string, std::string>> out;
-  if (!r.ok()) return out;
+  if (tool_error != nullptr) tool_error->clear();
+  if (!r.ok()) {
+    // An empty list and a failed adb used to be the same answer, so an adb
+    // that stopped answering was reported as an emulator that never
+    // appeared. They are different claims and only one of them is about the
+    // emulator.
+    if (tool_error != nullptr) {
+      *tool_error = !r.spawned
+                        ? r.spawn_error
+                        : (r.timed_out ? "`adb devices` did not answer within "
+                                             + std::to_string(timeout.count())
+                                             + " ms"
+                                       : trim(r.err));
+      if (tool_error->empty()) *tool_error = "`adb devices` failed";
+    }
+    return out;
+  }
   for (const auto& line : lines_of(r.out)) {
     if (line.empty() || line.rfind("List of devices", 0) == 0) continue;
     const auto tab = line.find('\t');
@@ -77,9 +95,11 @@ std::vector<std::string> adb_serials(const BootOptions& opts) {
   return out;
 }
 
-bool android_boot_completed(const std::string& serial, const BootOptions& opts) {
+bool android_boot_completed(
+    const std::string& serial, const BootOptions& opts,
+    std::chrono::milliseconds timeout = std::chrono::milliseconds(10000)) {
   proc::Options po;
-  po.timeout = std::chrono::milliseconds(10000);
+  po.timeout = timeout;
   po.cancel = opts.cancel;
   const auto r = proc::run(
       {opts.adb_path, "-s", serial, "shell", "getprop", "sys.boot_completed"},
@@ -248,6 +268,31 @@ BootTargets list_boot_targets(const BootOptions& opts) {
   return out;
 }
 
+/// How long to sleep between polls without outliving the budget.
+///
+/// The sleep happens after the budget check, so an unclamped one could push
+/// the loop past the deadline by a whole poll interval -- small next to a
+/// 180 s budget and not small next to a 3 s one, which is what a test that
+/// pins the bound would trip over.
+std::chrono::milliseconds poll_pause(std::chrono::milliseconds elapsed,
+                                     std::chrono::milliseconds ready_timeout,
+                                     std::chrono::milliseconds interval) {
+  if (elapsed >= ready_timeout) return std::chrono::milliseconds(0);
+  const auto remaining = ready_timeout - elapsed;
+  return remaining < interval ? remaining : interval;
+}
+
+std::optional<std::chrono::milliseconds> poll_budget(
+    std::chrono::milliseconds elapsed,
+    std::chrono::milliseconds ready_timeout,
+    std::chrono::milliseconds per_call_cap,
+    std::chrono::milliseconds floor) {
+  if (elapsed >= ready_timeout) return std::nullopt;
+  const auto remaining = ready_timeout - elapsed;
+  if (remaining <= floor) return std::nullopt;
+  return remaining < per_call_cap ? remaining : per_call_cap;
+}
+
 BootResult boot(const BootTarget& target, const BootOptions& opts) {
   BootResult res;
   if (target.identifier.empty()) {
@@ -288,15 +333,41 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
     }
     res.started = true;
     // simctl returns before the runtime is usable, so the state is polled.
-    while (elapsed() < opts.ready_timeout) {
+    //
+    // How many consecutive polls simctl itself failed to answer. Tracked
+    // because "the device is still booting" and "the tooling stopped
+    // answering" need different things done about them, and the second one
+    // used to be reported as the first.
+    int unanswered = 0;
+    std::string last_tool_error;
+    bool tool_timed_out = false;
+    for (;;) {
       if (opts.cancel.cancelled()) {
         res.notes.push_back("the wait was cancelled; the simulator may still "
                             "be booting");
         break;
       }
+      // Whatever is left of the budget, capped. A fixed per-call timeout let
+      // a poll starting just inside the budget run a minute past it.
+      const auto budget = poll_budget(elapsed(), opts.ready_timeout,
+                                      std::chrono::milliseconds(15000),
+                                      std::chrono::milliseconds(250));
+      if (!budget.has_value()) break;
+      po.timeout = *budget;
       const auto list = proc::run(
           {"/usr/bin/xcrun", "simctl", "list", "devices", "--json"}, po);
-      if (list.ok() && list.out.find(target.identifier) != std::string::npos) {
+      if (!list.ok()) {
+        unanswered++;
+        if (list.timed_out) tool_timed_out = true;
+        last_tool_error = list.spawned
+                              ? (list.timed_out
+                                     ? "it did not answer within " +
+                                           std::to_string(po.timeout.count()) +
+                                           " ms"
+                                     : trim(list.err))
+                              : list.spawn_error;
+      } else {
+        unanswered = 0;
         json::ParseError perr;
         auto parsed = json::parse(list.out, json::Limits{}, &perr);
         bool booted = false;
@@ -322,14 +393,35 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
           break;
         }
       }
-      std::this_thread::sleep_for(opts.poll_interval);
+      // Three in a row is not a blip. Continuing would spend the rest of the
+      // budget re-asking a service that is not answering, and then blame the
+      // simulator for not booting.
+      if (unanswered >= 3) break;
+      std::this_thread::sleep_for(
+          poll_pause(elapsed(), opts.ready_timeout, opts.poll_interval));
     }
     res.waited = elapsed();
     if (!res.ready) {
-      res.notes.push_back(
-          "the simulator was asked to boot and did not reach the `Booted` "
-          "state within the budget. It may still come up; nothing here "
-          "claims it did");
+      if (unanswered >= 3) {
+        // A provider failure, which is a different claim from a device that
+        // did not come up -- and the one the operator can act on.
+        res.error = "simctl stopped answering while waiting for the "
+                    "simulator: " + last_tool_error;
+        res.notes.push_back(
+            std::string("this is a failure of the simulator tooling, not an "
+                        "answer about the device: nothing here says whether ") +
+            target.identifier + " booted." +
+            (tool_timed_out
+                 ? " A hung simctl usually means CoreSimulatorService is "
+                   "wedged; `sudo pkill -f CoreSimulatorService` clears it, "
+                   "and it comes back on its own."
+                 : ""));
+      } else {
+        res.notes.push_back(
+            "the simulator was asked to boot and did not reach the `Booted` "
+            "state within the budget. It may still come up; nothing here "
+            "claims it did");
+      }
     } else {
       // The runtime is up; the Simulator UI is a separate application and is
       // not required for capture, so it is only mentioned.
@@ -356,10 +448,45 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
 
   // Every serial present beforehand, whatever its state, so a serial that
   // was already offline is not mistaken for one this boot produced.
+  //
+  // Bounded against the same budget as the polls. It used to take its own
+  // fixed 15 s outside the budget entirely: with a hung adb that alone spent
+  // 15 s of a 3 s budget, and the loop then had nothing left to poll with.
+  std::string baseline_error;
   std::vector<std::string> before;
-  for (const auto& [serial, state] : adb_devices_with_state(opts)) {
-    static_cast<void>(state);
-    before.push_back(serial);
+  {
+    const auto baseline_budget = poll_budget(
+        elapsed(), opts.ready_timeout, std::chrono::milliseconds(15000),
+        std::chrono::milliseconds(250));
+    if (!baseline_budget.has_value()) {
+      res.error = "no budget left to look at `adb devices` before starting "
+                  "the emulator, so nothing was started";
+      return res;
+    }
+    for (const auto& [serial, state] : adb_devices_with_state(
+             opts, *baseline_budget, &baseline_error)) {
+      static_cast<void>(state);
+      before.push_back(serial);
+    }
+  }
+  if (!baseline_error.empty()) {
+    // Without a baseline there is no way to tell which serial this boot
+    // produced, and an empty one is the dangerous answer rather than a
+    // harmless one: every emulator already running would look like it had
+    // just appeared, and this would report someone else's device as the one
+    // it started.
+    //
+    // So it does not start. Leaving an emulator running that cannot be
+    // identified is worse than not starting one, and the reason is
+    // actionable.
+    res.error = "adb did not answer before the emulator was started, so the "
+                "serials already present are unknown: " + baseline_error;
+    res.notes.push_back(
+        "nothing was started. Without that list a new serial cannot be told "
+        "from one that was already there, and this would have reported an "
+        "emulator it did not start. `adb kill-server` and a retry is the "
+        "usual fix");
+    return res;
   }
   // Detached: the emulator runs for as long as the device is up, which is far
   // longer than this call. Its output goes nowhere rather than filling a
@@ -374,18 +501,31 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
 
   std::string last_seen_serial;
   std::string last_seen_state;
-  while (elapsed() < opts.ready_timeout) {
+  int unanswered = 0;
+  std::string last_tool_error;
+  for (;;) {
     if (opts.cancel.cancelled()) {
       res.notes.push_back(
           "the wait was cancelled; the emulator may still be booting");
       break;
     }
+    // Whatever is left, capped -- and split between the two calls a poll
+    // makes, so one poll cannot spend the whole remaining budget and leave
+    // nothing for the check that actually decides readiness.
+    const auto budget = poll_budget(elapsed(), opts.ready_timeout,
+                                    std::chrono::milliseconds(15000),
+                                    std::chrono::milliseconds(250));
+    if (!budget.has_value()) break;
+    const auto half = std::chrono::milliseconds(budget->count() / 2 + 1);
+
     // The serial that appeared. Taken as a difference rather than assumed to
     // be `emulator-5554`: the port depends on what was already running, and
     // booting a second AVD lands on 5556.
     std::string appeared;
     std::string appeared_state;
-    for (const auto& [serial, state] : adb_devices_with_state(opts)) {
+    std::string tool_error;
+    for (const auto& [serial, state] :
+         adb_devices_with_state(opts, half, &tool_error)) {
       bool was_there = false;
       for (const auto& b : before) {
         if (b == serial) was_there = true;
@@ -396,20 +536,39 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
         break;
       }
     }
+    if (!tool_error.empty()) {
+      // adb did not answer. That is not "no new device": it is no answer.
+      unanswered++;
+      last_tool_error = tool_error;
+      if (unanswered >= 3) break;
+      std::this_thread::sleep_for(
+          poll_pause(elapsed(), opts.ready_timeout, opts.poll_interval));
+      continue;
+    }
+    unanswered = 0;
     if (!appeared.empty()) {
       last_seen_serial = appeared;
       last_seen_state = appeared_state;
-      if (appeared_state == "device" && android_boot_completed(appeared, opts)) {
+      if (appeared_state == "device" &&
+          android_boot_completed(appeared, opts, half)) {
         res.ready = true;
         res.device_id = appeared;
         break;
       }
     }
-    std::this_thread::sleep_for(opts.poll_interval);
+    std::this_thread::sleep_for(
+        poll_pause(elapsed(), opts.ready_timeout, opts.poll_interval));
   }
   res.waited = elapsed();
   if (!res.ready) {
-    if (!last_seen_serial.empty()) {
+    if (unanswered >= 3) {
+      res.error = "adb stopped answering while waiting for the emulator: " +
+                  last_tool_error;
+      res.notes.push_back(
+          "this is a failure of the Android tooling, not an answer about the "
+          "emulator: nothing here says whether " + target.identifier +
+          " came up. `adb kill-server` and a retry is the usual fix");
+    } else if (!last_seen_serial.empty()) {
       // Far more useful than "no new device": the emulator did start, and
       // this says how far it got.
       res.notes.push_back(
