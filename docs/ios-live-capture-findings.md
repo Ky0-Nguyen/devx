@@ -19,6 +19,7 @@ Verified on iPhone 17 Pro (26.5), simulator `456FA0D8`:
 | thread count | `proc_pidinfo(PROC_PIDLISTTHREADS)` | works (20 live threads on the RN app) |
 | per-thread CPU + **names** | `proc_pidinfo(PROC_PIDTHREADINFO, <handle>)` | works, no root |
 | Instruments-grade sampling | `task_for_pid` | **refused** (kr=5) without root or the debugger entitlement |
+| stack sampling | `/usr/bin/sample <pid>` | **works** -- see the correction below |
 
 `PROC_PIDTHREADID64INFO` does *not* work with the handles that
 `PROC_PIDLISTTHREADS` returns (errno 3); `PROC_PIDTHREADINFO` is the flavour
@@ -275,3 +276,42 @@ A gap in this tool is not an empty capture, and the two must not read alike.
 
 The `os-log` count of zero in that table is the Full Disk Access problem above,
 visible from a second angle.
+
+## Correction: stacks are obtainable on a simulator
+
+This document concluded, from `task_for_pid` being refused, that stack
+attribution was impossible here, and that claim went into the collector and
+into its capability output. It is wrong.
+
+`/usr/bin/sample` is entitled to do what this process cannot. Run against the
+simulator's Calendar app:
+
+```
+$ /usr/bin/sample 74447 2
+Call graph:
+    1702 Thread_6788599   DispatchQueue_1: com.apple.main-thread  (serial)
+    + 1702 start  (in dyld) + 6992
+    +   1702 start_sim  (in dyld_sim) + 20
+    +     1702 ???  (in MobileCal) load address 0x102350000 + 0x1348a0
+    +       1702 UIApplicationMain  (in UIKitCore) + 120
+    +         1702 -[UIApplication _run]  (in UIKitCore) + 776
+    +           1702 GSEventRunModal  (in GraphicsServices) + 116
+```
+
+1294 lines of symbolised call graph with per-thread attribution, in under four
+seconds, with no root and no Full Disk Access.
+
+So the honest statement is that `SimulatorHostCollector` reports CPU time and
+not attribution **because it does not ingest `sample`'s output**, not because
+attribution is unavailable. The difference matters: one is a platform limit to
+work around, the other is a feature that has not been written.
+
+It is not ingested here because `sample` produces an aggregated call graph
+rather than timestamped samples -- the natural mapping is one weighted
+`CpuSample` per call-graph path, which the model supports via
+`CpuSample::weight` -- and writing that parser deserves to be done against a
+range of real output rather than bolted on at the end of unrelated work.
+
+The collector now probes for it and says which of the two situations applies,
+so the capability output cannot go stale in the direction of claiming less
+than the platform allows.

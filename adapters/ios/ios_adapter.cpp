@@ -1154,9 +1154,11 @@ void IosAdapter::probe(model::CapabilityMatrix& out,
           "not involved.";
       c.limitations.push_back(
           "on a simulator this gives CPU *time* and memory, not frames and "
-          "not stacks: no command-line frame source exists for a simulator, "
-          "and stack sampling needs task_for_pid, which is refused without "
-          "root");
+          "not stacks. The frame part is a platform limit -- no command-line "
+          "frame source exists for a simulator. The stack part is not: "
+          "`/usr/bin/sample` profiles a simulator app and returns a "
+          "symbolised call graph, and this build does not ingest it yet, so "
+          "attribution is a gap here rather than an impossibility.");
       c.limitations.push_back(
           "simulator timings are not device timings, and an app running "
           "translated under Rosetta is not comparable to a native build "

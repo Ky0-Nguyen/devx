@@ -130,6 +130,48 @@ std::vector<HostThreadSample> sample_host_threads(std::int32_t pid) {
   return out;
 }
 
+SampleToolAccess sample_available_for(std::int32_t pid,
+                                      std::chrono::milliseconds timeout) {
+  SampleToolAccess out;
+  if (pid <= 0) {
+    out.detail = "no pid";
+    return out;
+  }
+  proc::Options po;
+  po.timeout = timeout;
+  // One second of sampling is enough to know whether it works at all; the
+  // point is the capability, not the profile.
+  const proc::Result r =
+      proc::run({"/usr/bin/sample", std::to_string(pid), "1"}, po);
+  if (!r.spawned) {
+    out.detail = "could not run /usr/bin/sample: " + r.spawn_error;
+    return out;
+  }
+  if (r.timed_out) {
+    out.detail = "`sample` did not finish within the budget";
+    return out;
+  }
+  if (r.exit_code != 0) {
+    out.detail = "`sample` exited " + std::to_string(r.exit_code) + ": " +
+                 (r.err.empty() ? r.out : r.err);
+    return out;
+  }
+  if (r.out.find("Call graph:") == std::string::npos) {
+    // Exited cleanly and produced nothing usable, which is not the same as
+    // working.
+    out.detail = "`sample` succeeded without producing a call graph";
+    return out;
+  }
+  out.available = true;
+  std::size_t at = 0;
+  while ((at = r.out.find('\n', at)) != std::string::npos) {
+    out.call_graph_lines++;
+    at++;
+  }
+  out.detail = "`sample` returned a symbolised call graph";
+  return out;
+}
+
 std::optional<bool> is_translated(std::int32_t pid) {
   // `sysctl.proc_translated` answers for the calling process only, so the
   // question is asked of the process itself through kinfo_proc's flags.
@@ -287,13 +329,34 @@ session::CaptureResult SimulatorHostCollector::begin(
     result.source_results.push_back(std::move(c));
   };
 
-  source("ios.simulator.host_cpu_time", "CPU time (host process)",
-         model::CapabilityStatus::kLimited,
-         "PROC_PIDTASKINFO for host process " + std::to_string(pid_) +
-             ", converted from mach absolute time units to nanoseconds",
-         {"this is CPU *time*, not attribution: stack sampling needs "
-          "task_for_pid, which is refused without root, so no function-level "
-          "answer is available here"});
+  {
+    // Measured, because the previous version of this asserted that stacks
+    // were impossible and was wrong.
+    const SampleToolAccess sampler =
+        sample_available_for(pid_, std::chrono::milliseconds(8000));
+    std::vector<std::string> cpu_limits = {
+        "this is CPU *time*, not attribution: no function-level answer is "
+        "recorded here"};
+    if (sampler.available) {
+      cpu_limits.push_back(
+          "attribution is **available and not ingested**: `/usr/bin/sample` "
+          "profiled this process and returned a symbolised call graph (" +
+          std::to_string(sampler.call_graph_lines) +
+          " lines). It is entitled to do what this process cannot -- "
+          "task_for_pid is refused here -- so the absence of stacks is a gap "
+          "in this tool, not a limit of the platform. `sample " +
+          std::to_string(pid_) + " 5` gives them now.");
+    } else {
+      cpu_limits.push_back(
+          "attribution was checked and is not available either: " +
+          sampler.detail + " (task_for_pid is also refused here)");
+    }
+    source("ios.simulator.host_cpu_time", "CPU time (host process)",
+           model::CapabilityStatus::kLimited,
+           "PROC_PIDTASKINFO for host process " + std::to_string(pid_) +
+               ", converted from mach absolute time units to nanoseconds",
+           std::move(cpu_limits));
+  }
 
   source("ios.simulator.host_footprint", "Memory footprint",
          model::CapabilityStatus::kAvailable,
