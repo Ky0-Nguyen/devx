@@ -263,3 +263,51 @@ MPI_TEST(a_booted_simulator_that_does_not_answer_is_its_own_failure, {}) {
   MPI_CHECK_MSG(simple.front().find("liveness") == std::string::npos,
                 "and is not given the wedged-runtime advice");
 }
+
+MPI_TEST(a_device_that_vanishes_mid_session_is_named_as_that, {}) {
+  // The commonest real iOS connection event: the phone is authorized when
+  // discovery runs and unplugged before apps are enumerated. It produced
+  // Apple's raw text, even though the meaning of error 1011 was already
+  // decoded for the reachability probe and simply not applied here.
+  //
+  // The exact string devicectl prints, from a real run against an absent
+  // device.
+  const std::string raw =
+      "ERROR: CoreDeviceService was unable to locate a device matching the "
+      "requested device identifier. (DeviceIdentifier: ecid_2666084064886814) "
+      "(com.apple.dt.CoreDeviceError error 1011 (0x3F3))";
+  const std::string described = mpi::ios::describe_devicectl_failure(raw);
+  MPI_CHECK_MSG(described.find("no longer there") != std::string::npos,
+                "it is named as a device that went away");
+  MPI_CHECK_MSG(described.find("unplugging") != std::string::npos,
+                "in terms of what actually happened");
+  MPI_CHECK_MSG(described.find("Re-run discovery") != std::string::npos,
+                "with what to do about it");
+  MPI_CHECK_MSG(described.find("1011") != std::string::npos,
+                "and the tool's own words are kept, because a tool's output "
+                "is evidence and paraphrasing it away loses it");
+
+  // 1000 is a different cause and must not be reported as a disconnect: it
+  // means the identifier is not a CoreDevice device at all.
+  const std::string not_a_device =
+      "ERROR: The specified device was not found. (Name: 456FA0D8) "
+      "(com.apple.dt.CoreDeviceError error 1000 (0x3E8))";
+  const std::string other = mpi::ios::describe_devicectl_failure(not_a_device);
+  MPI_CHECK_MSG(other.find("does not recognise") != std::string::npos,
+                "an unrecognised identifier is its own answer");
+  MPI_CHECK_MSG(other.find("no longer there") == std::string::npos,
+                "and is not reported as a device that disconnected");
+  MPI_CHECK_MSG(other.find("simulator UDID") != std::string::npos,
+                "naming the most likely cause");
+
+  // An unrecognised failure gets no invented explanation.
+  const std::string odd = "ERROR: something nobody has seen before";
+  const std::string passthrough = mpi::ios::describe_devicectl_failure(odd);
+  MPI_CHECK_MSG(passthrough.find("something nobody has seen") != std::string::npos,
+                "the raw text survives");
+  MPI_CHECK_MSG(passthrough.find("Re-run discovery") == std::string::npos,
+                "and no cause is invented for it");
+
+  MPI_CHECK_MSG(mpi::ios::describe_devicectl_failure("").empty(),
+                "an empty failure stays empty rather than gaining a story");
+}

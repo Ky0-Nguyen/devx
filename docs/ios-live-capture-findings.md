@@ -194,3 +194,23 @@ nothing, and a naive check would have salvaged it as a capture.
 
 For a simulator, the working path is `SimulatorHostCollector`: it reads the
 app as a host process and needs no Instruments at all.
+
+## Which `devicectl` commands answer from cache
+
+Worth knowing precisely, because it decides which readings can be trusted as
+current. Tested against a device that had been absent for four days:
+
+| command | against an absent device | conclusion |
+|---|---|---|
+| `device info details` | **`outcome: success`** in ~0.1 s, full properties | answers from a cached CoreDevice record |
+| `device info lockState` | fails, CoreDeviceError 1011, ~0.11 s | requires the hardware |
+| `device info processes` | fails, CoreDeviceError 1011, ~0.11 s | requires the hardware |
+| `device info apps` | fails, CoreDeviceError 1011, ~0.08 s | requires the hardware |
+
+So `details` is the only one whose values are an observation with a date
+rather than a fact about now, which is why `lastConnectionDate` travels with
+anything read from it. And the three that need the hardware are why a device
+authorized at discovery can still fail at enumeration: the phone was unplugged
+in between. `describe_devicectl_failure` names that case rather than printing
+Apple's raw error, and distinguishes it from error 1000, which means the
+identifier is not a CoreDevice device at all.
