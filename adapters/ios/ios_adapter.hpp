@@ -25,6 +25,7 @@
 // reported as unknown rather than guessed (spec A09, 3.4).
 #pragma once
 
+#include <chrono>
 #include <optional>
 #include <string>
 #include <vector>
@@ -45,9 +46,67 @@ struct DeviceReadiness {
   std::string developer_mode_status;
   std::string tunnel_state;
   std::string pairing_state;
+  /// When CoreDevice last actually talked to this device, verbatim from
+  /// `connectionProperties.lastConnectionDate`.
+  ///
+  /// This is here because `devicectl device info details` answers from a
+  /// **cached record**: it returns `outcome: success` in a tenth of a second
+  /// for a device that is not present at all, and every property it reports
+  /// is then a description of the device as it was when last seen. Measured
+  /// on a device that had been away four days -- it still reported
+  /// `developerModeStatus: enabled`, which was a claim about the past
+  /// presented as a fact about now.
+  std::string last_connection_date;
 };
 std::optional<DeviceReadiness> parse_devicectl_readiness(const json::Value& root,
                                                          const std::string& identifier);
+
+/// Whether a device answers *now*.
+///
+/// The passive listing cannot tell you this. `connectionProperties.tunnelState`
+/// is a cached field, and `devicectl device info details` succeeds against a
+/// device that is not there -- so both can describe a phone that left the desk
+/// days ago. `devicectl device info lockState` cannot: it has to reach the
+/// hardware, and it fails in about a tenth of a second when there is nothing
+/// to reach.
+///
+/// It also answers a question a capture needs anyway: a locked device cannot
+/// be driven.
+enum class Reachability {
+  kReachable,     // the device answered
+  kNotFound,      // CoreDevice could not locate it
+  kProbeFailed,   // the probe itself did not run (no devicectl, a timeout)
+};
+const char* to_string(Reachability r);
+
+struct ReachabilityProbe {
+  Reachability state = Reachability::kProbeFailed;
+  /// The device's own answer, when it gave one.
+  std::optional<bool> locked;
+  std::string detail;
+  /// What was run, so the reader knows what the answer rests on.
+  std::string evidence;
+  std::chrono::milliseconds took{0};
+};
+
+/// Probes one device. Costs about a tenth of a second either way, which is
+/// why it is worth doing rather than inferring.
+ReachabilityProbe probe_reachability(const std::string& device_id,
+                                     const discovery::ProviderOptions& opts);
+
+/// Why an unusable iOS device is unusable, and what to do about it.
+///
+/// "offline" is a true statement and a useless one: it does not say whether
+/// to reach for a cable, unlock the screen, trust the computer, or turn on
+/// Developer Mode. Everything needed to answer that is already in the
+/// listing and was being discarded.
+///
+/// Runs the live probe when `probe` is set, which costs about a tenth of a
+/// second and is the only way to distinguish "not here" from "here but the
+/// cached listing is stale".
+std::vector<std::string> explain_unusable_device(
+    const model::DeviceRef& device, const discovery::ProviderOptions& opts,
+    bool probe);
 
 // Parses `devicectl device info apps --json-output`.
 struct InstalledApp {

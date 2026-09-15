@@ -73,6 +73,15 @@ struct DeviceRef {
   // simulator UDID are the same string in every tool that accepts them.
   std::string hardware_udid;
 
+  // When the provider last actually talked to this device, verbatim.
+  //
+  // Set for physical iOS devices, where `devicectl` answers from a cached
+  // record: it reports a device's properties, successfully and in a tenth of
+  // a second, for a phone that left the desk days ago. Without this, those
+  // properties read as current facts. Empty where the provider only reports
+  // devices it can see right now, as adb does.
+  std::string last_seen_at;
+
   /// The identifier to hand to a tool that talks to the hardware.
   ///
   /// Prefer this over `device_id` for anything that records. `device_id`
