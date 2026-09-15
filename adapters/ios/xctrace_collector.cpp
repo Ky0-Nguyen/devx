@@ -48,6 +48,53 @@ std::filesystem::path scratch_dir(const std::string& session_hint,
 
 }  // namespace
 
+BundleReadability bundle_is_readable(const std::string& bundle_path,
+                                     const proc::Options& opts) {
+  BundleReadability out;
+  if (bundle_path.empty()) {
+    out.detail = "no bundle path";
+    return out;
+  }
+  if (!std::filesystem::exists(bundle_path)) {
+    // Distinct from "unreadable": nothing was written at all, which is a
+    // different failure with a different cause.
+    out.detail = "no bundle exists at " + bundle_path;
+    return out;
+  }
+  if (!proc::is_safe_argument(bundle_path, /*reject_option_like=*/true)) {
+    out.detail = "refusing to pass '" + bundle_path + "' to xctrace";
+    return out;
+  }
+  const auto toc = proc::run(
+      {"xcrun", "xctrace", "export", "--input", bundle_path, "--toc"}, opts);
+  if (!toc.spawned) {
+    out.detail = "could not run xctrace to check the bundle: " + toc.spawn_error;
+    return out;
+  }
+  if (toc.timed_out) {
+    out.detail = "the readability check did not finish, so whether the "
+                 "bundle is usable is unknown";
+    return out;
+  }
+  if (toc.exit_code != 0) {
+    // "Document Missing Template Error" is what an unfinished recording
+    // produces. The tool's own words are kept rather than paraphrased.
+    out.detail = "xctrace cannot read the bundle: " +
+                 (toc.err.empty() ? toc.out : toc.err);
+    return out;
+  }
+  // A zero exit is not enough on its own: the table of contents has to be
+  // there, or a future xctrace that succeeds while printing nothing would
+  // read as a valid capture.
+  if (toc.out.find("<trace-toc>") == std::string::npos) {
+    out.detail = "xctrace exited successfully without producing a table of "
+                 "contents, so there is nothing to read";
+    return out;
+  }
+  out.readable = true;
+  return out;
+}
+
 int xctrace_stop_signal() { return SIGINT; }
 std::chrono::milliseconds xctrace_stop_grace() {
   return std::chrono::milliseconds(12000);
@@ -269,14 +316,13 @@ session::CaptureResult XctraceCollector::capture(
   // `--toc` is the cheap form of that question: a stub bundle fails it with
   // "Document Missing Template Error" in well under a second.
   bool salvageable = false;
-  if (!outcome.refusal.empty() && std::filesystem::exists(bundle_path)) {
+  if (!outcome.refusal.empty()) {
     proc::Options probe_opts;
     probe_opts.timeout = std::chrono::milliseconds(20000);
     probe_opts.cancel = config.cancel;
-    const auto toc = proc::run(
-        {"xcrun", "xctrace", "export", "--input", bundle_path, "--toc"},
-        probe_opts);
-    salvageable = toc.ok() && toc.out.find("<trace-toc>") != std::string::npos;
+    const BundleReadability readable =
+        bundle_is_readable(bundle_path, probe_opts);
+    salvageable = readable.readable;
     if (salvageable) {
       out.partial = true;
       out.partial_reasons.push_back(

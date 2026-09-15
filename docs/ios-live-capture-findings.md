@@ -178,5 +178,19 @@ trace?" is now answered by trying to read one -- `xctrace export --toc`
 rejects a stub in well under a second -- rather than by how the process ended.
 A capture xctrace finished but did not exit from is kept and marked partial.
 
+That decision is `ios::bundle_is_readable`, extracted from the capture path
+because inline it was reachable only with a device attached. It was checked
+against the three bundles these experiments actually produced:
+
+| bundle | what it is | verdict |
+|---|---|---|
+| 10 MB, from a macOS recording | a real capture | **readable** |
+| 52 KB, from a simulator attach | a stub | rejected: *Document Missing Template Error* |
+| 252 KB, recording ran but the launch failed | no run data | rejected: *Trace is malformed - run data is missing* |
+
+The third row is why the check runs `--toc` rather than looking at whether a
+file exists or how large it is: that bundle is substantial and contains
+nothing, and a naive check would have salvaged it as a capture.
+
 For a simulator, the working path is `SimulatorHostCollector`: it reads the
 app as a host process and needs no Instruments at all.
