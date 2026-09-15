@@ -9,9 +9,16 @@ function(mpi_add_test name)
   set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                         "${CMAKE_BINARY_DIR}/bin")
   add_test(NAME ${name} COMMAND ${name})
+  add_dependencies(${name} fake_finalising_tool)
   set_tests_properties(${name} PROPERTIES ENVIRONMENT
-                       "MPI_FIXTURE_DIR=${PROJECT_SOURCE_DIR}/fixtures")
+                       "MPI_FIXTURE_DIR=${PROJECT_SOURCE_DIR}/fixtures;MPI_TEST_BIN_DIR=${CMAKE_BINARY_DIR}/bin")
 endfunction()
+
+# A stand-in for a tool that ignores SIGTERM and writes its output on SIGINT,
+# used by test_process to pin how a child is stopped. See the source.
+add_executable(fake_finalising_tool helpers/fake_finalising_tool.cpp)
+set_target_properties(fake_finalising_tool PROPERTIES
+                      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 mpi_add_test(test_json unit/test_json.cpp)
 mpi_add_test(test_xml unit/test_xml.cpp)
