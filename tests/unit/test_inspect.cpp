@@ -374,12 +374,14 @@ MPI_TEST(only_a_real_png_is_accepted_as_a_screenshot, {}) {
 namespace {
 
 mpi::rn::InspectorTarget rn_target(const char* app, const char* device,
-                                   const char* description) {
+                                   const char* description,
+                                   const char* key = "devkey1") {
   mpi::rn::InspectorTarget t;
   t.app_id = app;
   t.device_name = device;
   t.description = description;
-  t.websocket_path = "/inspector/debug?device=x&page=1";
+  t.device_key = key;
+  t.websocket_path = std::string("/inspector/debug?device=") + key + "&page=1";
   return t;
 }
 
@@ -392,10 +394,13 @@ MPI_TEST(one_app_on_two_devices_is_a_question_not_a_guess, {}) {
   // nothing said a choice had been made.
   const std::vector<mpi::rn::InspectorTarget> targets = {
       rn_target("io.example.app", "sdk_gphone16k_arm64 - 17 - API 37",
-                "React Native Bridgeless [C++ connection]"),
+                "React Native Bridgeless [C++ connection]", "androidkey"),
+      // Two targets, one device: Metro lists the runtime connection and an
+      // auxiliary page, and they share a device key.
       rn_target("io.example.app", "iPhone 17 Pro",
-                "React Native Bridgeless [C++ connection]"),
-      rn_target("io.example.app", "iPhone 17 Pro", "UI [C++ connection]"),
+                "React Native Bridgeless [C++ connection]", "ioskey"),
+      rn_target("io.example.app", "iPhone 17 Pro", "UI [C++ connection]",
+                "ioskey"),
   };
 
   const auto blind = mpi::rn::choose_target(targets, "io.example.app", "");
@@ -459,4 +464,70 @@ MPI_TEST(another_apps_runtime_is_never_attached_to, {}) {
   // Even naming the device must not override the app mismatch.
   MPI_CHECK(mpi::rn::choose_target(targets, "io.example.app", "iPhone").target
                 == nullptr);
+}
+
+MPI_TEST(two_devices_with_the_same_name_are_still_two_devices, {}) {
+  // Device names are not unique. Two simulators of the same model on
+  // different runtimes both report `iPad (A16)` -- verified against the
+  // simulator list: UDIDs 7ABCF841... (iOS 18.6) and 1909934C... (iOS 26.5).
+  //
+  // Grouping candidates by name merged them into one and picked between them
+  // silently, which is the very bug device selection was added to prevent.
+  // Metro's `device=` parameter is the identity that distinguishes them.
+  const std::vector<mpi::rn::InspectorTarget> targets = {
+      rn_target("io.example.app", "iPad (A16)",
+                "React Native Bridgeless [C++ connection]", "key18aaaaaa"),
+      rn_target("io.example.app", "iPad (A16)",
+                "React Native Bridgeless [C++ connection]", "key26bbbbbb"),
+  };
+
+  const auto blind = mpi::rn::choose_target(targets, "io.example.app", "");
+  MPI_CHECK_MSG(blind.target == nullptr,
+                "two same-named devices are not silently collapsed into one");
+  MPI_CHECK_MSG(blind.ambiguous, "they are reported as a choice");
+  MPI_CHECK_MSG(blind.device_names.size() == 2, "both are offered");
+  // Offering the same string twice would be useless, so the listing has to
+  // disambiguate them.
+  MPI_CHECK_MSG(blind.device_names[0] != blind.device_names[1],
+                "and the two entries are distinguishable, rather than the "
+                "same name printed twice");
+  bool shows_key = false;
+  for (const auto& n : blind.device_names) {
+    if (n.find("key18") != std::string::npos ||
+        n.find("key26") != std::string::npos) {
+      shows_key = true;
+    }
+  }
+  MPI_CHECK_MSG(shows_key,
+                "the device key is shown for exactly the names that clash");
+
+  // And the key is how one of them is then selected: the name cannot do it.
+  const auto by_key = mpi::rn::choose_target(targets, "io.example.app",
+                                             "key26");
+  MPI_CHECK(by_key.target != nullptr);
+  MPI_CHECK_MSG(by_key.target->device_key == "key26bbbbbb",
+                "the device key selects one of two identically named devices");
+
+  // The shared name still narrows to those two and remains ambiguous, rather
+  // than matching one arbitrarily.
+  const auto by_name = mpi::rn::choose_target(targets, "io.example.app",
+                                              "iPad");
+  MPI_CHECK_MSG(by_name.target == nullptr && by_name.ambiguous,
+                "a name matching both stays a question");
+}
+
+MPI_TEST(one_device_listed_twice_by_metro_is_not_ambiguous, {}) {
+  // The common case, and it must not be mistaken for two devices: Metro
+  // lists a runtime connection and its auxiliary pages for the same device.
+  const std::vector<mpi::rn::InspectorTarget> targets = {
+      rn_target("io.example.app", "iPhone 17 Pro",
+                "React Native Bridgeless [C++ connection]", "same"),
+      rn_target("io.example.app", "iPhone 17 Pro", "UI [C++ connection]",
+                "same"),
+  };
+  const auto only = mpi::rn::choose_target(targets, "io.example.app", "");
+  MPI_CHECK_MSG(only.target != nullptr && !only.ambiguous,
+                "two targets on one device need no choice");
+  MPI_CHECK_MSG(only.target->description.find("Bridgeless") != std::string::npos,
+                "and the runtime connection is the one attached to");
 }

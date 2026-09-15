@@ -60,6 +60,20 @@ A name that matches nothing is also refused, with the attached devices listed,
 rather than falling back to the only device and presenting it as the one
 asked for.
 
+**Device names are not unique**, which is why the grouping is not done by
+name. Two simulators of the same model on different runtimes both report
+`iPad (A16)` -- verified in the local simulator list: UDIDs `7ABCF841…` on iOS
+18.6 and `1909934C…` on iOS 26.5. Metro publishes a per-device identity in the
+`device=` parameter of its debugger URL, and that is what devices are grouped
+by; the two entries Metro lists for one device (a runtime connection and an
+auxiliary page) share it. Where two devices *do* share a name, the listing
+appends enough of that key to tell them apart, and the key can be used as the
+hint:
+
+```bash
+mpi inspect --app <id> --target-device key26bb     # when the name is ambiguous
+```
+
 ## Using it
 
 ```bash

@@ -74,6 +74,15 @@ TargetList list_targets(std::uint16_t metro_port) {
     target.device_name = str(t, "deviceName");
     target.websocket_path = path_of(str(t, "webSocketDebuggerUrl"));
     if (target.websocket_path.empty()) continue;
+    // `?device=<hash>&page=N`: the hash is the device, the page is a target
+    // on it. Names are not unique, so this is the identity to group by.
+    const std::size_t at = target.websocket_path.find("device=");
+    if (at != std::string::npos) {
+      const std::size_t start = at + 7;
+      std::size_t end = target.websocket_path.find('&', start);
+      if (end == std::string::npos) end = target.websocket_path.size();
+      target.device_key = target.websocket_path.substr(start, end - start);
+    }
     out.targets.push_back(std::move(target));
   }
   out.metro_answered_empty = out.targets.empty();
@@ -108,7 +117,11 @@ TargetChoice choose_target(const std::vector<InspectorTarget>& targets,
     const std::string want = lower(device_hint);
     std::vector<const InspectorTarget*> matched;
     for (const InspectorTarget* t : candidates) {
-      if (lower(t->device_name).find(want) != std::string::npos) {
+      // Name or key: the key is what distinguishes two devices that share a
+      // name, and it is what the ambiguity listing shows for them.
+      if (lower(t->device_name).find(want) != std::string::npos ||
+          (!t->device_key.empty() &&
+           lower(t->device_key).rfind(want, 0) == 0)) {
         matched.push_back(t);
       }
     }
@@ -122,23 +135,43 @@ TargetChoice choose_target(const std::vector<InspectorTarget>& targets,
     candidates = std::move(matched);
   }
 
-  // Distinct devices among what is left. Several targets on *one* device is
-  // normal -- Metro lists a runtime connection and auxiliary pages -- and is
-  // resolved by preference below. Several *devices* is a question only the
-  // caller can answer.
-  std::vector<std::string> devices;
+  // Distinct devices among what is left, keyed by Metro's device id and NOT
+  // by name. Several targets on *one* device is normal -- a runtime
+  // connection plus its auxiliary pages -- and is resolved by preference
+  // below. Several *devices* is a question only the caller can answer.
+  //
+  // Grouping by name was wrong: two simulators of the same model on
+  // different runtimes both report `iPad (A16)`, so they would have merged
+  // into one group and one of them been chosen silently.
+  std::vector<std::string> keys;
+  std::vector<std::string> labels;
   for (const InspectorTarget* t : candidates) {
+    const std::string key = t->device_key.empty() ? t->device_name
+                                                  : t->device_key;
     bool seen = false;
-    for (const std::string& d : devices) {
-      if (d == t->device_name) { seen = true; break; }
+    for (const std::string& k : keys) {
+      if (k == key) { seen = true; break; }
     }
-    if (!seen) devices.push_back(t->device_name);
+    if (seen) continue;
+    keys.push_back(key);
+    labels.push_back(t->device_name);
   }
-  if (devices.size() > 1) {
+  // Where two devices share a name, show enough of the key to tell them
+  // apart -- otherwise the list would offer the same string twice.
+  for (std::size_t i = 0; i < labels.size(); i++) {
+    bool duplicated = false;
+    for (std::size_t j = 0; j < labels.size(); j++) {
+      if (i != j && labels[j] == labels[i]) { duplicated = true; break; }
+    }
+    if (duplicated && !keys[i].empty()) {
+      labels[i] += " (" + keys[i].substr(0, 8) + ")";
+    }
+  }
+  if (keys.size() > 1) {
     choice.ambiguous = true;
-    choice.device_names = devices;
+    choice.device_names = labels;
     choice.error = "'" + wanted_app_id + "' is attached from " +
-                   std::to_string(devices.size()) +
+                   std::to_string(keys.size()) +
                    " devices; name one rather than having one chosen";
     return choice;
   }
