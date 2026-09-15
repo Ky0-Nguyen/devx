@@ -199,6 +199,28 @@ std::string ddi_refusal_text(const DeviceReadiness& readiness) {
   return text;
 }
 
+bool executable_path_names_bundle(const std::string& executable_path,
+                                  const std::string& bundle_id) {
+  if (executable_path.empty() || bundle_id.empty()) return false;
+  std::size_t at = 0;
+  while ((at = executable_path.find(bundle_id, at)) != std::string::npos) {
+    // Must start a path segment, or a different bundle id ending in this one
+    // would match -- "com.other.io.example" contains "io.example".
+    const bool starts_segment = at == 0 || executable_path[at - 1] == '/';
+    const std::size_t after = at + bundle_id.size();
+    // And must end at a boundary the installers actually produce: the end of
+    // the string, a path separator, `.app`, or the `-<digits>` a simulator
+    // install appends. A bare alphanumeric after it means a *different*
+    // identifier that happens to share this prefix.
+    const bool ends_cleanly =
+        after >= executable_path.size() || executable_path[after] == '/' ||
+        executable_path[after] == '.' || executable_path[after] == '-';
+    if (starts_segment && ends_cleanly) return true;
+    at = after;
+  }
+  return false;
+}
+
 std::string describe_devicectl_failure(const std::string& raw) {
   // Matched on the error numbers as well as the sentences, since Apple can
   // reword the sentences and has.
@@ -1390,6 +1412,24 @@ std::vector<model::AppEntry> IosAdapter::list_apps(
     }
   }
 
+  // Whether the attribution rule matched anything at all on this device.
+  //
+  // It is the difference between "this app is not running" and "the rule does
+  // not fit this device". A rule that matches nothing anywhere has not
+  // observed an idle device; it has failed, and saying so is the whole point.
+  bool attribution_ever_worked = false;
+  if (processes_ok) {
+    for (const auto& app : installed) {
+      for (const auto& p : processes) {
+        if (executable_path_names_bundle(p.executable_path, app.bundle_id)) {
+          attribution_ever_worked = true;
+          break;
+        }
+      }
+      if (attribution_ever_worked) break;
+    }
+  }
+
   for (const auto& app : installed) {
     model::AppEntry e;
     e.key.platform = model::Platform::kIos;
@@ -1414,10 +1454,9 @@ std::vector<model::AppEntry> IosAdapter::list_apps(
       // never used (spec 3.4).
       for (const auto& p : processes) {
         if (p.executable_path.empty()) continue;
-        const std::string needle = "/" + app.bundle_id + "/";
-        const bool path_names_bundle =
-            p.executable_path.find(needle) != std::string::npos;
-        if (!path_names_bundle) continue;
+        if (!executable_path_names_bundle(p.executable_path, app.bundle_id)) {
+          continue;
+        }
         model::ProcessInstance pi;
         pi.app = e.key;
         pi.pid = p.pid;
@@ -1435,11 +1474,31 @@ std::vector<model::AppEntry> IosAdapter::list_apps(
             "match. Ownership is left unestablished.";
         e.processes.push_back(std::move(pi));
       }
-      e.runtime_state = e.processes.empty() ? model::RuntimeState::kNotRunning
-                                            : model::RuntimeState::kRunning;
       if (!e.processes.empty()) {
+        e.runtime_state = model::RuntimeState::kRunning;
         e.notes.push_back(
             "running; iOS exposes no general foreground/suspended signal");
+      } else if (attribution_ever_worked) {
+        // The rule has matched something on this device, so it works here,
+        // and nothing matching this app means this app is not running.
+        e.runtime_state = model::RuntimeState::kNotRunning;
+      } else {
+        // Nothing matched *any* installed app while processes were listed.
+        // That is not evidence the device is idle: it is equally consistent
+        // with the attribution rule not fitting this device's path shape,
+        // which is exactly what happened when the rule required the bundle
+        // id as a whole path segment -- real container paths carry it as a
+        // segment prefix, and a physical device's do not carry it at all.
+        //
+        // Reporting not_running here would have told someone to start an app
+        // that was already running.
+        e.runtime_state = model::RuntimeState::kUnknown;
+        e.notes.push_back(
+            "runtime state is unknown: " + std::to_string(processes.size()) +
+            " process(es) were listed and none could be attributed to any "
+            "installed app. Attribution relies on the executable path naming "
+            "the bundle, which devicectl does not guarantee, so this is not "
+            "evidence that the app is not running");
       }
     }
 

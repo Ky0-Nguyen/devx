@@ -1,0 +1,23 @@
+#!/bin/sh
+# A stub `xcrun` that serves recorded devicectl JSON, so the physical-device
+# code path can be executed without a physical device. It is NOT a simulation
+# of a phone: it replays recorded response shapes, and the device it describes
+# is named SYNTHETIC so nothing downstream can mistake it for real hardware.
+DIR="$(dirname "$0")"
+if [ "$1" != "devicectl" ]; then exec /usr/bin/xcrun "$@"; fi
+shift
+sub=""
+out=""
+prev=""
+for a in "$@"; do
+  case "$a" in
+    details|apps|processes) sub="$a" ;;
+    devices) [ "$sub" = "" ] && sub="list" ;;
+  esac
+  if [ "$prev" = "--json-output" ]; then out="$a"; fi
+  prev="$a"
+done
+[ -z "$sub" ] && { echo "stub: unsupported devicectl subcommand" >&2; exit 2; }
+[ -n "$out" ] && cp "$DIR/$sub.json" "$out"
+cat "$DIR/$sub.json"
+exit 0

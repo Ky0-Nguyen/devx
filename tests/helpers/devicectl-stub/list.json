@@ -1,0 +1,38 @@
+{
+ "info": {
+  "outcome": "success"
+ },
+ "result": {
+  "devices": [
+   {
+    "identifier": "3FF46431-775C-59BB-AD26-D316DFAFA5A6",
+    "hardwareProperties": {
+     "udid": "00008101-000978CA11A1001E",
+     "platform": "iOS",
+     "marketingName": "iPhone 12 Pro Max",
+     "productType": "iPhone13,4",
+     "reality": "physical",
+     "ecid": 2666084064886814,
+     "serialNumber": "SYNTHETIC-SERIAL",
+     "cpuType": {
+      "name": "arm64e"
+     }
+    },
+    "deviceProperties": {
+     "name": "SYNTHETIC connected iPhone",
+     "osVersionNumber": "26.0",
+     "osBuildUpdate": "23A340",
+     "ddiServicesAvailable": true,
+     "developerModeStatus": "enabled"
+    },
+    "connectionProperties": {
+     "tunnelState": "connected",
+     "pairingState": "paired",
+     "transportType": "wired",
+     "authenticationType": "manualPairing",
+     "lastConnectionDate": "2026-09-15T12:00:00.000Z"
+    }
+   }
+  ]
+ }
+}
