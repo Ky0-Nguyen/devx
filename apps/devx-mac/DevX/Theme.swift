@@ -332,7 +332,7 @@ struct Field<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(label)
+            Text(tr(label))
                 .font(Term.font(11))
                 .foregroundStyle(Term.dim)
                 .frame(width: 128, alignment: .trailing)

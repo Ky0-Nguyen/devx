@@ -28,6 +28,21 @@ RUN = re.compile(r'"(?:[^"\\\n]|\\.)*"(?:\s*\+\s*\n?\s*"(?:[^"\\\n]|\\.)*")*')
 LIT = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
 
 
+
+def strip_comment_lines(text):
+    """Drops whole-line `//` comments.
+
+    Necessary because the catalog's own comments quote the tokens they are
+    about -- a note explaining that "UI" and "JS" stay in English put three
+    bare literals into the file, which the pair walker read as a catalog entry
+    and then reported as a dead translation. Only whole-line comments are
+    removed: a `//` inside a string is part of a URL, not a comment.
+    """
+    out = []
+    for line in text.split("\n"):
+        out.append("" if line.lstrip().startswith("//") else line)
+    return "\n".join(out)
+
 def unescape(s):
     return (s.replace('\\"', '"').replace("\\n", "\n")
              .replace("\\t", "\t").replace("\\\\", "\\"))
@@ -47,7 +62,7 @@ def joined_runs(text):
 # component does it: Panel/Banner/BulletList and the empty-state view all run
 # `t()` over these parameters (see Theme.swift).
 TRANSLATING = ("tr(", "title:", "subtitle:", "message:", "detail:", "hint:",
-               "items:")
+               "items:", "label:")
 # Call sites that render their argument as-is.
 VERBATIM = ("Text(", "Button(", "navigationTitle(", "Label(", "help(",
             "placeholder:")
@@ -59,7 +74,8 @@ def unreached(keys):
     for f in sorted(glob.glob(os.path.join(SRC, "*.swift"))):
         if os.path.basename(f) == "Strings.swift":
             continue
-        sources[os.path.basename(f)] = open(f, encoding="utf-8").read()
+        sources[os.path.basename(f)] = strip_comment_lines(
+            open(f, encoding="utf-8").read())
 
     bad = []
     for key in keys:
@@ -94,7 +110,7 @@ def unreached(keys):
 
 def catalog_pairs():
     """The catalog's (english, translation) pairs, both sides joined."""
-    src = open(CATALOG, encoding="utf-8").read()
+    src = strip_comment_lines(open(CATALOG, encoding="utf-8").read())
     start = src.index("static let vietnamese")
     body = src[start:]
     # Entries are `<run> : <run> ,` -- walk runs in order and pair them up.
@@ -128,14 +144,15 @@ def translation_targets():
     for f in sorted(glob.glob(os.path.join(SRC, "*.swift"))):
         if os.path.basename(f) == "Strings.swift":
             continue
-        text = open(f, encoding="utf-8").read()
+        text = strip_comment_lines(open(f, encoding="utf-8").read())
         for m in re.finditer(r'\btr\(', text):
             run = RUN.match(text, m.end())
             if not run:
                 continue    # tr(title), tr(item) -- a variable, not a literal
             out.add(unescape("".join(LIT.findall(run.group(0)))))
         # Titles and subtitles handed straight to a translating component.
-        for label in ("title:", "subtitle:", "message:", "detail:", "hint:"):
+        for label in ("title:", "subtitle:", "message:", "detail:", "hint:",
+                      "label:"):
             for m in re.finditer(re.escape(label) + r'\s*\n?\s*', text):
                 run = RUN.match(text, m.end())
                 if run:
@@ -149,7 +166,8 @@ def main():
     for f in sorted(glob.glob(os.path.join(SRC, "*.swift"))):
         if os.path.basename(f) == "Strings.swift":
             continue
-        rendered |= joined_runs(open(f, encoding="utf-8").read())
+        rendered |= joined_runs(
+            strip_comment_lines(open(f, encoding="utf-8").read()))
 
     pairs = catalog_pairs()
     if not pairs:

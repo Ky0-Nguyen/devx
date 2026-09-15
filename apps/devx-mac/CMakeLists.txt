@@ -38,6 +38,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Views.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Views2.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LiveView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineView.swift

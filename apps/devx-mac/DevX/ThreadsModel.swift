@@ -20,29 +20,38 @@ enum ThreadRole: String, CaseIterable {
     case renderer
     case other
 
+    /// React Native's own names for these threads.
+    ///
+    /// Deliberately the conventional ones -- "UI thread", "JS thread",
+    /// "native modules thread" -- rather than shorter labels of this tool's
+    /// invention. Someone reading a profile has read the React Native
+    /// documentation, and a tool that renames the three threads everyone
+    /// already argues about makes its reader translate before they can think.
     var label: String {
         switch self {
-        case .uiMain: return "UI main"
-        case .js: return "JS"
-        case .nativeModules: return "native modules"
-        case .renderer: return "renderer"
-        case .other: return "other"
+        case .uiMain: return tr("UI thread (main)")
+        case .js: return tr("JS thread")
+        case .nativeModules: return tr("native modules thread")
+        case .renderer: return tr("render thread")
+        case .other: return tr("other")
         }
     }
 
     var detail: String {
         switch self {
         case .uiMain:
-            return "draws and handles input; work here is what a user feels first"
+            return tr("draws and handles input; work here is what a user "
+                    + "feels first")
         case .js:
-            return "the app's own JavaScript; a long task here does not block "
-                 + "drawing unless the UI thread waits on it"
+            return tr("the app's own JavaScript; a long task here does not "
+                    + "block drawing unless the UI thread waits on it")
         case .nativeModules:
-            return "bridged native work on behalf of JS"
+            return tr("bridged native work on behalf of JS")
         case .renderer:
-            return "the platform's own render thread, not the app's code"
+            return tr("the platform's own render thread, not the app's code")
         case .other:
-            return "no role could be established from what this capture records"
+            return tr("no role could be established from what this capture "
+                    + "records")
         }
     }
 }
@@ -68,9 +77,9 @@ enum RoleBasis: String {
 
     var label: String {
         switch self {
-        case .platformSignal: return "platform signal"
-        case .threadName: return "from the thread's name"
-        case .none: return "not established"
+        case .platformSignal: return tr("platform signal")
+        case .threadName: return tr("from the thread's name")
+        case .none: return tr("not established")
         }
     }
 

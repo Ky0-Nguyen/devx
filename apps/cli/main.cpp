@@ -123,6 +123,9 @@ bool needs_value(const std::string& flag) {
       "--max-input-mib",
       "--max-markers",
       "--max-spread",
+      "--metro-port",
+      "--screenshot-dir",
+      "--seconds",
       "--min-absolute-delta",
       "--min-relative-delta",
       "--min-runs",
@@ -172,6 +175,8 @@ bool is_boolean_flag(const std::string& flag) {
       "--no-memory",    "--no-simulators",  "--profileable",
       "--quiet",        "--running",        "--scheduling",
       "--sdk",          "--source-dirty",
+      "--targets",      "--redux",          "--redux-values",
+      "--screenshot",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
@@ -446,6 +451,8 @@ int main(int argc, char** argv) {
     code = cmd_export(parsed.inv);
   } else if (cmd == "rules") {
     code = cmd_rules(parsed.inv);
+  } else if (cmd == "inspect") {
+    return to_int(cmd_inspect(parsed.inv));
   } else if (cmd == "sdk-bridge") {
     code = cmd_sdk_bridge(parsed.inv);
   } else if (cmd == "version") {

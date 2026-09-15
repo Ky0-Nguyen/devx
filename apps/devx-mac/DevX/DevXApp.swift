@@ -39,6 +39,7 @@ struct DevXApp: App {
         if let c = launch.candidate { state.candidatePath = c }
 
         state.loadLanguage()
+        state.loadRememberedTarget()
         state.loadRecents()
         state.loadVersion()
         state.loadDevices()
@@ -166,6 +167,7 @@ struct RootView: View {
                 case .preflight: PreflightView()
                 case .live: LiveView()
                 case .record: RecordView()
+                case .inspect: InspectView()
                 case .sessions: SessionsView()
                 case .issues: IssuesView()
                 case .threads: ThreadsView()

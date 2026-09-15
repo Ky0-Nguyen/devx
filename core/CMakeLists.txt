@@ -2,6 +2,10 @@ add_library(mpi_core STATIC
   util/json.cpp
   util/xml.cpp
   net/http_server.cpp
+  net/websocket_client.cpp
+  net/loopback_http.cpp
+  observe/inspect.cpp
+  observe/screenshot.cpp
   sdk/marker_ingest.cpp
   sdk/sdk_bridge.cpp
   util/process.cpp

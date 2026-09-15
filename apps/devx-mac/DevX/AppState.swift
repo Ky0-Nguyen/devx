@@ -65,6 +65,54 @@ final class AppState: ObservableObject {
         }
     }
     static let languageKey = "devx.language"
+    static let deviceKey = "devx.lastDevice"
+    static let appKey = "devx.lastApp"
+
+    /// Remembers the target so it does not have to be retyped every launch.
+    ///
+    /// A *preference*, not evidence. The device id is written down because it
+    /// was selected here, and on the next launch it is only restored if
+    /// discovery finds that device again -- a remembered id is not a claim
+    /// that anything is connected, which is the same rule Recents follows.
+    func rememberTarget() {
+        UserDefaults.standard.set(selectedDevice, forKey: Self.deviceKey)
+        UserDefaults.standard.set(selectedApp, forKey: Self.appKey)
+    }
+
+    private var pendingDevice: String? = nil
+
+    /// Reads the remembered target. The device is *not* selected yet: it is
+    /// held until discovery says whether it is there.
+    func loadRememberedTarget() {
+        // An explicit `--device` / `--app` on the command line has already
+        // been applied at this point and must win: someone who named a target
+        // is not asking for last week's.
+        if selectedDevice.isEmpty {
+            pendingDevice = UserDefaults.standard.string(forKey: Self.deviceKey)
+        }
+        if selectedApp.isEmpty,
+           let app = UserDefaults.standard.string(forKey: Self.appKey),
+           !app.isEmpty {
+            selectedApp = app
+        }
+    }
+
+    /// Applies the remembered device once a device list exists.
+    ///
+    /// Returns true when it was restored. A remembered device that is absent,
+    /// or present but unusable, is left unselected rather than selected and
+    /// then failing on the first operation.
+    @discardableResult
+    func applyRememberedDevice() -> Bool {
+        let ids = usableDevices.map { $0["device_id"].text }
+        guard let chosen = RecentTargets.restore(remembered: pendingDevice,
+                                                 usable: ids) else {
+            return false
+        }
+        pendingDevice = nil
+        selectedDevice = chosen
+        return true
+    }
 
     /// Applies the stored preference before the first frame is drawn, so the
     /// window does not appear in English and then change under the reader.
@@ -121,11 +169,32 @@ final class AppState: ObservableObject {
     // issue list. Clicking an issue focuses its evidence interval (spec
     // section 13), so this is what carries that selection.
     @Published var focusedBandId: String = ""
+    // Inspect: reading a running app through the inspector it already runs.
+    @Published var inspectTargetsDoc: JSON = .null
+    @Published var inspectDoc: JSON = .null
+    @Published var inspectSeconds: Int = 15
+    @Published var inspectRedux: Bool = true
+    /// Off by default, and deliberately not remembered: a store holds tokens
+    /// and personal data, so including its values is a decision made per
+    /// capture rather than a setting that quietly stays on.
+    @Published var inspectReduxValues: Bool = false
+    @Published var inspectScreenshots: Bool = false
+
     @Published var rulesDoc: JSON = .null
     @Published var recordDoc: JSON = .null
 
-    @Published var selectedDevice: String = ""
-    @Published var selectedApp: String = ""
+    @Published var selectedDevice: String = "" {
+        didSet {
+            guard selectedDevice != oldValue else { return }
+            UserDefaults.standard.set(selectedDevice, forKey: Self.deviceKey)
+        }
+    }
+    @Published var selectedApp: String = "" {
+        didSet {
+            guard selectedApp != oldValue else { return }
+            UserDefaults.standard.set(selectedApp, forKey: Self.appKey)
+        }
+    }
     @Published var selectedSession: String = ""
     // Issue filters (spec section 13). Empty means "no filter on this
     // dimension" -- never "match nothing", which would make an empty list
@@ -347,7 +416,11 @@ final class AppState: ObservableObject {
             if self.selectedDevice.isEmpty ||
                 !self.usableDevices.contains(where: {
                     $0["device_id"].text == self.selectedDevice }) {
-                self.selectedDevice = self.usableDevices.first?["device_id"].text ?? ""
+                // The device remembered from last time wins over whichever
+                // one discovery happened to return first.
+                if !self.applyRememberedDevice() {
+                    self.selectedDevice = self.usableDevices.first?["device_id"].text ?? ""
+                }
             }
         }
     }
@@ -475,6 +548,49 @@ final class AppState: ObservableObject {
                 // so the boot list is no longer right either.
                 self.loadBootTargets()
             }
+        }
+    }
+
+    func loadInspectTargetsIfNeeded() {
+        guard inspectTargetsDoc.isNull else { return }
+        loadInspectTargets()
+    }
+
+    func loadInspectTargets() {
+        run("Listing attachable apps…", { Core.inspectTargets(metroPort: 8081) }) {
+            self.inspectTargetsDoc = $0
+        }
+    }
+
+    /// Observes for the configured window.
+    ///
+    /// The screenshot directory sits beside the sessions, because the images
+    /// are part of what a capture produced and belong with it rather than in
+    /// a temporary folder that the next reboot clears.
+    func runInspect() {
+        guard !selectedApp.isEmpty else { return }
+        let app = selectedApp
+        let seconds = inspectSeconds
+        let redux = inspectRedux
+        let values = inspectReduxValues
+        let shots = inspectScreenshots
+        let device = selectedDevice
+        let dir = sessionsDir + "/inspect-shots"
+        if shots {
+            try? FileManager.default.createDirectory(
+                atPath: dir, withIntermediateDirectories: true)
+        }
+        Core.resetCancel()
+        run("Observing \(app) for \(seconds)s…", {
+            Core.inspect(appId: app, seconds: seconds, metroPort: 8081,
+                         redux: redux, reduxValues: values,
+                         screenshots: shots, deviceId: device,
+                         screenshotDir: dir)
+        }) { doc in
+            self.inspectDoc = doc
+            // A capture changes what is attachable -- the app may have
+            // reloaded and taken a new target id with it.
+            self.loadInspectTargets()
         }
     }
 

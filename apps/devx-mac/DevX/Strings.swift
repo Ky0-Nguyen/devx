@@ -244,6 +244,31 @@ enum Strings {
             + "analyze --suppressions` đọc. Phiên trên đĩa không bị thay đổi.",
 
         // ---- Threads ----
+        // React Native's own thread names. "UI", "JS" and "native" stay in
+        // English inside them: those are the words a Vietnamese React Native
+        // developer uses, and translating them would make the labels harder
+        // to match against the documentation, not easier.
+        "UI thread (main)": "luồng UI (main)",
+        "JS thread": "luồng JS",
+        "native modules thread": "luồng native modules",
+        "render thread": "luồng render",
+        "other": "khác",
+        "draws and handles input; work here is what a user feels first":
+            "vẽ và xử lý thao tác nhập; công việc ở đây là thứ người dùng "
+            + "cảm nhận đầu tiên",
+        "the app's own JavaScript; a long task here does not block drawing "
+        + "unless the UI thread waits on it":
+            "JavaScript của chính ứng dụng; một tác vụ dài ở đây không chặn "
+            + "việc vẽ, trừ khi luồng UI phải chờ nó",
+        "bridged native work on behalf of JS":
+            "công việc native được gọi qua bridge thay cho JS",
+        "the platform's own render thread, not the app's code":
+            "luồng render của chính nền tảng, không phải mã của ứng dụng",
+        "no role could be established from what this capture records":
+            "không xác định được vai trò từ những gì lần ghi này lưu lại",
+        "platform signal": "tín hiệu từ nền tảng",
+        "from the thread's name": "suy ra từ tên luồng",
+        "not established": "không xác định được",
         "No threads recorded": "Không có luồng nào được ghi",
         "Roles below come from thread names":
             "Vai trò bên dưới suy ra từ tên luồng",
@@ -562,6 +587,155 @@ enum Strings {
         + "app is running now":
             "những gì đã được profile từ máy này — không bao giờ là bằng "
             + "chứng rằng một ứng dụng đang chạy",
+
+        // ---- Inspect ----
+        "A React Native debug build already runs an inspector and "
+        + "already connects itself to Metro. This reads that connection, "
+        + "so nothing is added to the app: no dependency, no import, no "
+        + "rebuild. A release build runs no inspector, and an empty "
+        + "capture there means there was nothing to attach to.":
+            "Một bản build debug của React Native đã tự chạy inspector và "
+            + "đã tự kết nối tới Metro. Tính năng này đọc kết nối đó, nên "
+            + "không cần thêm gì vào ứng dụng: không thư viện, không import, "
+            + "không build lại. Bản release không chạy inspector, và một lần "
+            + "quan sát trống ở đó nghĩa là không có gì để kết nối tới.",
+        "A screenshot was not taken":
+            "Không chụp được ảnh màn hình",
+        "Attachable now":
+            "Có thể kết nối lúc này",
+        "Inspect":
+            "Quan sát",
+        "Metro is not answering":
+            "Metro không trả lời",
+        "Metro is running and nothing is attached to its inspector. A "
+        + "debug build connects itself; a release build has no inspector "
+        + "to connect.":
+            "Metro đang chạy và chưa có gì kết nối tới inspector của nó. "
+            + "Bản build debug sẽ tự kết nối; bản release không có inspector "
+            + "để kết nối.",
+        "Network":
+            "Mạng",
+        "No app is attached":
+            "Chưa có ứng dụng nào kết nối",
+        "Nothing below is a statement about the app.":
+            "Không có gì bên dưới nói lên điều gì về ứng dụng.",
+        "Nothing was attached":
+            "Không kết nối được gì",
+        "Nothing was reported. The domain was enabled, so this is the "
+        + "app making no JavaScript HTTP calls in the window — a native "
+        + "module's own HTTP would not appear here either way.":
+            "Không có gì được báo về. Domain đã được bật, nên đây là việc "
+            + "ứng dụng không gọi HTTP nào từ JavaScript trong khoảng thời "
+            + "gian này — HTTP do một native module tự gọi thì dù sao cũng "
+            + "không xuất hiện ở đây.",
+        "Observe":
+            "Quan sát",
+        "Redux state":
+            "Trạng thái Redux",
+        "Screenshots":
+            "Ảnh màn hình",
+        "The app logged nothing in this window.":
+            "Ứng dụng không ghi log gì trong khoảng thời gian này.",
+        "This says nothing about the app.":
+            "Điều này không nói lên gì về ứng dụng.",
+        "What this does not show":
+            "Những gì phần này không cho thấy",
+        "a debugger session, not a measurement":
+            "một phiên debugger, không phải một phép đo",
+        "a store holds tokens and personal data; the values are left "
+        + "out unless asked for":
+            "store chứa token và dữ liệu cá nhân; các giá trị sẽ bị loại ra "
+            + "trừ khi bạn yêu cầu",
+        "each shows the moment it was taken, and nothing else":
+            "mỗi ảnh chỉ cho thấy đúng thời điểm nó được chụp, không gì khác",
+        "include its values":
+            "kèm theo các giá trị",
+        "inferred Redux action:":
+            "action Redux suy ra được:",
+        "listed by Metro; a debug build appears here by itself":
+            "do Metro liệt kê; bản build debug sẽ tự xuất hiện ở đây",
+        "needs a device: Metro knows the app but not which device it is on":
+            "cần một thiết bị: Metro biết ứng dụng nhưng không biết nó đang "
+            + "chạy trên thiết bị nào",
+        "not looked yet":
+            "chưa quét",
+        "observe":
+            "quan sát",
+        "observing…":
+            "đang quan sát…",
+        "read the Redux store":
+            "đọc store Redux",
+        "screenshot the screen before and after":
+            "chụp màn hình trước và sau",
+        "size unknown":
+            "không rõ kích thước",
+        "slice(s)":
+            "slice",
+        "state, not actions":
+            "trạng thái, không phải action",
+        "still in flight when the window closed: evidence of the "
+        + "request, none of its outcome":
+            "vẫn đang chạy khi cửa sổ quan sát đóng lại: là bằng chứng có "
+            + "request, không nói gì về kết quả của nó",
+        "the JavaScript side only":
+            "chỉ phía JavaScript",
+        "use":
+            "dùng",
+        "whatever the app chose to log":
+            "bất cứ thứ gì ứng dụng chọn ghi log",
+
+        // ---- Field labels ----
+        // Short labels down the left of every panel. Technical
+        // tokens a Vietnamese developer says in English -- cpu,
+        // frame, tick -- stay inside them.
+        "app": "ứng dụng",
+        "baseline": "bản nền",
+        "candidate": "bản ứng viên",
+        "cause": "nguyên nhân",
+        "clock": "đồng hồ",
+        "collected": "đã thu",
+        "counter points": "điểm counter",
+        "cpu samples": "mẫu CPU",
+        "cpu window": "cửa sổ CPU",
+        "detection": "phát hiện",
+        "detector": "bộ phát hiện",
+        "device": "thiết bị",
+        "duration": "thời lượng",
+        "elapsed": "đã trôi qua",
+        "eligibility": "điều kiện hợp lệ",
+        "evidence": "bằng chứng",
+        "expiry": "ngày hết hạn",
+        "fingerprint": "dấu vân dữ liệu",
+        "fix": "cách khắc phục",
+        "frame history": "lịch sử frame",
+        "frames": "frame",
+        "interval": "khoảng",
+        "last tick": "tick gần nhất",
+        "max relative spread": "độ trải tương đối tối đa",
+        "min absolute delta": "chênh lệch tuyệt đối tối thiểu",
+        "min relative delta": "chênh lệch tương đối tối thiểu",
+        "min valid runs": "số lần chạy hợp lệ tối thiểu",
+        "mode": "chế độ",
+        "occurrences": "số lần xuất hiện",
+        "platform": "nền tảng",
+        "reason": "lý do",
+        "recents": "gần đây",
+        "reference": "tham chiếu",
+        "resolution": "độ phân giải",
+        "sampling": "lấy mẫu",
+        "scope": "phạm vi",
+        "screen": "màn hình",
+        "seconds": "giây",
+        "session": "phiên",
+        "sessions": "các phiên",
+        "severity": "mức độ",
+        "sources": "nguồn",
+        "suppressed": "đã bỏ qua",
+        "suppressions": "các mục bỏ qua",
+        "symbols": "ký hiệu",
+        "target": "mục tiêu",
+        "threads": "luồng",
+        "window": "cửa sổ",
 
         // ---- Language ----
         "Language": "Ngôn ngữ",

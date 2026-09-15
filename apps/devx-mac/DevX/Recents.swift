@@ -180,3 +180,22 @@ func presence(of target: RecentTarget, identifiers: Set<String>,
     return identifiers.contains(target.appIdentifier) ? .inListing
                                                       : .notInListing
 }
+
+extension RecentTargets {
+    /// Decides whether a remembered device id may be selected again.
+    ///
+    /// Here rather than in AppState because it is a rule, not plumbing, and
+    /// because getting it wrong is silent: selecting a device that discovery
+    /// did not return would leave the app pointed at something absent, and
+    /// every later operation would fail with an error about the device rather
+    /// than about the stale preference that caused it.
+    ///
+    /// Returns nil when there is nothing to restore, which the caller reads
+    /// as "leave it unselected" -- never as "select the first one", because a
+    /// silent switch to a different device is how a capture ends up
+    /// attributed to the wrong hardware.
+    static func restore(remembered: String?, usable: [String]) -> String? {
+        guard let remembered, !remembered.isEmpty else { return nil }
+        return usable.contains(remembered) ? remembered : nil
+    }
+}
