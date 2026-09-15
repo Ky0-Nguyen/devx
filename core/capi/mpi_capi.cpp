@@ -1,5 +1,7 @@
 #include "core/capi/mpi_capi.h"
 
+#include "adapters/rn/inspector.hpp"
+
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -338,6 +340,57 @@ char* mpi_boot_targets_json(void) {
     discovery::BootOptions opts;
     opts.cancel = cancel_registry().token();
     return discovery::list_boot_targets(opts).to_json();
+  });
+}
+
+char* mpi_inspect_targets_json(int metro_port) {
+  return guard([&] {
+    const std::uint16_t port = metro_port > 0 && metro_port <= 65535
+                                   ? static_cast<std::uint16_t>(metro_port)
+                                   : static_cast<std::uint16_t>(8081);
+    const rn::TargetList list = rn::list_targets(port);
+    json::Value out = json::Value::object();
+    out.set("metro_reachable", json::Value::boolean(list.metro_reachable));
+    out.set("metro_port", json::Value::integer(port));
+    if (!list.error.empty()) out.set("error", json::Value::string(list.error));
+    json::Value arr = json::Value::array();
+    for (const auto& t : list.targets) {
+      json::Value v = json::Value::object();
+      v.set("app_id", json::Value::string(t.app_id));
+      v.set("title", json::Value::string(t.title));
+      v.set("description", json::Value::string(t.description));
+      v.set("device_name", json::Value::string(t.device_name));
+      arr.push_back(std::move(v));
+    }
+    out.set("targets", std::move(arr));
+    return out;
+  });
+}
+
+char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
+                       int flags, const char* device_id,
+                       const char* screenshot_dir) {
+  return guard([&] {
+    rn::InspectOptions opts;
+    opts.app_id = safe(app_id);
+    opts.seconds = seconds > 0 && seconds <= 3600 ? seconds : 15;
+    opts.metro_port = metro_port > 0 && metro_port <= 65535
+                          ? static_cast<std::uint16_t>(metro_port)
+                          : static_cast<std::uint16_t>(8081);
+    opts.read_redux_state = (flags & 1) != 0;
+    opts.include_state_values = (flags & 2) != 0;
+    if (opts.include_state_values) opts.read_redux_state = true;
+    // Screenshots need a device id. Metro's inspector knows the app but not
+    // which device it is on, so without one there is nothing safe to
+    // photograph -- and the wrong device is worse than none.
+    opts.screenshot_device_id = safe(device_id);
+    opts.screenshots = (flags & 4) != 0 && !opts.screenshot_device_id.empty();
+    opts.screenshot_dir = safe(screenshot_dir);
+    // Bound to a local: `token()` returns by value, and taking the address
+    // of the temporary would leave a dangling pointer for the whole capture.
+    const CancellationToken cancel = cancel_registry().token();
+    const observe::InspectReport report = rn::run(opts, &cancel);
+    return report.to_json();
   });
 }
 

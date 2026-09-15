@@ -132,6 +132,29 @@ enum Core {
         call { mpi_boot_json(identifier, Int32(readyTimeoutSeconds)) }
     }
 
+    /// What is attachable right now. Cheap, and it does not hold the single
+    /// debugger slot the way a capture does.
+    static func inspectTargets(metroPort: Int) -> JSON {
+        call { mpi_inspect_targets_json(Int32(metroPort)) }
+    }
+
+    /// Reads a running app's network calls, console output and Redux state
+    /// through the inspector the app already runs. Blocks for the whole
+    /// window, so the caller runs it off the main thread.
+    static func inspect(appId: String, seconds: Int, metroPort: Int,
+                        redux: Bool, reduxValues: Bool,
+                        screenshots: Bool, deviceId: String,
+                        screenshotDir: String) -> JSON {
+        var flags: Int32 = 0
+        if redux { flags |= 1 }
+        if reduxValues { flags |= 3 }     // values imply reading the store
+        if screenshots { flags |= 4 }
+        return call {
+            mpi_inspect_json(appId, Int32(seconds), Int32(metroPort), flags,
+                             deviceId, screenshotDir)
+        }
+    }
+
     static func sessions(dir: String) -> JSON { call { mpi_sessions_json(dir) } }
 
     static func session(dir: String, id: String) -> JSON {

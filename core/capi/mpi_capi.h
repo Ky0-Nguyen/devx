@@ -57,6 +57,24 @@ char* mpi_boot_targets_json(void);
  * be confirmed -- an AVD name is not a device id. */
 char* mpi_boot_json(const char* identifier, int ready_timeout_s);
 
+/* Reads a running React Native app's network calls, console output and Redux
+ * state through the inspector the app already runs -- nothing is added to the
+ * app. See core/observe/inspect.hpp for what that reaches and what it does
+ * not; the returned document carries those limits in its `caveats` array, so
+ * a caller that renders the data has the caveats to hand.
+ *
+ * `app_id` may be empty, meaning whatever is attached. `seconds` is the
+ * observation window. `metro_port` 0 means the default 8081. `flags` is a bit
+ * set: 1 read the Redux store, 2 include its values, 4 take screenshots
+ * (which needs `device_id`).
+ */
+char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
+                       int flags, const char* device_id,
+                       const char* screenshot_dir);
+
+/* What is attachable right now, without holding the debugger slot. */
+char* mpi_inspect_targets_json(int metro_port);
+
 /* Session packages under `sessions_dir`, newest first. */
 char* mpi_sessions_json(const char* sessions_dir);
 

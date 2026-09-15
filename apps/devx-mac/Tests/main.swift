@@ -938,6 +938,31 @@ do {
           "and English still works afterwards")
 }
 
+do {
+    // Remembering the target. The rule is small and the failure is silent:
+    // restoring a device discovery did not return leaves the app pointed at
+    // something absent, and every later error blames the device rather than
+    // the stale preference.
+    check(RecentTargets.restore(remembered: "emulator-5554",
+                                usable: ["emulator-5554", "ABC"])
+            == "emulator-5554",
+          "a remembered device that is present is restored")
+    check(RecentTargets.restore(remembered: "emulator-5554",
+                                usable: ["ABC"]) == nil,
+          "a remembered device that is absent is not restored")
+    check(RecentTargets.restore(remembered: "emulator-5554", usable: []) == nil,
+          "and an empty device list restores nothing")
+    check(RecentTargets.restore(remembered: nil,
+                                usable: ["emulator-5554"]) == nil,
+          "nothing remembered restores nothing")
+    check(RecentTargets.restore(remembered: "", usable: ["emulator-5554"]) == nil,
+          "an empty remembered id is not a device id")
+    // The case that matters most: absent must not silently become "the first
+    // one", or a capture gets attributed to hardware nobody chose.
+    check(RecentTargets.restore(remembered: "gone", usable: ["a", "b"]) != "a",
+          "an absent device never falls through to the first in the list")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
