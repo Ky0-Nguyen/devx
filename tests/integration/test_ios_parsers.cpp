@@ -857,3 +857,50 @@ MPI_TEST(an_unreadable_log_store_is_named_as_a_permission, {"J15", "D07"}) {
   MPI_CHECK_MSG(access.readable || !access.detail.empty(),
                 "the probe always produces an answer rather than silence");
 }
+
+MPI_TEST(preflight_reports_the_log_store_permission_before_a_capture_fails,
+         {"J15", "D07"}) {
+  // Preflight exists to say what will work before it is tried. It knew
+  // nothing about the unified log store, so the sequence was: a clean
+  // preflight, then a capture that came back permission_denied with an empty
+  // table. The capture path had learned to explain that and preflight had
+  // not -- the same inconsistency as preflight contradicting the live capture
+  // the tool could do.
+  ios::IosAdapter adapter;
+  model::CapabilityMatrix matrix;
+  discovery::ProviderOptions opts;
+  adapter.probe(matrix, opts);
+
+  const model::Capability* store = matrix.find("ios.capture.log_store");
+  MPI_CHECK_MSG(store != nullptr,
+                "the log store is reported as a capability of its own, since "
+                "it is a host prerequisite with its own fix");
+  MPI_CHECK_MSG(!store->evidence.empty(),
+                "with what was actually run, not an assertion");
+  bool names_the_permission = false;
+  for (const auto& pre : store->prerequisites) {
+    if (pre.find("Full Disk Access") != std::string::npos) {
+      names_the_permission = true;
+    }
+  }
+  MPI_CHECK_MSG(names_the_permission, "and names the permission required");
+
+  // The status must be one of the two definite answers -- never unknown,
+  // because this is cheap to determine and always determinable.
+  MPI_CHECK_MSG(store->status == model::CapabilityStatus::kAvailable ||
+                    store->status == model::CapabilityStatus::kPermissionDenied,
+                "the answer is definite either way");
+
+  if (store->status == model::CapabilityStatus::kPermissionDenied) {
+    MPI_CHECK_MSG(!store->recovery_action.empty(),
+                  "a refusal comes with the fix, not just the diagnosis");
+    bool corrects_the_wording = false;
+    for (const auto& l : store->limitations) {
+      if (l.find("corrupt") != std::string::npos) corrects_the_wording = true;
+    }
+    MPI_CHECK_MSG(corrects_the_wording,
+                  "and it says that xctrace calls this corruption, so someone "
+                  "reading that error is not sent hunting for a damaged "
+                  "machine");
+  }
+}
