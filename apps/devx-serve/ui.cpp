@@ -157,9 +157,11 @@ std::string index_html(const std::string& token, const std::string& version,
 
   <section id="tab-record">
     <h2>Record</h2>
-    <p class="hint">Live capture is implemented for Android. For iOS the collector is not wired
-      up yet, and DevX will say so rather than writing a capture-shaped session with nothing
-      measured in it.</p>
+    <p class="hint">Live capture is implemented for Android. For iOS the collector <em>is</em>
+      wired up and a batch record uses it, but it cannot stream: <code>xctrace record</code>
+      produces a trace bundle when it finishes rather than events readable while it runs. On
+      this host it attaches and then does not finish, which it reports as a provider failure
+      rather than writing a capture-shaped session with nothing measured in it.</p>
     <div class="row">
       <select id="recDevice"></select>
       <input type="text" id="recApp" placeholder="package name or bundle id" style="min-width:260px">

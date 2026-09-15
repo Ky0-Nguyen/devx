@@ -18,6 +18,17 @@ deadline, `simpleperf` for symbolised stacks, `dumpsys meminfo` for memory.
 Verified against a booted emulator (API 37) on the superapp HutBot debug
 build, and live against `com.android.settings` for the frame path.
 
+**The desktop app can now attempt an iOS record.** It used to refuse before
+constructing a collector, telling the user "the xctrace collector is not wired
+to the session controller yet" -- which was false, and contradicted the CLI,
+which has constructed that collector for iOS for some time. So the app could
+not attempt something the CLI could, and blamed the wrong thing for it. It now
+picks the collector the same way the CLI does and reports whatever the
+collector reports. **Live** capture is still unavailable on iOS, and the
+reason is now the true one: the collector reports `supports_streaming()
+== false`, because `xctrace record` yields a trace bundle when it finishes
+rather than events readable while it runs.
+
 **iOS records, and on this host it does not finish.** There is an `xctrace`
 collector wired to the session controller now, and an importer
 (`ios.xctrace.export`) for what Instruments exports. The recording step was
@@ -563,7 +574,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **177 of 198** checklist items have at least one automated test
-(457 test cases in 19 binaries, plus 250 Swift, both harnesses declaring the checklist ids they cover). The remaining 21 are enumerated with a stated
+(458 test cases in 19 binaries, plus 250 Swift, both harnesses declaring the checklist ids they cover). The remaining 21 are enumerated with a stated
 reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
 needs an iOS recording that completes, needs a UI test harness.
 
