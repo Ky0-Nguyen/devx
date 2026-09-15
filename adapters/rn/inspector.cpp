@@ -13,6 +13,13 @@ namespace {
 
 const std::string kEmpty;
 
+std::string lower(std::string v) {
+  for (char& c : v) {
+    if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+  }
+  return v;
+}
+
 const std::string& str(const json::Value& v, std::string_view key) {
   if (!v.is_object()) return kEmpty;
   const json::Value* f = v.find(key);
@@ -73,28 +80,86 @@ TargetList list_targets(std::uint16_t metro_port) {
   return out;
 }
 
-const InspectorTarget* choose_target(const std::vector<InspectorTarget>& targets,
-                                     const std::string& wanted_app_id) {
+TargetChoice choose_target(const std::vector<InspectorTarget>& targets,
+                           const std::string& wanted_app_id,
+                           const std::string& device_hint) {
+  TargetChoice choice;
+
+  // Only the app's own targets are candidates. Attaching to another app's
+  // runtime would report its traffic under this app's name.
+  std::vector<const InspectorTarget*> candidates;
+  for (const InspectorTarget& t : targets) {
+    if (!wanted_app_id.empty() && t.app_id != wanted_app_id) continue;
+    candidates.push_back(&t);
+  }
+  if (candidates.empty()) {
+    for (const InspectorTarget& t : targets) {
+      choice.device_names.push_back(t.device_name + " (" + t.app_id + ")");
+    }
+    choice.error = wanted_app_id.empty()
+        ? "Metro listed no attachable target"
+        : "no target for '" + wanted_app_id + "'";
+    return choice;
+  }
+
+  // Narrow by device when asked. Metro publishes only a device *name*, so
+  // that is what a hint can match.
+  if (!device_hint.empty()) {
+    const std::string want = lower(device_hint);
+    std::vector<const InspectorTarget*> matched;
+    for (const InspectorTarget* t : candidates) {
+      if (lower(t->device_name).find(want) != std::string::npos) {
+        matched.push_back(t);
+      }
+    }
+    if (matched.empty()) {
+      for (const InspectorTarget* t : candidates) {
+        choice.device_names.push_back(t->device_name);
+      }
+      choice.error = "no attached device matches '" + device_hint + "'";
+      return choice;
+    }
+    candidates = std::move(matched);
+  }
+
+  // Distinct devices among what is left. Several targets on *one* device is
+  // normal -- Metro lists a runtime connection and auxiliary pages -- and is
+  // resolved by preference below. Several *devices* is a question only the
+  // caller can answer.
+  std::vector<std::string> devices;
+  for (const InspectorTarget* t : candidates) {
+    bool seen = false;
+    for (const std::string& d : devices) {
+      if (d == t->device_name) { seen = true; break; }
+    }
+    if (!seen) devices.push_back(t->device_name);
+  }
+  if (devices.size() > 1) {
+    choice.ambiguous = true;
+    choice.device_names = devices;
+    choice.error = "'" + wanted_app_id + "' is attached from " +
+                   std::to_string(devices.size()) +
+                   " devices; name one rather than having one chosen";
+    return choice;
+  }
+
+  // One device. Prefer the full runtime connection: it is the target that
+  // carries Runtime and Network, where the auxiliary pages answer far less.
   const InspectorTarget* best = nullptr;
   int best_score = -1;
-  for (const InspectorTarget& t : targets) {
+  for (const InspectorTarget* t : candidates) {
     int score = 0;
-    // Metro lists several entries per app; the one describing the runtime
-    // connection is the one carrying Runtime and Network. The others are
-    // auxiliary pages that answer far less.
-    if (t.description.find("C++ connection") != std::string::npos) score += 4;
-    if (t.description.find("Bridgeless") != std::string::npos) score += 1;
-    if (!wanted_app_id.empty() && t.app_id == wanted_app_id) score += 8;
-    if (!wanted_app_id.empty() && t.app_id != wanted_app_id) score -= 16;
+    if (t->description.find("C++ connection") != std::string::npos) score += 4;
+    if (t->description.find("Bridgeless") != std::string::npos) score += 2;
+    // "UI [C++ connection]" is an auxiliary page on the same runtime.
+    if (t->description.rfind("UI ", 0) == 0) score -= 3;
     if (score > best_score) {
       best_score = score;
-      best = &t;
+      best = t;
     }
   }
-  // A negative best means every target belonged to a different app. Returning
-  // one anyway would report another app's traffic under this app's name.
-  if (best_score < 0) return nullptr;
-  return best;
+  choice.target = best;
+  return choice;
 }
 
 std::string redux_probe_expression(bool include_values) {
@@ -195,17 +260,27 @@ observe::InspectReport run(const InspectOptions& options,
     return report;
   }
 
-  const InspectorTarget* target = choose_target(list.targets, options.app_id);
+  const TargetChoice choice =
+      choose_target(list.targets, options.app_id, options.device_hint);
+  const InspectorTarget* target = choice.target;
   if (target == nullptr) {
     report = assembler.finish(0);
     report.debugger_attached = false;
     observe::SourceStatus s;
     s.name = "react native inspector (via Metro)";
     s.state = observe::SourceState::kUnavailable;
-    s.detail = "Metro lists " + std::to_string(list.targets.size()) +
-               " target(s), none of them '" + options.app_id +
-               "'. Attaching to another app's runtime would report its "
-               "traffic under this app's name, so nothing was attached.";
+    std::string detail = choice.error;
+    if (choice.ambiguous) {
+      // Naming the choices is the point: the operator knows which device
+      // they meant, and this tool must not decide for them.
+      detail += ". Attached devices:";
+      for (const std::string& d : choice.device_names) detail += " [" + d + "]";
+      detail += ". Pass the device to observe.";
+    } else if (!choice.device_names.empty()) {
+      detail += ". What is attached:";
+      for (const std::string& d : choice.device_names) detail += " [" + d + "]";
+    }
+    s.detail = detail;
     report.sources.insert(report.sources.begin(), s);
     return report;
   }
@@ -451,12 +526,21 @@ bool InspectStream::start(const InspectOptions& options, std::string* error) {
              "provider, not an idle app.";
     return false;
   }
-  const InspectorTarget* chosen = choose_target(list.targets, options.app_id);
+  const TargetChoice choice =
+      choose_target(list.targets, options.app_id, options.device_hint);
+  const InspectorTarget* chosen = choice.target;
   if (chosen == nullptr) {
-    *error = "Metro lists " + std::to_string(list.targets.size()) +
-             " target(s), none of them '" + options.app_id +
-             "'. Attaching to another app's runtime would report its traffic "
-             "under this app's name.";
+    *error = choice.error;
+    if (choice.ambiguous) {
+      *error += ". Attached devices:";
+      for (const std::string& d : choice.device_names) *error += " [" + d + "]";
+      *error += ". Name the device rather than having one chosen for you: "
+                "attaching to the wrong one reports its traffic under the "
+                "right app's name.";
+    } else if (!choice.device_names.empty()) {
+      *error += ". What is attached:";
+      for (const std::string& d : choice.device_names) *error += " [" + d + "]";
+    }
     return false;
   }
   impl_->target = *chosen;

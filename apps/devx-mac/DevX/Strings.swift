@@ -1139,6 +1139,8 @@ enum Strings {
         "not looked yet":
             "chưa quét",
         "watch live": "xem trực tiếp",
+        "any attached device": "thiết bị nào cũng được",
+        "any": "bất kỳ",
         "stop watching": "dừng xem",
         "watching — act in the app and calls appear here":
             "đang xem — hãy thao tác trong ứng dụng và các lệnh gọi sẽ "

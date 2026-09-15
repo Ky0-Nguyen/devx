@@ -125,6 +125,7 @@ bool needs_value(const std::string& flag) {
       "--max-spread",
       "--metro-port",
       "--screenshot-dir",
+      "--target-device",
       "--seconds",
       "--min-absolute-delta",
       "--min-relative-delta",

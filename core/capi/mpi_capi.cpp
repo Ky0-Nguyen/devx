@@ -203,7 +203,8 @@ InspectStreamHolder& inspect_stream() {
 
 rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
                                         int flags, const char* device_id,
-                                        const char* screenshot_dir) {
+                                        const char* screenshot_dir,
+                                        const char* target_device) {
   rn::InspectOptions opts;
   opts.app_id = safe(app_id);
   opts.metro_port = metro_port > 0 && metro_port <= 65535
@@ -215,6 +216,10 @@ rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
   opts.screenshot_device_id = safe(device_id);
   opts.screenshots = (flags & 4) != 0 && !opts.screenshot_device_id.empty();
   opts.screenshot_dir = safe(screenshot_dir);
+  // Which device's runtime to attach to, matched against Metro's device
+  // name. Without it, an app running on two devices at once was silently
+  // observed on whichever Metro listed first.
+  opts.device_hint = safe(target_device);
   return opts;
 }
 
@@ -437,7 +442,8 @@ char* mpi_inspect_targets_json(int metro_port) {
 
 char* mpi_inspect_stream_start(const char* app_id, int metro_port, int flags,
                                const char* device_id,
-                               const char* screenshot_dir) {
+                               const char* screenshot_dir,
+                               const char* target_device) {
   return guard([&] {
     json::Value out = json::Value::object();
     auto& holder = inspect_stream();
@@ -453,7 +459,7 @@ char* mpi_inspect_stream_start(const char* app_id, int metro_port, int flags,
     auto stream = std::make_unique<rn::InspectStream>();
     std::string error;
     const rn::InspectOptions opts = inspect_options_from(
-        app_id, metro_port, flags, device_id, screenshot_dir);
+        app_id, metro_port, flags, device_id, screenshot_dir, target_device);
     if (!stream->start(opts, &error)) {
       out.set("error", json::Value::string(error));
       out.set("attached", json::Value::boolean(false));
@@ -507,7 +513,8 @@ char* mpi_inspect_stream_stop(void) {
 
 char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
                        int flags, const char* device_id,
-                       const char* screenshot_dir) {
+                       const char* screenshot_dir,
+                       const char* target_device) {
   return guard([&] {
     rn::InspectOptions opts;
     opts.app_id = safe(app_id);
@@ -524,6 +531,10 @@ char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
     opts.screenshot_device_id = safe(device_id);
     opts.screenshots = (flags & 4) != 0 && !opts.screenshot_device_id.empty();
     opts.screenshot_dir = safe(screenshot_dir);
+    // Which device's runtime to attach to, matched against Metro's device
+    // name. Without it, an app running on two devices at once was silently
+    // observed on whichever Metro listed first.
+    opts.device_hint = safe(target_device);
     // Bound to a local: `token()` returns by value, and taking the address
     // of the temporary would leave a dangling pointer for the whole capture.
     const CancellationToken cancel = cancel_registry().token();

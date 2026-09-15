@@ -82,7 +82,8 @@ char* mpi_device_advice_json(const char* device_id, int probe);
  */
 char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
                        int flags, const char* device_id,
-                       const char* screenshot_dir);
+                       const char* screenshot_dir,
+                       const char* target_device);
 
 /* What is attachable right now, without holding the debugger slot. */
 char* mpi_inspect_targets_json(int metro_port);
@@ -104,7 +105,8 @@ char* mpi_inspect_targets_json(int metro_port);
  */
 char* mpi_inspect_stream_start(const char* app_id, int metro_port, int flags,
                                const char* device_id,
-                               const char* screenshot_dir);
+                               const char* screenshot_dir,
+                               const char* target_device);
 /* Reads for up to `budget_ms`, then returns the observation so far. */
 char* mpi_inspect_stream_poll(int budget_ms);
 /* Stops and returns the final observation. */

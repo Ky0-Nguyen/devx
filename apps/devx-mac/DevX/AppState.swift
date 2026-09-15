@@ -185,6 +185,10 @@ final class AppState: ObservableObject {
     /// Which kinds of activity to show, and a free-text needle.
     @Published var inspectKinds: Set<InspectKind> = Set(InspectKind.allCases)
     @Published var inspectNeedle: String = ""
+    /// Which attached device to observe, matched against Metro's device name.
+    /// Empty is only valid when one device offers the app -- otherwise the
+    /// core refuses and lists the choices rather than picking one.
+    @Published var inspectTargetDevice: String = ""
 
     @Published var rulesDoc: JSON = .null
     @Published var recordDoc: JSON = .null
@@ -596,6 +600,7 @@ final class AppState: ObservableObject {
         let values = inspectReduxValues
         let shots = inspectScreenshots
         let device = selectedDevice
+        let hint = inspectTargetDevice
         let dir = sessionsDir + "/inspect-shots"
         if shots {
             try? FileManager.default.createDirectory(
@@ -606,7 +611,7 @@ final class AppState: ObservableObject {
             Core.inspect(appId: app, seconds: seconds, metroPort: 8081,
                          redux: redux, reduxValues: values,
                          screenshots: shots, deviceId: device,
-                         screenshotDir: dir)
+                         screenshotDir: dir, targetDevice: hint)
         }) { doc in
             self.inspectDoc = doc
             // A capture changes what is attachable -- the app may have
@@ -630,6 +635,7 @@ final class AppState: ObservableObject {
         let values = inspectReduxValues
         let shots = inspectScreenshots
         let device = selectedDevice
+        let hint = inspectTargetDevice
         let dir = sessionsDir + "/inspect-shots"
         if shots {
             try? FileManager.default.createDirectory(
@@ -640,7 +646,8 @@ final class AppState: ObservableObject {
             Core.inspectStreamStart(appId: app, metroPort: 8081,
                                     redux: redux, reduxValues: values,
                                     screenshots: shots, deviceId: device,
-                                    screenshotDir: dir)
+                                    screenshotDir: dir,
+                                    targetDevice: hint)
         }) { doc in
             if doc["attached"].bool != true {
                 self.inspectDoc = .null

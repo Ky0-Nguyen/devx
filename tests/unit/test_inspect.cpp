@@ -11,6 +11,7 @@
 
 #include "core/net/websocket_client.hpp"
 #include "core/observe/inspect.hpp"
+#include "adapters/rn/inspector.hpp"
 #include "core/observe/screenshot.hpp"
 #include "tests/unit/test_framework.hpp"
 
@@ -368,4 +369,94 @@ MPI_TEST(only_a_real_png_is_accepted_as_a_screenshot, {}) {
   std::string zero = png;
   zero[16] = 0; zero[17] = 0; zero[18] = 0; zero[19] = 0;
   MPI_CHECK(!png_dimensions(zero, &w, &h));
+}
+
+namespace {
+
+mpi::rn::InspectorTarget rn_target(const char* app, const char* device,
+                                   const char* description) {
+  mpi::rn::InspectorTarget t;
+  t.app_id = app;
+  t.device_name = device;
+  t.description = description;
+  t.websocket_path = "/inspector/debug?device=x&page=1";
+  return t;
+}
+
+}  // namespace
+
+MPI_TEST(one_app_on_two_devices_is_a_question_not_a_guess, {}) {
+  // The bug this pins, observed live: the same bundle id was attached from an
+  // Android emulator and an iOS simulator at once, and asking for the app
+  // always attached to Android. There was no way to reach iOS at all, and
+  // nothing said a choice had been made.
+  const std::vector<mpi::rn::InspectorTarget> targets = {
+      rn_target("io.example.app", "sdk_gphone16k_arm64 - 17 - API 37",
+                "React Native Bridgeless [C++ connection]"),
+      rn_target("io.example.app", "iPhone 17 Pro",
+                "React Native Bridgeless [C++ connection]"),
+      rn_target("io.example.app", "iPhone 17 Pro", "UI [C++ connection]"),
+  };
+
+  const auto blind = mpi::rn::choose_target(targets, "io.example.app", "");
+  MPI_CHECK_MSG(blind.target == nullptr, "no target is chosen blindly");
+  MPI_CHECK_MSG(blind.ambiguous, "it is reported as ambiguous");
+  MPI_CHECK_MSG(blind.device_names.size() == 2,
+                "two devices, not three targets: several targets on one "
+                "device is normal and is resolved by preference");
+  MPI_CHECK_MSG(!blind.error.empty(), "and the reason is stated");
+
+  // Naming the device reaches it -- including the iOS one, which was
+  // previously unreachable.
+  const auto ios = mpi::rn::choose_target(targets, "io.example.app", "iPhone");
+  MPI_CHECK(ios.target != nullptr);
+  MPI_CHECK_MSG(ios.target->device_name == "iPhone 17 Pro",
+                "the iOS device is selectable");
+  MPI_CHECK_MSG(ios.target->description.find("Bridgeless") != std::string::npos,
+                "and the full runtime connection wins over the UI page on "
+                "the same device, since that is the one carrying Network");
+
+  const auto droid = mpi::rn::choose_target(targets, "io.example.app", "sdk_gphone");
+  MPI_CHECK(droid.target != nullptr);
+  MPI_CHECK(droid.target->device_name.find("sdk_gphone") != std::string::npos);
+
+  // Case does not decide it: nobody types a device name exactly.
+  MPI_CHECK(mpi::rn::choose_target(targets, "io.example.app", "iphone").target
+                != nullptr);
+}
+
+MPI_TEST(a_device_hint_that_matches_nothing_is_not_a_silent_fallback, {}) {
+  const std::vector<mpi::rn::InspectorTarget> targets = {
+      rn_target("io.example.app", "iPhone 17 Pro",
+                "React Native Bridgeless [C++ connection]"),
+  };
+  const auto miss = mpi::rn::choose_target(targets, "io.example.app", "Pixel99");
+  MPI_CHECK_MSG(miss.target == nullptr,
+                "a hint that matches nothing attaches to nothing, rather "
+                "than falling back to the only device and reporting it as "
+                "the one asked for");
+  MPI_CHECK(!miss.ambiguous);
+  MPI_CHECK_MSG(!miss.device_names.empty(),
+                "and the available devices are listed so the name can be "
+                "corrected");
+
+  // One device and no hint is unambiguous and must still work.
+  const auto only = mpi::rn::choose_target(targets, "io.example.app", "");
+  MPI_CHECK_MSG(only.target != nullptr,
+                "a single device needs no hint");
+}
+
+MPI_TEST(another_apps_runtime_is_never_attached_to, {}) {
+  const std::vector<mpi::rn::InspectorTarget> targets = {
+      rn_target("io.other.app", "iPhone 17 Pro",
+                "React Native Bridgeless [C++ connection]"),
+  };
+  const auto wrong = mpi::rn::choose_target(targets, "io.example.app", "");
+  MPI_CHECK_MSG(wrong.target == nullptr,
+                "a different app's runtime is not attached to: its traffic "
+                "would be reported under the requested app's name");
+  MPI_CHECK(wrong.error.find("io.example.app") != std::string::npos);
+  // Even naming the device must not override the app mismatch.
+  MPI_CHECK(mpi::rn::choose_target(targets, "io.example.app", "iPhone").target
+                == nullptr);
 }

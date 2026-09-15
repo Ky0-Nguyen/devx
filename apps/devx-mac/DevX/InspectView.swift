@@ -94,6 +94,10 @@ struct InspectView: View {
                             Spacer(minLength: 0)
                             Button(tr("use")) {
                                 state.selectedApp = t["app_id"].text
+                                // Pin the device as well. Choosing a row and
+                                // then being observed on a different device
+                                // is the bug this button exists to avoid.
+                                state.inspectTargetDevice = t["device_name"].text
                             }
                             .buttonStyle(TermButtonStyle())
                         }
@@ -115,6 +119,17 @@ struct InspectView: View {
                 Field(label: "app") {
                     TextField("package name or bundle id", text: $state.selectedApp)
                         .textFieldStyle(TermFieldStyle()).frame(maxWidth: 320)
+                }
+                Field(label: "device") {
+                    HStack(spacing: 8) {
+                        TextField(tr("any attached device"),
+                                  text: $state.inspectTargetDevice)
+                            .textFieldStyle(TermFieldStyle()).frame(maxWidth: 240)
+                        if !state.inspectTargetDevice.isEmpty {
+                            Button(tr("any")) { state.inspectTargetDevice = "" }
+                                .buttonStyle(TermButtonStyle())
+                        }
+                    }
                 }
                 Field(label: "seconds") {
                     Stepper(value: $state.inspectSeconds, in: 1...300, step: 5) {

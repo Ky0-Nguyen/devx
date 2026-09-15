@@ -148,14 +148,15 @@ enum Core {
     static func inspectStreamStart(appId: String, metroPort: Int,
                                    redux: Bool, reduxValues: Bool,
                                    screenshots: Bool, deviceId: String,
-                                   screenshotDir: String) -> JSON {
+                                   screenshotDir: String,
+                                   targetDevice: String) -> JSON {
         var flags: Int32 = 0
         if redux { flags |= 1 }
         if reduxValues { flags |= 3 }
         if screenshots { flags |= 4 }
         return call {
             mpi_inspect_stream_start(appId, Int32(metroPort), flags, deviceId,
-                                     screenshotDir)
+                                     screenshotDir, targetDevice)
         }
     }
 
@@ -175,14 +176,14 @@ enum Core {
     static func inspect(appId: String, seconds: Int, metroPort: Int,
                         redux: Bool, reduxValues: Bool,
                         screenshots: Bool, deviceId: String,
-                        screenshotDir: String) -> JSON {
+                        screenshotDir: String, targetDevice: String) -> JSON {
         var flags: Int32 = 0
         if redux { flags |= 1 }
         if reduxValues { flags |= 3 }     // values imply reading the store
         if screenshots { flags |= 4 }
         return call {
             mpi_inspect_json(appId, Int32(seconds), Int32(metroPort), flags,
-                             deviceId, screenshotDir)
+                             deviceId, screenshotDir, targetDevice)
         }
     }
 
