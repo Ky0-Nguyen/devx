@@ -94,3 +94,46 @@ enum InspectFilter {
         return InspectFilterResult(shown: shown, hidden: rows.count - shown.count)
     }
 }
+
+// MARK: - Clearing
+
+/// Clearing a list, without throwing anything away.
+///
+/// A live observation piles up: hundreds of console lines, dozens of
+/// requests. "Clear" is the obvious control and it has the same requirement
+/// as every other filter here -- **what is on screen must not become a claim
+/// about the app.** So a clear is a *watermark*, not a delete: the rows are
+/// still in the observation, still exported, still counted, and the view says
+/// how many it is holding back and offers to show them again.
+///
+/// That also makes it correct while streaming. The assembler is cumulative
+/// and hands back the whole observation on every poll, so a clear that
+/// removed rows would see them return on the next tick.
+extension InspectFilter {
+    /// Rows kept after a clear that hid the first `clearedCount` of them.
+    ///
+    /// Count-based because the console and network lists are append-only: a
+    /// network exchange is updated in place as its response arrives, so its
+    /// index is stable while its contents are not. A mark that pointed at a
+    /// row's contents would move.
+    static func afterClear(_ rows: [JSON], clearedCount: Int) -> [JSON] {
+        guard clearedCount > 0 else { return rows }
+        // A clear from a previous run can outlive the list it was made
+        // against -- the app reloaded and the observation started over. More
+        // rows hidden than exist means the mark is stale, and hiding
+        // everything forever is the one outcome that would look like a bug.
+        guard clearedCount < rows.count else { return [] }
+        return Array(rows.dropFirst(clearedCount))
+    }
+
+    /// Redux records kept after a clear at `clearedSeq`.
+    ///
+    /// Sequence-based rather than count-based: records carry a monotonic seq
+    /// from inside the app, and the in-app buffer can drop the oldest ones
+    /// under load. A count would then hide the wrong rows -- the list
+    /// shortens from the front while the mark stays put.
+    static func afterClear(reduxRecords: [JSON], clearedSeq: Int) -> [JSON] {
+        guard clearedSeq > 0 else { return reduxRecords }
+        return reduxRecords.filter { ($0["seq"].int ?? 0) > clearedSeq }
+    }
+}

@@ -155,6 +155,7 @@ enum Core {
     /// Opens a live observation. One at a time.
     static func inspectStreamStart(appId: String, metroPort: Int,
                                    redux: Bool, reduxValues: Bool,
+                                   reduxWatch: Bool, reduxActions: Bool,
                                    screenshots: Bool, deviceId: String,
                                    screenshotDir: String,
                                    targetDevice: String,
@@ -162,6 +163,8 @@ enum Core {
         var flags: Int32 = 0
         if redux { flags |= 1 }
         if reduxValues { flags |= 3 }
+        if reduxWatch { flags |= 16 }
+        if reduxActions { flags |= 48 }   // wrapping implies watching
         if screenshots { flags |= 4 }
         if detail { flags |= 8 }
         return call {
@@ -185,12 +188,15 @@ enum Core {
     /// window, so the caller runs it off the main thread.
     static func inspect(appId: String, seconds: Int, metroPort: Int,
                         redux: Bool, reduxValues: Bool,
+                        reduxWatch: Bool, reduxActions: Bool,
                         screenshots: Bool, deviceId: String,
                         screenshotDir: String, targetDevice: String,
                         detail: Bool) -> JSON {
         var flags: Int32 = 0
         if redux { flags |= 1 }
         if reduxValues { flags |= 3 }     // values imply reading the store
+        if reduxWatch { flags |= 16 }
+        if reduxActions { flags |= 48 }   // wrapping implies watching
         if screenshots { flags |= 4 }
         if detail { flags |= 8 }
         return call {

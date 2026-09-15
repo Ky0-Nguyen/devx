@@ -49,6 +49,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Strings.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/SettingsView.swift
@@ -72,6 +73,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Strings.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectFilter.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFilter.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)
@@ -189,6 +191,56 @@ add_custom_target(devx_install
   COMMENT "Installing DevX.app to ${DEVX_INSTALL_DIR}"
   VERBATIM
 )
+
+# `cmake --build build --target devx_dmg` builds the disk image a release
+# attaches.
+#
+# A target rather than a hand-run `hdiutil` line, so the artifact people
+# download is produced the same way every time and the recipe is reviewable.
+#
+# `hdiutil create -srcfolder` on a staging directory rather than on the bundle
+# directly: pointing it at the .app produces an image whose only item is the
+# app with no room beside it, and the convention a Mac user expects is a
+# window they drag *from*. The staging directory carries the app plus a
+# symlink to /Applications, which is what makes the drag work.
+#
+# UDZO is the compressed read-only format. It is what every other Mac app
+# ships and it keeps the download to about a third of the bundle.
+#
+# NOT notarized, and deliberately not pretending to be: this is signed
+# ad-hoc (`codesign --sign -`), so Gatekeeper will refuse it on first launch
+# until the user right-clicks > Open. docs/packaging-and-signing.md has the
+# whole story; the release notes have to repeat it, because a download that
+# fails to open with "damaged" is the single most common way a tool like this
+# gets written off as broken.
+set(DEVX_DMG ${CMAKE_BINARY_DIR}/DevX.dmg)
+set(DEVX_DMG_STAGE ${CMAKE_BINARY_DIR}/dmg-stage)
+add_custom_command(
+  OUTPUT ${DEVX_DMG}
+  # A stale staging directory would ship whatever an older layout left in it,
+  # inside the image people download.
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${DEVX_DMG_STAGE} ${DEVX_DMG}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${DEVX_DMG_STAGE}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${DEVX_BUNDLE} ${DEVX_DMG_STAGE}/DevX.app
+  COMMAND chmod +x ${DEVX_DMG_STAGE}/DevX.app/Contents/MacOS/DevX
+  # Re-signed after the copy, for the same reason devx_install does it: the
+  # copy has new inode metadata and an unverifiable signature is quarantined.
+  COMMAND codesign --force --sign - ${DEVX_DMG_STAGE}/DevX.app
+  COMMAND codesign --verify --verbose=1 ${DEVX_DMG_STAGE}/DevX.app
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+          /Applications ${DEVX_DMG_STAGE}/Applications
+  COMMAND hdiutil create -quiet -volname DevX -srcfolder ${DEVX_DMG_STAGE}
+          -ov -format UDZO ${DEVX_DMG}
+  # Proves the image mounts and carries a launchable bundle. An image that
+  # only *builds* is not an image that installs, and finding that out from a
+  # user is finding it out too late.
+  COMMAND hdiutil verify -quiet ${DEVX_DMG}
+  DEPENDS ${DEVX_BINARY}
+  COMMENT "Building DevX.dmg"
+  VERBATIM
+)
+add_custom_target(devx_dmg DEPENDS ${DEVX_DMG})
 
 # Swift-side tests. Built as a plain executable so ctest can run it without a
 # test-bundle host, matching how the C++ tests run. Only the pure layers are

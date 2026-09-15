@@ -47,6 +47,13 @@ COMMANDS
   compare <baseline> <cand>     Compare two run-set JSON files.
   export <session>              Re-export a session (--format json|markdown).
   rules                         Describe every detector and its thresholds.
+  inspect                       Read a running app's network calls, console
+                                output and Redux store through the inspector a
+                                React Native debug build already runs --
+                                nothing is added to the app. Not a performance
+                                measurement: a debugger is attached.
+  sdk-bridge                    Run the loopback host the optional in-app SDK
+                                reports to.
 
 GLOBAL OPTIONS
   --device <id>                 Device id (adb serial, or CoreDevice/sim UDID).
@@ -58,6 +65,35 @@ GLOBAL OPTIONS
   --timeout-ms <n>              Per-command device tooling timeout.
   --sessions-dir <path>         Where session packages live.
   --max-input-mib <n>           Cap on a single input file (default 2048).
+
+INSPECT OPTIONS
+  --targets                     List what is attachable and exit. Does not
+                                take the debugger slot.
+  --metro-port <n>              Metro's port (default 8081).
+  --target-device <name>        Which attached device's runtime to observe,
+                                matched against the name Metro publishes.
+                                --device is translated to that name for you.
+  --seconds <n>                 How long to observe (default 15).
+  --detail                      Capture request/response headers and response
+                                bodies. Off by default: this is where the
+                                bearer tokens are.
+  --redux                       Locate the Redux store and report its slices.
+  --redux-values                Include the store's values. Off by default: a
+                                store holds tokens and personal data.
+  --redux-watch                 Watch the store change for the whole window,
+                                through store.subscribe. Read-only, and names
+                                no action -- Redux passes subscribers none.
+  --redux-actions               Also wrap store.dispatch so action types and
+                                payloads are seen. This MODIFIES the running
+                                app for the duration and puts it back
+                                afterwards; a reference captured beforehand
+                                (a thunk's dispatch) still bypasses it.
+  --redux-buffer <n>            Records the in-app buffer holds between drains
+                                (default 200). Overflow is reported, not
+                                hidden.
+  --screenshot                  Photograph the screen before and after.
+                                Requires --device.
+  --screenshot-dir <path>       Where the PNGs go (default ".").
 
 RECORD OPTIONS (Android)
   --duration-s <n>              Capture duration in seconds (default 5).
@@ -136,6 +172,7 @@ bool needs_value(const std::string& flag) {
       "--platform",
       "--preset",
       "--r8-map",
+      "--redux-buffer",
       "--sample-hz",
       "--sdk-port",
       "--tick-ms",
@@ -177,6 +214,7 @@ bool is_boolean_flag(const std::string& flag) {
       "--quiet",        "--running",        "--scheduling",
       "--sdk",          "--source-dirty",
       "--targets",      "--redux",          "--redux-values",
+      "--redux-watch",  "--redux-actions",
       "--screenshot",   "--detail",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {

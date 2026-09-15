@@ -76,6 +76,58 @@ struct TargetChoice {
   std::string error;
 };
 
+/// The hint to match against Metro's published device name.
+///
+/// Metro's inspector publishes a device *name* -- "iPhone 17 Pro" -- and no
+/// other identifier. `--device` carries a device id, and `--screenshot`
+/// *requires* `--device`, because photographing needs the simulator's UDID.
+/// Passing the id straight through as the hint therefore made those two flags
+/// mutually exclusive: every screenshot run failed with
+///
+///     no attached device matches '456FA0D8-48C1-4BEC-B087-50E8A046EA5D'
+///     What is attached: [iPhone 17 Pro] [iPhone 17 Pro]
+///
+/// -- naming, in the same sentence, the device it had just refused to match.
+///
+/// So an id is translated to the name discovery already knows for it. That is
+/// a real identity mapping, not a guess: both come from the same device
+/// record.
+///
+/// An explicit `--target-device` always wins, since someone naming a Metro
+/// target is answering this question directly. When the id resolves to
+/// nothing the id is kept, so the failure still quotes what the operator
+/// typed.
+std::string metro_device_hint(const std::string& explicit_hint,
+                              const std::string& device_id,
+                              const std::string& device_display_name);
+/// Options for watching the store rather than reading it once.
+struct ReduxWatchOptions {
+  /// Wrap `store.dispatch` so action types and payloads are seen.
+  ///
+  /// This **modifies the running app** for the duration, which is the one
+  /// thing this feature otherwise avoids -- so it is opt-in, it is stated in
+  /// the report, and the original function is put back. There is no
+  /// read-only route to an action: Redux passes subscribers no arguments,
+  /// and nothing else broadcasts a dispatch.
+  bool wrap_dispatch = false;
+  /// Include values in the deltas, and the payloads of actions.
+  ///
+  /// Off by default for the same reason as everywhere else here: this is
+  /// where the tokens are.
+  bool include_values = false;
+  /// How many records the in-app buffer holds between drains. A burst larger
+  /// than this drops the oldest and the count is reported -- a tail that says
+  /// it is a tail, rather than a short list that looks complete.
+  int buffer = 200;
+};
+
+/// Installs the watcher inside the app: a `store.subscribe` listener, plus a
+/// `dispatch` wrapper when asked for.
+///
+/// Idempotent and self-healing. A previous run that died with the socket
+/// open leaves its state behind; this finds it, undoes it, and starts clean
+/// rather than stacking a second wrapper on the first.
+
 /// Picks the target to attach to.
 ///
 /// `device_hint` is matched case-insensitively as a substring of Metro's
@@ -105,6 +157,15 @@ struct InspectOptions {
   /// app's store holds tokens and personal data, and this report can be
   /// exported.
   bool include_state_values = false;
+
+  /// Watch the store while the capture is open, rather than reading it once.
+  ///
+  /// This is the difference between "the cart slice exists" and "ADD_TO_CART
+  /// changed cart.items[2].qty from 1 to 3". It implies read_redux_state.
+  bool watch_redux = false;
+  /// How the watcher behaves, including whether it wraps `dispatch` -- the
+  /// one setting here that modifies the running app.
+  ReduxWatchOptions redux_watch;
 
   /// Capture request and response headers, and response bodies.
   ///
@@ -182,6 +243,9 @@ class InspectStream {
  private:
   void handle(const json::Value& message);
   void request_pending_bodies();
+  /// Empties the in-app watcher's buffer, at most once per interval and never
+  /// with one already in flight.
+  void drain_redux();
 
   struct Impl;
   std::unique_ptr<Impl> impl_;
@@ -196,5 +260,17 @@ class InspectStream {
 /// part most likely to break when React changes: a test can at least pin its
 /// shape, and a reader can see exactly what is evaluated inside their app.
 std::string redux_probe_expression(bool include_values);
+
+std::string redux_watch_install_expression(const ReduxWatchOptions& options);
+
+/// Takes and clears whatever the watcher has buffered.
+std::string redux_watch_drain_expression();
+
+/// Removes the listener and puts the original `dispatch` back.
+///
+/// Sent on a clean stop. If the socket dies first the app keeps a listener
+/// appending to a bounded buffer nobody drains -- which is why the buffer is
+/// bounded, and why install undoes what it finds.
+std::string redux_watch_uninstall_expression();
 
 }  // namespace mpi::rn
