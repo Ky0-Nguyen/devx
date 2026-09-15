@@ -248,6 +248,15 @@ else
 fi
 check "export of a missing session is an error" 5 "$MPI" export "$TMP/nope"
 
+echo "== translations =="
+# A catalog keyed by English text cannot fail loudly: edit a sentence in a view
+# and its translation silently stops applying. This is the check for that.
+if python3 "$(dirname "$0")/check-i18n.py" --quiet; then
+  printf '  ok   every translation still matches a rendered string\n'; pass=$((pass+1))
+else
+  printf '  FAIL the translation catalog has drifted from the views\n'; fail=$((fail+1))
+fi
+
 echo "== app bundle =="
 # The icon is generated at build time, so its absence is a build wiring
 # failure rather than a missing file someone forgot to commit -- and a

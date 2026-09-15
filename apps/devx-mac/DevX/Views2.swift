@@ -158,7 +158,7 @@ private struct RecordResult: View {
 
             if wrote, let id = doc["session_id"].string {
                 Button { state.openSession(id) } label: {
-                    Label("Open issues", systemImage: "arrow.right.circle")
+                    Label(tr("Open issues"), systemImage: "arrow.right.circle")
                 }
                 .buttonStyle(TermButtonStyle(filled: true))
             }
@@ -214,9 +214,9 @@ struct SessionsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                Text("Captures and imports on this machine. A session built from an "
+                Text(tr("Captures and imports on this machine. A session built from an "
                      + "import is labelled as one, and so is a session built from "
-                     + "synthetic fixture data.")
+                     + "synthetic fixture data."))
                     .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(state.sessionsDir)
@@ -249,7 +249,7 @@ struct SessionsView: View {
         .navigationTitle("~/sessions")
         .toolbar {
             Button { state.loadSessions() } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
+                Label(tr("Refresh"), systemImage: "arrow.clockwise")
             }
         }
     }
@@ -263,10 +263,10 @@ struct DetectorsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("All twelve detectors from the specification catalog are registered, "
+                Text(tr("All twelve detectors from the specification catalog are registered, "
                      + "including the ones not implemented yet — a detector the engine has "
                      + "never heard of could not be reported as skipped, and then "
-                     + "\"no findings\" would be indistinguishable from \"no analysis\".")
+                     + "\"no findings\" would be indistinguishable from \"no analysis\"."))
                     .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 

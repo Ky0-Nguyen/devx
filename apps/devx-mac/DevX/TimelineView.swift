@@ -67,7 +67,7 @@ struct TimelineView: View {
             .onChange(of: state.timelineBins) { _, _ in
                 state.loadTimeline(force: true)
             }
-            Button("Rebuild") { state.loadTimeline(force: true) }
+            Button(tr("Rebuild")) { state.loadTimeline(force: true) }
                 .buttonStyle(TermButtonStyle())
         }
     }
@@ -286,12 +286,12 @@ struct TrackRow: View {
             Chip(text: track["kind"].display(), tone: .neutral)
             Spacer(minLength: 0)
             if let p = peak {
-                Text("peak " + Fmt.value(p, unit: track["unit"].text))
+                Text(tr("peak ") + Fmt.value(p, unit: track["unit"].text))
                     .font(Term.font(11)).foregroundStyle(Term.dim)
             } else if track["placed"].bool != false {
                 // No fully measured bin: there is no maximum to scale to, and
                 // saying "peak 0" would invent one.
-                Text("no measured bin")
+                Text(tr("no measured bin"))
                     .font(Term.font(11)).foregroundStyle(Term.cyan)
             }
         }

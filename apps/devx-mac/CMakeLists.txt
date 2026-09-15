@@ -45,6 +45,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsModel.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Strings.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareView.swift
@@ -66,6 +67,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssueFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Recents.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsModel.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Strings.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
 )
 

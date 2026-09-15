@@ -38,7 +38,10 @@ build/bin/devx_swift_tests        the Swift-side tests
 ```
 
 The app bundle carries one resource: `Contents/Resources/DevX.icns`, and
-nothing else -- no fonts, no images, no localisations.
+nothing else -- no fonts, no images, no localisation resources.
+(The app *is* translated -- see `docs/internationalisation.md` -- but
+the catalog is compiled into the binary rather than shipped as
+`.lproj` directories, so the bundle stays as it is described here.)
 
 The icon is **generated**, not committed. `tools/gen-icon.swift` draws it
 with CoreGraphics and packs it with `iconutil`, both of which ship with

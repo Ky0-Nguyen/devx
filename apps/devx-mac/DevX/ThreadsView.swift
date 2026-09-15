@@ -93,7 +93,7 @@ struct ThreadsView: View {
                             } else {
                                 // Absent, not zero: a thread with no samples
                                 // was not necessarily idle.
-                                Text("no share available")
+                                Text(tr("no share available"))
                                     .font(Term.font(11)).foregroundStyle(Term.cyan)
                             }
                             Spacer(minLength: 0)
@@ -113,14 +113,14 @@ struct ThreadsView: View {
     }
 
     private func threadTable(_ s: ThreadSplit) -> some View {
-        Panel(title: "Threads (\(s.threads.count))",
+        Panel(title: tr("Threads") + " (\(s.threads.count))",
               subtitle: "busiest first; a thread with no samples is not a "
                       + "thread that did nothing") {
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(s.threads) { t in
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(t.name.isEmpty ? "(unnamed)" : t.name)
+                            Text(t.name.isEmpty ? tr("(unnamed)") : t.name)
                                 .font(Term.font(12)).foregroundStyle(Term.ink)
                             Text("tid \(t.tid)")
                                 .font(Term.font(10)).foregroundStyle(Term.dim)
@@ -148,7 +148,7 @@ struct ThreadsView: View {
                                     .frame(height: 5)
                             }
                         } else {
-                            Text("no samples attributed")
+                            Text(tr("no samples attributed"))
                                 .font(Term.font(10)).foregroundStyle(Term.cyan)
                         }
                         Spacer(minLength: 0)

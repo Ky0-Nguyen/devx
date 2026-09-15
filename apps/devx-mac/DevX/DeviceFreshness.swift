@@ -38,34 +38,47 @@ enum DeviceFreshness {
     static func ago(_ seconds: TimeInterval) -> String {
         // A clock that moved backwards -- an NTP correction, a laptop waking
         // -- must not print "-4s ago" or a huge number. It is simply unknown.
-        if seconds < 0 { return "at an unknown time" }
-        if seconds < 2 { return "a moment ago" }
-        if seconds < 60 { return "\(Int(seconds))s ago" }
-        if seconds < 3600 { return "\(Int(seconds / 60))m ago" }
-        return "\(Int(seconds / 3600))h ago"
+        if seconds < 0 { return tr("at an unknown time") }
+        if seconds < 2 { return tr("a moment ago") }
+        if seconds < 60 { return fill(tr("{n}s ago"), "{n}", Int(seconds)) }
+        if seconds < 3600 { return fill(tr("{n}m ago"), "{n}", Int(seconds / 60)) }
+        return fill(tr("{n}h ago"), "{n}", Int(seconds / 3600))
+    }
+
+    /// Substitutes one placeholder.
+    ///
+    /// The templates carry named braces rather than `%@`, so a translator can
+    /// see what goes where and a mistyped token cannot silently swap two
+    /// values. A placeholder a translation dropped leaves the sentence short
+    /// rather than inserting a stray number.
+    static func fill(_ template: String, _ placeholder: String,
+                     _ value: Any) -> String {
+        template.replacingOccurrences(of: placeholder, with: "\(value)")
     }
 
     static func status(loadedAt: Date?, now: Date, watching: Bool) -> DiscoveryStatus {
         guard let loadedAt else {
             return DiscoveryStatus(
-                text: "discovery has not run — this list is not yet a claim "
-                    + "about what is connected",
+                text: tr("discovery has not run — this list is not yet a claim "
+                      + "about what is connected"),
                 confidence: .noClaim)
         }
         let age = now.timeIntervalSince(loadedAt)
         let when = ago(age)
         if watching {
             return DiscoveryStatus(
-                text: "re-scanning every 5s · last looked \(when)",
+                text: fill(tr("re-scanning every 5s · last looked {when}"),
+                           "{when}", when),
                 confidence: .current)
         }
         if age <= agingAfter {
-            return DiscoveryStatus(text: "last looked \(when)",
-                                   confidence: .current)
+            return DiscoveryStatus(
+                text: fill(tr("last looked {when}"), "{when}", when),
+                confidence: .current)
         }
         return DiscoveryStatus(
-            text: "last looked \(when) — a device connected or started since "
-                + "then is not in this list",
+            text: fill(tr("last looked {when} — a device connected or started "
+                       + "since then is not in this list"), "{when}", when),
             confidence: .aging)
     }
 

@@ -9,20 +9,26 @@ enum DevXTab: String, CaseIterable, Identifiable {
     case devices, apps, preflight, live, record, sessions, issues, threads,
          timeline, compare, detectors, settings
     var id: String { rawValue }
+    /// Translated at the point of display. The `rawValue` is untouched --
+    /// it is what `--tab=` accepts and what LaunchOptions parses, so it is an
+    /// identifier, not a label.
+    /// Wrapped case by case rather than once around a helper, so the
+    /// catalog checker can see that every one of these strings reaches `tr()`
+    /// -- an indirection it would have to guess at.
     var title: String {
         switch self {
-        case .devices: return "Devices"
-        case .apps: return "Apps"
-        case .preflight: return "Preflight"
-        case .live: return "Live"
-        case .record: return "Record"
-        case .sessions: return "Sessions"
-        case .issues: return "Issues"
-        case .threads: return "Threads"
-        case .timeline: return "Timeline"
-        case .compare: return "Compare"
-        case .detectors: return "Detectors"
-        case .settings: return "Export"
+        case .devices: return tr("Devices")
+        case .apps: return tr("Apps")
+        case .preflight: return tr("Preflight")
+        case .live: return tr("Live")
+        case .record: return tr("Record")
+        case .sessions: return tr("Sessions")
+        case .issues: return tr("Issues")
+        case .threads: return tr("Threads")
+        case .timeline: return tr("Timeline")
+        case .compare: return tr("Compare")
+        case .detectors: return tr("Detectors")
+        case .settings: return tr("Export")
         }
     }
     var icon: String {
