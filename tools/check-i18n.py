@@ -108,11 +108,45 @@ def unreached(keys):
     return bad
 
 
-def catalog_pairs():
+CORE_DIRS = ("core", "adapters")
+
+
+def cpp_strings():
+    """Every string literal in the C++ sources, joined across adjacent parts.
+
+    The core catalog is verified against these rather than against the Swift
+    views, because that text arrives at runtime from the analysis core -- it
+    never appears in a `.swift` file, and checking it the same way reported
+    all 110 entries as dead.
+    """
+    out = set()
+    for d in CORE_DIRS:
+        for root, _dirs, files in os.walk(os.path.join(ROOT, d)):
+            for name in files:
+                if not name.endswith((".cpp", ".hpp")):
+                    continue
+                text = open(os.path.join(root, name), encoding="utf-8",
+                            errors="replace").read()
+                # C++ concatenates adjacent literals with no operator, so the
+                # run regex needs no `+` between them.
+                for m in re.finditer(
+                        r'"(?:[^"\\\n]|\\.)*"(?:\s*\n?\s*"(?:[^"\\\n]|\\.)*")*',
+                        text):
+                    parts = LIT.findall(m.group(0))
+                    if parts:
+                        out.add(unescape("".join(parts)))
+    return out
+
+
+def catalog_pairs(which="vietnamese"):
     """The catalog's (english, translation) pairs, both sides joined."""
     src = strip_comment_lines(open(CATALOG, encoding="utf-8").read())
-    start = src.index("static let vietnamese")
+    start = src.index("static let " + which + ":")
     body = src[start:]
+    # Stop at the next `static let`, so the two catalogs do not bleed.
+    nxt = body.find("static let ", 12)
+    if nxt != -1:
+        body = body[:nxt]
     # Entries are `<run> : <run> ,` -- walk runs in order and pair them up.
     runs = []
     for m in RUN.finditer(body):
@@ -169,7 +203,12 @@ def main():
         rendered |= joined_runs(
             strip_comment_lines(open(f, encoding="utf-8").read()))
 
-    pairs = catalog_pairs()
+    core_pairs = catalog_pairs("vietnameseCore")
+    core_available = cpp_strings()
+    core_stale = [en for en, _ in core_pairs if en not in core_available]
+    core_unchanged = [en for en, vi in core_pairs if en == vi]
+
+    pairs = catalog_pairs("vietnamese")
     if not pairs:
         print("check-i18n: could not read the catalog at all", file=sys.stderr)
         return 1
@@ -186,6 +225,19 @@ def main():
     empty = [en for en, vi in pairs if not vi.strip()]
 
     ok = True
+    if core_stale:
+        ok = False
+        print(f"check-i18n: {len(core_stale)} core catalog key(s) no longer "
+              f"appear in any C++ source -- their translations are dead:",
+              file=sys.stderr)
+        for s2 in core_stale:
+            print(f"  - {s2[:110]!r}", file=sys.stderr)
+    if core_unchanged:
+        ok = False
+        print(f"check-i18n: {len(core_unchanged)} core translation(s) "
+              f"identical to the English:", file=sys.stderr)
+        for s2 in core_unchanged:
+            print(f"  - {s2[:110]!r}", file=sys.stderr)
     if untranslated:
         ok = False
         print(f"check-i18n: {len(untranslated)} catalog key(s) are rendered "
@@ -219,9 +271,10 @@ def main():
     if ok and not quiet:
         targets = len(translation_targets())
         done = targets - len(missing)
-        print(f"check-i18n: {len(pairs)} translations, all still rendered; "
-              f"{done} of {targets} translatable strings covered "
-              f"({len(missing)} fall back to English)")
+        print(f"check-i18n: {len(pairs)} UI translations, all still "
+              f"rendered; {done} of {targets} translatable UI strings covered "
+              f"({len(missing)} fall back to English). "
+              f"{len(core_pairs)} core translations, all still emitted.")
     return 0 if ok else 1
 
 

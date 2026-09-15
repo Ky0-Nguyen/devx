@@ -1,5 +1,6 @@
 #include "core/capi/mpi_capi.h"
 
+#include "adapters/ios/simulator_host_collector.hpp"
 #include "adapters/rn/inspector.hpp"
 
 #include <dirent.h>
@@ -1227,7 +1228,15 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
                                            target->profiling_reason));
       return out;
     }
-    if (dev->platform != model::Platform::kAndroid) {
+    // iOS **simulators** now stream, through a different collector: the app
+    // is an ordinary host process there, so its CPU time and memory
+    // footprint can be read directly. A physical iOS device still cannot --
+    // the app is not a host process and `xctrace record` only yields a
+    // bundle when it finishes.
+    const bool ios_simulator_live =
+        dev->platform == model::Platform::kIos &&
+        dev->form == model::DeviceForm::kSimulator;
+    if (dev->platform != model::Platform::kAndroid && !ios_simulator_live) {
       // Live capture needs a collector that collects in increments. The
       // xctrace collector is wired -- a batch record uses it -- but it
       // reports `supports_streaming() == false`, because `xctrace record`
@@ -1239,15 +1248,16 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
       // batch record does on the same device.
       out.set("error",
               json::Value::string(
-                  "live capture is not available for " +
+                  "live capture is not available for this " +
                   std::string(model::to_string(dev->platform)) +
-                  " in this build: its collector does not support streaming. "
-                  "`xctrace record` produces a trace bundle when it finishes "
-                  "rather than events that can be read while it runs, so "
-                  "there is nothing to stream. A batch capture uses the same "
-                  "collector and will report what it managed; on this host "
-                  "`xctrace record` attaches and then does not finish, which "
-                  "it reports as a provider failure."));
+                  " target. On a physical iOS device the app is not a host "
+                  "process, so it cannot be read directly, and `xctrace "
+                  "record` produces a trace bundle only when it finishes -- "
+                  "there is nothing to stream. An iOS **simulator** does "
+                  "stream: the app runs as an ordinary macOS process there, "
+                  "and CPU time and memory footprint are read from it "
+                  "directly. A batch capture uses xctrace and will report "
+                  "what it managed."));
       out.set("unsupported", json::Value::boolean(true));
       out.set("target_resolved", json::Value::boolean(true));
       return out;
@@ -1318,7 +1328,13 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
     cfg.run_until_stopped = true;
 
     ctx.live = std::make_unique<session::LiveSession>();
-    const bool started = ctx.live->start(std::make_shared<android::AdbCollector>(),
+    std::shared_ptr<session::Collector> live_collector;
+    if (ios_simulator_live) {
+      live_collector = std::make_shared<ios::SimulatorHostCollector>();
+    } else {
+      live_collector = std::make_shared<android::AdbCollector>();
+    }
+    const bool started = ctx.live->start(live_collector,
                                          *dev, processes, cfg, std::move(trace));
     if (!started) {
       const auto s = ctx.live->snapshot();
