@@ -574,9 +574,28 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **177 of 198** checklist items have at least one automated test
-(458 test cases in 19 binaries, plus 250 Swift, both harnesses declaring the checklist ids they cover). The remaining 21 are enumerated with a stated
-reason in `docs/requirement-test-map.md`; they cluster into: needs hardware,
-needs an iOS recording that completes, needs a UI test harness.
+(509 test cases in 22 binaries, plus 360 Swift checks and 78 smoke checks,
+both harnesses declaring the checklist ids they cover). The remaining 21 are
+enumerated with a stated reason in `docs/requirement-test-map.md`; they
+cluster into: needs hardware, needs an iOS recording that completes, needs a
+UI test harness.
+
+Read these numbers, do not remember them. They were wrong here for a while --
+458 cases in 19 binaries, from a time when that was true -- which is the same
+mistake as guessing a measurement:
+
+```bash
+python3 tools/gen-requirement-map.py     # the 177/198, and the map itself
+for b in build/bin/test_*; do "$b"; done # the case count
+./build/bin/devx_swift_tests             # the Swift checks
+bash tools/smoke-test.sh                 # the smoke checks
+```
+
+The checklist coverage has not moved with them: the tests added since are for
+behaviour already keyed to existing ids, or for invariants that are not
+checklist items at all. A rising case count is not rising coverage, and
+reporting it as such would be exactly the kind of flattering arithmetic this
+document exists to avoid.
 
 A checklist item having a test is not the same as the capability being verified
 on hardware. The capability matrix is the authority on that.

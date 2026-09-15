@@ -19,7 +19,7 @@ Two cautions on reading this:
    (that the tool refuses to claim something) rather than of the positive
    behaviour.
 
-## Covered (177 items, 619 test-case links)
+## Covered (177 items, 635 test-case links)
 
 | Checklist id | Test binary | Test case |
 |---|---|---|
@@ -208,6 +208,11 @@ Two cautions on reading this:
 | D05 | `test_heap` | `an_unsupported_identifier_size_is_refused_not_guessed` |
 | D06 | `test_session_lifecycle` | `a_missing_artifact_fails_the_write_rather_than_the_manifest` |
 | D06 | `test_session_lifecycle` | `an_interrupted_write_is_never_mistaken_for_a_session` |
+| D07 | `test_ios_parsers` | `a_recording_that_started_is_a_different_failure_from_one_that_did_not` |
+| D07 | `test_ios_parsers` | `a_stub_bundle_is_not_mistaken_for_a_capture` |
+| D07 | `test_ios_parsers` | `an_unreadable_log_store_is_named_as_a_permission` |
+| D07 | `test_ios_parsers` | `preflight_reports_the_log_store_permission_before_a_capture_fails` |
+| D07 | `test_ios_parsers` | `samples_in_an_unread_table_are_not_reported_as_no_samples` |
 | D07 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
 | D08 | `test_heap` | `a_truncated_dump_reports_what_it_got` |
 | D08 | `test_ingestion` | `missing_file_is_an_error_not_an_empty_trace` |
@@ -429,6 +434,7 @@ Two cautions on reading this:
 | H03 | `test_rules` | `det04_skips_below_minimum_sample_population` |
 | H04 | `test_rules` | `threshold_override_changes_the_verdict` |
 | H05 | `test_heap` | `det06_without_a_dump_refuses_the_substitute` |
+| H05 | `test_ios_parsers` | `the_ios_collector_is_wired_but_cannot_stream` |
 | H05 | `test_report` | `skipped_detectors_and_their_reasons_appear_in_the_report` |
 | H05 | `test_rules` | `a_skip_does_not_send_an_ios_user_to_an_android_flag` |
 | H05 | `test_rules` | `det05_needs_cycles_from_the_app_and_says_where_they_come_from` |
@@ -620,11 +626,20 @@ Two cautions on reading this:
 | J14 | `test_android_parsers` | `atrace_reads_a_real_cold_start_trace` |
 | J14 | `test_rules` | `det05_finds_nothing_in_a_real_capture_that_did_not_grow` |
 | J15 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
+| J15 | `test_ios_parsers` | `a_recording_that_started_is_a_different_failure_from_one_that_did_not` |
+| J15 | `test_ios_parsers` | `a_stub_bundle_is_not_mistaken_for_a_capture` |
+| J15 | `test_ios_parsers` | `a_target_never_accepted_is_not_blamed_on_the_simulator` |
 | J15 | `test_ios_parsers` | `adapter_probe_runs_against_the_real_toolchain` |
+| J15 | `test_ios_parsers` | `an_unreadable_log_store_is_named_as_a_permission` |
 | J15 | `test_ios_parsers` | `parses_real_devicectl_device_listing` |
+| J15 | `test_ios_parsers` | `preflight_does_not_contradict_the_live_capture_it_can_do` |
+| J15 | `test_ios_parsers` | `preflight_reports_the_log_store_permission_before_a_capture_fails` |
 | J15 | `test_ios_parsers` | `readiness_reports_ddi_services_state` |
+| J15 | `test_ios_parsers` | `samples_in_an_unread_table_are_not_reported_as_no_samples` |
 | J15 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
+| J15 | `test_ios_parsers` | `the_hardest_ios_refusal_says_when_it_was_observed` |
 | J15 | `test_ios_parsers` | `xctrace_explains_an_attach_that_found_no_process` |
+| J15 | `test_ios_parsers` | `xctrace_is_stopped_with_the_signal_it_responds_to` |
 | J15 | `test_ios_parsers` | `xctrace_keeps_a_bundle_it_wrote_despite_reporting_errors` |
 | J15 | `test_ios_parsers` | `xctrace_reports_a_nonzero_exit_with_no_bundle` |
 | J15 | `test_ios_parsers` | `xctrace_timeout_is_a_provider_failure_not_an_empty_capture` |
@@ -638,6 +653,7 @@ Two cautions on reading this:
 | J18 | `test_ios_parsers` | `adapter_lists_real_devices_including_simulators` |
 | J18 | `test_ios_parsers` | `parses_real_simctl_device_listing` |
 | J18 | `test_ios_parsers` | `simulator_apps_are_enumerated_from_the_real_booted_simulator` |
+| J18 | `test_ios_parsers` | `the_ios_collector_is_wired_but_cannot_stream` |
 | J18 | `test_rules` | `a_skip_does_not_send_an_ios_user_to_an_android_flag` |
 | J19 | `test_rules` | `native_evidence_without_js_evidence_invents_none` |
 | J20 | `test_ingestion` | `xctrace_toc_reads_the_run_without_claiming_a_platform` |
@@ -795,7 +811,7 @@ Two cautions on reading this:
 
 ## Totals
 
-- test binaries: 20
-- test cases declaring at least one id: 473
-- checklist-item links: 619
+- test binaries: 23
+- test cases declaring at least one id: 483
+- checklist-item links: 635
 - section-18 coverage: 177/198 (89%)
