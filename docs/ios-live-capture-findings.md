@@ -1,33 +1,53 @@
-# iOS live capture: what is actually reachable
+# iOS: what works, what does not, and what was measured
 
-Recorded mid-investigation so the measurements are not lost. This is
-reconnaissance, **not** an implemented provider: nothing in this document is
-wired into the app yet, and one question in it is unresolved.
+The record of how iOS capture behaves in this tool, and of the evidence behind
+each claim. Written because almost every sentence here was wrong at some point
+and the corrections are the useful part.
 
-## The opening that makes this possible
+Everything below was measured on this host. Where something is unverified, it
+says so.
 
-An app running in an iOS **simulator** is an ordinary macOS process owned by
-the developer. That is the whole reason a live provider is conceivable here at
-all, and it does not extend to a physical device.
+---
+
+## 1. Current state
+
+| | physical device | simulator |
+|---|---|---|
+| discovery | works | works |
+| app / process enumeration | works (needs a connected device) | works |
+| batch capture (`record`) | implemented, **never run against hardware** | xctrace cannot record a simulator target — see §5 |
+| live capture | not possible: the app is not a host process | **works** — CPU time, utilisation, memory footprint, per-thread times |
+| stack attribution | via xctrace, unverified | **works** — `/usr/bin/sample`, see §7 |
+| frame timing | via xctrace, unverified | impossible: no command-line frame source exists |
+
+The simulator path is `adapters/ios/simulator_host_collector.cpp`; it needs no
+Instruments at all.
+
+---
+
+## 2. Why the simulator path is possible
+
+An app running in an iOS simulator is an ordinary macOS process owned by the
+developer. That is the whole reason, and it does not extend to a device.
 
 Verified on iPhone 17 Pro (26.5), simulator `456FA0D8`:
 
 | What | How | Result |
 |---|---|---|
 | bundle id → host pid | `simctl spawn <udid> launchctl list`, label `UIKitApplication:<bundleid>[…]`, column 1 | works; the pid is a host pid owned by the user |
-| memory | `proc_pid_rusage`, `ri_phys_footprint` | works, no root — and `phys_footprint` is the metric Xcode's gauge shows |
+| memory | `proc_pid_rusage`, `ri_phys_footprint` | works, no root — and it is the metric Xcode's gauge shows |
 | thread count | `proc_pidinfo(PROC_PIDLISTTHREADS)` | works (20 live threads on the RN app) |
 | per-thread CPU + **names** | `proc_pidinfo(PROC_PIDTHREADINFO, <handle>)` | works, no root |
-| Instruments-grade sampling | `task_for_pid` | **refused** (kr=5) without root or the debugger entitlement |
-| stack sampling | `/usr/bin/sample <pid>` | **works** -- see the correction below |
+| stack attribution | `/usr/bin/sample <pid>` | works — §7 |
+| Instruments-grade sampling | `task_for_pid` | refused (kr=5) without root or the debugger entitlement |
 
-`PROC_PIDTHREADID64INFO` does *not* work with the handles that
+`PROC_PIDTHREADID64INFO` does **not** work with the handles
 `PROC_PIDLISTTHREADS` returns (errno 3); `PROC_PIDTHREADINFO` is the flavour
 that takes them.
 
-## The thread split, from a platform signal
+### The thread split, from a platform signal
 
-Thread names on the RN app came back as the runtime's own, not inferred:
+Thread names come back as the runtime's own, not inferred:
 
 ```
 com.facebook.react.runtime.JavaScript     18981 ms user
@@ -38,31 +58,24 @@ com.facebook.SocketRocket.NetworkThread      21 ms
 ```
 
 This is the iOS half of the JS-versus-native question, and it qualifies as
-`RoleBasis.platformSignal` rather than `threadName`: the name is set by the
-runtime through `pthread_setname_np`, not pattern-matched by us.
+`platformSignal` rather than `threadName`: the runtime sets it through
+`pthread_setname_np`, we do not pattern-match it.
 
-One thing this exposes and must be surfaced if it is ever used: the app carried
-a `com.apple.rosetta.exceptionserver` thread, meaning it was running
-**translated** under Rosetta. Translated CPU timings are not comparable to a
-device, nor to a native simulator build, and a capture that did not say so
-would be inviting exactly the comparison the project forbids.
+One thing it exposed: the app carried a `com.apple.rosetta.exceptionserver`
+thread, so it was running **translated**. Translated CPU timings are not
+comparable to a device, nor to a native simulator build, and a capture that
+did not say so would invite exactly that comparison. The collector records it.
 
-## RESOLVED: the CPU numbers were in the wrong unit
+---
 
-This section recorded an unexplained fifty-fold discrepancy and refused to
-build a CPU provider on it. The explanation is a unit.
+## 3. The unit trap that blocked this for a while
 
-The task-level counters (`PROC_PIDTASKINFO`, and the identical values in
+The task-level CPU counters (`PROC_PIDTASKINFO`, and the identical values in
 `proc_pid_rusage`) are in **mach absolute time units**. The per-thread
 counters (`PROC_PIDTHREADINFO`) are in **nanoseconds**. Two units in one API
 family.
 
-The ratio is the host timebase: 125/3 on Apple Silicon, or 41.6667 ns per
-tick, which is the factor of ~42 that looked like 50. On Intel it is 1/1,
-which is why reading the counters as nanoseconds works there and hides the
-trap entirely.
-
-With the timebase applied, against a process burning a deliberate 3.0 s:
+Against a process burning a deliberate 3.0 s:
 
 | Source | Reading |
 |---|---|
@@ -70,221 +83,132 @@ With the timebase applied, against a process burning a deliberate 3.0 s:
 | task counters read as mach ticks | **2.999 s** |
 | `ps -o time` | 3.00 s |
 
-Confirmed again live against the simulator's Calendar app: 6.594 s where `ps`
-independently reported 6.59 s.
+The ratio is the timebase: 125/3 on Apple Silicon, 41.6667 ns per tick — and
+1/1 on Intel, where reading them as nanoseconds happens to work, which is how
+the trap stays hidden. Confirmed again live: 6.594 s where `ps` independently
+said 6.59 s.
 
-`adapters/ios/simulator_host_collector.cpp` is the provider this unblocked.
-The earlier guess in this document -- that the task counters exclude live
-threads -- was wrong; they include everything, and only the unit was at fault.
+This was originally written up as an unexplained fifty-fold discrepancy, with
+a guess that the task counters excluded live threads. The guess was wrong;
+only the unit was at fault.
 
-## Also worth knowing: `devicectl` answers from a cache
+---
 
-`devicectl device info details --device <id>` returns `outcome: success`, in
-about a tenth of a second, for a device that is **not present at all**. Every
-property it reports is then a description of the device as it was when last
-seen. Measured on a phone that had been away four days: it still reported
-`developerModeStatus: enabled`.
+## 4. `devicectl` answers from a cache — but only one subcommand does
 
-`connectionProperties.lastConnectionDate` is what makes this detectable, and
-it is now carried as `DeviceRef::last_seen_at` so those properties are never
-presented as current facts.
-
-For a live answer, `devicectl device info lockState` has to reach the
-hardware: it fails in ~100 ms with CoreDeviceError 1011 when there is nothing
-to reach, and it also reports whether the device is locked -- which a capture
-needs anyway, since a locked device cannot be driven. That is
-`ios::probe_reachability`.
-
-## Historical: the reasoning that held this up
-
-
-
-Three readings of the same process, taken at one instant, disagree — and a CPU
-series built on the wrong one would be a fabricated measurement.
-
-Against a purpose-built process that burned a known ~3.0 s of CPU across one
-exited thread, one live thread and the main thread:
-
-| Source | Reading |
-|---|---|
-| `proc_pid_rusage` (`ri_user_time + ri_system_time`) | 0.059 s |
-| `proc_pidinfo(PROC_PIDTASKINFO)` (`pti_total_*`) | 0.059 s — identical |
-| sum over live threads | 0.797 s |
-| `ps -o time` | 2.47 s |
-
-So `proc_pid_rusage` and the task-level totals agree with each other and
-disagree with reality by roughly fifty-fold. The task-level counters appear to
-exclude live threads, which is long-standing macOS behaviour, but
-`task-level + live threads` still only reaches 0.86 s against a true 2.5–3.0 s,
-so that explanation is incomplete.
-
-**Until this is understood, there is no CPU provider here.** Memory
-(`phys_footprint`) is unaffected and stood up to checking; the thread names are
-not timing at all. A provider could honestly ship memory and the thread split
-with CPU declared a missing provider, which is what the coverage model exists
-to express.
-
-## Physical iOS devices
-
-Out of reach by this route entirely: the app is not a host process, and
-`xctrace record` produces a bundle only when it finishes — on this host it
-attaches and then does not finish. `XctraceCollector::supports_streaming()`
-reporting `false` remains correct for physical devices.
-
-## `xctrace` cannot record an iOS simulator target on this host
-
-Isolated by comparison rather than assumed, because the same command behaves
-completely differently depending on what it is pointed at:
-
-| target | result |
-|---|---|
-| plain macOS process | honours `--time-limit`, prints `Ctrl-C to stop the recording`, exits by itself, writes a 10 MB bundle that `xctrace export --toc` reads |
-| iOS simulator, `--attach <pid>` | accepts the target, never prints `Ctrl-C to stop`, never reaches its own time limit, ignores SIGINT, leaves a 52 KB stub that exports with `Document Missing Template Error` |
-| iOS simulator, `--launch <executable>` | identical hang |
-| iOS simulator, `--launch <bundle id>` | launch *fails* (`posix_spawn failure … No such file or directory`), and then the recording completes and exits normally |
-
-That last row is the tell: xctrace finishes cleanly whenever there is nothing
-to record, and hangs as soon as it actually has a live simulator target. The
-fault is in recording a simulator target, not in the invocation.
-
-Two things changed as a result.
-
-`proc::Options` gained `stop_signal` and `stop_grace`. Instruments finalises
-its bundle on **SIGINT** -- it says so -- and needs seconds to write it, so
-the default SIGTERM-then-SIGKILL-in-500ms was destroying any recording that
-had completed but not exited. That is a real data-loss path on a physical
-device even though it does not rescue the simulator case.
-
-That fix is tested without hardware, because the behaviour that caused the
-loss can be reproduced exactly. `tests/helpers/fake_finalising_tool.cpp`
-ignores SIGTERM and writes its output only on SIGINT, after a delay, which is
-what Instruments does. Four cases pin it:
-
-- with the **default** stop signal the output is lost -- a demonstration that
-  the bug was real rather than theoretical;
-- with SIGINT and a grace period the output survives;
-- a grace period shorter than the child's work still ends the child, because
-  a collector that hangs on shutdown is worse than a lost bundle;
-- a child that exits promptly is not delayed by a long grace period, so the
-  twelve-second budget costs nothing when it is not needed.
-
-A fifth case asserts that the xctrace collector asks for those settings.
-`proc::run` honouring a stop signal and this collector choosing the right one
-are two different things, and only the second prevents the loss -- so the
-policy is exposed as `ios::xctrace_stop_signal()` and
-`ios::xctrace_stop_grace()` and pinned directly.
-
-And a timeout no longer refuses on its own. The question "is there a usable
-trace?" is now answered by trying to read one -- `xctrace export --toc`
-rejects a stub in well under a second -- rather than by how the process ended.
-A capture xctrace finished but did not exit from is kept and marked partial.
-
-That decision is `ios::bundle_is_readable`, extracted from the capture path
-because inline it was reachable only with a device attached. It was checked
-against the three bundles these experiments actually produced:
-
-| bundle | what it is | verdict |
-|---|---|---|
-| 10 MB, from a macOS recording | a real capture | **readable** |
-| 52 KB, from a simulator attach | a stub | rejected: *Document Missing Template Error* |
-| 252 KB, recording ran but the launch failed | no run data | rejected: *Trace is malformed - run data is missing* |
-
-The third row is why the check runs `--toc` rather than looking at whether a
-file exists or how large it is: that bundle is substantial and contains
-nothing, and a naive check would have salvaged it as a capture.
-
-For a simulator, the working path is `SimulatorHostCollector`: it reads the
-app as a host process and needs no Instruments at all.
-
-## Which `devicectl` commands answer from cache
-
-Worth knowing precisely, because it decides which readings can be trusted as
-current. Tested against a device that had been absent for four days:
+Which matters, because it decides which readings can be trusted as current.
+Tested against a device absent for four days:
 
 | command | against an absent device | conclusion |
 |---|---|---|
 | `device info details` | **`outcome: success`** in ~0.1 s, full properties | answers from a cached CoreDevice record |
 | `device info lockState` | fails, CoreDeviceError 1011, ~0.11 s | requires the hardware |
-| `device info processes` | fails, CoreDeviceError 1011, ~0.11 s | requires the hardware |
-| `device info apps` | fails, CoreDeviceError 1011, ~0.08 s | requires the hardware |
+| `device info processes` | fails, 1011, ~0.11 s | requires the hardware |
+| `device info apps` | fails, 1011, ~0.08 s | requires the hardware |
 
-So `details` is the only one whose values are an observation with a date
-rather than a fact about now, which is why `lastConnectionDate` travels with
-anything read from it. And the three that need the hardware are why a device
-authorized at discovery can still fail at enumeration: the phone was unplugged
-in between. `describe_devicectl_failure` names that case rather than printing
-Apple's raw error, and distinguishes it from error 1000, which means the
-identifier is not a CoreDevice device at all.
+So `details` is the only reading that is an observation with a date rather
+than a fact about now — it still reported `developerModeStatus: enabled` for a
+phone that had been away four days. `connectionProperties.lastConnectionDate`
+is what makes that detectable, and it travels with anything read from it as
+`DeviceRef::last_seen_at`.
 
-## Instruments needs Full Disk Access, and says "corrupt" when it lacks it
+The three that need hardware are why a device authorized at discovery can
+still fail at enumeration: the phone was unplugged in between.
+`describe_devicectl_failure` names that rather than printing Apple's raw
+error, and keeps 1011 (device gone) distinct from 1000 (not a CoreDevice
+device at all — a simulator UDID, or a typo).
 
-Worth knowing before concluding anything about a machine's ability to
-profile. Every recording taken in this environment produced a `time-profile`
-table with a schema and zero rows, and xctrace explained it as:
+`lockState` is also the live reachability probe: it has to reach the hardware,
+fails in ~114 ms when there is nothing to reach, and reports lock state, which
+a capture needs anyway since a locked device cannot be driven.
 
-    Fatal logging system error: The log archive is corrupt or incomplete and
-    cannot be read
+---
 
-Nothing is corrupt. Instruments samples through the unified log store, and a
+## 5. `xctrace` cannot record an iOS simulator target on this host
+
+Isolated by comparison, because the same command behaves completely
+differently depending on what it is pointed at:
+
+| target | result |
+|---|---|
+| plain macOS process | honours `--time-limit`, prints `Ctrl-C to stop the recording`, exits by itself, writes a bundle that exports |
+| simulator, `--attach <pid>` | accepts the target, never prints `Ctrl-C to stop`, never reaches its own time limit, ignores SIGINT, leaves a 52 KB stub that exports with `Document Missing Template Error` |
+| simulator, `--launch <executable>` | identical hang |
+| simulator, `--launch <bundle id>` | launch *fails*, and then the recording completes and exits normally |
+
+That last row is the tell: xctrace finishes cleanly whenever there is nothing
+to record and hangs as soon as it has a live simulator target. The fault is in
+recording a simulator target, not in the invocation.
+
+Two things changed as a result.
+
+**`proc::Options` gained `stop_signal` and `stop_grace`.** Instruments
+finalises its bundle on SIGINT — it says so — and needs seconds. The default
+SIGTERM-then-SIGKILL-in-500ms destroyed recordings that had completed but not
+exited. That is a real data-loss path on a physical device even though it does
+not rescue the simulator case. Tested without hardware:
+`tests/helpers/fake_finalising_tool.cpp` ignores SIGTERM and writes its output
+only on SIGINT, after a delay, which is what Instruments does.
+
+**A timeout no longer refuses on its own.** "Is there a usable trace?" is
+answered by trying to read one — `ios::bundle_is_readable` runs
+`xctrace export --toc`, which rejects a stub in under a second — rather than
+by how the process ended. Checked against the three bundles these experiments
+produced:
+
+| bundle | what it is | verdict |
+|---|---|---|
+| 10 MB, macOS recording | a real capture | readable |
+| 52 KB, simulator attach | a stub | rejected: *Document Missing Template Error* |
+| 252 KB, recording ran but the launch failed | no run data | rejected: *Trace is malformed - run data is missing* |
+
+The third is why the check runs `--toc` rather than looking at size or
+existence: that bundle is five times the stub and contains nothing.
+
+---
+
+## 6. Two reasons a capture can look empty on a good device
+
+**Full Disk Access.** Instruments samples through the unified log store, and a
 process without Full Disk Access cannot open it:
 
-    $ /usr/bin/log show --last 5s
-    log: Could not open local log store: Operation not permitted
-    $ ls -ld /var/db/diagnostics
-    drwxr-x---  17 root  admin
+```
+$ /usr/bin/log show --last 5s
+log: Could not open local log store: Operation not permitted
+$ ls -ld /var/db/diagnostics
+drwxr-x---  17 root  admin
+```
 
-So an empty capture on a perfectly good device can be a checkbox rather than a
-fault, and the wording actively misdirects. Two places now say so: a capture
-that comes back with an empty table probes `log show --last 1s` and reports
-`permission_denied` with the fix, and `mpi preflight` carries
-`ios.capture.log_store` so the permission is found before a capture is
-attempted rather than after.
+xctrace reports that as `Fatal logging system error: The log archive is
+corrupt or incomplete and cannot be read`, which describes a damaged machine
+and is usually this permission. It is reported as `permission_denied` with the
+fix, in the capture and in `mpi preflight` as `ios.capture.log_store`, so it
+is found before a capture is attempted rather than after.
 
-This also means every "unverified on a physical device" note in this document
-is a statement about *this execution context* as much as about the absence of
-hardware. With Full Disk Access granted, sampling may simply work.
-
-## `time-profile` is not the only table with samples in it
-
-The collector exports `table[@schema="time-profile"]` and treats an empty
-result as "no samples". Measured on a real recording from this host:
+**`time-profile` is not the only table with samples.** The collector exports
+`table[@schema="time-profile"]`. On a real recording here:
 
 | table | rows |
 |---|---|
 | `time-profile` | **0** |
-| `time-sample` | **2** -- a real thread, process and kperf backtrace |
+| `time-sample` | **2** — a real thread, process and kperf backtrace |
 | `kdebug` | 40 |
 | `os-log` | 0 |
-| `dyld-library-load` | 0 |
 
-The samples were in the bundle the whole time, in a schema this build does not
-parse. "The exported table held no samples" was true and misleading at once,
-and it is the same shape as refusing a recording xctrace had finished but not
-exited from: data present, discarded on the strength of the wrong question.
+The samples were in the bundle, in a schema this build does not parse. An
+empty `time-profile` now triggers a row count over the tables that plausibly
+carry samples, and reports that the samples exist, how many, in which schema,
+and where the bundle is — because a gap in this tool is not an empty capture.
 
-Parsing `time-sample` is not done here, and deliberately. Its columns are
-different -- `cp-user-callstack`, `kperf-bt`, `thread-state` rather than
-time-profile's weighted frames -- and the only sample available to write it
-against is two rows from a recording that failed. A parser written against
-that and unverifiable against a good capture is worse than none.
+---
 
-What the collector does instead is say so: an empty `time-profile` triggers a
-row count on the tables that plausibly carry samples, and when one has rows it
-reports that the samples exist, how many, in which schema, that this build
-does not read it, and where the bundle is so it can be opened in Instruments.
-A gap in this tool is not an empty capture, and the two must not read alike.
+## 7. Stack attribution on a simulator
 
-The `os-log` count of zero in that table is the Full Disk Access problem above,
-visible from a second angle.
+This document previously concluded, from `task_for_pid` being refused, that
+stack attribution was impossible here. That was wrong, and the wrong claim was
+in the collector and its capability output as well.
 
-## Correction: stacks are obtainable on a simulator
-
-This document concluded, from `task_for_pid` being refused, that stack
-attribution was impossible here, and that claim went into the collector and
-into its capability output. It is wrong.
-
-`/usr/bin/sample` is entitled to do what this process cannot. Run against the
-simulator's Calendar app:
+`/usr/bin/sample` is entitled to do what this process cannot:
 
 ```
 $ /usr/bin/sample 74447 2
@@ -299,38 +223,52 @@ Call graph:
 ```
 
 1294 lines of symbolised call graph with per-thread attribution, in under four
-seconds, with no root and no Full Disk Access.
+seconds, no root and no Full Disk Access.
 
-So the honest statement is that `SimulatorHostCollector` reports CPU time and
-not attribution **because it does not ingest `sample`'s output**, not because
-attribution is unavailable. The difference matters: one is a platform limit to
-work around, the other is a feature that has not been written.
+`adapters/ios/sample_parser.cpp` turns that into weighted `CpuSample`s, behind
+`CaptureConfig::stack_profile` and a checkbox in the Live tab. Two things in
+the parsing are easy to get wrong and invisible when they are:
 
-It **is** ingested now. `adapters/ios/sample_parser.cpp` turns the call graph
-into weighted `CpuSample`s, and `CaptureConfig::stack_profile` runs it at the
-end of a live capture.
-
-Two things in that parsing are easy to get wrong and invisible when they are:
-
-**Each node's count includes its children.** The quantity that means anything
-is `self = count - sum(children)`: the samples that stopped *in* that frame.
-Emitting every node at its full count multiply-counts the same samples down
-the whole path, and emitting only leaves loses every frame that has both self
-time and callees. The test for this is constructed rather than recorded,
-because the real graph happened to be single-child chains throughout and could
-not exercise it.
+**Each node's count includes its children,** so the quantity that means
+anything is `self = count - sum(children)`. Emitting every node at its full
+count multiply-counts the same samples down the path; emitting only leaves
+loses every frame with both self time and callees. The test for this is
+constructed, and labelled so, because the recorded graph is single-child
+chains throughout and cannot exercise it.
 
 **A frame must appear in its own stack.** Emitting a node after popping it off
-the path left every sample one frame short -- the deepest stack ended at the
+the path left every sample one frame short — the deepest stack ended at the
 *caller* of its leaf. That conserves the weights, so a sample-count check
 passes and the stacks are quietly wrong. Caught by checking the leaf against
 the recording: `mach_msg2_trap`, not `mach_msg2_internal`.
 
-The conservation check is the one worth keeping: the self times must sum
-exactly to what the threads declared. Verified on the real output at 37444
-samples across 22 threads, and on the committed fixture.
+The conservation check is worth keeping as the other half: self times must sum
+exactly to what the threads declared. Verified at 37444 samples across 22
+threads, and on `fixtures/sample/recorded-simulator-callgraph.txt`.
 
-What it still cannot do is place any of this in time. `sample` reports an
-aggregate with no timestamps, so this answers "where" and never "when", and
-the capability says so. It is opt-in for that reason as much as for the cost:
-`sample` blocks for the seconds it samples.
+What it cannot do is place any of this in time. `sample` reports an aggregate
+with no timestamps, so it answers "where" and never "when", and the capability
+says so.
+
+---
+
+## 8. What is still unverified, and why
+
+**No capture has ever run against a connected physical iPhone.** The two
+devices here were last seen 2025-09-11 and 2025-06-25. Every physical-device
+claim in this tool rests on code review and on the probes above correctly
+reporting them absent — not on a successful capture. The SIGINT fix in §5 is
+aimed squarely at that path and has only ever been exercised against a
+stand-in.
+
+The physical-device *enumeration* path has been executed, with a recorded
+`devicectl` — see `tests/helpers/devicectl-stub`. That harness found three
+bugs in code that had never run, including process attribution never working
+at all.
+
+**Ingesting a populated `time-profile` export is unexercised**, because of the
+Full Disk Access problem in §6. Every recording here has a schema and no rows.
+
+Both of those are properties of this machine, not of the code, and the notes
+that used to describe them as machine faults were wrong twice — once about a
+"corrupt" log archive, once about sampling being impossible.
