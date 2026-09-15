@@ -36,6 +36,25 @@ namespace mpi::ios {
 // What one `xctrace record` invocation did, read from its own output rather
 // than from its exit status alone: it exits non-zero for a partial recording
 // that still produced a usable bundle.
+/// Whether a bundle holds samples in a table this build does not read.
+///
+/// The collector exports `table[@schema="time-profile"]`. That is not the only
+/// table Instruments writes samples to: a recording here produced
+/// `time-profile` with **zero** rows and `time-sample` with two, carrying a
+/// real thread, process and kperf backtrace.
+///
+/// So "the exported table held no samples" can be true and misleading at the
+/// same time -- the samples exist, in a schema this build cannot parse. That
+/// is a gap in this tool, not an empty capture, and the two must not read
+/// alike. Asked only after the export has already come back empty.
+struct AlternateSampleTable {
+  std::string schema;
+  std::int64_t rows = 0;
+  bool found() const { return rows > 0 && !schema.empty(); }
+};
+AlternateSampleTable find_unread_sample_table(const std::string& bundle_path,
+                                              const proc::Options& opts);
+
 /// Whether this process can read the unified log store.
 ///
 /// Instruments samples through it, and a process without Full Disk Access

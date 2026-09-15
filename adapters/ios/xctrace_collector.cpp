@@ -95,6 +95,42 @@ BundleReadability bundle_is_readable(const std::string& bundle_path,
   return out;
 }
 
+AlternateSampleTable find_unread_sample_table(const std::string& bundle_path,
+                                              const proc::Options& opts) {
+  AlternateSampleTable out;
+  if (bundle_path.empty()) return out;
+  if (!proc::is_safe_argument(bundle_path, /*reject_option_like=*/true)) {
+    return out;
+  }
+  // Only tables that plausibly carry per-sample rows. Listed rather than
+  // discovered from the table of contents, because "any table with rows" is
+  // not the same claim: a kdebug table has rows in every trace and says
+  // nothing about CPU sampling.
+  static const char* kCandidates[] = {"time-sample", "cpu-profile",
+                                      "counters-profile"};
+  for (const char* schema : kCandidates) {
+    const proc::Result r = proc::run(
+        {"xcrun", "xctrace", "export", "--input", bundle_path, "--xpath",
+         export_xpath_for(schema)}, opts);
+    if (!r.spawned || r.exit_code != 0) continue;
+    // Count rows without parsing: the point is whether there are any, and
+    // parsing a schema this build does not support is exactly what is being
+    // reported as missing.
+    std::int64_t rows = 0;
+    std::size_t at = 0;
+    while ((at = r.out.find("<row>", at)) != std::string::npos) {
+      rows++;
+      at += 5;
+    }
+    if (rows > 0) {
+      out.schema = schema;
+      out.rows = rows;
+      return out;
+    }
+  }
+  return out;
+}
+
 LogStoreAccess probe_log_store_access() {
   LogStoreAccess out;
   proc::Options po;
@@ -426,6 +462,25 @@ session::CaptureResult XctraceCollector::capture(
     // archive is corrupt or incomplete", which sends people looking for
     // corruption that is not there. Asked only now, when something already
     // came back empty, so a working capture pays nothing.
+    // Before blaming anything, check whether the samples are simply in a
+    // table this build does not read. Saying "no samples" while they sit in
+    // the bundle is the same mistake as refusing a recording that xctrace
+    // finished but did not exit from.
+    proc::Options alt_opts;
+    alt_opts.timeout = std::chrono::milliseconds(20000);
+    alt_opts.cancel = config.cancel;
+    const AlternateSampleTable alt =
+        find_unread_sample_table(bundle_path, alt_opts);
+    if (alt.found()) {
+      limits.push_back(
+          "the samples are not missing: this bundle holds " +
+          std::to_string(alt.rows) + " row(s) in the `" + alt.schema +
+          "` table, which this build does not parse -- it reads "
+          "`time-profile` only. That is a gap in this tool, not an empty "
+          "capture, and the recording at " + bundle_path +
+          " can be opened in Instruments.");
+    }
+
     const LogStoreAccess log_access = probe_log_store_access();
     if (!log_access.readable) {
       limits.push_back(

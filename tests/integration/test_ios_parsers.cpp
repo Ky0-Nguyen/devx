@@ -904,3 +904,46 @@ MPI_TEST(preflight_reports_the_log_store_permission_before_a_capture_fails,
                   "machine");
   }
 }
+
+MPI_TEST(samples_in_an_unread_table_are_not_reported_as_no_samples,
+         {"J15", "D07"}) {
+  // The collector exports table[@schema="time-profile"]. That is not the only
+  // table Instruments writes samples to. Measured on a real recording from
+  // this host:
+  //
+  //     time-profile        0 rows
+  //     time-sample         2 rows   <- a real thread, process and kperf
+  //                                     backtrace
+  //     kdebug             40 rows
+  //     os-log              0 rows
+  //
+  // So "the exported table held no samples" was true and misleading at once:
+  // the samples were in the bundle, in a schema this build cannot parse. A
+  // gap in this tool is not an empty capture, and reporting them alike sends
+  // someone looking at their app instead of at this code.
+  proc::Options opts;
+  opts.timeout = std::chrono::milliseconds(20000);
+
+  // An absent bundle has no alternate table, and must not claim one.
+  const auto none = ios::find_unread_sample_table("/nonexistent.trace", opts);
+  MPI_CHECK_MSG(!none.found(), "a bundle that does not exist holds nothing");
+  MPI_CHECK(none.rows == 0);
+  MPI_CHECK(none.schema.empty());
+
+  MPI_CHECK_MSG(!ios::find_unread_sample_table("", opts).found(),
+                "an empty path is refused rather than passed to xctrace");
+  // An option-shaped path never reaches the child process.
+  MPI_CHECK(!ios::find_unread_sample_table("--input", opts).found());
+
+  // A directory that exists and is not a trace: xctrace rejects it, and no
+  // table may be claimed from a failed export.
+  const std::string fake =
+      std::filesystem::temp_directory_path().string() + "/mpi-notatrace.trace";
+  std::filesystem::remove_all(fake);
+  std::filesystem::create_directories(fake);
+  const auto junk = ios::find_unread_sample_table(fake, opts);
+  MPI_CHECK_MSG(!junk.found(),
+                "a failed export yields no alternate table, rather than a "
+                "zero-row claim that reads as a checked answer");
+  std::filesystem::remove_all(fake);
+}
