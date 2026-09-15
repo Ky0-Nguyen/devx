@@ -474,8 +474,11 @@ MPI_TEST(simulator_apps_are_enumerated_from_the_real_booted_simulator,
 
 MPI_TEST(xctrace_timeout_is_a_provider_failure_not_an_empty_capture,
          {"J15", "E13", "D07"}) {
-  // The measured behaviour on this host: xctrace attaches to a simulator
-  // target and then runs indefinitely, ignoring its own --time-limit.
+  // The measured behaviour on this host: xctrace accepts a simulator target
+  // and then never starts recording. The signature is the *absence* of
+  // "Ctrl-C to stop the recording" while still holding the target -- isolated
+  // by comparison, since the identical command against a macOS process
+  // honours --time-limit, exits by itself and writes a bundle that exports.
   const auto out = ios::interpret_record_output(
       "Starting recording with the Time Profiler template. Attaching to: "
       "Settings (87700). Time limit: 3.0 s\n",
@@ -483,10 +486,52 @@ MPI_TEST(xctrace_timeout_is_a_provider_failure_not_an_empty_capture,
   MPI_CHECK(out.attached);
   MPI_CHECK(out.timed_out);
   MPI_CHECK(!out.wrote_bundle);
+  MPI_CHECK_MSG(!out.began_recording,
+                "no 'Ctrl-C to stop' line means it never started recording");
   MPI_CHECK(!out.refusal.empty());
-  // The distinction the whole tool is built around.
-  MPI_CHECK(out.refusal.find("not the same as a recording that found nothing") !=
-            std::string::npos);
+  // The refusal must say *which* failure this is, because the two have
+  // different answers: one may have a salvageable trace and this one cannot.
+  MPI_CHECK_MSG(out.refusal.find("never started recording") != std::string::npos,
+                "the refusal names the failure precisely");
+  MPI_CHECK_MSG(out.refusal.find("simulator") != std::string::npos,
+                "and says it is a simulator limitation, not the invocation");
+  // The distinction the whole tool is built around, now carried where it
+  // belongs: the caller states "no readable trace, so nothing was measured"
+  // in the capability, and the refusal points at the path that does work.
+  MPI_CHECK_MSG(out.refusal.find("live capture") != std::string::npos,
+                "and points at the alternative that does work, rather than "
+                "leaving the operator with a dead end");
+}
+
+MPI_TEST(a_recording_that_started_is_a_different_failure_from_one_that_did_not,
+         {"J15", "D07"}) {
+  // xctrace got as far as recording and then failed to exit. That trace may
+  // be real and readable, so this refusal must NOT claim the simulator
+  // limitation -- the caller tries the export before believing it.
+  const auto out = ios::interpret_record_output(
+      "Starting recording with the Time Profiler template. Attaching to: "
+      "burn (77280). Time limit: 4000.0 ms\n"
+      "Ctrl-C to stop the recording\n",
+      "", /*exit_code=*/-1, /*timed_out=*/true);
+  MPI_CHECK(out.attached);
+  MPI_CHECK_MSG(out.began_recording, "the recording did start");
+  MPI_CHECK_MSG(out.refusal.find("never started recording") == std::string::npos,
+                "so it is not reported as the simulator hang");
+  MPI_CHECK_MSG(out.refusal.find("did not exit") != std::string::npos,
+                "it is reported as what it is: a process that would not exit");
+}
+
+MPI_TEST(a_target_never_accepted_is_not_blamed_on_the_simulator, {"J15"}) {
+  // Nothing was accepted at all -- a different cause again, and claiming the
+  // simulator limitation here would send someone to the wrong answer.
+  const auto out = ios::interpret_record_output(
+      "", "", /*exit_code=*/-1, /*timed_out=*/true);
+  MPI_CHECK(!out.attached);
+  MPI_CHECK(!out.began_recording);
+  MPI_CHECK_MSG(out.refusal.find("never reported accepting") != std::string::npos,
+                "the refusal says the target was never accepted");
+  MPI_CHECK_MSG(out.refusal.find("simulator") == std::string::npos,
+                "and does not attribute it to the simulator limitation");
 }
 
 MPI_TEST(xctrace_keeps_a_bundle_it_wrote_despite_reporting_errors,

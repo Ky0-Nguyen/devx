@@ -35,6 +35,12 @@ namespace mpi::ios {
 // than from its exit status alone: it exits non-zero for a partial recording
 // that still produced a usable bundle.
 struct RecordOutcome {
+  /// Whether xctrace got as far as actually recording.
+  ///
+  /// It prints "Ctrl-C to stop the recording" at that point, and the absence
+  /// of that line while still holding the target is the signature of the
+  /// simulator hang: accepted, never recording, unresponsive to SIGINT.
+  bool began_recording = false;
   bool attached = false;
   bool wrote_bundle = false;
   bool timed_out = false;

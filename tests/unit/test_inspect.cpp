@@ -90,9 +90,20 @@ MPI_TEST(a_source_that_saw_nothing_is_not_a_source_that_failed, {}) {
                   "an attached source with no events says it saw nothing");
     MPI_CHECK_MSG(s.state != mpi::observe::SourceState::kUnavailable,
                   "which is a different answer from being unreachable");
-    MPI_CHECK_MSG(s.detail.find("native module") != std::string::npos,
-                  "and it names the coverage gap, so an empty list is not "
-                  "read as 'the app made no requests'");
+    // It must name what the gap actually is. "WebView" earns its place here
+    // by measurement: driving a React Native SSO login -- typing into the
+    // form and submitting it -- produced no entry at all, because a
+    // WebView's requests are native and never reach the JS inspector.
+    MPI_CHECK_MSG(s.detail.find("WebView") != std::string::npos,
+                  "the detail names WebView, which is where most SSO and "
+                  "payment traffic goes and the most common reason this list "
+                  "looks empty while the app is plainly busy");
+    MPI_CHECK_MSG(s.detail.find("native") != std::string::npos,
+                  "and native code generally, so an empty list is not read "
+                  "as 'the app made no requests'");
+    MPI_CHECK_MSG(s.detail.find("fetch/XHR") != std::string::npos,
+                  "and says what it does cover, rather than only what it "
+                  "does not");
   }
   MPI_CHECK(found_network_source);
   MPI_CHECK_MSG(empty.caveats.size() >= 4,

@@ -129,3 +129,35 @@ Out of reach by this route entirely: the app is not a host process, and
 `xctrace record` produces a bundle only when it finishes — on this host it
 attaches and then does not finish. `XctraceCollector::supports_streaming()`
 reporting `false` remains correct for physical devices.
+
+## `xctrace` cannot record an iOS simulator target on this host
+
+Isolated by comparison rather than assumed, because the same command behaves
+completely differently depending on what it is pointed at:
+
+| target | result |
+|---|---|
+| plain macOS process | honours `--time-limit`, prints `Ctrl-C to stop the recording`, exits by itself, writes a 10 MB bundle that `xctrace export --toc` reads |
+| iOS simulator, `--attach <pid>` | accepts the target, never prints `Ctrl-C to stop`, never reaches its own time limit, ignores SIGINT, leaves a 52 KB stub that exports with `Document Missing Template Error` |
+| iOS simulator, `--launch <executable>` | identical hang |
+| iOS simulator, `--launch <bundle id>` | launch *fails* (`posix_spawn failure … No such file or directory`), and then the recording completes and exits normally |
+
+That last row is the tell: xctrace finishes cleanly whenever there is nothing
+to record, and hangs as soon as it actually has a live simulator target. The
+fault is in recording a simulator target, not in the invocation.
+
+Two things changed as a result.
+
+`proc::Options` gained `stop_signal` and `stop_grace`. Instruments finalises
+its bundle on **SIGINT** -- it says so -- and needs seconds to write it, so
+the default SIGTERM-then-SIGKILL-in-500ms was destroying any recording that
+had completed but not exited. That is a real data-loss path on a physical
+device even though it does not rescue the simulator case.
+
+And a timeout no longer refuses on its own. The question "is there a usable
+trace?" is now answered by trying to read one -- `xctrace export --toc`
+rejects a stub in well under a second -- rather than by how the process ended.
+A capture xctrace finished but did not exit from is kept and marked partial.
+
+For a simulator, the working path is `SimulatorHostCollector`: it reads the
+app as a host process and needs no Instruments at all.

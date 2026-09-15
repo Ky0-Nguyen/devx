@@ -1099,12 +1099,14 @@ enum Strings {
         "Nothing was attached":
             "Không kết nối được gì",
         "Nothing was reported. The domain was enabled, so this is the "
-        + "app making no JavaScript HTTP calls in the window — a native "
-        + "module's own HTTP would not appear here either way.":
+        + "app making no JavaScript HTTP calls in the window. A WebView's "
+        + "requests never appear here — which covers most SSO and payment "
+        + "screens — and neither do a native module's.":
             "Không có gì được báo về. Domain đã được bật, nên đây là việc "
             + "ứng dụng không gọi HTTP nào từ JavaScript trong khoảng thời "
-            + "gian này — HTTP do một native module tự gọi thì dù sao cũng "
-            + "không xuất hiện ở đây.",
+            + "gian này. Request của WebView không bao giờ xuất hiện ở đây "
+            + "— điều này đúng với phần lớn màn hình SSO và thanh toán — và "
+            + "request của native module cũng vậy.",
         "Observe":
             "Quan sát",
         "Redux state":

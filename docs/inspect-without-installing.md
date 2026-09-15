@@ -61,6 +61,24 @@ Native's own fetch/XHR instrumentation. HTTP performed by a native module
 through OkHttp, or an image fetched by the platform's loader, never appears.
 An empty list does not mean the app made no requests.
 
+The case that catches people is a **WebView**, because most SSO and payment
+flows are one. Measured on a React Native app's Yum! Single Sign On screen:
+tapping into the form, typing a user id and submitting it produced **no
+network entry at all** over five polls, while the only entry that ever
+appeared was the app's own periodic `generate_204` connectivity probe. The
+WebView's requests are native, and nothing about them reaches the JavaScript
+inspector.
+
+So an empty Network list on a login screen is normal and says nothing about
+the app. The app's own API calls appear once it is past SSO and calling its
+endpoints from JavaScript. The source status and the empty-list message both
+name WebView for this reason.
+
+There is no no-install route to native traffic on a stock emulator: `adb root`
+is refused on a production build (`adbd cannot run as root in production
+builds`), so packet capture is not available either, and a proxy would mean
+installing a certificate on the device.
+
 **Redux actions are not observable read-only.** The store's state can be read;
 the stream of dispatched actions cannot, because nothing broadcasts it. Seeing
 actions would mean wrapping `dispatch` inside the running app — modifying it,

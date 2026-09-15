@@ -371,9 +371,12 @@ InspectReport InspectAssembler::finish(std::int64_t wall_ms) {
                                   : SourceState::kRanSawNothing;
   net.detail = network_events_ > 0
       ? "React Native's own fetch/XHR instrumentation reported these"
-      : "the domain was enabled and no request was reported; a call made by "
-        "a native module or the platform image loader would not appear here "
-        "either way";
+      : "the domain was enabled and no request was reported. This covers "
+        "JavaScript fetch/XHR only, so it would be empty either way for a "
+        "screen whose traffic is native: a WebView (an SSO or payment page "
+        "is usually one), a native networking module, or the platform's "
+        "image loader. Measured on a React Native SSO login: typing and "
+        "submitting the form produced no entry here at all.";
   report.sources.push_back(net);
 
   SourceStatus con;
@@ -390,9 +393,11 @@ InspectReport InspectAssembler::finish(std::int64_t wall_ms) {
       "This needs a debug build: a release build runs no inspector, so an "
       "empty capture there means there was nothing to attach to, not that "
       "the app was idle.",
-      "Network coverage is the JavaScript side only. HTTP performed by a "
-      "native module (OkHttp, the platform image loader) does not appear "
-      "here, so an empty list does not mean the app made no requests.",
+      "Network coverage is the JavaScript side only: React Native's own "
+      "fetch/XHR instrumentation. A **WebView** does not appear here -- which "
+      "covers most SSO and payment flows -- and neither does a native "
+      "networking module or the platform image loader. An empty list does "
+      "not mean the app made no requests.",
       "Redux actions are not observable without modifying the running app. "
       "The store's state can be read; the stream of dispatched actions "
       "cannot, and nothing here infers actions from state changes.",
