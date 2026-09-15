@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "core/util/process.hpp"
 #include "core/session/collector.hpp"
 
 namespace mpi::ios {
@@ -44,6 +45,26 @@ namespace mpi::ios {
 /// prints "Ctrl-C to stop the recording" -- and needs seconds to write it, so
 /// the default SIGTERM-then-SIGKILL-in-500ms destroyed captures that had
 /// already succeeded.
+/// Whether a trace bundle can actually be read.
+///
+/// The question a timeout must not answer by itself. `xctrace record` can
+/// finish a recording and then fail to exit, and refusing on the exit code
+/// threw away real captures; equally, it can leave a **stub** bundle that
+/// looks like a result and is not. Asking `xctrace export --toc` settles it:
+/// a stub is rejected with "Document Missing Template Error" in well under a
+/// second, and a real bundle answers with a `<trace-toc>` document.
+///
+/// Extracted from the capture path so it can be tested. Inline, it was
+/// reachable only with a device attached, which is the one thing this
+/// environment has never had.
+struct BundleReadability {
+  bool readable = false;
+  /// Why not, in the tool's own words, when it is not.
+  std::string detail;
+};
+BundleReadability bundle_is_readable(const std::string& bundle_path,
+                                     const proc::Options& opts);
+
 int xctrace_stop_signal();
 std::chrono::milliseconds xctrace_stop_grace();
 

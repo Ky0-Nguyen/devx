@@ -649,3 +649,52 @@ MPI_TEST(xctrace_is_stopped_with_the_signal_it_responds_to, {"J15"}) {
                 "and still bounded, because a collector that hangs on "
                 "shutdown is worse than a lost bundle");
 }
+
+MPI_TEST(a_stub_bundle_is_not_mistaken_for_a_capture, {"J15", "D07"}) {
+  // The salvage path's decision, which used to be inline in the capture
+  // function and therefore reachable only with a device attached -- the one
+  // thing this environment has never had.
+  //
+  // It has to be strict in both directions. A recording xctrace finished but
+  // did not exit from is real and must be kept; a stub it left behind looks
+  // like a result and is not. Both were measured: a real macOS recording
+  // produced a 10 MB bundle that `--toc` reads, and a simulator attempt
+  // produced a 52 KB stub that `--toc` rejects with "Document Missing
+  // Template Error".
+  proc::Options opts;
+  opts.timeout = std::chrono::milliseconds(20000);
+
+  const auto missing = ios::bundle_is_readable("/nonexistent/path.trace", opts);
+  MPI_CHECK_MSG(!missing.readable, "a bundle that does not exist is not one");
+  MPI_CHECK_MSG(missing.detail.find("no bundle exists") != std::string::npos,
+                "and that is reported as absence, which is a different "
+                "failure from an unreadable bundle and has a different cause");
+
+  MPI_CHECK_MSG(!ios::bundle_is_readable("", opts).readable,
+                "an empty path is refused rather than passed to xctrace");
+
+  // An option-shaped path must never reach the child process.
+  const auto unsafe = ios::bundle_is_readable("--input", opts);
+  MPI_CHECK(!unsafe.readable);
+  MPI_CHECK_MSG(unsafe.detail.find("refusing") != std::string::npos ||
+                    unsafe.detail.find("no bundle exists") != std::string::npos,
+                "and is either refused outright or fails the existence check "
+                "first; either way it is not handed to xctrace as a flag");
+
+  // A directory that exists and is not a trace bundle: the shape a partial
+  // or corrupted recording leaves behind. It must not pass.
+  const std::string fake =
+      std::filesystem::temp_directory_path().string() + "/mpi-fake.trace";
+  std::filesystem::remove_all(fake);
+  std::filesystem::create_directories(fake);
+  {
+    std::ofstream junk(fake + "/not-a-trace.txt");
+    junk << "this is not a trace bundle";
+  }
+  const auto stub = ios::bundle_is_readable(fake, opts);
+  MPI_CHECK_MSG(!stub.readable,
+                "a directory that exists but is not a readable trace does "
+                "not count as a capture");
+  MPI_CHECK_MSG(!stub.detail.empty(), "and the tool's own reason is kept");
+  std::filesystem::remove_all(fake);
+}
