@@ -193,6 +193,12 @@ char* mpi_analyze_trace_json(const char* trace_path);
 
 /* ---- live capture -------------------------------------------------------
  *
+ * `stack_profile_seconds` > 0 takes a stack profile at the *end* of the
+ * capture, on a platform where that is a separate step -- the iOS simulator
+ * path runs `/usr/bin/sample` for that many seconds. It is an aggregate with
+ * no timestamps: it says where the samples were and can never say when, so it
+ * is opt-in rather than folded into the tick loop. 0 disables it.
+ *
  * A capture you can watch while it runs. mpi_live_start returns as soon as the
  * collector has prepared the device; mpi_live_poll_json returns the current
  * snapshot, which a UI can call on a timer.
@@ -207,7 +213,7 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
                      const char* app_identifier, int sample_hz,
                      int collect_frames, int collect_cpu, int collect_memory,
                      int reset_frame_history, int tick_ms, int cpu_window_ms,
-                     int timeout_ms);
+                     int timeout_ms, int stack_profile_seconds);
 
 /* The current snapshot: counts, per-source status, and the preliminary
  * analysis. Safe to call at any time, including before a start. */

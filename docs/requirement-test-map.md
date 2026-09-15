@@ -811,7 +811,7 @@ Two cautions on reading this:
 
 ## Totals
 
-- test binaries: 23
+- test binaries: 24
 - test cases declaring at least one id: 483
 - checklist-item links: 635
 - section-18 coverage: 177/198 (89%)

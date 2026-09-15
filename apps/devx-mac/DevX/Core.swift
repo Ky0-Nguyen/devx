@@ -314,14 +314,20 @@ enum Core {
     }
 
     // ---- live capture ----
+    /// `stackProfileSeconds` > 0 takes a stack profile at the end of the
+    /// capture (iOS simulator: `/usr/bin/sample`). It is an aggregate with no
+    /// timestamps, so it answers where and never when -- which is why it is
+    /// opt-in rather than part of the tick loop.
     static func liveStart(dir: String, device: String, app: String,
                           sampleHz: Int, frames: Bool, cpu: Bool, memory: Bool,
-                          resetFrames: Bool, tickMs: Int, cpuWindowMs: Int) -> JSON {
+                          resetFrames: Bool, tickMs: Int, cpuWindowMs: Int,
+                          stackProfileSeconds: Int = 0) -> JSON {
         call {
             mpi_live_start(dir, device, app, Int32(sampleHz),
                            frames ? 1 : 0, cpu ? 1 : 0, memory ? 1 : 0,
                            resetFrames ? 1 : 0, Int32(tickMs),
-                           Int32(cpuWindowMs), 45000)
+                           Int32(cpuWindowMs), 45000,
+                           Int32(stackProfileSeconds))
         }
     }
     static func livePoll() -> JSON { call { mpi_live_poll_json() } }

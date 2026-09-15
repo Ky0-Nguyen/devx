@@ -51,6 +51,18 @@ struct CaptureConfig {
   // it walks the whole heap, and the file it writes is tens of megabytes --
   // 49 MB for the app this was built against.
   bool heap_dump = false;
+
+  // Take a stack profile at the end of the capture, on a platform where that
+  // is a separate step from the tick loop.
+  //
+  // Off by default because it costs its own duration: the iOS simulator path
+  // runs `/usr/bin/sample`, which blocks for the seconds it samples. It is
+  // also a different *kind* of result from the rest of a live capture -- an
+  // aggregate with no timestamps, which answers "where" and can never
+  // answer "when" -- and mixing that into a timeline by default would invite
+  // reading it as one.
+  bool stack_profile = false;
+  std::chrono::milliseconds stack_profile_duration{3000};
   // Where a collector may write a large side-artifact it cannot hold in
   // memory -- a heap dump is tens of megabytes. The session writer moves what
   // it finds here into the package.

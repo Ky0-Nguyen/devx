@@ -6,6 +6,7 @@ add_library(mpi_adapters STATIC
   ios/ios_adapter.cpp
   ios/xctrace_collector.cpp
   ios/simulator_host_collector.cpp
+  ios/sample_parser.cpp
   rn/inspector.cpp
 )
 target_link_libraries(mpi_adapters PUBLIC mpi_core mpi_project_options)
