@@ -8,6 +8,67 @@
 // means, and the fact that a debugger was attached while this was recorded.
 import SwiftUI
 
+/// Headers and bodies for one exchange.
+///
+/// Collapsed by default even when captured: a request with twenty headers
+/// would bury the next request, and the list is the thing being scanned.
+private struct ExchangeDetail: View {
+    let row: JSON
+    @State private var open = false
+
+    var body: some View {
+        let reqH = row["request_headers"]
+        let resH = row["response_headers"]
+        let hasBody = !row["response_body"].text.isEmpty
+            || !row["request_body"].text.isEmpty
+        let count = reqH.keys.count + resH.keys.count
+        if count > 0 || hasBody {
+            VStack(alignment: .leading, spacing: 2) {
+                Button(open ? tr("hide detail")
+                            : tr("detail") + " (\(count) " + tr("headers") + ")") {
+                    open.toggle()
+                }
+                .buttonStyle(TermButtonStyle())
+                if open {
+                    ForEach(reqH.keys, id: \.self) { k in
+                        Text("> \(k): " + reqH[k].text)
+                            .font(Term.micro).foregroundStyle(Term.dim)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if !row["request_body"].text.isEmpty {
+                        Text("> " + row["request_body"].text)
+                            .font(Term.micro).foregroundStyle(Term.ink)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    ForEach(resH.keys, id: \.self) { k in
+                        Text("< \(k): " + resH[k].text)
+                            .font(Term.micro).foregroundStyle(Term.dim)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if !row["response_body"].text.isEmpty {
+                        // The encoding matters: text shown as base64 is
+                        // unreadable, and base64 shown as text is nonsense.
+                        let b64 = row["response_body_base64"].bool == true
+                        Text("< " + (b64 ? tr("body (base64)") + " " : "")
+                             + row["response_body"].text)
+                            .font(Term.micro).foregroundStyle(Term.ink)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else if !row["response_body_unavailable"].text.isEmpty {
+                        Text("< " + row["response_body_unavailable"].text)
+                            .font(Term.micro).foregroundStyle(Term.cyan)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.leading, 60)
+        }
+    }
+}
+
 /// A pulsing dot, so "watching" is visible without reading a label.
 private struct LiveDot: View {
     @State private var bright = false
@@ -146,6 +207,17 @@ struct InspectView: View {
                           + "values are left out unless asked for"))
                         .font(Term.micro).foregroundStyle(Term.amber)
                         .padding(.leading, 18)
+                }
+                Toggle(tr("capture headers and response bodies"),
+                       isOn: $state.inspectDetail)
+                    .toggleStyle(.checkbox).font(Term.body)
+                if state.inspectDetail {
+                    Text(tr("this is the data in flight, including "
+                          + "Authorization headers and whatever a login "
+                          + "returns; it is captured verbatim"))
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                        .padding(.leading, 18)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Toggle(tr("screenshot the screen before and after"),
                        isOn: $state.inspectScreenshots)
@@ -305,6 +377,7 @@ struct InspectView: View {
                                 .font(Term.micro).foregroundStyle(Term.cyan)
                                 .padding(.leading, 60)
                         }
+                        if state.inspectDetail { ExchangeDetail(row: r) }
                     }
                 }
             }

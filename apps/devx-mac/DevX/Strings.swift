@@ -1139,6 +1139,14 @@ enum Strings {
         "not looked yet":
             "chưa quét",
         "watch live": "xem trực tiếp",
+        "capture headers and response bodies":
+            "thu headers và response body",
+        "this is the data in flight, including Authorization headers and "
+        + "whatever a login returns; it is captured verbatim":
+            "đây là dữ liệu đang truyền, gồm cả header Authorization và bất "
+            + "cứ thứ gì trả về sau khi đăng nhập; được thu nguyên văn",
+        "hide detail": "ẩn chi tiết",
+        "detail": "chi tiết",
         "any attached device": "thiết bị nào cũng được",
         "any": "bất kỳ",
         "stop watching": "dừng xem",

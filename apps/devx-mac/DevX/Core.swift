@@ -77,6 +77,14 @@ enum JSON: Sendable {
         return nil
     }
     var array: [JSON] { if case .array(let a) = self { return a }; return [] }
+
+    /// An object's keys, sorted. Sorted because these are rendered as a list
+    /// and dictionary order is not stable between runs -- an unsorted header
+    /// list would reshuffle itself on every poll.
+    var keys: [String] {
+        if case .object(let d) = self { return d.keys.sorted() }
+        return []
+    }
     var text: String { string ?? "" }
     /// For display: a value the engine left unknown reads as such rather than
     /// as an empty cell that could be mistaken for zero.
@@ -149,11 +157,13 @@ enum Core {
                                    redux: Bool, reduxValues: Bool,
                                    screenshots: Bool, deviceId: String,
                                    screenshotDir: String,
-                                   targetDevice: String) -> JSON {
+                                   targetDevice: String,
+                                   detail: Bool) -> JSON {
         var flags: Int32 = 0
         if redux { flags |= 1 }
         if reduxValues { flags |= 3 }
         if screenshots { flags |= 4 }
+        if detail { flags |= 8 }
         return call {
             mpi_inspect_stream_start(appId, Int32(metroPort), flags, deviceId,
                                      screenshotDir, targetDevice)
@@ -176,11 +186,13 @@ enum Core {
     static func inspect(appId: String, seconds: Int, metroPort: Int,
                         redux: Bool, reduxValues: Bool,
                         screenshots: Bool, deviceId: String,
-                        screenshotDir: String, targetDevice: String) -> JSON {
+                        screenshotDir: String, targetDevice: String,
+                        detail: Bool) -> JSON {
         var flags: Int32 = 0
         if redux { flags |= 1 }
         if reduxValues { flags |= 3 }     // values imply reading the store
         if screenshots { flags |= 4 }
+        if detail { flags |= 8 }
         return call {
             mpi_inspect_json(appId, Int32(seconds), Int32(metroPort), flags,
                              deviceId, screenshotDir, targetDevice)

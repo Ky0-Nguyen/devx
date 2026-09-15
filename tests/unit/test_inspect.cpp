@@ -531,3 +531,146 @@ MPI_TEST(one_device_listed_twice_by_metro_is_not_ambiguous, {}) {
   MPI_CHECK_MSG(only.target->description.find("Bridgeless") != std::string::npos,
                 "and the runtime connection is the one attached to");
 }
+
+MPI_TEST(request_detail_is_captured_only_when_asked_for, {}) {
+  // Headers and bodies are what make a request inspectable rather than
+  // listed, and they are where the secrets are: an Authorization header
+  // carries a bearer token. Off unless asked.
+  const char* kRequest =
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"r1",
+         "timestamp":100.0,"request":{"method":"POST",
+         "url":"https://api.example.com/v2/login",
+         "headers":{"Authorization":"Bearer secret-token",
+                    "Content-Type":"application/json"},
+         "postData":"{\"user\":\"someone\"}"}}})";
+  mpi::json::ParseError err;
+
+  {
+    mpi::observe::InspectAssembler off;
+    auto doc = mpi::json::parse(kRequest, &err);
+    MPI_CHECK(doc.has_value());
+    off.feed(*doc);
+    const auto report = off.finish(1000);
+    MPI_CHECK(report.network.size() == 1);
+    MPI_CHECK_MSG(report.network.front().request_headers.empty(),
+                  "no headers are kept by default");
+    MPI_CHECK_MSG(!report.network.front().request_body.has_value(),
+                  "and no request body");
+    MPI_CHECK_MSG(report.to_json().dump().find("secret-token") ==
+                      std::string::npos,
+                  "so a bearer token cannot reach a report that nobody asked "
+                  "to contain one");
+  }
+
+  mpi::observe::InspectAssembler on;
+  on.capture_detail(true);
+  auto doc = mpi::json::parse(kRequest, &err);
+  MPI_CHECK(doc.has_value());
+  on.feed(*doc);
+  auto resp = mpi::json::parse(
+      R"({"method":"Network.responseReceived","params":{"requestId":"r1",
+         "response":{"status":200,"mimeType":"application/json",
+         "headers":{"Content-Type":"application/json","Content-Length":"42"}}}})",
+      &err);
+  MPI_CHECK(resp.has_value());
+  on.feed(*resp);
+  auto fin = mpi::json::parse(
+      R"({"method":"Network.loadingFinished","params":{"requestId":"r1",
+         "timestamp":100.5,"encodedDataLength":42}})", &err);
+  MPI_CHECK(fin.has_value());
+  on.feed(*fin);
+
+  // The assembler records what finished; asking for the body is the
+  // session's job, because the assembler talks to nothing.
+  MPI_CHECK_MSG(on.finished_requests().size() == 1,
+                "a finished request is offered for a body fetch");
+  MPI_CHECK(on.finished_requests().front() == "r1");
+  on.set_response_body("r1", "{\"token\":\"abc\"}", /*base64=*/false);
+
+  const auto report = on.finish(1000);
+  const auto& ex = report.network.front();
+  MPI_CHECK_MSG(ex.request_headers.size() == 2, "request headers are kept");
+  MPI_CHECK_MSG(ex.request_headers.at("Authorization") == "Bearer secret-token",
+                "verbatim -- redacting would be a claim about what was sent "
+                "that is not true");
+  MPI_CHECK(ex.response_headers.size() == 2);
+  MPI_CHECK(ex.request_body.value_or("") == "{\"user\":\"someone\"}");
+  MPI_CHECK(ex.response_body.value_or("") == "{\"token\":\"abc\"}");
+  MPI_CHECK(!ex.response_body_base64);
+
+  const std::string dumped = report.to_json().dump();
+  MPI_CHECK(dumped.find("request_headers") != std::string::npos);
+  MPI_CHECK(dumped.find("response_body") != std::string::npos);
+  MPI_CHECK_MSG(dumped.find("\"response_body_base64\":false") != std::string::npos,
+                "the encoding flag travels with the body: a reader decoding "
+                "text as base64 gets nonsense");
+}
+
+MPI_TEST(a_base64_body_keeps_its_flag, {}) {
+  // The real shape from the live inspector: `packager-status:running` came
+  // back as base64 with base64Encoded true, for a response the runtime
+  // classified as application/octet-stream.
+  mpi::observe::InspectAssembler a;
+  a.capture_detail(true);
+  mpi::json::ParseError err;
+  auto req = mpi::json::parse(
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"r9",
+         "timestamp":1.0,"request":{"method":"GET","url":"http://x/status"}}})",
+      &err);
+  MPI_CHECK(req.has_value());
+  a.feed(*req);
+  a.set_response_body("r9", "cGFja2FnZXItc3RhdHVzOnJ1bm5pbmc=", /*base64=*/true);
+  const auto report = a.finish(10);
+  MPI_CHECK(report.network.front().response_body_base64);
+  MPI_CHECK(report.to_json().dump().find("\"response_body_base64\":true") !=
+            std::string::npos);
+}
+
+MPI_TEST(no_body_by_construction_is_not_a_retrieval_failure, {}) {
+  // The runtime reports "could not retrieve" for both a body it failed to
+  // fetch and a response that never had one. A HEAD or a 204 is the second,
+  // and printing the raw error for it reads as a failure.
+  mpi::observe::InspectAssembler a;
+  a.capture_detail(true);
+  mpi::json::ParseError err;
+  auto head = mpi::json::parse(
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"h1",
+         "timestamp":1.0,"request":{"method":"HEAD","url":"https://x/204"}}})",
+      &err);
+  MPI_CHECK(head.has_value());
+  a.feed(*head);
+  auto resp = mpi::json::parse(
+      R"({"method":"Network.responseReceived","params":{"requestId":"h1",
+         "response":{"status":204,"headers":{"Content-Length":"0"}}}})", &err);
+  MPI_CHECK(resp.has_value());
+  a.feed(*resp);
+  a.set_response_body_unavailable(
+      "h1", "Internal error: Could not retrieve response body for the given "
+            "requestId.");
+  const auto report = a.finish(10);
+  const std::string why = report.network.front().response_body_unavailable;
+  MPI_CHECK_MSG(why.find("no body by construction") != std::string::npos,
+                "a HEAD is explained, not blamed on a retrieval error");
+  MPI_CHECK_MSG(why.find("Internal error") == std::string::npos,
+                "and the runtime's misleading wording is not passed through");
+
+  // A response that should have had a body keeps the runtime's own words,
+  // because then the retrieval really did fail.
+  mpi::observe::InspectAssembler b;
+  b.capture_detail(true);
+  auto get = mpi::json::parse(
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"g1",
+         "timestamp":1.0,"request":{"method":"GET","url":"https://x/data"}}})",
+      &err);
+  MPI_CHECK(get.has_value());
+  b.feed(*get);
+  auto ok = mpi::json::parse(
+      R"({"method":"Network.responseReceived","params":{"requestId":"g1",
+         "response":{"status":200,"headers":{"Content-Length":"512"}}}})", &err);
+  MPI_CHECK(ok.has_value());
+  b.feed(*ok);
+  b.set_response_body_unavailable("g1", "Internal error: gone");
+  MPI_CHECK_MSG(b.finish(10).network.front().response_body_unavailable
+                    .find("Internal error") != std::string::npos,
+                "a real retrieval failure is reported as one");
+}

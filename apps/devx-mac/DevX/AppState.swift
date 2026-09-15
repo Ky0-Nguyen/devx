@@ -179,6 +179,10 @@ final class AppState: ObservableObject {
     /// capture rather than a setting that quietly stays on.
     @Published var inspectReduxValues: Bool = false
     @Published var inspectScreenshots: Bool = false
+    /// Capture request/response headers and bodies. Off by default and
+    /// deliberately not remembered: this is the data in flight, including
+    /// bearer tokens, so it is a decision made per observation.
+    @Published var inspectDetail: Bool = false
     /// Live observation state.
     @Published var inspectStreaming: Bool = false
     @Published var inspectDisconnect: String = ""
@@ -601,6 +605,7 @@ final class AppState: ObservableObject {
         let shots = inspectScreenshots
         let device = selectedDevice
         let hint = inspectTargetDevice
+        let detail = inspectDetail
         let dir = sessionsDir + "/inspect-shots"
         if shots {
             try? FileManager.default.createDirectory(
@@ -611,7 +616,8 @@ final class AppState: ObservableObject {
             Core.inspect(appId: app, seconds: seconds, metroPort: 8081,
                          redux: redux, reduxValues: values,
                          screenshots: shots, deviceId: device,
-                         screenshotDir: dir, targetDevice: hint)
+                         screenshotDir: dir, targetDevice: hint,
+                         detail: detail)
         }) { doc in
             self.inspectDoc = doc
             // A capture changes what is attachable -- the app may have
@@ -636,6 +642,7 @@ final class AppState: ObservableObject {
         let shots = inspectScreenshots
         let device = selectedDevice
         let hint = inspectTargetDevice
+        let detail = inspectDetail
         let dir = sessionsDir + "/inspect-shots"
         if shots {
             try? FileManager.default.createDirectory(
@@ -647,7 +654,7 @@ final class AppState: ObservableObject {
                                     redux: redux, reduxValues: values,
                                     screenshots: shots, deviceId: device,
                                     screenshotDir: dir,
-                                    targetDevice: hint)
+                                    targetDevice: hint, detail: detail)
         }) { doc in
             if doc["attached"].bool != true {
                 self.inspectDoc = .null

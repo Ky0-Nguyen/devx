@@ -106,6 +106,16 @@ struct InspectOptions {
   /// exported.
   bool include_state_values = false;
 
+  /// Capture request and response headers, and response bodies.
+  ///
+  /// This is what makes a request inspectable rather than merely listed, and
+  /// it is off by default because it is where the secrets are: an
+  /// `Authorization` header carries a bearer token and a login response
+  /// carries whatever the login returned. Verified available with nothing
+  /// added to the app -- `Network.getResponseBody` returned a real body over
+  /// the inspector socket.
+  bool capture_detail = false;
+
   /// Take a picture of the screen at the start and end of the window.
   ///
   /// Two rather than one, because one image cannot say whether the app moved.
@@ -171,6 +181,7 @@ class InspectStream {
 
  private:
   void handle(const json::Value& message);
+  void request_pending_bodies();
 
   struct Impl;
   std::unique_ptr<Impl> impl_;

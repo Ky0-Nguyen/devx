@@ -56,6 +56,9 @@ ExitCode cmd_inspect(const Invocation& inv) {
     }
     opts.metro_port = static_cast<std::uint16_t>(port);
   }
+  // Headers and bodies: what makes a request inspectable rather than listed.
+  // Off unless asked, because this is where the bearer tokens are.
+  opts.capture_detail = inv.has_flag("detail");
   opts.screenshots = inv.has_flag("screenshot");
   if (opts.screenshots) {
     if (inv.global.device.empty()) {
@@ -197,6 +200,35 @@ ExitCode cmd_inspect(const Invocation& inv) {
         if (e.incomplete) {
           std::cout << "          (still in flight when the window closed: "
                        "evidence of the request, none of its outcome)\n";
+        }
+        if (opts.capture_detail) {
+          for (const auto& kv : e.request_headers) {
+            std::cout << "            > " << kv.first << ": "
+                      << elide(kv.second, 90) << "\n";
+          }
+          if (e.request_body.has_value()) {
+            std::cout << "            > body "
+                      << observe::InspectAssembler::single_line(*e.request_body,
+                                                                100)
+                      << "\n";
+          }
+          for (const auto& kv : e.response_headers) {
+            std::cout << "            < " << kv.first << ": "
+                      << elide(kv.second, 90) << "\n";
+          }
+          if (e.response_body.has_value()) {
+            std::cout << "            < body ("
+                      << (e.response_body_base64 ? "base64" : "text") << ", "
+                      << e.response_body->size() << " chars) "
+                      << observe::InspectAssembler::single_line(
+                             *e.response_body, 90)
+                      << "\n";
+          } else if (!e.response_body_unavailable.empty()) {
+            // A HEAD or a 204 has no body. Saying so beats an empty line
+            // that reads as an empty response.
+            std::cout << "            < no body: "
+                      << e.response_body_unavailable << "\n";
+          }
         }
         if (e.failed && !e.failure.empty()) {
           std::cout << "          failed: " << e.failure << "\n";

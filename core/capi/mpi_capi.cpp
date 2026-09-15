@@ -220,6 +220,9 @@ rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
   // name. Without it, an app running on two devices at once was silently
   // observed on whichever Metro listed first.
   opts.device_hint = safe(target_device);
+  // Headers and bodies. Off unless asked: an Authorization header carries a
+  // bearer token and a login response carries whatever the login returned.
+  opts.capture_detail = (flags & 8) != 0;
   return opts;
 }
 
@@ -535,6 +538,7 @@ char* mpi_inspect_json(const char* app_id, int seconds, int metro_port,
     // name. Without it, an app running on two devices at once was silently
     // observed on whichever Metro listed first.
     opts.device_hint = safe(target_device);
+    opts.capture_detail = (flags & 8) != 0;
     // Bound to a local: `token()` returns by value, and taking the address
     // of the temporary would leave a dangling pointer for the whole capture.
     const CancellationToken cancel = cancel_registry().token();

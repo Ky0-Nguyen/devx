@@ -177,7 +177,7 @@ bool is_boolean_flag(const std::string& flag) {
       "--quiet",        "--running",        "--scheduling",
       "--sdk",          "--source-dirty",
       "--targets",      "--redux",          "--redux-values",
-      "--screenshot",
+      "--screenshot",   "--detail",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;

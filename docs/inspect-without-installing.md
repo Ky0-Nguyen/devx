@@ -23,6 +23,7 @@ assumed:
 | console output | `Runtime.consoleAPICalled`, `Log.entryAdded` | level, arguments, source location |
 | JS exceptions | `Runtime.exceptionThrown` | message and stack |
 | Redux **state** | `Runtime.evaluate`, walking React's own devtools hook | the store's slices, and its values on request |
+| request **detail** | headers from the events, bodies via `Network.getResponseBody` | request and response headers, request body, response body |
 
 The Redux part is the surprising one. `__REDUX_DEVTOOLS_EXTENSION__` is not
 present in a React Native app and there is no global `store`, but
@@ -84,6 +85,39 @@ mpi inspect --app <id> --device emulator-5554 --screenshot
 
 Or the **Inspect** tab in DevX, which shows the same thing and lets the
 observation window run while you use the app.
+
+## Request detail
+
+Reactotron shows a request's headers and bodies, and so does this -- with
+nothing installed. Headers arrive in the events themselves; the response body
+needs a separate `Network.getResponseBody` call per request, which the session
+issues as each request finishes.
+
+```bash
+mpi inspect --app <id> --target-device iPhone --detail
+```
+
+Verified over the inspector socket: `getResponseBody` returned
+`cGFja2FnZXItc3RhdHVzOnJ1bm5pbmc=` with `base64Encoded: true`, which decodes
+to `packager-status:running` -- a real response body from a live app.
+
+**Off by default, and that is not timidity.** An `Authorization` header
+carries a bearer token and a login response carries whatever the login
+returned. This is the data *in flight*, which is more sensitive than the Redux
+store's data at rest, and it lands in a report that can be exported. Values
+are kept **verbatim** rather than redacted, because a redacted header is a
+claim about what was sent that is not true -- so the decision is whether to
+capture it at all.
+
+The encoding flag travels with every body. The runtime decides text versus
+base64, and a reader that decodes text as base64 gets nonsense.
+
+"There is no body" and "the body could not be fetched" are the same error from
+the runtime -- `Internal error: Could not retrieve response body` -- and they
+are different facts. Where the exchange settles it (a HEAD, a 204 or 304, or
+`Content-Length: 0`) it is reported as having no body by construction, because
+the raw error reads as a failure for a response that was never going to carry
+content.
 
 ## What it does not reach
 

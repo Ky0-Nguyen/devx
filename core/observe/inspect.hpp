@@ -98,6 +98,28 @@ struct NetworkExchange {
   /// evidence of a request, and no evidence at all about its outcome.
   bool incomplete = false;
 
+  // --- detail, captured only when asked for ------------------------------
+  //
+  // Headers and bodies are what makes a request inspectable rather than just
+  // listed, and they are also where the secrets are: an `Authorization`
+  // header carries a bearer token, and a login response carries whatever the
+  // login returned. They are off by default for the same reason the Redux
+  // store's values are, and for a stronger one -- this is the data in flight,
+  // not the data at rest.
+  std::map<std::string, std::string> request_headers;
+  std::map<std::string, std::string> response_headers;
+  /// The request body, when the request had one (`request.postData`).
+  std::optional<std::string> request_body;
+  /// The response body, fetched with `Network.getResponseBody`.
+  std::optional<std::string> response_body;
+  /// Whether `response_body` is base64. The runtime decides: text comes back
+  /// as text and anything else base64, and re-encoding it here would destroy
+  /// the distinction.
+  bool response_body_base64 = false;
+  /// Set when a body was asked for and the runtime had none to give. A HEAD
+  /// or a 204 genuinely has no body, and that is not a failure to record.
+  std::string response_body_unavailable;
+
   std::optional<double> duration_ms() const;
 };
 
@@ -161,6 +183,28 @@ class InspectAssembler {
   /// Feeds one CDP message. Unknown methods are counted, never guessed at.
   void feed(const json::Value& message);
 
+  /// Whether headers and bodies are kept. Off by default: they carry bearer
+  /// tokens and whatever a login returned.
+  void capture_detail(bool on) { capture_detail_ = on; }
+  bool capturing_detail() const { return capture_detail_; }
+
+  /// Records a body fetched separately with `Network.getResponseBody`.
+  ///
+  /// Separate from `feed` because the reply to that command carries an `id`
+  /// and no method, so only the caller that sent it knows which request it
+  /// belongs to.
+  void set_response_body(const std::string& request_id, std::string body,
+                         bool base64);
+  /// Records that the runtime had no body to give for a request.
+  void set_response_body_unavailable(const std::string& request_id,
+                                     std::string reason);
+
+  /// The requests whose responses have finished, in arrival order. The caller
+  /// asks for their bodies; the assembler does not talk to anything.
+  const std::vector<std::string>& finished_requests() const {
+    return finished_;
+  }
+
   /// Finishes the report. `wall_ms` is the capture's own duration.
   InspectReport finish(std::int64_t wall_ms);
 
@@ -202,6 +246,8 @@ class InspectAssembler {
   std::int64_t network_events_ = 0;
   std::int64_t console_events_ = 0;
   std::optional<double> first_timestamp_;
+  bool capture_detail_ = false;
+  std::vector<std::string> finished_;
 };
 
 }  // namespace mpi::observe
