@@ -339,17 +339,35 @@ MPI_TEST(adapter_probe_runs_against_the_real_toolchain, {"J15", "M0"}) {
   }
   MPI_CHECK(mentions_no_bypass);
 
-  // Live capture must be explicitly unverified, per spec section 0.15.
+  // Live capture must be explicitly unverified *for a physical device*, per
+  // spec section 0.15.
+  //
+  // This used to assert `tested == kNotTested`, which stopped being the right
+  // expression of it: a booted simulator streams through the host-process
+  // collector, so `tested` legitimately becomes
+  // verified_on_simulator_or_emulator. The invariant is that the physical
+  // path is still declared unverified -- which lives in the limitations, and
+  // is where a reader looks for what a capability does not cover.
   const auto* live = m.find("ios.capture.live_recording");
   MPI_CHECK(live != nullptr);
-  MPI_CHECK_MSG(live->tested == model::TestedState::kNotTested,
-                "live physical capture was never demonstrated here");
+  MPI_CHECK_MSG(live->tested != model::TestedState::kVerifiedOnPhysicalDevice,
+                "live physical capture was never demonstrated here, so it is "
+                "never marked verified on a physical device");
   bool says_unverified = false;
   for (const auto& l : live->limitations) {
     if (l.find("UNVERIFIED") != std::string::npos) says_unverified = true;
   }
   MPI_CHECK_MSG(says_unverified,
                 "the live-capture gap must be labelled UNVERIFIED, not omitted");
+  bool names_the_device_gap = false;
+  for (const auto& l : live->limitations) {
+    if (l.find("UNVERIFIED on a physical device") != std::string::npos) {
+      names_the_device_gap = true;
+    }
+  }
+  MPI_CHECK_MSG(names_the_device_gap,
+                "and it says *which* path is unverified, since the simulator "
+                "path is not");
 }
 
 MPI_TEST(adapter_lists_real_devices_including_simulators, {"A04", "J18"}) {
@@ -744,4 +762,78 @@ MPI_TEST(the_hardest_ios_refusal_says_when_it_was_observed, {"J15"}) {
   ok_mode.developer_mode_status = "enabled";
   MPI_CHECK(ios::ddi_refusal_text(ok_mode).find("Developer Mode") ==
             std::string::npos);
+}
+
+MPI_TEST(preflight_does_not_contradict_the_live_capture_it_can_do, {"J15"}) {
+  // iOS live capture became two answers when SimulatorHostCollector landed:
+  // a booted simulator streams without Instruments, while the physical path
+  // is still undemonstrated. Preflight reported only the second, so it told
+  // an operator live capture was unverified while the Live tab would run it
+  // successfully on the simulator in front of them -- the same class of
+  // defect as the old "the collector is not wired" message, which was also
+  // false.
+  ios::IosAdapter adapter;
+  model::CapabilityMatrix matrix;
+  discovery::ProviderOptions opts;
+  adapter.probe(matrix, opts);
+
+  const model::Capability* live = nullptr;
+  for (const auto& c : matrix.capabilities) {
+    if (c.id == "ios.capture.live_recording") live = &c;
+  }
+  MPI_CHECK_MSG(live != nullptr, "the capability is reported");
+
+  // Whatever this host has, the physical-device caveat is always present: a
+  // booted simulator does not make hardware verified, and dropping the note
+  // when one happens to be running would let a green simulator answer stand
+  // in for a path that has never been tested.
+  bool says_device_unverified = false, mentions_simulator = false;
+  for (const auto& l : live->limitations) {
+    if (l.find("UNVERIFIED on a physical device") != std::string::npos) {
+      says_device_unverified = true;
+    }
+    if (l.find("simulator") != std::string::npos) mentions_simulator = true;
+  }
+  MPI_CHECK_MSG(says_device_unverified,
+                "the physical-device path is always declared unverified");
+  MPI_CHECK_MSG(mentions_simulator,
+                "and the simulator is named, since the answer differs there");
+
+  // The name must cover both, or a reader scanning ids sees only half of what
+  // the capability reports.
+  MPI_CHECK_MSG(live->human_name.find("simulator") != std::string::npos,
+                "the capability's name says it covers simulators too");
+
+  // A prerequisite list that mentions only a physical device would send
+  // someone hunting for hardware they do not need.
+  bool prereq_mentions_simulator = false;
+  for (const auto& pre : live->prerequisites) {
+    if (pre.find("simulator") != std::string::npos) {
+      prereq_mentions_simulator = true;
+    }
+  }
+  MPI_CHECK(prereq_mentions_simulator);
+
+  // When a booted simulator is present the status must not be `unknown`:
+  // that is the contradiction this fixes. When none is, unknown is right.
+  bool booted_simulator_present = false;
+  std::vector<std::string> errs;
+  for (const auto& d : adapter.list_devices(opts, errs)) {
+    if (d.form == model::DeviceForm::kSimulator && d.usable_for_capture()) {
+      booted_simulator_present = true;
+    }
+  }
+  if (booted_simulator_present) {
+    MPI_CHECK_MSG(live->status == model::CapabilityStatus::kLimited,
+                  "with a booted simulator, live capture is reported as "
+                  "limited-but-working rather than unknown");
+    MPI_CHECK_MSG(live->evidence.find("host process") != std::string::npos,
+                  "with the reason it works: the app is a host process");
+    MPI_CHECK_MSG(live->tested ==
+                      model::TestedState::kVerifiedOnSimulatorOrEmulator,
+                  "and it is marked verified on a simulator, not untested");
+  } else {
+    MPI_CHECK_MSG(live->status == model::CapabilityStatus::kUnknown,
+                  "with nothing to probe, unknown is the honest status");
+  }
 }

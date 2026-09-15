@@ -1090,26 +1090,67 @@ void IosAdapter::probe(model::CapabilityMatrix& out,
   }
 
   {
+    // Live capture is now two different answers on iOS, and reporting only
+    // the physical-device one contradicted the tool itself: a booted
+    // simulator streams through SimulatorHostCollector, while this said live
+    // capture was unverified. Preflight and the Live tab telling an operator
+    // opposite things is the same defect as the old "the collector is not
+    // wired" message, which was also false.
     auto c = make_cap("ios.capture.live_recording",
-                      "Live trace capture from a physical iOS device",
+                      "Live capture (physical device, and simulator)",
                       model::CapabilityStatus::kUnknown, "xctrace");
     c.provider_version = xt_version;
-    c.prerequisites.push_back("a reachable physical device");
+    c.prerequisites.push_back("a reachable physical device, OR a booted "
+                              "simulator for the host-process collector");
     c.prerequisites.push_back("an attachable, developer-signed app");
-    c.evidence =
-        xt_version.empty()
-            ? "xctrace is not available on this host"
-            : xt_version +
-                  " is installed, but live capture has NOT been exercised "
-                  "against a physical device in this environment";
+
+    if (sim != nullptr) {
+      // Measured, not assumed: the host-process collector was driven against
+      // a booted simulator and returned CPU time, utilisation, memory
+      // footprint and per-thread times.
+      c.status = model::CapabilityStatus::kLimited;
+      c.tested = model::TestedState::kVerifiedOnSimulatorOrEmulator;
+      c.evidence =
+          "a booted simulator is present and live capture works there "
+          "without Instruments: the app is an ordinary host process, so CPU "
+          "time and memory footprint are read through libproc. xctrace is "
+          "not involved.";
+      c.limitations.push_back(
+          "on a simulator this gives CPU *time* and memory, not frames and "
+          "not stacks: no command-line frame source exists for a simulator, "
+          "and stack sampling needs task_for_pid, which is refused without "
+          "root");
+      c.limitations.push_back(
+          "simulator timings are not device timings, and an app running "
+          "translated under Rosetta is not comparable to a native build "
+          "either -- the capture records which");
+    } else {
+      c.evidence =
+          xt_version.empty()
+              ? "xctrace is not available on this host"
+              : xt_version +
+                    " is installed; no booted simulator is present, and live "
+                    "capture has NOT been exercised against a physical "
+                    "device in this environment";
+    }
+
+    // Always stated, whether or not a simulator is present. A usable
+    // simulator does not make the device path verified, and dropping the
+    // note when one happens to be booted would let a green simulator answer
+    // stand in for hardware that has never been tested.
     c.limitations.push_back(
-        "UNVERIFIED: no physical iOS device was reachable during "
-        "implementation, so the live capture path is implemented but not "
-        "demonstrated. This blocks the M2 gate for iOS.");
+        "UNVERIFIED on a physical device: no physical iOS device has been "
+        "reachable, so that path is implemented and not demonstrated. "
+        "Instruments cannot record a *simulator* target at all on this host "
+        "-- it accepts the target and never starts recording -- so a working "
+        "simulator answer does not transfer to hardware.");
     c.recovery_action =
-        "connect a trusted physical iPhone or iPad and run `mpi preflight` to "
-        "convert this from unknown to a measured result";
-    c.tested = model::TestedState::kNotTested;
+        sim != nullptr
+            ? "for a device, connect a trusted physical iPhone or iPad and "
+              "re-run `mpi preflight`; the simulator path is already usable"
+            : "boot a simulator, or connect a trusted physical iPhone or "
+              "iPad, and run `mpi preflight` to convert this from unknown to "
+              "a measured result";
     out.upsert(std::move(c));
   }
 }
