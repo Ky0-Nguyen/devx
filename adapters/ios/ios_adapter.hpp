@@ -61,6 +61,21 @@ struct DeviceReadiness {
 std::optional<DeviceReadiness> parse_devicectl_readiness(const json::Value& root,
                                                          const std::string& identifier);
 
+/// The refusal text for a device whose developer disk image services are not
+/// mounted, qualified by when that was observed.
+///
+/// `devicectl device info details` answers from a cached record, so every
+/// value it reports is an observation with a date attached. This is the
+/// hardest refusal in the iOS path -- it stops app enumeration outright and
+/// tells someone to go and do something in Xcode -- and it was stating the
+/// value without saying when it was seen. The date was already parsed and
+/// then never used, which is worse than not having it.
+///
+/// App enumeration only runs for a device discovery found usable, so in
+/// practice the reading is fresh; this makes that checkable rather than
+/// assumed.
+std::string ddi_refusal_text(const DeviceReadiness& readiness);
+
 /// Whether a device answers *now*.
 ///
 /// The passive listing cannot tell you this. `connectionProperties.tunnelState`

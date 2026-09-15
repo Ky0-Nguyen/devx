@@ -698,3 +698,50 @@ MPI_TEST(a_stub_bundle_is_not_mistaken_for_a_capture, {"J15", "D07"}) {
   MPI_CHECK_MSG(!stub.detail.empty(), "and the tool's own reason is kept");
   std::filesystem::remove_all(fake);
 }
+
+MPI_TEST(the_hardest_ios_refusal_says_when_it_was_observed, {"J15"}) {
+  // ddiServicesAvailable = false stops app enumeration outright and sends
+  // someone to Xcode. `devicectl device info details` answers from a cached
+  // record -- proven: it returns outcome:success in a tenth of a second for
+  // a device that is not present -- so this reading is an observation with a
+  // date, and stating it without the date is a claim with no timestamp.
+  //
+  // The date was already being parsed and then never used anywhere, which is
+  // worse than not having it.
+  ios::DeviceReadiness r;
+  r.ddi_services_available = false;
+  r.last_connection_date = "2025-09-11T10:10:27.063Z";
+  const std::string with_date = ios::ddi_refusal_text(r);
+  MPI_CHECK_MSG(with_date.find("ddiServicesAvailable = false") != std::string::npos,
+                "the finding itself is still stated");
+  MPI_CHECK_MSG(with_date.find("2025-09-11T10:10:27.063Z") != std::string::npos,
+                "with the date devicectl last spoke to the device");
+  MPI_CHECK_MSG(with_date.find("re-run discovery") != std::string::npos,
+                "and what to do if the device has been reconnected since");
+
+  // No date available: the sentence must still stand on its own rather than
+  // trailing off into a dangling clause.
+  ios::DeviceReadiness undated;
+  undated.ddi_services_available = false;
+  const std::string plain = ios::ddi_refusal_text(undated);
+  MPI_CHECK(plain.find("ddiServicesAvailable = false") != std::string::npos);
+  MPI_CHECK_MSG(plain.find("as of") == std::string::npos,
+                "no date is claimed when none was reported");
+
+  // Developer Mode is a separate prerequisite. Someone told only about the
+  // disk image will go to Xcode when the device is asking for a setting.
+  ios::DeviceReadiness both;
+  both.ddi_services_available = false;
+  both.developer_mode_status = "disabled";
+  const std::string two = ios::ddi_refusal_text(both);
+  MPI_CHECK_MSG(two.find("Developer Mode") != std::string::npos,
+                "both blockers are named when both are present");
+
+  // And it is not mentioned when it is not a blocker, so the message does
+  // not send someone to check a setting that is already correct.
+  ios::DeviceReadiness ok_mode;
+  ok_mode.ddi_services_available = false;
+  ok_mode.developer_mode_status = "enabled";
+  MPI_CHECK(ios::ddi_refusal_text(ok_mode).find("Developer Mode") ==
+            std::string::npos);
+}
