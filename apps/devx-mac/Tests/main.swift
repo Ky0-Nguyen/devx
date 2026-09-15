@@ -895,23 +895,6 @@ do {
     check(empty.nothingToShow, "an empty machine is its own answer")
     check(!empty.hidEverything, "and is not blamed on the filter")
 
-    // Columns keep reading order: the list is sorted by relevance, so a
-    // straight split down the middle would push the second-best device to
-    // the top of the right column, far from the first.
-    let cols = DeviceFilter.columns(devices)
-    check(cols.count == 2, "four devices fill two columns")
-    check(cols[0].map { $0["device_id"].text } == ["emulator-5554", "9C2E1180"],
-          "the left column takes rows 1 and 3")
-    check(cols[1].map { $0["device_id"].text } == ["B11AD99F", "77A0C431"],
-          "so the top two devices sit side by side, not a column apart")
-    check(DeviceFilter.columns(Array(devices.prefix(2))).count == 1,
-          "two devices are not worth splitting")
-    check(DeviceFilter.columns([]).count == 1,
-          "and an empty list is one empty column, not two")
-    let odd = DeviceFilter.columns(Array(devices.prefix(3)))
-    check(odd[0].count == 2 && odd[1].count == 1,
-          "an odd count leaves the shortfall on the right")
-    check(odd.flatMap { $0 }.count == 3, "no device is lost or duplicated")
 }
 
 do {
@@ -1224,6 +1207,132 @@ do {
     check(InspectFilter.afterClear(reduxRecords: [parse("{}")],
                                    clearedSeq: 1).isEmpty,
           "a record with no seq is not treated as newer than the mark")
+}
+
+do {
+    // Splitting the device list by platform. The row-major split kept reading
+    // order but put an iPad beside a Pixel, so "what have I got on Android"
+    // meant reading every row's chip.
+    func dev(_ id: String, _ platform: String, trust: String = "authorized")
+            -> JSON {
+        parse("{\"device_id\":\"\(id)\",\"platform\":\"\(platform)\","
+              + "\"trust\":\"\(trust)\",\"display_name\":\"d\(id)\"}")
+    }
+    let all = [dev("a1", "android"), dev("i1", "ios"), dev("i2", "ios")]
+
+    let cols = DeviceFilter.byPlatform(all, beforeFilter: all)
+    check(cols.count == 2, "two platforms, two columns")
+    check(cols[0].platform == "android" && cols[1].platform == "ios",
+          "Android first, matching the order the rest of the app names them")
+    check(cols[0].devices.count == 1 && cols[1].devices.count == 2,
+          "each device lands in exactly one column")
+    check(cols.flatMap { $0.devices }.count == all.count,
+          "and none is lost")
+
+    // Both columns exist even when a platform has nothing, because an absent
+    // column would be silently different from an empty one.
+    let iosOnly = [dev("i1", "ios")]
+    let onlyIos = DeviceFilter.byPlatform(iosOnly, beforeFilter: iosOnly)
+    check(onlyIos.count == 2, "Android keeps its column with nothing in it")
+    check(onlyIos[0].noneOnThisPlatform,
+          "and says that is a fact about the platform, not the filter")
+    check(!onlyIos[0].hidEverything, "nothing was hidden to blame")
+
+    // The claim each empty column makes has to be the right one. A needle
+    // that hid every Android device must blame the filter in that column and
+    // not in the other.
+    let shown = [dev("i1", "ios")]
+    let filtered = DeviceFilter.byPlatform(shown, beforeFilter: all)
+    check(filtered[0].hidEverything,
+          "the Android column blames the filter, because Android rows existed")
+    check(filtered[0].hiddenByFilter == 1, "and counts only its own platform")
+    check(!filtered[1].hidEverything,
+          "while the iOS column, which has rows, blames nothing")
+    check(filtered[1].hiddenByFilter == 1,
+          "iOS also had one removed, counted separately")
+
+    // A platform nobody anticipated is still a device. Dropping it would be
+    // the one unrecoverable mistake this view could make.
+    let odd = all + [dev("w1", "harmonyos")]
+    let withOdd = DeviceFilter.byPlatform(odd, beforeFilter: odd)
+    check(withOdd.count == 3, "an unknown platform gets its own column")
+    check(withOdd[2].platform == "harmonyos",
+          "named as the provider named it, not relabelled")
+    check(withOdd.flatMap { $0.devices }.count == odd.count,
+          "and every device still appears exactly once")
+
+    // A device whose platform is missing must not be guessed into one of the
+    // known two.
+    let blank = [dev("x1", ""), dev("a1", "android")]
+    let withBlank = DeviceFilter.byPlatform(blank, beforeFilter: blank)
+    check(withBlank.contains { $0.platform == "unknown" },
+          "an empty platform gets its own bucket")
+    check(withBlank.first { $0.platform == "unknown" }?.devices.count == 1,
+          "holding the device nothing said the platform of")
+    check(withBlank.first { $0.platform == "android" }?.devices.count == 1,
+          "and it is not folded into Android")
+    check(withBlank.flatMap { $0.devices }.count == 2, "nothing is lost")
+
+    // An empty machine: both columns present, both saying it is the machine.
+    let empty = DeviceFilter.byPlatform([], beforeFilter: [])
+    check(empty.count == 2, "the two known platforms always have a column")
+    check(empty.allSatisfy { $0.noneOnThisPlatform },
+          "and neither blames a filter that removed nothing")
+}
+
+do {
+    // Column widths. The split by platform made one thing worse before this:
+    // one Android emulator beside twenty-five simulators, at equal widths,
+    // left half the window empty while the iOS column ran off the bottom.
+    func col(_ platform: String, _ n: Int, hidden: Int = 0)
+            -> DevicePlatformColumn {
+        DevicePlatformColumn(platform: platform,
+                             devices: Array(repeating: parse("{}"), count: n),
+                             hiddenByFilter: hidden)
+    }
+
+    let lopsided = [col("android", 1), col("ios", 25)]
+    let w = DeviceFilter.columnWeights(lopsided)
+    check(w.count == 2, "one weight per column")
+    check(abs(w.reduce(0, +) - 1.0) < 0.0001, "the weights fill the width")
+    check(w[1] > w[0], "the column with twenty-five devices gets more width")
+    check(w[0] >= 0.25,
+          "but the one with a single device stays wide enough to read a "
+          + "device id in")
+    check(w[1] <= 0.75, "so the big column funds that floor")
+
+    // Balanced columns get near-equal width, without the floor distorting it.
+    let even = DeviceFilter.columnWeights([col("android", 3), col("ios", 3)])
+    check(abs(even[0] - even[1]) < 0.0001, "equal counts, equal width")
+
+    // An empty machine must not divide by zero or collapse a column to
+    // nothing -- the empty column carries the sentence saying why it is
+    // empty, and that has to be legible.
+    let empty = DeviceFilter.columnWeights([col("android", 0), col("ios", 0)])
+    check(empty.count == 2 && abs(empty.reduce(0, +) - 1.0) < 0.0001,
+          "no devices at all still fills the width")
+    check(empty.allSatisfy { $0 > 0.3 }, "and neither column vanishes")
+
+    // One platform empty, the other full: the empty one keeps its floor.
+    let oneSided = DeviceFilter.columnWeights([col("android", 0), col("ios", 9)])
+    check(oneSided[0] >= 0.25,
+          "an empty column keeps enough width to explain itself")
+    check(oneSided[1] > oneSided[0], "while the full one still gets the rest")
+
+    // A floor that cannot be satisfied must give way rather than overflow.
+    // Four columns cannot all have 26%.
+    let many = DeviceFilter.columnWeights(
+        [col("android", 10), col("ios", 1), col("harmonyos", 1),
+         col("unknown", 1)])
+    check(many.count == 4, "a weight for every column, known or not")
+    check(abs(many.reduce(0, +) - 1.0) < 0.0001,
+          "four columns still sum to one width, not more")
+    check(many.allSatisfy { $0 > 0 }, "and none is zero or negative")
+
+    check(DeviceFilter.columnWeights([]).isEmpty, "no columns, no weights")
+    let single = DeviceFilter.columnWeights([col("ios", 4)])
+    check(single.count == 1 && abs(single[0] - 1.0) < 0.0001,
+          "a lone column takes the whole width")
 }
 
 if listingRequirements { exit(0) }
