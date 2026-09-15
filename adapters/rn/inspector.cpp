@@ -1,6 +1,7 @@
 #include "adapters/rn/inspector.hpp"
 
 #include <chrono>
+#include <map>
 
 #include "core/observe/screenshot.hpp"
 
@@ -361,6 +362,29 @@ observe::InspectReport run(const InspectOptions& options,
   command("Runtime.enable", {});
   command("Log.enable", {});
   command("Network.enable", {});
+  assembler.capture_detail(options.capture_detail);
+
+  // Command id -> the request whose body it asks for, and how many finished
+  // requests have been asked about so far.
+  std::map<int, std::string> body_requests;
+  std::size_t bodies_asked = 0;
+  auto ask_for_bodies = [&] {
+    if (!options.capture_detail) return;
+    const auto& finished = assembler.finished_requests();
+    while (bodies_asked < finished.size()) {
+      const std::string& rid = finished[bodies_asked++];
+      json::Value params = json::Value::object();
+      params.set("requestId", json::Value::string(rid));
+      json::Value msg = json::Value::object();
+      const int id = next_id++;
+      msg.set("id", json::Value::integer(id));
+      msg.set("method", json::Value::string("Network.getResponseBody"));
+      msg.set("params", std::move(params));
+      body_requests[id] = rid;
+      std::string ignored;
+      ws.send_text(msg.dump(), &ignored);
+    }
+  };
 
   int redux_id = -1;
   if (options.read_redux_state) {
@@ -431,6 +455,38 @@ observe::InspectReport run(const InspectOptions& options,
     auto doc = json::parse(message, &perr);
     if (!doc.has_value()) continue;
 
+    // A reply to a body request.
+    const json::Value* reply_id = doc->find("id");
+    if (reply_id != nullptr && reply_id->is_number()) {
+      const auto it = body_requests.find(static_cast<int>(reply_id->as_int()));
+      if (it != body_requests.end()) {
+        const std::string rid = it->second;
+        body_requests.erase(it);
+        const json::Value* err = doc->find("error");
+        if (err != nullptr) {
+          const json::Value* m = err->find("message");
+          assembler.set_response_body_unavailable(
+              rid, m != nullptr && m->is_string()
+                       ? m->as_string()
+                       : std::string("the runtime returned no body"));
+        } else {
+          const json::Value* result = doc->find("result");
+          const json::Value* body =
+              result != nullptr ? result->find("body") : nullptr;
+          const json::Value* b64 =
+              result != nullptr ? result->find("base64Encoded") : nullptr;
+          if (body != nullptr && body->is_string()) {
+            assembler.set_response_body(rid, body->as_string(),
+                                        b64 != nullptr && b64->as_bool());
+          } else {
+            assembler.set_response_body_unavailable(
+                rid, "the runtime returned a reply with no body field");
+          }
+        }
+        continue;
+      }
+    }
+
     // A reply to the Redux probe, rather than an event.
     const json::Value* id = doc->find("id");
     if (id != nullptr && id->is_number() &&
@@ -475,6 +531,7 @@ observe::InspectReport run(const InspectOptions& options,
       continue;
     }
     assembler.feed(*doc);
+    ask_for_bodies();
   }
 
   const std::int64_t elapsed = now_ms() - started;
@@ -531,6 +588,11 @@ observe::InspectReport run(const InspectOptions& options,
 struct InspectStream::Impl {
   net::WebSocketClient ws;
   observe::InspectAssembler assembler;
+  /// Command id -> the request whose body it asks for.
+  std::map<int, std::string> body_requests;
+  /// How many finished requests have already been asked about, so each is
+  /// asked once.
+  std::size_t bodies_asked = 0;
   InspectOptions options;
   InspectorTarget target;
   std::int64_t started_ms = 0;
@@ -596,6 +658,7 @@ bool InspectStream::start(const InspectOptions& options, std::string* error) {
   command("Runtime.enable");
   command("Log.enable");
   command("Network.enable");
+  impl_->assembler.capture_detail(options.capture_detail);
 
   if (options.read_redux_state) {
     json::Value params = json::Value::object();
@@ -633,8 +696,64 @@ bool InspectStream::start(const InspectOptions& options, std::string* error) {
   return true;
 }
 
+/// Sends `Network.getResponseBody` for any finished request not yet asked
+/// about.
+///
+/// Done here rather than in the assembler because the assembler talks to
+/// nothing: it records what arrives, and issuing a command is the session's
+/// job. One request per body, and each asked exactly once.
+void InspectStream::request_pending_bodies() {
+  if (!impl_->options.capture_detail) return;
+  const auto& finished = impl_->assembler.finished_requests();
+  while (impl_->bodies_asked < finished.size()) {
+    const std::string& rid = finished[impl_->bodies_asked++];
+    json::Value params = json::Value::object();
+    params.set("requestId", json::Value::string(rid));
+    json::Value msg = json::Value::object();
+    const int id = impl_->next_id++;
+    msg.set("id", json::Value::integer(id));
+    msg.set("method", json::Value::string("Network.getResponseBody"));
+    msg.set("params", std::move(params));
+    impl_->body_requests[id] = rid;
+    std::string ignored;
+    impl_->ws.send_text(msg.dump(), &ignored);
+  }
+}
+
 void InspectStream::handle(const json::Value& message) {
   const json::Value* id = message.find("id");
+  if (id != nullptr && id->is_number()) {
+    const auto it = impl_->body_requests.find(static_cast<int>(id->as_int()));
+    if (it != impl_->body_requests.end()) {
+      const std::string rid = it->second;
+      impl_->body_requests.erase(it);
+      const json::Value* err = message.find("error");
+      if (err != nullptr) {
+        // A HEAD or a 204 genuinely has no body, and the runtime says so with
+        // this same error. Recorded as "none to give" rather than as a
+        // failure, because they are different facts.
+        const json::Value* m = err->find("message");
+        impl_->assembler.set_response_body_unavailable(
+            rid, m != nullptr && m->is_string()
+                     ? m->as_string()
+                     : std::string("the runtime returned no body"));
+      } else {
+        const json::Value* result = message.find("result");
+        const json::Value* body =
+            result != nullptr ? result->find("body") : nullptr;
+        const json::Value* b64 =
+            result != nullptr ? result->find("base64Encoded") : nullptr;
+        if (body != nullptr && body->is_string()) {
+          impl_->assembler.set_response_body(
+              rid, body->as_string(), b64 != nullptr && b64->as_bool());
+        } else {
+          impl_->assembler.set_response_body_unavailable(
+              rid, "the runtime returned a reply with no body field");
+        }
+      }
+      return;
+    }
+  }
   if (id != nullptr && id->is_number() &&
       static_cast<int>(id->as_int()) == impl_->redux_id) {
     const json::Value* result = message.find("result");
@@ -700,6 +819,9 @@ void InspectStream::pump(int budget_ms) {
     json::ParseError perr;
     auto doc = json::parse(message, &perr);
     if (doc.has_value()) handle(*doc);
+    // A request that just finished can be asked about immediately, so the
+    // body arrives in the same poll rather than the next one.
+    request_pending_bodies();
   }
 }
 

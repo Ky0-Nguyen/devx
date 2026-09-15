@@ -16,6 +16,18 @@ const json::Value* field(const json::Value& v, std::string_view key) {
   return v.is_object() ? v.find(key) : nullptr;
 }
 
+/// Copies a CDP header object. Values are kept verbatim -- redacting a token
+/// here would be a claim about what was sent that is not true.
+std::map<std::string, std::string> read_headers(const json::Value* headers) {
+  std::map<std::string, std::string> out;
+  if (headers == nullptr || !headers->is_object()) return out;
+  for (const auto& member : headers->members()) {
+    out[member.first] = member.second.is_string() ? member.second.as_string()
+                                                  : member.second.dump();
+  }
+  return out;
+}
+
 /// CDP timestamps are seconds as a double (monotonic, not wall clock). The
 /// model keeps nanoseconds, and the conversion is done once here rather than
 /// at each use so a unit mistake cannot be made twice.
@@ -161,6 +173,41 @@ std::optional<std::string> InspectAssembler::redux_action_type(
   return std::nullopt;
 }
 
+void InspectAssembler::set_response_body(const std::string& request_id,
+                                         std::string body, bool base64) {
+  auto it = exchanges_.find(request_id);
+  if (it == exchanges_.end()) return;
+  it->second.response_body = std::move(body);
+  it->second.response_body_base64 = base64;
+  it->second.response_body_unavailable.clear();
+}
+
+void InspectAssembler::set_response_body_unavailable(
+    const std::string& request_id, std::string reason) {
+  auto it = exchanges_.find(request_id);
+  if (it == exchanges_.end()) return;
+  const NetworkExchange& ex = it->second;
+  // "There is no body" and "the body could not be retrieved" are different
+  // facts, and the runtime reports both with the same error. Where the
+  // exchange itself settles it, say so plainly: the raw "Internal error"
+  // reads as a failure for a response that was never going to have content.
+  const auto content_length = ex.response_headers.find("Content-Length");
+  const bool empty_by_construction =
+      ex.method == "HEAD" || ex.status.value_or(0) == 204 ||
+      ex.status.value_or(0) == 304 ||
+      (content_length != ex.response_headers.end() &&
+       content_length->second == "0");
+  if (empty_by_construction) {
+    it->second.response_body_unavailable =
+        "this response has no body by construction (" +
+        (ex.method == "HEAD" ? std::string("a HEAD request")
+                             : "HTTP " + std::to_string(ex.status.value_or(0))) +
+        "), so there was nothing to retrieve";
+    return;
+  }
+  it->second.response_body_unavailable = std::move(reason);
+}
+
 void InspectAssembler::feed(const json::Value& message) {
   const std::string& method = str(field(message, "method"));
   if (method.empty()) return;   // a command reply, not an event
@@ -184,6 +231,16 @@ void InspectAssembler::feed(const json::Value& message) {
     if (req != nullptr) {
       ex.method = str(field(*req, "method"));
       ex.url = str(field(*req, "url"));
+      if (capture_detail_) {
+        ex.request_headers = read_headers(field(*req, "headers"));
+        const json::Value* post = field(*req, "postData");
+        // Only when there is one. An empty string is not a body, and
+        // recording it produced a blank "body" line that read as a request
+        // that sent nothing deliberately.
+        if (post != nullptr && post->is_string() && !post->as_string().empty()) {
+          ex.request_body = post->as_string();
+        }
+      }
     }
     const json::Value* ts = field(params, "timestamp");
     if (ts != nullptr && ts->is_number()) {
@@ -215,6 +272,9 @@ void InspectAssembler::feed(const json::Value& message) {
       }
       it->second.mime_type = str(field(*resp, "mimeType"));
       if (it->second.url.empty()) it->second.url = str(field(*resp, "url"));
+      if (capture_detail_) {
+        it->second.response_headers = read_headers(field(*resp, "headers"));
+      }
     }
     return;
   }
@@ -230,6 +290,10 @@ void InspectAssembler::feed(const json::Value& message) {
     if (len != nullptr && len->is_number()) {
       it->second.encoded_bytes = static_cast<std::int64_t>(len->as_double());
     }
+    // The caller asks for the body; this only records that there is one to
+    // ask about. Recorded whether or not detail is on, so switching it on
+    // mid-session does not need the list rebuilt.
+    finished_.push_back(it->first);
     return;
   }
   if (method == "Network.loadingFailed") {
@@ -445,6 +509,33 @@ json::Value InspectReport::to_json() const {
     v.set("duration_ms", ms.has_value() ? json::Value::number(*ms)
                                         : json::Value::null());
     v.set("incomplete", json::Value::boolean(e.incomplete));
+    if (!e.request_headers.empty()) {
+      json::Value h = json::Value::object();
+      for (const auto& kv : e.request_headers) {
+        h.set(kv.first, json::Value::string(kv.second));
+      }
+      v.set("request_headers", std::move(h));
+    }
+    if (!e.response_headers.empty()) {
+      json::Value h = json::Value::object();
+      for (const auto& kv : e.response_headers) {
+        h.set(kv.first, json::Value::string(kv.second));
+      }
+      v.set("response_headers", std::move(h));
+    }
+    if (e.request_body.has_value()) {
+      v.set("request_body", json::Value::string(*e.request_body));
+    }
+    if (e.response_body.has_value()) {
+      v.set("response_body", json::Value::string(*e.response_body));
+      // The runtime decides text versus base64, and the flag has to travel
+      // with the value: a reader decoding text as base64 gets nonsense.
+      v.set("response_body_base64",
+            json::Value::boolean(e.response_body_base64));
+    } else if (!e.response_body_unavailable.empty()) {
+      v.set("response_body_unavailable",
+            json::Value::string(e.response_body_unavailable));
+    }
     v.set("failed", json::Value::boolean(e.failed));
     if (!e.failure.empty()) v.set("failure", json::Value::string(e.failure));
     net.push_back(std::move(v));
