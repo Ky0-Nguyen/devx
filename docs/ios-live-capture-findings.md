@@ -242,3 +242,36 @@ attempted rather than after.
 This also means every "unverified on a physical device" note in this document
 is a statement about *this execution context* as much as about the absence of
 hardware. With Full Disk Access granted, sampling may simply work.
+
+## `time-profile` is not the only table with samples in it
+
+The collector exports `table[@schema="time-profile"]` and treats an empty
+result as "no samples". Measured on a real recording from this host:
+
+| table | rows |
+|---|---|
+| `time-profile` | **0** |
+| `time-sample` | **2** -- a real thread, process and kperf backtrace |
+| `kdebug` | 40 |
+| `os-log` | 0 |
+| `dyld-library-load` | 0 |
+
+The samples were in the bundle the whole time, in a schema this build does not
+parse. "The exported table held no samples" was true and misleading at once,
+and it is the same shape as refusing a recording xctrace had finished but not
+exited from: data present, discarded on the strength of the wrong question.
+
+Parsing `time-sample` is not done here, and deliberately. Its columns are
+different -- `cp-user-callstack`, `kperf-bt`, `thread-state` rather than
+time-profile's weighted frames -- and the only sample available to write it
+against is two rows from a recording that failed. A parser written against
+that and unverifiable against a good capture is worse than none.
+
+What the collector does instead is say so: an empty `time-profile` triggers a
+row count on the tables that plausibly carry samples, and when one has rows it
+reports that the samples exist, how many, in which schema, that this build
+does not read it, and where the bundle is so it can be opened in Instruments.
+A gap in this tool is not an empty capture, and the two must not read alike.
+
+The `os-log` count of zero in that table is the Full Disk Access problem above,
+visible from a second angle.
