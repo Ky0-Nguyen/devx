@@ -57,6 +57,18 @@ char* mpi_boot_targets_json(void);
  * be confirmed -- an AVD name is not a device id. */
 char* mpi_boot_json(const char* identifier, int ready_timeout_s);
 
+/* Why an unusable iOS device is unusable, and what to do about it.
+ *
+ * "offline" is true and useless on its own: it does not say whether to reach
+ * for a cable, unlock the screen, trust the computer, or enable Developer
+ * Mode. Everything needed to answer that is in the listing already.
+ *
+ * `probe` runs a live reachability check, which costs about a tenth of a
+ * second and is the only way to tell "not here" from "here, but the cached
+ * listing is stale".
+ */
+char* mpi_device_advice_json(const char* device_id, int probe);
+
 /* Reads a running React Native app's network calls, console output and Redux
  * state through the inspector the app already runs -- nothing is added to the
  * app. See core/observe/inspect.hpp for what that reaches and what it does

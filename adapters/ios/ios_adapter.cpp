@@ -141,6 +141,10 @@ std::vector<model::DeviceRef> parse_devicectl_devices(
       } else {
         ref.trust = model::TrustState::kOffline;
       }
+      // Recorded for the same reason `hardware_udid` is: this listing is a
+      // cached record, and a property read from it is a description of the
+      // device as it was when last seen.
+      ref.last_seen_at = str_at(*cp, "lastConnectionDate");
       if (transport == "wired" || transport == "localHost") {
         ref.connection = model::ConnectionType::kUsb;
       } else if (transport == "localNetwork" || transport == "wifi") {
@@ -169,6 +173,151 @@ std::vector<model::DeviceRef> parse_devicectl_devices(
   return out;
 }
 
+const char* to_string(Reachability r) {
+  switch (r) {
+    case Reachability::kReachable:   return "reachable";
+    case Reachability::kNotFound:    return "not_found";
+    case Reachability::kProbeFailed: return "probe_failed";
+  }
+  return "probe_failed";
+}
+
+ReachabilityProbe probe_reachability(const std::string& device_id,
+                                     const discovery::ProviderOptions& opts) {
+  ReachabilityProbe out;
+  out.evidence = "xcrun devicectl device info lockState";
+  if (!proc::is_safe_argument(device_id, /*reject_option_like=*/true)) {
+    out.detail = "refusing to pass '" + device_id + "' as a device id";
+    return out;
+  }
+  const auto started = std::chrono::steady_clock::now();
+  proc::Options po;
+  // Short: an absent device fails in about 100 ms, and a present one answers
+  // as quickly. A long budget here would only slow discovery down.
+  po.timeout = std::chrono::milliseconds(6000);
+  po.cancel = opts.cancel;
+  const proc::Result r = proc::run(
+      {"xcrun", "devicectl", "device", "info", "lockState", "--device",
+       device_id, "--timeout", "5"}, po);
+  out.took = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - started);
+
+  if (!r.spawned) {
+    out.detail = "could not run devicectl: " + r.spawn_error;
+    return out;
+  }
+  if (r.timed_out) {
+    // Not "not found": a timeout is the probe failing to answer, and calling
+    // it absence would report a slow-to-respond device as gone.
+    out.detail = "the probe did not finish within 6s, so whether the device "
+                 "is there is unknown";
+    return out;
+  }
+  const std::string combined = r.out + r.err;
+  if (r.exit_code == 0) {
+    out.state = Reachability::kReachable;
+    // The device answered, which is the fact worth having. Its lock state is
+    // in the answer, and a locked device cannot be driven for a capture.
+    if (combined.find("passcodeRequired: true") != std::string::npos ||
+        combined.find("\"isPasscodeRequired\" : true") != std::string::npos) {
+      out.locked = true;
+    } else if (combined.find("passcodeRequired: false") != std::string::npos ||
+               combined.find("\"isPasscodeRequired\" : false") != std::string::npos) {
+      out.locked = false;
+    }
+    out.detail = "the device answered a live query";
+    return out;
+  }
+  // CoreDeviceError 1011 is "unable to locate a device matching the requested
+  // device identifier" -- the device is not present. Matched on the error
+  // number rather than the sentence, which Apple can reword.
+  if (combined.find("error 1011") != std::string::npos ||
+      combined.find("unable to locate a device") != std::string::npos) {
+    out.state = Reachability::kNotFound;
+    out.detail = "CoreDevice could not locate the device: it is not connected "
+                 "by cable and not reachable on this network";
+    return out;
+  }
+  // Error 1000 is a different thing from 1011: the identifier is not a
+  // CoreDevice device at all. A simulator UDID lands here, and so does a
+  // typo, and neither is a phone that has gone away.
+  if (combined.find("error 1000") != std::string::npos ||
+      combined.find("The specified device was not found") != std::string::npos) {
+    out.detail = "'" + device_id +
+                 "' is not a CoreDevice device: devicectl manages physical "
+                 "devices, so a simulator UDID or a mistyped id gives this. "
+                 "It is not a statement about any phone.";
+    return out;
+  }
+  out.detail = "the probe failed: " +
+               (r.err.empty() ? std::string("exit ") + std::to_string(r.exit_code)
+                              : r.err);
+  return out;
+}
+
+std::vector<std::string> explain_unusable_device(
+    const model::DeviceRef& device, const discovery::ProviderOptions& opts,
+    bool probe) {
+  std::vector<std::string> out;
+  if (device.platform != model::Platform::kIos) return out;
+
+  if (device.form == model::DeviceForm::kSimulator) {
+    out.push_back("this is a simulator and it is not booted. Start it from "
+                  "the Devices tab, or `mpi boot --device " +
+                  device.device_id + "`.");
+    return out;
+  }
+
+  if (!device.last_seen_at.empty()) {
+    // The single most useful fact, and the one that was being thrown away: a
+    // device last seen in June is not a connection problem to debug, it is a
+    // device that is somewhere else.
+    out.push_back("devicectl last spoke to this device at " +
+                  device.last_seen_at +
+                  ". Everything else it reports about the device describes it "
+                  "as it was then, not as it is now -- the listing is a cached "
+                  "record, and it answers successfully for a device that is "
+                  "not present.");
+  }
+
+  if (probe) {
+    const ReachabilityProbe p = probe_reachability(device.capture_id(), opts);
+    switch (p.state) {
+      case Reachability::kNotFound:
+        out.push_back("a live probe (" + p.evidence + ") could not find it: " +
+                      p.detail + ". Connect it by USB, or put it on this "
+                      "machine's network with Xcode's 'Connect via network' "
+                      "enabled for it.");
+        break;
+      case Reachability::kReachable:
+        // Worth saying loudly: the passive listing and the live probe
+        // disagree, and the probe is the one that talked to the hardware.
+        out.push_back("a live probe reached the device, which contradicts the "
+                      "cached listing that marked it unusable. Re-run "
+                      "discovery; if it still reads as unusable, that is a "
+                      "bug in this tool rather than a problem with the "
+                      "device.");
+        if (p.locked.has_value() && *p.locked) {
+          out.push_back("the device is locked. Unlock it: a locked device "
+                        "will not run a capture.");
+        }
+        break;
+      case Reachability::kProbeFailed:
+        out.push_back("a live probe did not settle it: " + p.detail);
+        break;
+    }
+  }
+
+  // The remaining prerequisites, each stated only when it is the blocker.
+  if (device.trust == model::TrustState::kUntrusted) {
+    out.push_back("pairing or Developer Mode is the blocker rather than the "
+                  "connection. On the device: trust this computer when asked, "
+                  "and enable Settings > Privacy & Security > Developer Mode "
+                  "(iOS 16 and later), then reconnect.");
+  }
+  return out;
+}
+
 std::optional<DeviceReadiness> parse_devicectl_readiness(
     const json::Value& root, const std::string& identifier) {
   const json::Value* result = root.find("result");
@@ -188,6 +337,7 @@ std::optional<DeviceReadiness> parse_devicectl_readiness(
     if (const json::Value* cp = result->find("connectionProperties"); cp) {
       r.tunnel_state = str_at(*cp, "tunnelState");
       r.pairing_state = str_at(*cp, "pairingState");
+      r.last_connection_date = str_at(*cp, "lastConnectionDate");
     }
     return r;
   }
@@ -208,6 +358,7 @@ std::optional<DeviceReadiness> parse_devicectl_readiness(
     if (const json::Value* cp = d.find("connectionProperties"); cp) {
       r.tunnel_state = str_at(*cp, "tunnelState");
       r.pairing_state = str_at(*cp, "pairingState");
+      r.last_connection_date = str_at(*cp, "lastConnectionDate");
     }
     return r;
   }

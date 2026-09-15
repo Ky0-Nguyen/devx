@@ -109,6 +109,9 @@ json::Value DeviceRef::to_json() const {
   v.set("hardware_udid", hardware_udid.empty()
                              ? json::Value::null()
                              : json::Value::string(hardware_udid));
+  v.set("last_seen_at", last_seen_at.empty()
+                            ? json::Value::null()
+                            : json::Value::string(last_seen_at));
   return v;
 }
 

@@ -46,7 +46,57 @@ a `com.apple.rosetta.exceptionserver` thread, meaning it was running
 device, nor to a native simulator build, and a capture that did not say so
 would be inviting exactly the comparison the project forbids.
 
-## Unresolved: which number is total CPU
+## RESOLVED: the CPU numbers were in the wrong unit
+
+This section recorded an unexplained fifty-fold discrepancy and refused to
+build a CPU provider on it. The explanation is a unit.
+
+The task-level counters (`PROC_PIDTASKINFO`, and the identical values in
+`proc_pid_rusage`) are in **mach absolute time units**. The per-thread
+counters (`PROC_PIDTHREADINFO`) are in **nanoseconds**. Two units in one API
+family.
+
+The ratio is the host timebase: 125/3 on Apple Silicon, or 41.6667 ns per
+tick, which is the factor of ~42 that looked like 50. On Intel it is 1/1,
+which is why reading the counters as nanoseconds works there and hides the
+trap entirely.
+
+With the timebase applied, against a process burning a deliberate 3.0 s:
+
+| Source | Reading |
+|---|---|
+| task counters read as nanoseconds | 0.072 s |
+| task counters read as mach ticks | **2.999 s** |
+| `ps -o time` | 3.00 s |
+
+Confirmed again live against the simulator's Calendar app: 6.594 s where `ps`
+independently reported 6.59 s.
+
+`adapters/ios/simulator_host_collector.cpp` is the provider this unblocked.
+The earlier guess in this document -- that the task counters exclude live
+threads -- was wrong; they include everything, and only the unit was at fault.
+
+## Also worth knowing: `devicectl` answers from a cache
+
+`devicectl device info details --device <id>` returns `outcome: success`, in
+about a tenth of a second, for a device that is **not present at all**. Every
+property it reports is then a description of the device as it was when last
+seen. Measured on a phone that had been away four days: it still reported
+`developerModeStatus: enabled`.
+
+`connectionProperties.lastConnectionDate` is what makes this detectable, and
+it is now carried as `DeviceRef::last_seen_at` so those properties are never
+presented as current facts.
+
+For a live answer, `devicectl device info lockState` has to reach the
+hardware: it fails in ~100 ms with CoreDeviceError 1011 when there is nothing
+to reach, and it also reports whether the device is locked -- which a capture
+needs anyway, since a locked device cannot be driven. That is
+`ios::probe_reachability`.
+
+## Historical: the reasoning that held this up
+
+
 
 Three readings of the same process, taken at one instant, disagree — and a CPU
 series built on the wrong one would be a fabricated measurement.

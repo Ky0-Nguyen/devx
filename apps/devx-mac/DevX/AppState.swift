@@ -557,6 +557,21 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Advice for the device the operator asked about, keyed by device id so
+    /// two rows cannot show each other's answer.
+    @Published var deviceAdvice: [String: JSON] = [:]
+
+    /// Asks why a device cannot be used. Runs a live probe, so it is on
+    /// demand rather than for every row in the list.
+    func explainDevice(_ deviceId: String) {
+        guard !deviceId.isEmpty else { return }
+        run("Checking \(deviceId)…", {
+            Core.deviceAdvice(deviceId: deviceId, probe: true)
+        }) { doc in
+            self.deviceAdvice[deviceId] = doc
+        }
+    }
+
     func loadInspectTargetsIfNeeded() {
         guard inspectTargetsDoc.isNull else { return }
         loadInspectTargets()

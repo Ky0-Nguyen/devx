@@ -371,6 +371,15 @@ bool resolve_device(const Invocation& inv, const model::DiscoverySnapshot& snap,
     if (!out.usable_for_capture()) {
       std::cerr << "error: device '" << want << "' is "
                 << model::to_string(out.trust) << " and cannot be used.\n";
+      // "offline" is true and useless on its own. The probe costs about a
+      // tenth of a second, and this is exactly the moment worth spending it:
+      // the operator is standing there wondering what to plug in.
+      discovery::ProviderOptions popts;
+      popts.cancel = inv.global.cancel;
+      for (const std::string& line :
+           ios::explain_unusable_device(out, popts, /*probe=*/true)) {
+        std::cerr << "  - " << line << "\n";
+      }
       code = ExitCode::kCollectionError;
       return false;
     }

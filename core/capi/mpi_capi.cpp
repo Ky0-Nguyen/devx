@@ -379,6 +379,38 @@ char* mpi_boot_targets_json(void) {
   });
 }
 
+char* mpi_device_advice_json(const char* device_id, int probe) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    const std::string id = safe(device_id);
+    discovery::DiscoveryService svc;
+    discovery::ProviderOptions popts;
+    popts.cancel = cancel_registry().token();
+    // Devices only: the app listing costs seconds and this answers a
+    // question about the device.
+    const auto snap = svc.snapshot(popts, /*include_apps=*/false);
+    bool ambiguous = false;
+    const model::DeviceRef* dev = find_device(snap, id, ambiguous);
+    if (dev == nullptr) {
+      out.set("error", json::Value::string("no device with id '" + id + "'"));
+      return out;
+    }
+    out.set("device_id", json::Value::string(dev->device_id));
+    out.set("trust", json::Value::string(model::to_string(dev->trust)));
+    out.set("usable", json::Value::boolean(dev->usable_for_capture()));
+    out.set("last_seen_at", dev->last_seen_at.empty()
+                                ? json::Value::null()
+                                : json::Value::string(dev->last_seen_at));
+    json::Value advice = json::Value::array();
+    for (const std::string& line :
+         ios::explain_unusable_device(*dev, popts, probe != 0)) {
+      advice.push_back(json::Value::string(line));
+    }
+    out.set("advice", std::move(advice));
+    return out;
+  });
+}
+
 char* mpi_inspect_targets_json(int metro_port) {
   return guard([&] {
     const std::uint16_t port = metro_port > 0 && metro_port <= 65535

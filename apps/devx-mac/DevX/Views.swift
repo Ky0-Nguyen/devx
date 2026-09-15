@@ -138,6 +138,7 @@ private struct TickModifier: ViewModifier {
 }
 
 private struct DeviceRow: View {
+    @EnvironmentObject var state: AppState
     let device: JSON
     let selected: Bool
 
@@ -175,6 +176,50 @@ private struct DeviceRow: View {
         .padding(11)
         .termCard(selected: selected)
         .contentShape(Rectangle())
+        // The answer belongs beside the row that raises the question. Only
+        // for a device that cannot be used -- a working device needs no
+        // explanation.
+        .overlay(alignment: .bottomLeading) { EmptyView() }
+        if trust != "authorized" {
+            adviceSection
+        }
+    }
+
+    /// "offline" is true and useless on its own: it does not say whether to
+    /// reach for a cable, unlock the screen, trust the computer or turn on
+    /// Developer Mode. Asking costs a live probe, so it is a button rather
+    /// than something every row does on sight.
+    @ViewBuilder private var adviceSection: some View {
+        let id = device["device_id"].text
+        let doc = state.deviceAdvice[id]
+        VStack(alignment: .leading, spacing: 4) {
+            if let doc, !doc.isNull {
+                if !doc["last_seen_at"].isNull {
+                    Text(tr("last seen") + " " + doc["last_seen_at"].text)
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                }
+                ForEach(Array(doc["advice"].array.enumerated()),
+                        id: \.offset) { _, line in
+                    HStack(alignment: .top, spacing: 6) {
+                        Text("-").foregroundStyle(Term.cyan)
+                        Text(line.text).font(Term.micro)
+                            .foregroundStyle(Term.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                if doc["advice"].array.isEmpty {
+                    Text(tr("no specific reason could be established"))
+                        .font(Term.micro).foregroundStyle(Term.cyan)
+                }
+            } else {
+                Button(tr("why can't I use this?")) {
+                    state.explainDevice(id)
+                }
+                .buttonStyle(TermButtonStyle())
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.bottom, 8)
     }
 }
 

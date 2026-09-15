@@ -132,6 +132,12 @@ enum Core {
         call { mpi_boot_json(identifier, Int32(readyTimeoutSeconds)) }
     }
 
+    /// Why an unusable device is unusable, and what to do about it.
+    /// `probe` runs a live reachability check (~0.1s).
+    static func deviceAdvice(deviceId: String, probe: Bool) -> JSON {
+        call { mpi_device_advice_json(deviceId, probe ? 1 : 0) }
+    }
+
     /// What is attachable right now. Cheap, and it does not hold the single
     /// debugger slot the way a capture does.
     static func inspectTargets(metroPort: Int) -> JSON {

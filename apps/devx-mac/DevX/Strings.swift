@@ -600,6 +600,10 @@ enum Strings {
         "Could not start it": "Không khởi động được",
         "Ready": "Sẵn sàng",
         "No device discovered": "Không phát hiện thiết bị nào",
+        "why can't I use this?": "vì sao không dùng được?",
+        "last seen": "lần cuối nhìn thấy",
+        "no specific reason could be established":
+            "không xác định được lý do cụ thể",
         "Device enumeration failed": "Liệt kê thiết bị thất bại",
         "Provider notes": "Ghi chú từ provider",
         "Recently profiled": "Đã profile gần đây",
