@@ -33,9 +33,19 @@
 // reported as a missing provider, never as zero, and a capture here cannot
 // support any frame-deadline finding.
 //
-// **No stacks.** Stack sampling needs `task_for_pid`, which is refused
-// without root or the debugger entitlement (verified: kr=5). So there are CPU
-// *times*, per process and per thread, and no attribution to functions.
+// **No stacks yet -- but they are obtainable, and this file used to say they
+// were not.** `task_for_pid` is refused here (verified: kr=5), and the
+// conclusion drawn from that was wrong: `/usr/bin/sample` is entitled to do
+// what this process cannot, and it profiles a simulator app perfectly well.
+// Run against the simulator's Calendar it returned 1294 lines of symbolised
+// call graph -- `UIApplicationMain`, `-[UIApplication _run]`,
+// `GSEventRunModal` -- with per-thread attribution, in under four seconds,
+// with no root and no Full Disk Access.
+//
+// So the honest statement is that this collector reports CPU *time* and not
+// attribution **because it does not yet ingest `sample`'s output**, not
+// because attribution is impossible. `sample_available_for` measures it, and
+// the capability says which of the two it is.
 //
 // **Simulator timings are not device timings.** Already true of every
 // simulator capture in this tool, and more so here: the app may be running
@@ -98,6 +108,21 @@ struct PidLookup {
 PidLookup find_simulator_app_pid(const std::string& udid,
                                  const std::string& bundle_id,
                                  std::chrono::milliseconds timeout);
+
+/// Whether `/usr/bin/sample` can profile this process.
+///
+/// It is entitled to do what this process cannot: `task_for_pid` is refused
+/// here, and `sample` still returns a symbolised call graph for a simulator
+/// app. The collector does not ingest that output yet, and the difference
+/// between "cannot" and "does not" is the whole reason this is probed rather
+/// than assumed -- the assumption was made once and was wrong.
+struct SampleToolAccess {
+  bool available = false;
+  std::int64_t call_graph_lines = 0;
+  std::string detail;
+};
+SampleToolAccess sample_available_for(std::int32_t pid,
+                                      std::chrono::milliseconds timeout);
 
 /// Whether the process is running translated under Rosetta.
 ///

@@ -150,3 +150,41 @@ MPI_TEST(a_pid_lookup_distinguishes_not_running_from_not_there, {}) {
       std::chrono::milliseconds(2000));
   MPI_CHECK(!bad_bundle.found);
 }
+
+MPI_TEST(a_missing_feature_is_not_reported_as_a_platform_limit, {}) {
+  // This file used to state that stack attribution was impossible on a
+  // simulator, reasoning from task_for_pid being refused (which it is,
+  // kr=5). The reasoning was wrong: /usr/bin/sample is entitled to do what
+  // this process cannot, and it returns a symbolised call graph for a
+  // simulator app -- 1294 lines against the simulator's Calendar, in under
+  // four seconds, with no root and no Full Disk Access.
+  //
+  // The distinction is the point. "The platform cannot" is a fact to work
+  // around; "this build does not" is a feature to write. Reporting the
+  // second as the first tells someone to stop looking.
+  const auto self = mpi::ios::sample_available_for(
+      getpid(), std::chrono::milliseconds(15000));
+
+  // Whichever this host allows, the answer must be definite and carry its
+  // evidence -- it is measured now rather than asserted.
+  MPI_CHECK_MSG(!self.detail.empty(),
+                "the probe always says what happened");
+  if (self.available) {
+    MPI_CHECK_MSG(self.call_graph_lines > 0,
+                  "a call graph that exists has lines in it");
+    MPI_CHECK_MSG(self.detail.find("call graph") != std::string::npos,
+                  "and the evidence names what came back");
+  }
+
+  // A pid that cannot exist is refused rather than sampled.
+  const auto none = mpi::ios::sample_available_for(
+      -1, std::chrono::milliseconds(2000));
+  MPI_CHECK(!none.available);
+  MPI_CHECK(none.call_graph_lines == 0);
+  MPI_CHECK_MSG(!none.detail.empty(), "with a reason, not silence");
+
+  const auto gone = mpi::ios::sample_available_for(
+      999999, std::chrono::milliseconds(8000));
+  MPI_CHECK_MSG(!gone.available,
+                "a process that is not there cannot be profiled");
+}
