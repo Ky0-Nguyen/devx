@@ -26,6 +26,20 @@ struct InspectorTarget {
   std::string title;
   std::string description;
   std::string device_name;
+  /// Metro's own per-device identity, from the `device=` parameter of the
+  /// debugger URL.
+  ///
+  /// This exists because **device names are not unique**. Two different
+  /// simulators of the same model on different runtimes both report
+  /// `iPad (A16)` -- verified: UDIDs 7ABCF841… (iOS 18.6) and 1909934C…
+  /// (iOS 26.5). Grouping by name would merge two genuinely different devices
+  /// into one and pick between them silently, which is the bug that device
+  /// selection was added to prevent.
+  ///
+  /// Several targets share one key when Metro lists a runtime connection plus
+  /// its auxiliary pages -- that is the same device and is resolved by
+  /// preference.
+  std::string device_key;
   std::string websocket_path;   // the path only; the host is always loopback
 };
 
@@ -64,10 +78,12 @@ struct TargetChoice {
 
 /// Picks the target to attach to.
 ///
-/// `device_hint` is matched case-insensitively as a substring of Metro's own
-/// `deviceName`, which is the only device identity Metro publishes -- it does
-/// not report an adb serial or a simulator UDID. Empty means "whichever, as
-/// long as there is only one".
+/// `device_hint` is matched case-insensitively as a substring of Metro's
+/// `deviceName` **or** of its device key. Metro publishes no adb serial and
+/// no simulator UDID, so a name is what an operator has to go on -- but when
+/// two devices share a name, the key is how they are told apart, and the
+/// listing shows it for exactly those. Empty means "whichever, as long as
+/// there is only one".
 ///
 /// Prefers a full runtime connection over the auxiliary pages Metro also
 /// lists for the same device. Pure, so the preference and the ambiguity rule
