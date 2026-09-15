@@ -13,6 +13,7 @@
 
 #include "adapters/ios/ios_adapter.hpp"
 #include "adapters/ios/xctrace_collector.hpp"
+#include "core/session/live_capture.hpp"
 #include "tests/unit/test_framework.hpp"
 
 using namespace mpi;
@@ -537,4 +538,48 @@ MPI_TEST(xctrace_collector_does_not_claim_to_stream, {"section-13"}) {
   ios::XctraceCollector collector;
   MPI_CHECK(!collector.supports_streaming());
   MPI_CHECK(collector.platform() == model::Platform::kIos);
+}
+
+MPI_TEST(the_ios_collector_is_wired_but_cannot_stream, {"J18", "H05"}) {
+  // This exists because of a message that was wrong. The desktop app told an
+  // iOS user "the xctrace collector is not wired to the session controller
+  // yet", which contradicted what the CLI does on the same device: the CLI
+  // has constructed this collector for iOS for some time, and `mpi record`
+  // against a simulator really does attach.
+  //
+  // The distinction that message should have drawn is the one asserted here.
+  // The collector exists and is usable for a batch capture; what it cannot do
+  // is stream, because `xctrace record` yields a trace bundle when it
+  // finishes rather than events that can be read while it runs.
+  ios::XctraceCollector collector;
+
+  // Wired: it is a Collector, it names itself, and it claims iOS.
+  session::Collector& as_collector = collector;
+  MPI_CHECK(!as_collector.id().empty());
+  MPI_CHECK(as_collector.platform() == model::Platform::kIos);
+
+  // And it does not pretend to stream. A live session asked to drive it must
+  // refuse on this, not on a claim about wiring.
+  MPI_CHECK_MSG(!as_collector.supports_streaming(),
+                "the iOS collector reports no streaming support, which is the "
+                "real reason live capture is unavailable there");
+
+  // A live session handed it refuses, and the refusal names streaming.
+  session::LiveSession live;
+  model::DeviceRef device;
+  device.device_id = "sim-1";
+  device.platform = model::Platform::kIos;
+  device.form = model::DeviceForm::kSimulator;
+  model::ProcessInstance p;
+  p.pid = 1;
+  const bool started =
+      live.start(std::make_shared<ios::XctraceCollector>(), device, {p},
+                 session::CaptureConfig{}, model::NormalizedTrace{});
+  MPI_CHECK(!started);
+  const auto snap = live.snapshot();
+  MPI_CHECK(snap.state == session::LiveState::kFailed);
+  MPI_CHECK_MSG(snap.error.find("streaming") != std::string::npos,
+                "the refusal is about streaming: " + snap.error);
+  MPI_CHECK_MSG(snap.error.find("not wired") == std::string::npos,
+                "and never claims the collector is unwired");
 }

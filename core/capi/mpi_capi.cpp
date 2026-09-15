@@ -19,6 +19,7 @@
 #include "adapters/android/adb_collector.hpp"
 #include "adapters/android/hprof_parser.hpp"
 #include "adapters/ios/ios_adapter.hpp"
+#include "adapters/ios/xctrace_collector.hpp"
 #include "core/discovery/boot.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -629,15 +630,31 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
       return out;
     }
 
-    if (dev->platform != model::Platform::kAndroid) {
-      // The same refusal the CLI makes: no collector, so no session.
+    // The platform's collector, chosen the same way the CLI chooses it.
+    //
+    // This used to refuse anything but Android, saying "the xctrace collector
+    // is not wired to the session controller yet" -- which was not true: the
+    // CLI has constructed it for iOS for some time, and running `mpi record`
+    // against a simulator really does attach. So the desktop app could not
+    // attempt something the CLI could, and told the user a reason that
+    // contradicted the other front end.
+    //
+    // What iOS recording actually does here is fail in the collector, with
+    // the collector's own account of why -- `xctrace record` attaches and
+    // then never finishes. That is a provider failure and reads as one.
+    std::unique_ptr<session::Collector> collector;
+    if (dev->platform == model::Platform::kAndroid) {
+      collector = std::make_unique<android::AdbCollector>();
+    } else if (dev->platform == model::Platform::kIos) {
+      collector = std::make_unique<ios::XctraceCollector>();
+    }
+    if (!collector) {
       out.set("error",
               json::Value::string(
-                  "live capture is not implemented for " +
+                  "no collector exists for " +
                   std::string(model::to_string(dev->platform)) +
-                  " in this build: the xctrace collector is not wired to the "
-                  "session controller yet. The target resolved successfully, "
-                  "so the blocker is the collector, not this target."));
+                  " in this build. The target resolved successfully, so the "
+                  "blocker is the collector, not this target."));
       out.set("target_resolved", json::Value::boolean(true));
       out.set("unsupported", json::Value::boolean(true));
       out.set("source_results", json::Value::array());
@@ -697,8 +714,7 @@ char* mpi_record_json(const char* sessions_dir, const char* device_id,
       }
     }
 
-    android::AdbCollector collector;
-    const auto capture = collector.capture(*dev, processes, cfg, trace);
+    const auto capture = collector->capture(*dev, processes, cfg, trace);
     for (const auto& c : capture.source_results) trace.capabilities.upsert(c);
 
     json::Value srcs = json::Value::array();
@@ -1159,14 +1175,26 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
       return out;
     }
     if (dev->platform != model::Platform::kAndroid) {
-      // The same refusal the batch path makes: no collector, so no session.
+      // Live capture needs a collector that collects in increments. The
+      // xctrace collector is wired -- a batch record uses it -- but it
+      // reports `supports_streaming() == false`, because `xctrace record`
+      // produces one trace bundle at the end rather than something that can
+      // be read while it runs.
+      //
+      // The old message here said the collector was "not wired to the
+      // session controller yet", which was false and contradicted what a
+      // batch record does on the same device.
       out.set("error",
               json::Value::string(
-                  "live capture is not implemented for " +
+                  "live capture is not available for " +
                   std::string(model::to_string(dev->platform)) +
-                  " in this build: the xctrace collector is not wired to the "
-                  "session controller yet. The target resolved successfully, "
-                  "so the blocker is the collector, not this target."));
+                  " in this build: its collector does not support streaming. "
+                  "`xctrace record` produces a trace bundle when it finishes "
+                  "rather than events that can be read while it runs, so "
+                  "there is nothing to stream. A batch capture uses the same "
+                  "collector and will report what it managed; on this host "
+                  "`xctrace record` attaches and then does not finish, which "
+                  "it reports as a provider failure."));
       out.set("unsupported", json::Value::boolean(true));
       out.set("target_resolved", json::Value::boolean(true));
       return out;

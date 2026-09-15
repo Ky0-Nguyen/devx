@@ -10,9 +10,13 @@ struct RecordView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Live capture is implemented for Android, using the platform's own "
                      + "text interfaces: dumpsys gfxinfo framestats for frames, simpleperf "
-                     + "for CPU stacks, dumpsys meminfo for memory. For iOS the collector "
-                     + "is not wired up yet, and DevX will say so rather than writing a "
-                     + "capture-shaped session with nothing measured in it.")
+                     + "for CPU stacks, dumpsys meminfo for memory.\n\n"
+                     + "For iOS the collector IS wired up and a batch record uses it, but "
+                     + "it cannot stream: `xctrace record` produces a trace bundle when it "
+                     + "finishes rather than events that can be read while it runs. On "
+                     + "this host it attaches and then never finishes, which it reports as "
+                     + "a provider failure rather than writing a capture-shaped session "
+                     + "with nothing measured in it.")
                     .font(Term.body).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
