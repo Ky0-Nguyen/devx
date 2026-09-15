@@ -306,12 +306,31 @@ not attribution **because it does not ingest `sample`'s output**, not because
 attribution is unavailable. The difference matters: one is a platform limit to
 work around, the other is a feature that has not been written.
 
-It is not ingested here because `sample` produces an aggregated call graph
-rather than timestamped samples -- the natural mapping is one weighted
-`CpuSample` per call-graph path, which the model supports via
-`CpuSample::weight` -- and writing that parser deserves to be done against a
-range of real output rather than bolted on at the end of unrelated work.
+It **is** ingested now. `adapters/ios/sample_parser.cpp` turns the call graph
+into weighted `CpuSample`s, and `CaptureConfig::stack_profile` runs it at the
+end of a live capture.
 
-The collector now probes for it and says which of the two situations applies,
-so the capability output cannot go stale in the direction of claiming less
-than the platform allows.
+Two things in that parsing are easy to get wrong and invisible when they are:
+
+**Each node's count includes its children.** The quantity that means anything
+is `self = count - sum(children)`: the samples that stopped *in* that frame.
+Emitting every node at its full count multiply-counts the same samples down
+the whole path, and emitting only leaves loses every frame that has both self
+time and callees. The test for this is constructed rather than recorded,
+because the real graph happened to be single-child chains throughout and could
+not exercise it.
+
+**A frame must appear in its own stack.** Emitting a node after popping it off
+the path left every sample one frame short -- the deepest stack ended at the
+*caller* of its leaf. That conserves the weights, so a sample-count check
+passes and the stacks are quietly wrong. Caught by checking the leaf against
+the recording: `mach_msg2_trap`, not `mach_msg2_internal`.
+
+The conservation check is the one worth keeping: the self times must sum
+exactly to what the threads declared. Verified on the real output at 37444
+samples across 22 threads, and on the committed fixture.
+
+What it still cannot do is place any of this in time. `sample` reports an
+aggregate with no timestamps, so this answers "where" and never "when", and
+the capability says so. It is opt-in for that reason as much as for the cost:
+`sample` blocks for the seconds it samples.

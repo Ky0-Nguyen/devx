@@ -146,6 +146,48 @@ bool file_exists(const std::string& path) {
 
 }  // namespace
 
+namespace {
+
+/// The line the helper prints once its signal handlers are installed.
+constexpr const char* kHelperReady = "Ctrl-C to stop the recording";
+
+/// Runs the helper and reports whether that run actually exercised the stop
+/// behaviour.
+///
+/// The precondition is easy to miss and was missed here: if the child is
+/// signalled before it has installed its SIGINT handler, the default action
+/// kills it and nothing about the stop signal was tested. The signature is
+/// exit 130 with no output at all. Under the full suite that happened
+/// intermittently -- roughly one run in six -- and the test failed as though
+/// SIGINT had not worked.
+///
+/// So readiness is checked rather than assumed: the helper prints a line when
+/// its handlers are in place, and a run without that line is not evidence
+/// about anything. `attempts` bounds the retries so a genuinely broken stop
+/// signal still fails rather than looping.
+struct StopRun {
+  bool exercised = false;   // the child was ready before it was signalled
+  bool wrote_output = false;
+  mpi::proc::Result result;
+};
+
+StopRun run_until_exercised(const std::string& helper,
+                            const std::string& out,
+                            const mpi::proc::Options& opts,
+                            int attempts = 6) {
+  StopRun run;
+  for (int i = 0; i < attempts; i++) {
+    std::filesystem::remove(out);
+    run.result = mpi::proc::run({helper, out, "200"}, opts);
+    run.exercised = run.result.out.find(kHelperReady) != std::string::npos;
+    run.wrote_output = std::filesystem::exists(out);
+    if (run.exercised) return run;
+  }
+  return run;
+}
+
+}  // namespace
+
 MPI_TEST(the_default_stop_signal_loses_a_tools_output, {}) {
   // Not a wish, a demonstration. The child ignores SIGTERM and writes its
   // output only on SIGINT, which is exactly how `xctrace record` behaves:
@@ -154,15 +196,16 @@ MPI_TEST(the_default_stop_signal_loses_a_tools_output, {}) {
   // output is lost -- which is how a capture that had actually been taken
   // was being reported as a provider failure.
   const std::string out = temp_output("default");
-  std::filesystem::remove(out);
-
   mpi::proc::Options opts;
-  opts.timeout = std::chrono::milliseconds(700);
-  const auto r = mpi::proc::run({helper_path(), out, "200"}, opts);
+  opts.timeout = std::chrono::milliseconds(1500);
+  const StopRun run = run_until_exercised(helper_path(), out, opts);
 
-  MPI_CHECK_MSG(r.spawned, "the helper ran");
-  MPI_CHECK_MSG(r.timed_out, "and was stopped by the timeout");
-  MPI_CHECK_MSG(!file_exists(out),
+  MPI_CHECK_MSG(run.result.spawned, "the helper ran");
+  MPI_CHECK_MSG(run.exercised,
+                "and reached the point of having handlers installed, so this "
+                "run says something about the stop signal");
+  MPI_CHECK_MSG(run.result.timed_out, "it was stopped by the timeout");
+  MPI_CHECK_MSG(!run.wrote_output,
                 "SIGTERM does not reach a tool that ignores it, and the "
                 "500ms grace expires before it could write anything anyway");
   std::filesystem::remove(out);
@@ -171,17 +214,19 @@ MPI_TEST(the_default_stop_signal_loses_a_tools_output, {}) {
 MPI_TEST(sigint_and_a_grace_period_keep_the_output, {}) {
   // The fix. Same child, same timeout, only the stop behaviour differs.
   const std::string out = temp_output("sigint");
-  std::filesystem::remove(out);
-
   mpi::proc::Options opts;
-  opts.timeout = std::chrono::milliseconds(700);
+  opts.timeout = std::chrono::milliseconds(1500);
   opts.stop_signal = SIGINT;
   opts.stop_grace = std::chrono::milliseconds(4000);
-  const auto r = mpi::proc::run({helper_path(), out, "200"}, opts);
+  const StopRun run = run_until_exercised(helper_path(), out, opts);
 
-  MPI_CHECK_MSG(r.spawned, "the helper ran");
-  MPI_CHECK_MSG(r.timed_out, "it still hit the timeout");
-  MPI_CHECK_MSG(file_exists(out),
+  MPI_CHECK_MSG(run.result.spawned, "the helper ran");
+  MPI_CHECK_MSG(run.exercised,
+                "and had its handlers installed before being signalled -- "
+                "without that this run tests nothing, and asserting on it "
+                "was what made this flaky");
+  MPI_CHECK_MSG(run.result.timed_out, "it still hit the timeout");
+  MPI_CHECK_MSG(run.wrote_output,
                 "but it was interrupted rather than killed, and had time to "
                 "finish writing -- so a recording that was actually taken "
                 "survives the timeout");
@@ -228,6 +273,11 @@ MPI_TEST(a_child_that_exits_promptly_is_not_delayed_by_a_long_grace, {}) {
       std::chrono::steady_clock::now() - started);
 
   MPI_CHECK(r.ok());
-  MPI_CHECK_MSG(elapsed < std::chrono::milliseconds(2000),
-                "a child that exits on its own never enters the grace path");
+  // Measured against the grace period, not against an absolute wall time.
+  // `< 2000ms` was a statement about how fast this machine spawns /bin/echo,
+  // which is not what is being tested and fails under load; what distinguishes
+  // the bug is whether the 12s grace was waited out.
+  MPI_CHECK_MSG(elapsed < opts.stop_grace / 2,
+                "a child that exits on its own never enters the grace path, "
+                "so the call returns in well under the grace period");
 }

@@ -1307,7 +1307,7 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
                      const char* app_identifier, int sample_hz,
                      int collect_frames, int collect_cpu, int collect_memory,
                      int reset_frame_history, int tick_ms, int cpu_window_ms,
-                     int timeout_ms) {
+                     int timeout_ms, int stack_profile_seconds) {
   return guard([&] {
     json::Value out = json::Value::object();
     auto& ctx = live_context();
@@ -1478,6 +1478,13 @@ char* mpi_live_start(const char* sessions_dir, const char* device_id,
     cfg.cpu_window =
         std::chrono::milliseconds(cpu_window_ms >= 1000 ? cpu_window_ms : 5000);
     cfg.run_until_stopped = true;
+    // A stack profile at the end, when asked for. Bounded: `sample` blocks
+    // for its whole duration, so a large value would hold the stop.
+    if (stack_profile_seconds > 0) {
+      cfg.stack_profile = true;
+      const int secs = stack_profile_seconds > 30 ? 30 : stack_profile_seconds;
+      cfg.stack_profile_duration = std::chrono::milliseconds(secs * 1000);
+    }
 
     ctx.live = std::make_unique<session::LiveSession>();
     std::shared_ptr<session::Collector> live_collector;

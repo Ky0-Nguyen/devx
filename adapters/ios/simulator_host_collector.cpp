@@ -494,6 +494,82 @@ session::CaptureResult SimulatorHostCollector::finish(
     result.error = "the capture was never started";
     return result;
   }
+  if (config.stack_profile) {
+    // `sample` blocks for the duration it samples, so this happens at the end
+    // rather than per tick -- and it is an aggregate, not a series: it says
+    // where the time went and nothing about when.
+    proc::Options po;
+    po.timeout = config.stack_profile_duration + std::chrono::milliseconds(15000);
+    const std::int64_t seconds =
+        config.stack_profile_duration.count() / 1000 > 0
+            ? config.stack_profile_duration.count() / 1000
+            : 1;
+    const proc::Result r = proc::run(
+        {"/usr/bin/sample", std::to_string(pid_), std::to_string(seconds)}, po);
+    model::Capability c;
+    c.id = "ios.simulator.stack_profile";
+    c.human_name = "Stack profile (/usr/bin/sample)";
+    c.provider = "/usr/bin/sample";
+    c.tested = model::TestedState::kVerifiedOnSimulatorOrEmulator;
+    c.observed_at = time_util::now_iso8601_utc();
+    if (!r.spawned || r.exit_code != 0) {
+      c.status = model::CapabilityStatus::kUnsupported;
+      c.evidence = r.spawned ? "`sample` exited " +
+                                   std::to_string(r.exit_code) + ": " + r.err
+                             : "could not run `sample`: " + r.spawn_error;
+      result.source_results.push_back(std::move(c));
+    } else {
+      const SampleParse parsed = parse_sample_output(r.out, process_key_);
+      if (!parsed.ok) {
+        c.status = model::CapabilityStatus::kUnsupported;
+        c.evidence = "`sample` ran and its output could not be read: " +
+                     parsed.error;
+        result.source_results.push_back(std::move(c));
+      } else {
+        for (const auto& s : parsed.samples) out.cpu_samples.push_back(s);
+        for (const SampleThread& t : parsed.threads) {
+          bool known = false;
+          for (const auto& existing : out.threads) {
+            if (existing.thread_instance_id == process_key_ + ":" + t.label) {
+              known = true;
+              break;
+            }
+          }
+          if (known) continue;
+          model::ThreadInfo info;
+          info.thread_instance_id = process_key_ + ":" + t.label;
+          info.process_instance_id = process_key_;
+          // `sample`'s Thread_NNNN is its own identifier and not a tid;
+          // putting it in `tid` would be a false identifier.
+          info.tid = 0;
+          info.name = t.description.empty() ? t.label : t.description;
+          info.is_main_ui_thread = t.is_main;
+          out.threads.push_back(std::move(info));
+        }
+        c.status = model::CapabilityStatus::kLimited;
+        c.evidence = "`sample` returned " +
+                     std::to_string(parsed.samples.size()) +
+                     " weighted stack(s) across " +
+                     std::to_string(parsed.threads.size()) + " thread(s)";
+        c.limitations.push_back(
+            "these are aggregates with no timestamps: they say where the "
+            "samples were, and cannot place anything on a timeline. Nothing "
+            "here supports a claim about when something happened.");
+        c.limitations.push_back(
+            "the window is the " + std::to_string(seconds) +
+            "s `sample` ran for at the end of the capture, not the capture's "
+            "whole duration");
+        if (parsed.unparsed_lines > 0) {
+          c.limitations.push_back(
+              std::to_string(parsed.unparsed_lines) +
+              " line(s) of the call graph were not understood and were "
+              "counted rather than guessed at");
+        }
+        result.source_results.push_back(std::move(c));
+      }
+    }
+  }
+
   if (config.frames) {
     // A coverage row whose whole window is one gap, so a detector cannot read
     // the silence as measured smoothness. Spec section 6: a window a

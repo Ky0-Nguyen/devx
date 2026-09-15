@@ -60,6 +60,7 @@
 #include <string>
 #include <vector>
 
+#include "adapters/ios/sample_parser.hpp"
 #include "core/session/collector.hpp"
 
 namespace mpi::ios {
