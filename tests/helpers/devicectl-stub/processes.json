@@ -1,0 +1,17 @@
+{
+ "info": {
+  "outcome": "success"
+ },
+ "result": {
+  "runningProcesses": [
+   {
+    "processIdentifier": 4242,
+    "executable": "file:///private/var/containers/Bundle/Application/A303B644-4AD8-49C3-A0F6-872F48BA45EE/io.pizzahut.hutbot.debug-1789449967523.app/HutBot"
+   },
+   {
+    "processIdentifier": 1,
+    "executable": "file:///sbin/launchd"
+   }
+  ]
+ }
+}

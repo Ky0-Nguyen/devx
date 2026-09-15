@@ -1,0 +1,25 @@
+{
+ "info": {
+  "outcome": "success"
+ },
+ "result": {
+  "apps": [
+   {
+    "bundleIdentifier": "io.pizzahut.hutbot.debug",
+    "name": "HutBot",
+    "version": "1.0",
+    "appClip": false,
+    "removable": true,
+    "installationType": "User",
+    "defaultApp": false
+   },
+   {
+    "bundleIdentifier": "com.apple.Preferences",
+    "name": "Settings",
+    "version": "1.0",
+    "installationType": "System",
+    "removable": false
+   }
+  ]
+ }
+}

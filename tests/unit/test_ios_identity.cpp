@@ -311,3 +311,48 @@ MPI_TEST(a_device_that_vanishes_mid_session_is_named_as_that, {}) {
   MPI_CHECK_MSG(mpi::ios::describe_devicectl_failure("").empty(),
                 "an empty failure stays empty rather than gaining a story");
 }
+
+MPI_TEST(process_attribution_matches_real_container_paths, {}) {
+  using mpi::ios::executable_path_names_bundle;
+  const std::string bid = "io.pizzahut.hutbot.debug";
+
+  // The real shape, from `simctl get_app_container` on this machine. The
+  // bundle id is a segment *prefix* here, not a segment -- the old rule
+  // required `"/" + bundle_id + "/"` and therefore matched nothing, so every
+  // app reported not_running with no processes while actually running.
+  const std::string real =
+      "/private/var/containers/Bundle/Application/"
+      "A303B644-4AD8-49C3-A0F6-872F48BA45EE/"
+      "io.pizzahut.hutbot.debug-1789449967523.app/HutBot";
+  MPI_CHECK_MSG(executable_path_names_bundle(real, bid),
+                "a real container path is matched");
+
+  // A file:// URL, which is how devicectl reports it.
+  MPI_CHECK(executable_path_names_bundle("file://" + real, bid));
+
+  // The plain form, and the bundle id as the final segment.
+  MPI_CHECK(executable_path_names_bundle("/x/" + bid + "/Exec", bid));
+  MPI_CHECK(executable_path_names_bundle("/x/" + bid, bid));
+  MPI_CHECK(executable_path_names_bundle("/x/" + bid + ".app/Exec", bid));
+
+  // A physical device's path names the product, not the bundle -- so this is
+  // correctly NOT a match, and the caller must report unknown rather than
+  // not_running for it.
+  MPI_CHECK_MSG(!executable_path_names_bundle(
+                    "/private/var/containers/Bundle/Application/"
+                    "A303B644-4AD8-49C3-A0F6-872F48BA45EE/HutBot.app/HutBot",
+                    bid),
+                "a device-shaped path does not name the bundle id, and "
+                "pretending otherwise would attribute a process on no "
+                "evidence");
+
+  // A different bundle id that merely starts with this one must not match,
+  // or one app's processes would be attributed to another.
+  MPI_CHECK(!executable_path_names_bundle("/x/" + bid + "extra/Exec", bid));
+  MPI_CHECK(!executable_path_names_bundle("/x/" + bid + "2.app/Exec", bid));
+  // Nor one that merely ends with it.
+  MPI_CHECK(!executable_path_names_bundle("/x/com.other." + bid + "/Exec", bid));
+
+  MPI_CHECK(!executable_path_names_bundle("", bid));
+  MPI_CHECK(!executable_path_names_bundle(real, ""));
+}

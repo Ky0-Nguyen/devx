@@ -76,6 +76,27 @@ std::optional<DeviceReadiness> parse_devicectl_readiness(const json::Value& root
 /// assumed.
 std::string ddi_refusal_text(const DeviceReadiness& readiness);
 
+/// Whether an executable path names an app's bundle.
+///
+/// The only attribution signal devicectl's process listing offers, and it is
+/// weaker than it looks. The rule was `"/" + bundle_id + "/"` -- the bundle
+/// id as a whole path segment -- and that matches nothing real. Checked
+/// against an actual container path:
+///
+///     .../Bundle/Application/A303B644-.../io.pizzahut.hutbot.debug-1789449967523.app/HutBot
+///
+/// The bundle id is a segment *prefix* there, not a segment. On a physical
+/// device it is absent entirely: the segment is `<Product>.app`. So the rule
+/// could not match, every app reported `not_running` with no processes, and a
+/// capture would tell someone to start an app that was already running.
+///
+/// This matches the bundle id at a segment boundary, allowing the `-<digits>`
+/// and `.app` suffixes the installers add, and still refuses a different
+/// bundle id that merely starts with the same text. A display name is never
+/// used (spec 3.4).
+bool executable_path_names_bundle(const std::string& executable_path,
+                                  const std::string& bundle_id);
+
 /// Turns a devicectl failure into a sentence about the device.
 ///
 /// A device that is authorized at discovery and gone by the time apps are
