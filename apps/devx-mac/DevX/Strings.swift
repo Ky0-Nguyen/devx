@@ -1132,8 +1132,15 @@ enum Strings {
             + "chạy trên thiết bị nào",
         "not looked yet":
             "chưa quét",
-        "observe":
-            "quan sát",
+        "watch live": "xem trực tiếp",
+        "stop watching": "dừng xem",
+        "watching — act in the app and calls appear here":
+            "đang xem — hãy thao tác trong ứng dụng và các lệnh gọi sẽ "
+            + "hiện ra ở đây",
+        "The observation ended early": "Phiên quan sát kết thúc sớm",
+        "clear": "xoá lọc",
+        "what to show, not what was captured":
+            "hiển thị cái gì, không phải đã thu được cái gì",
         "observing…":
             "đang quan sát…",
         "read the Redux store":

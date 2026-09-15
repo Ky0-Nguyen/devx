@@ -11,6 +11,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -82,6 +83,56 @@ struct InspectOptions {
 /// with the reason, which is a different answer from an idle app.
 observe::InspectReport run(const InspectOptions& options,
                            const CancellationToken* cancel = nullptr);
+
+/// An observation that stays open, so the data arrives while it happens.
+///
+/// `run()` above returns when its window closes, which is fine for a scripted
+/// capture and wrong for a person: the interesting API calls happen when you
+/// tap something, and a report that appears fifteen seconds later cannot be
+/// connected to what you just did. This keeps the socket open and hands back
+/// whatever has arrived so far.
+///
+/// The assembler is cumulative, so each poll returns the whole observation to
+/// date rather than a delta. That is deliberate: a network exchange is
+/// assembled from three separate events, and a caller stitching deltas back
+/// together would have to re-implement that -- and would show a request with
+/// no status for as long as the response had not arrived yet.
+class InspectStream {
+ public:
+  InspectStream();
+  ~InspectStream();
+  InspectStream(const InspectStream&) = delete;
+  InspectStream& operator=(const InspectStream&) = delete;
+
+  /// Attaches. Returns false and fills `error` when there is nothing to
+  /// attach to; the reason distinguishes "no Metro", "no debug build
+  /// connected" and "the debugger slot is taken", because they need different
+  /// things done about them.
+  bool start(const InspectOptions& options, std::string* error);
+
+  /// Reads whatever has arrived, for at most `budget_ms`. Never blocks longer
+  /// than that, so a caller can poll from a UI without freezing it.
+  void pump(int budget_ms);
+
+  /// The observation so far.
+  observe::InspectReport snapshot() const;
+
+  bool running() const { return running_; }
+  /// Set once the app closed the connection or the socket failed. The report
+  /// says so, because a capture that ended early is partial and partial is
+  /// not quiet.
+  const std::string& disconnect_reason() const { return disconnect_reason_; }
+
+  void stop();
+
+ private:
+  void handle(const json::Value& message);
+
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+  bool running_ = false;
+  std::string disconnect_reason_;
+};
 
 /// The expression used to locate a Redux store by walking React's own
 /// devtools hook.

@@ -152,6 +152,26 @@ struct RootView: View {
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 3) {
                     Rectangle().fill(Term.line).frame(height: 1)
+                    // The language control lives here as well as in a tab.
+                    // It was only in the Export tab's first panel, and
+                    // someone looking for it could not find it -- a fair
+                    // verdict on putting a global preference behind a tab
+                    // named after something else.
+                    HStack(spacing: 6) {
+                        Text("lang").font(Term.font(10))
+                            .foregroundStyle(Term.dim)
+                        Picker("", selection: $state.language) {
+                            ForEach(DevXLanguage.allCases) { lang in
+                                Text(lang.label).tag(lang)
+                            }
+                        }
+                        .labelsHidden()
+                        .controlSize(.mini)
+                        .frame(maxWidth: 108)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.bottom, 3)
+
                     Text("engine \(state.engineVersion) · ruleset \(state.rulesetVersion)")
                         .font(Term.font(10))
                         .foregroundStyle(Term.dim)

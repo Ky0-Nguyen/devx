@@ -8,6 +8,20 @@
 // means, and the fact that a debugger was attached while this was recorded.
 import SwiftUI
 
+/// A pulsing dot, so "watching" is visible without reading a label.
+private struct LiveDot: View {
+    @State private var bright = false
+    var body: some View {
+        Circle()
+            .fill(Term.green)
+            .frame(width: 6, height: 6)
+            .opacity(bright ? 1.0 : 0.25)
+            .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true),
+                       value: bright)
+            .onAppear { bright = true }
+    }
+}
+
 struct InspectView: View {
     @EnvironmentObject var state: AppState
 
@@ -34,6 +48,7 @@ struct InspectView: View {
                                          + "about the app."))
                     }
                     sourcesPanel
+                    filterBar
                     networkPanel
                     consolePanel
                     if state.inspectRedux { reduxPanel }
@@ -126,11 +141,71 @@ struct InspectView: View {
                         .font(Term.micro).foregroundStyle(Term.amber)
                         .padding(.leading, 18)
                 }
-                Button(state.busy == nil ? tr("observe") : tr("observing…")) {
-                    state.runInspect()
+                HStack(spacing: 10) {
+                    // The live one first: it is what someone wants when they
+                    // are about to tap around in the app.
+                    if state.inspectStreaming {
+                        Button(tr("stop watching")) { state.stopInspectStream() }
+                            .buttonStyle(TermButtonStyle(tone: Term.amber,
+                                                         filled: true))
+                    } else {
+                        Button(tr("watch live")) { state.startInspectStream() }
+                            .buttonStyle(TermButtonStyle(filled: true))
+                            .disabled(state.selectedApp.isEmpty)
+                    }
+                    Button(state.busy == nil
+                            ? tr("observe for \(state.inspectSeconds)s")
+                            : tr("observing…")) {
+                        state.runInspect()
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    .disabled(state.busy != nil || state.selectedApp.isEmpty
+                              || state.inspectStreaming)
+                    if state.inspectStreaming {
+                        LiveDot()
+                        Text(tr("watching — act in the app and calls appear "
+                              + "here"))
+                            .font(Term.micro).foregroundStyle(Term.green)
+                    }
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(TermButtonStyle(filled: true))
-                .disabled(state.busy != nil || state.selectedApp.isEmpty)
+                if !state.inspectDisconnect.isEmpty {
+                    Banner(kind: .caution,
+                           title: "The observation ended early",
+                           message: state.inspectDisconnect)
+                }
+            }
+        }
+    }
+
+    /// Kind and text filters.
+    ///
+    /// The kinds are the three things asked for -- API, Redux, Log -- and
+    /// they are toggles rather than a segmented control because watching API
+    /// calls *and* Redux actions together is the common case.
+    @ViewBuilder private var filterBar: some View {
+        Panel(title: "Filter", subtitle: "what to show, not what was captured") {
+            HStack(spacing: 14) {
+                ForEach(InspectKind.allCases) { kind in
+                    Toggle(kind.label, isOn: Binding(
+                        get: { state.inspectKinds.contains(kind) },
+                        set: { on in
+                            if on { state.inspectKinds.insert(kind) }
+                            else { state.inspectKinds.remove(kind) }
+                        }))
+                        .toggleStyle(.checkbox).font(Term.body)
+                }
+                TextField(tr("url, action, status…"), text: $state.inspectNeedle)
+                    .textFieldStyle(TermFieldStyle()).frame(maxWidth: 260)
+                if !state.inspectNeedle.isEmpty
+                    || state.inspectKinds.count != InspectKind.allCases.count {
+                    Button(tr("clear")) {
+                        state.inspectNeedle = ""
+                        state.inspectKinds = Set(InspectKind.allCases)
+                    }
+                    .buttonStyle(TermButtonStyle())
+                }
+                Spacer(minLength: 0)
             }
         }
     }
@@ -162,10 +237,22 @@ struct InspectView: View {
     }
 
     @ViewBuilder private var networkPanel: some View {
-        let rows = state.inspectDoc["network"].array
-        Panel(title: tr("Network") + " (\(rows.count))",
+        let all = state.inspectDoc["network"].array
+        let result = InspectFilter.network(all, kinds: state.inspectKinds,
+                                           needle: state.inspectNeedle)
+        let rows = result.shown
+        Panel(title: tr("Network") + " (\(rows.count)"
+                     + (result.hidden > 0 ? " / \(all.count)" : "") + ")",
               subtitle: "the JavaScript side only") {
-            if rows.isEmpty {
+            // An empty list because of a filter is a statement about the
+            // filter. An empty list with nothing hidden is a statement about
+            // the app. They must not look the same.
+            if result.hidEverything {
+                Text(tr("\(result.hidden) request(s) are hidden by the "
+                      + "filter. This says nothing about the app."))
+                    .font(Term.small).foregroundStyle(Term.cyan)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if rows.isEmpty {
                 Text(tr("Nothing was reported. The domain was enabled, so "
                       + "this is the app making no JavaScript HTTP calls in "
                       + "the window — a native module's own HTTP would not "
@@ -209,10 +296,19 @@ struct InspectView: View {
     }
 
     @ViewBuilder private var consolePanel: some View {
-        let rows = state.inspectDoc["console"].array
-        Panel(title: tr("Console") + " (\(rows.count))",
+        let all = state.inspectDoc["console"].array
+        let result = InspectFilter.console(all, kinds: state.inspectKinds,
+                                           needle: state.inspectNeedle)
+        let rows = result.shown
+        Panel(title: tr("Console") + " (\(rows.count)"
+                     + (result.hidden > 0 ? " / \(all.count)" : "") + ")",
               subtitle: "whatever the app chose to log") {
-            if rows.isEmpty {
+            if result.hidEverything {
+                Text(tr("\(result.hidden) line(s) are hidden by the filter. "
+                      + "This says nothing about the app."))
+                    .font(Term.small).foregroundStyle(Term.cyan)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if rows.isEmpty {
                 Text(tr("The app logged nothing in this window."))
                     .font(Term.small).foregroundStyle(Term.dim)
             } else {

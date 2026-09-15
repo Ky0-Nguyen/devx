@@ -417,4 +417,224 @@ observe::InspectReport run(const InspectOptions& options,
   return assembled;
 }
 
+
+// --- InspectStream ---------------------------------------------------------
+
+struct InspectStream::Impl {
+  net::WebSocketClient ws;
+  observe::InspectAssembler assembler;
+  InspectOptions options;
+  InspectorTarget target;
+  std::int64_t started_ms = 0;
+  int next_id = 1;
+  int redux_id = -1;
+  observe::StateSnapshot snapshot;
+  std::vector<observe::Screenshot> shots;
+};
+
+InspectStream::InspectStream() : impl_(std::make_unique<Impl>()) {}
+InspectStream::~InspectStream() { stop(); }
+
+bool InspectStream::start(const InspectOptions& options, std::string* error) {
+  impl_->options = options;
+  const TargetList list = list_targets(options.metro_port);
+  if (!list.metro_reachable) {
+    *error = "Metro is not running on 127.0.0.1:" +
+             std::to_string(options.metro_port) + ": " + list.error +
+             ". This says nothing about the app.";
+    return false;
+  }
+  if (list.targets.empty()) {
+    *error = "Metro is running but no app is attached to its inspector. A "
+             "debug build connects itself; a release build runs no inspector "
+             "at all, so there is nothing to attach to. This is a missing "
+             "provider, not an idle app.";
+    return false;
+  }
+  const InspectorTarget* chosen = choose_target(list.targets, options.app_id);
+  if (chosen == nullptr) {
+    *error = "Metro lists " + std::to_string(list.targets.size()) +
+             " target(s), none of them '" + options.app_id +
+             "'. Attaching to another app's runtime would report its traffic "
+             "under this app's name.";
+    return false;
+  }
+  impl_->target = *chosen;
+  if (!impl_->ws.connect(options.metro_port, chosen->websocket_path, error)) {
+    *error = "the target was listed but the debugger session could not be "
+             "opened: " + *error +
+             ". A session already open elsewhere (React Native DevTools, or "
+             "another copy of this tool) holds the only slot.";
+    return false;
+  }
+
+  auto command = [&](const std::string& method) {
+    json::Value msg = json::Value::object();
+    msg.set("id", json::Value::integer(impl_->next_id++));
+    msg.set("method", json::Value::string(method));
+    msg.set("params", json::Value::object());
+    std::string ignored;
+    impl_->ws.send_text(msg.dump(), &ignored);
+  };
+  command("Runtime.enable");
+  command("Log.enable");
+  command("Network.enable");
+
+  if (options.read_redux_state) {
+    json::Value params = json::Value::object();
+    params.set("expression", json::Value::string(
+        redux_probe_expression(options.include_state_values)));
+    params.set("returnByValue", json::Value::boolean(true));
+    params.set("timeout", json::Value::integer(5000));
+    json::Value msg = json::Value::object();
+    impl_->redux_id = impl_->next_id++;
+    msg.set("id", json::Value::integer(impl_->redux_id));
+    msg.set("method", json::Value::string("Runtime.evaluate"));
+    msg.set("params", std::move(params));
+    std::string ignored;
+    impl_->ws.send_text(msg.dump(), &ignored);
+    impl_->snapshot.note = "the probe was sent and no reply has arrived yet";
+  } else {
+    impl_->snapshot.basis = "not read: enable the Redux option to look for "
+                            "the store";
+  }
+
+  if (options.screenshots && !options.screenshot_device_id.empty()) {
+    observe::ShotOptions so;
+    so.platform = options.screenshot_platform;
+    so.device_id = options.screenshot_device_id;
+    so.out_path = (options.screenshot_dir.empty() ? std::string(".")
+                                                  : options.screenshot_dir) +
+                  "/screen-before.png";
+    so.moment = observe::ShotMoment::kBeforeCapture;
+    impl_->shots.push_back(observe::capture_screen(so));
+  }
+
+  impl_->started_ms = now_ms();
+  running_ = true;
+  disconnect_reason_.clear();
+  return true;
+}
+
+void InspectStream::handle(const json::Value& message) {
+  const json::Value* id = message.find("id");
+  if (id != nullptr && id->is_number() &&
+      static_cast<int>(id->as_int()) == impl_->redux_id) {
+    const json::Value* result = message.find("result");
+    const json::Value* inner = result != nullptr ? result->find("result") : nullptr;
+    const json::Value* value = inner != nullptr ? inner->find("value") : nullptr;
+    if (value != nullptr && value->is_object()) {
+      const json::Value* found = value->find("found");
+      impl_->snapshot.found = found != nullptr && found->as_bool();
+      const json::Value* basis = value->find("basis");
+      if (basis != nullptr && basis->is_string()) {
+        impl_->snapshot.basis = basis->as_string();
+      }
+      const json::Value* note = value->find("note");
+      impl_->snapshot.note = (note != nullptr && note->is_string())
+                                 ? note->as_string() : std::string();
+      const json::Value* scanned = value->find("scanned");
+      if (scanned != nullptr && scanned->is_number()) {
+        impl_->snapshot.fibers_scanned = scanned->as_int();
+      }
+      const json::Value* slices = value->find("slices");
+      impl_->snapshot.slice_names.clear();
+      if (slices != nullptr && slices->is_array()) {
+        for (const json::Value& sl : slices->items()) {
+          if (sl.is_string()) impl_->snapshot.slice_names.push_back(sl.as_string());
+        }
+      }
+      const json::Value* state = value->find("state");
+      if (state != nullptr && state->is_string()) {
+        impl_->snapshot.state_json = state->as_string();
+      }
+    } else {
+      const json::Value* err = message.find("error");
+      impl_->snapshot.basis = "the runtime refused the probe";
+      impl_->snapshot.note = err != nullptr ? err->dump() : "no result";
+    }
+    return;
+  }
+  impl_->assembler.feed(message);
+}
+
+void InspectStream::pump(int budget_ms) {
+  if (!running_) return;
+  const std::int64_t deadline = now_ms() + budget_ms;
+  for (;;) {
+    const std::int64_t left = deadline - now_ms();
+    if (left <= 0) return;
+    std::string message;
+    std::string error;
+    // Short slices, so a quiet app returns promptly instead of holding the
+    // caller for the whole budget.
+    const int slice = static_cast<int>(left > 100 ? 100 : left);
+    const net::WsRead rc = impl_->ws.read(&message, slice, &error, nullptr);
+    if (rc == net::WsRead::kTimeout) continue;
+    if (rc == net::WsRead::kClosed || rc == net::WsRead::kError) {
+      running_ = false;
+      disconnect_reason_ = rc == net::WsRead::kClosed
+          ? "the app closed the debugger connection (it was reloaded, "
+            "backgrounded, or stopped)"
+          : error;
+      return;
+    }
+    if (rc != net::WsRead::kMessage) return;
+    json::ParseError perr;
+    auto doc = json::parse(message, &perr);
+    if (doc.has_value()) handle(*doc);
+  }
+}
+
+observe::InspectReport InspectStream::snapshot() const {
+  // The assembler is cumulative, and `finish()` is non-destructive, so this
+  // can be called repeatedly while the stream is still open.
+  observe::InspectAssembler copy = impl_->assembler;
+  observe::InspectReport report = copy.finish(now_ms() - impl_->started_ms);
+  report.app_id = impl_->target.app_id;
+  report.device_name = impl_->target.device_name;
+  report.target_title = impl_->target.title;
+  report.state = impl_->snapshot;
+  report.screenshots = impl_->shots;
+
+  observe::SourceStatus s;
+  s.name = "react native inspector (via Metro)";
+  s.state = running_ ? observe::SourceState::kAttached
+                     : observe::SourceState::kRefused;
+  s.detail = running_
+      ? "attached to '" + impl_->target.title + "' (" +
+            impl_->target.description + ") with nothing added to the app"
+      : "the connection ended: " + disconnect_reason_;
+  s.events = 1;
+  report.sources.insert(report.sources.begin(), s);
+
+  if (!running_ && !disconnect_reason_.empty()) {
+    report.caveats.insert(
+        report.caveats.begin(),
+        "The observation ended early: " + disconnect_reason_ +
+            ". The absence of anything below is not evidence that it did not "
+            "happen.");
+  }
+  return report;
+}
+
+void InspectStream::stop() {
+  if (impl_ == nullptr) return;
+  if (running_ && impl_->options.screenshots &&
+      !impl_->options.screenshot_device_id.empty()) {
+    observe::ShotOptions so;
+    so.platform = impl_->options.screenshot_platform;
+    so.device_id = impl_->options.screenshot_device_id;
+    so.out_path = (impl_->options.screenshot_dir.empty()
+                       ? std::string(".")
+                       : impl_->options.screenshot_dir) +
+                  "/screen-after.png";
+    so.moment = observe::ShotMoment::kAfterCapture;
+    so.capture_start_unix_ms = 0;
+    impl_->shots.push_back(observe::capture_screen(so));
+  }
+  impl_->ws.close();
+  running_ = false;
+}
+
 }  // namespace mpi::rn

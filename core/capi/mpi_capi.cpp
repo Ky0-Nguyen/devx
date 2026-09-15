@@ -185,6 +185,41 @@ LiveContext& live_context() {
 
 }  // namespace
 
+namespace {
+
+/// The single live inspect stream.
+///
+/// One at a time, because the debugger slot is single-occupancy: a second
+/// stream would either be refused by Metro or would displace the first, and
+/// silently displacing a running observation is worse than refusing.
+struct InspectStreamHolder {
+  std::mutex mu;
+  std::unique_ptr<rn::InspectStream> stream;
+};
+InspectStreamHolder& inspect_stream() {
+  static InspectStreamHolder holder;
+  return holder;
+}
+
+rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
+                                        int flags, const char* device_id,
+                                        const char* screenshot_dir) {
+  rn::InspectOptions opts;
+  opts.app_id = safe(app_id);
+  opts.metro_port = metro_port > 0 && metro_port <= 65535
+                        ? static_cast<std::uint16_t>(metro_port)
+                        : static_cast<std::uint16_t>(8081);
+  opts.read_redux_state = (flags & 1) != 0;
+  opts.include_state_values = (flags & 2) != 0;
+  if (opts.include_state_values) opts.read_redux_state = true;
+  opts.screenshot_device_id = safe(device_id);
+  opts.screenshots = (flags & 4) != 0 && !opts.screenshot_device_id.empty();
+  opts.screenshot_dir = safe(screenshot_dir);
+  return opts;
+}
+
+}  // namespace
+
 extern "C" {
 
 void mpi_string_free(char* s) { std::free(s); }
@@ -364,6 +399,76 @@ char* mpi_inspect_targets_json(int metro_port) {
       arr.push_back(std::move(v));
     }
     out.set("targets", std::move(arr));
+    return out;
+  });
+}
+
+char* mpi_inspect_stream_start(const char* app_id, int metro_port, int flags,
+                               const char* device_id,
+                               const char* screenshot_dir) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& holder = inspect_stream();
+    std::lock_guard<std::mutex> lock(holder.mu);
+    if (holder.stream != nullptr && holder.stream->running()) {
+      out.set("error", json::Value::string(
+          "an observation is already running; stop it before starting "
+          "another. The debugger slot holds one session at a time, and "
+          "displacing the running one silently would lose what it had "
+          "collected."));
+      return out;
+    }
+    auto stream = std::make_unique<rn::InspectStream>();
+    std::string error;
+    const rn::InspectOptions opts = inspect_options_from(
+        app_id, metro_port, flags, device_id, screenshot_dir);
+    if (!stream->start(opts, &error)) {
+      out.set("error", json::Value::string(error));
+      out.set("attached", json::Value::boolean(false));
+      return out;
+    }
+    holder.stream = std::move(stream);
+    out.set("attached", json::Value::boolean(true));
+    out.set("report", holder.stream->snapshot().to_json());
+    return out;
+  });
+}
+
+char* mpi_inspect_stream_poll(int budget_ms) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& holder = inspect_stream();
+    std::lock_guard<std::mutex> lock(holder.mu);
+    if (holder.stream == nullptr) {
+      out.set("error", json::Value::string("no observation is running"));
+      out.set("running", json::Value::boolean(false));
+      return out;
+    }
+    holder.stream->pump(budget_ms > 0 && budget_ms <= 5000 ? budget_ms : 400);
+    out.set("running", json::Value::boolean(holder.stream->running()));
+    if (!holder.stream->running() &&
+        !holder.stream->disconnect_reason().empty()) {
+      out.set("disconnect_reason",
+              json::Value::string(holder.stream->disconnect_reason()));
+    }
+    out.set("report", holder.stream->snapshot().to_json());
+    return out;
+  });
+}
+
+char* mpi_inspect_stream_stop(void) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& holder = inspect_stream();
+    std::lock_guard<std::mutex> lock(holder.mu);
+    if (holder.stream == nullptr) {
+      out.set("error", json::Value::string("no observation is running"));
+      return out;
+    }
+    holder.stream->stop();
+    out.set("report", holder.stream->snapshot().to_json());
+    out.set("running", json::Value::boolean(false));
+    holder.stream.reset();
     return out;
   });
 }

@@ -963,6 +963,80 @@ do {
           "an absent device never falls through to the first in the list")
 }
 
+do {
+    // Filtering, and the distinction that matters: an empty list because of a
+    // filter is a statement about the filter; an empty list with nothing
+    // hidden is a statement about the app. Conflating them is how a filtered
+    // view reads as a quiet app.
+    let lines = [
+        parse(#"{"level":"log","text":"fetching /v2/profile"}"#),
+        parse(#"{"level":"error","text":"BIOMETRIC_ERROR_NONE_ENROLLED"}"#),
+        parse(#"{"level":"log","text":"action user/login @ 1","inferred_redux_action_type":"user/login"}"#),
+    ]
+    let all = Set(InspectKind.allCases)
+
+    var r = InspectFilter.console(lines, kinds: all, needle: "")
+    check(r.shown.count == 3 && r.hidden == 0, "no filter shows everything")
+    check(!r.hidEverything && !r.nothingToShow, "and hides nothing")
+
+    r = InspectFilter.console(lines, kinds: [.redux], needle: "")
+    check(r.shown.count == 1, "the Redux filter keeps the action line")
+    check(r.shown.first?["inferred_redux_action_type"].text == "user/login",
+          "which is the one carrying an inferred action type")
+    check(r.hidden == 2, "and reports how many it removed")
+
+    r = InspectFilter.console(lines, kinds: [.log], needle: "")
+    check(r.shown.count == 2, "the Log filter keeps the non-action lines")
+
+    r = InspectFilter.console(lines, kinds: [.network], needle: "")
+    check(r.hidEverything,
+          "a filter that matches no console line says the filter hid them")
+    check(!r.nothingToShow, "not that there was nothing to show")
+
+    r = InspectFilter.console([], kinds: all, needle: "")
+    check(r.nothingToShow, "an app that logged nothing is a different answer")
+    check(!r.hidEverything, "and is not blamed on the filter")
+
+    // Text search covers the fields someone would actually type into.
+    check(InspectFilter.console(lines, kinds: all, needle: "profile")
+            .shown.count == 1, "a URL fragment matches the message")
+    check(InspectFilter.console(lines, kinds: all, needle: "user/login")
+            .shown.count == 1, "an action type matches")
+    check(InspectFilter.console(lines, kinds: all, needle: "ERROR")
+            .shown.count == 1, "and matching ignores case")
+    check(InspectFilter.console(lines, kinds: all, needle: "  ")
+            .shown.count == 3, "a whitespace-only needle is not a filter")
+
+    // Network rows, where a status is a plausible search term.
+    let reqs = [
+        parse(#"{"method":"POST","url":"http://10.0.2.2:8081/symbolicate","status":500}"#),
+        parse(#"{"method":"HEAD","url":"https://clients3.google.com/generate_204","status":204}"#),
+        parse(#"{"method":"GET","url":"https://api.example.com/v2/profile","status":null}"#),
+    ]
+    check(InspectFilter.network(reqs, kinds: all, needle: "").shown.count == 3,
+          "no needle shows every request")
+    check(InspectFilter.network(reqs, kinds: all, needle: "500")
+            .shown.count == 1, "a status is searchable")
+    check(InspectFilter.network(reqs, kinds: all, needle: "post")
+            .shown.count == 1, "so is a method, case-insensitively")
+    check(InspectFilter.network(reqs, kinds: all, needle: "example.com")
+            .shown.count == 1, "and a host")
+    // A request with no status must still be searchable by its URL: the
+    // absent status is not allowed to make the row invisible.
+    check(InspectFilter.network(reqs, kinds: all, needle: "profile")
+            .shown.count == 1,
+          "a request with no status is still matched on its URL")
+    let hiddenAll = InspectFilter.network(reqs, kinds: [.log], needle: "")
+    check(hiddenAll.hidEverything && hiddenAll.hidden == 3,
+          "turning the API filter off hides requests and says so")
+
+    for kind in InspectKind.allCases {
+        check(!kind.label.isEmpty, "kind \(kind.rawValue) has a label")
+        check(InspectKind(rawValue: kind.rawValue) == kind,
+              "and a rawValue that round-trips")
+    }
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

@@ -38,6 +38,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Views.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Views2.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LiveView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineModel.swift
@@ -70,6 +71,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Strings.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectFilter.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

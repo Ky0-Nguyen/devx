@@ -179,6 +179,12 @@ final class AppState: ObservableObject {
     /// capture rather than a setting that quietly stays on.
     @Published var inspectReduxValues: Bool = false
     @Published var inspectScreenshots: Bool = false
+    /// Live observation state.
+    @Published var inspectStreaming: Bool = false
+    @Published var inspectDisconnect: String = ""
+    /// Which kinds of activity to show, and a free-text needle.
+    @Published var inspectKinds: Set<InspectKind> = Set(InspectKind.allCases)
+    @Published var inspectNeedle: String = ""
 
     @Published var rulesDoc: JSON = .null
     @Published var recordDoc: JSON = .null
@@ -591,6 +597,90 @@ final class AppState: ObservableObject {
             // A capture changes what is attachable -- the app may have
             // reloaded and taken a new target id with it.
             self.loadInspectTargets()
+        }
+    }
+
+    private var inspectTimer: Timer? = nil
+
+    /// Starts watching the app live.
+    ///
+    /// The window-based `runInspect` is kept for a fixed-length observation;
+    /// this is the one a person uses, because the interesting API calls
+    /// happen when they tap something and a report fifteen seconds later
+    /// cannot be connected to what they just did.
+    func startInspectStream() {
+        guard !selectedApp.isEmpty, !inspectStreaming else { return }
+        let app = selectedApp
+        let redux = inspectRedux
+        let values = inspectReduxValues
+        let shots = inspectScreenshots
+        let device = selectedDevice
+        let dir = sessionsDir + "/inspect-shots"
+        if shots {
+            try? FileManager.default.createDirectory(
+                atPath: dir, withIntermediateDirectories: true)
+        }
+        inspectDisconnect = ""
+        run("Attaching to \(app)…", {
+            Core.inspectStreamStart(appId: app, metroPort: 8081,
+                                    redux: redux, reduxValues: values,
+                                    screenshots: shots, deviceId: device,
+                                    screenshotDir: dir)
+        }) { doc in
+            if doc["attached"].bool != true {
+                self.inspectDoc = .null
+                return
+            }
+            self.inspectDoc = doc["report"]
+            self.inspectStreaming = true
+            self.beginInspectPolling()
+        }
+    }
+
+    private func beginInspectPolling() {
+        guard inspectTimer == nil else { return }
+        // Twice a second: fast enough that a tap and its request feel
+        // connected, slow enough that the socket read is not the app's main
+        // activity.
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.pollInspectStream() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        inspectTimer = timer
+    }
+
+    private func pollInspectStream() {
+        guard inspectStreaming else { return }
+        // Off the main thread: the poll reads a socket, and a UI that blocks
+        // on it would stutter exactly while the app is being used.
+        Self.coreQueue.async {
+            let doc = Core.inspectStreamPoll(budgetMs: 250)
+            DispatchQueue.main.async {
+                // Keep the last good report if a poll came back empty:
+                // replacing it with null would blank the screen mid-session.
+                if !doc["report"].isNull { self.inspectDoc = doc["report"] }
+                if doc["running"].bool == false {
+                    // The app closed the connection. Stop polling and keep
+                    // what arrived; the report says it ended early.
+                    self.inspectDisconnect = doc["disconnect_reason"].text
+                    self.stopInspectStream(keepReport: true)
+                }
+            }
+        }
+    }
+
+    func stopInspectStream(keepReport: Bool = true) {
+        inspectTimer?.invalidate()
+        inspectTimer = nil
+        guard inspectStreaming else { return }
+        inspectStreaming = false
+        Self.coreQueue.async {
+            let doc = Core.inspectStreamStop()
+            DispatchQueue.main.async {
+                if keepReport, !doc["report"].isNull {
+                    self.inspectDoc = doc["report"]
+                }
+            }
         }
     }
 

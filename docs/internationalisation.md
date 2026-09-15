@@ -24,7 +24,33 @@ loop variables. A shadowed `t` turned nine call sites into attempts to call a
 JSON value, and the compiler's message for that says nothing about
 translation.
 
-## What is *not* translated, and why
+## Core text: translated for display, English on disk
+
+The original decision here was that core-emitted text stayed English
+everywhere, and the reasoning below explains why. That reasoning was about the
+**stored** text, and it still holds -- but it was applied too widely, and the
+result was a Vietnamese interface whose Detectors and Issues tabs read in
+English.
+
+So there are two catalogs. `Strings.vietnamese` is this app's own chrome;
+`Strings.vietnameseCore` is text the analysis core emits, translated at the
+moment it is drawn. Nothing about what is written to disk changes: the session
+package, the JSON and Markdown exports, and everything `mpi compare` reads
+stay in one language, so two captures taken on differently configured machines
+remain comparable.
+
+Identifiers are not in either catalog and must not be:
+`frames_responsiveness`, `configurable_heuristic`, `DET-01`, `frame_records`.
+Those are values, not prose -- they appear in the exported document, in
+`--suppressions` files and in the specification, and a translated identifier
+matches none of them.
+
+`tools/check-i18n.py` verifies the core catalog against the **C++** sources
+rather than the Swift views, because that text never appears in a `.swift`
+file. Checking it the same way as the UI catalog reported all 110 entries as
+dead.
+
+## What is *still* not translated, and why
 
 Detector findings, coverage notes, threshold origins, refusal messages and
 everything else the C++ core emits stay in English.
