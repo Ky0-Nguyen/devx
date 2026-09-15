@@ -37,7 +37,19 @@ build/bin/devx-serve              the HTTP view of a session, for a browser
 build/bin/devx_swift_tests        the Swift-side tests
 ```
 
-The app bundle carries no resources: no images, no fonts, no localisations.
+The app bundle carries one resource: `Contents/Resources/DevX.icns`, and
+nothing else -- no fonts, no images, no localisations.
+
+The icon is **generated**, not committed. `tools/gen-icon.swift` draws it
+with CoreGraphics and packs it with `iconutil`, both of which ship with
+macOS, so it adds no dependency and leaves no binary blob in the tree that
+a reviewer cannot read. CMake looks `iconutil` up rather than assuming it:
+without it the app still builds, with no icon and a `--` line at configure
+time saying so.
+
+The copy into `Contents/Resources` happens **before** `codesign`. A resource
+added afterwards leaves `_CodeSignature/CodeResources` describing a bundle
+that no longer matches itself, which macOS reports as a damaged app.
 The typeface is Menlo, which ships with every macOS, and the palette is in
 code (ADR-0002 again -- a bundled font file would be the first third-party
 asset in the repository).
@@ -50,9 +62,23 @@ cmake --build build
 open build/bin/DevX.app
 ```
 
-There is no installer, no `.dmg` and no Sparkle-style updater. Distribution is
-"copy the `.app`", which is adequate for a tool used by the team that builds
-it and is not adequate for anything wider -- see below.
+To put it where the Dock and Spotlight can find it:
+
+```bash
+cmake --build build --target devx_install
+```
+
+That copies the bundle to `~/Applications/DevX.app` and re-signs it there.
+Both details matter. The destination is the **user's** Applications folder, not
+`/Applications`: it needs no privilege escalation, and an un-notarized ad-hoc
+build has no business installed system-wide. The re-sign is because the copy is
+a different set of files on disk; a bundle carried across without one can trip
+Gatekeeper on first launch. Override the destination with
+`-DDEVX_INSTALL_DIR=...` if you want it elsewhere.
+
+Beyond that there is no installer, no `.dmg` and no Sparkle-style updater.
+Distribution is "copy the `.app`", which is adequate for a tool used by the
+team that builds it and is not adequate for anything wider -- see below.
 
 ---
 
