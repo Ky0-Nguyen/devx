@@ -50,6 +50,9 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Strings.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFilter.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BodyFormat.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CompareView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/SettingsView.swift
@@ -74,6 +77,9 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFreshness.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DeviceFilter.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BodyFormat.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

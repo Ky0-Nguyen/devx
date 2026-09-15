@@ -618,6 +618,65 @@ enum Strings {
         "record(s)": "bản ghi",
         "expand all": "mở hết",
         "show them": "hiện lại",
+        "Request headers": "Header của request",
+        "Response headers": "Header của response",
+        "Request body": "Body của request",
+        "Response body": "Body của response",
+        "What this pane cannot show": "Những gì khung này không thể cho biết",
+        "not measured, rather than measured as nothing":
+            "không đo được, chứ không phải đo ra là không có",
+        "what was asked for": "những gì đã được gửi đi",
+        "no request selected": "chưa chọn request nào",
+        "Pick a request on the left.": "Chọn một request ở bên trái.",
+        "Pick a request on the left to read its headers and body.":
+            "Chọn một request ở bên trái để xem header và body của nó.",
+        "Observe or watch an app on the left.":
+            "Quan sát hoặc theo dõi một app ở bên trái.",
+        "that request is no longer in the list":
+            "request đó không còn trong danh sách",
+        "The list on the left is the current one.":
+            "Danh sách bên trái là danh sách hiện tại.",
+        "this request is hidden by the filter. It is still captured.":
+            "request này đang bị bộ lọc ẩn đi. Nó vẫn được thu lại.",
+        "this request is held back by clear. It is still captured.":
+            "request này đang bị clear giữ lại. Nó vẫn được thu lại.",
+        "headers and bodies were not captured for this observation":
+            "phiên này không thu header và body",
+        "switch on \"capture headers and response bodies\" before the next observation":
+            "bật \"capture headers and response bodies\" trước phiên quan sát tiếp theo",
+        "whether headers and bodies were captured for this observation is not recorded, so their absence here says nothing either":
+            "không có ghi nhận phiên này có thu header và body hay không, nên việc chúng không xuất hiện ở đây cũng không nói lên điều gì",
+        "not recorded for this request": "không được ghi nhận cho request này",
+        "no request headers were recorded": "không ghi nhận header nào của request",
+        "no response headers were recorded": "không ghi nhận header nào của response",
+        "the body was fetched and was zero bytes":
+            "body đã được lấy về và dài 0 byte",
+        "the body was asked for and no answer came back":
+            "đã yêu cầu body nhưng không có phản hồi nào trở về",
+        "still in flight when the window closed, so no body was ever asked for":
+            "vẫn đang chạy khi phiên kết thúc, nên chưa hề yêu cầu body",
+        "the request failed, so no body was ever asked for":
+            "request đã thất bại, nên chưa hề yêu cầu body",
+        "the runtime reported this request as failed and gave no reason":
+            "runtime báo request này thất bại mà không nêu lý do",
+        "not text: the runtime returned this body base64, and it is shown as it arrived rather than decoded":
+            "không phải text: runtime trả body này dưới dạng base64, và nó được hiện đúng như lúc nhận chứ không giải mã",
+        "re-indented: every value is the bytes that arrived; only the whitespace between them changed":
+            "đã thụt lề lại: mọi giá trị vẫn là byte đã nhận được, chỉ khoảng trắng giữa chúng là thay đổi",
+        "shown as captured: this is not JSON":
+            "hiện đúng như lúc thu: đây không phải JSON",
+        "{shown} of {total} chars": "{shown} trên {total} ký tự",
+        "show more": "xem thêm",
+        "bytes on the wire": "số byte truyền đi",
+        "content type": "loại nội dung",
+        "no timing breakdown: one duration is recorded, and the DNS, connect, TLS and time-to-first-byte phases are not":
+            "không có phân tách thời gian: chỉ ghi nhận một tổng thời lượng, còn các pha DNS, connect, TLS và time-to-first-byte thì không",
+        "no cookies: the inspector reports an empty cookie list for every request, so nothing here distinguishes that from a request that sent none":
+            "không có cookie: inspector báo danh sách cookie rỗng cho mọi request, nên ở đây không thể phân biệt điều đó với một request vốn không gửi cookie nào",
+        "no initiator: what in the app made this call is not captured":
+            "không rõ nguồn gọi: phần nào trong app tạo ra lời gọi này thì không được thu lại",
+        "headers that usually carry a credential are shown in full below, as captured:":
+            "các header thường mang thông tin đăng nhập được hiện đầy đủ bên dưới, đúng như lúc thu:",
         "{n} held back by clear — still captured, still exported":
             "{n} mục đang được ẩn bởi clear — vẫn thu được, vẫn xuất ra",
         "the slice was replaced with an equal value: subscribers re-rendered and nothing changed":
@@ -1188,8 +1247,6 @@ enum Strings {
         + "whatever a login returns; it is captured verbatim":
             "đây là dữ liệu đang truyền, gồm cả header Authorization và bất "
             + "cứ thứ gì trả về sau khi đăng nhập; được thu nguyên văn",
-        "hide detail": "ẩn chi tiết",
-        "detail": "chi tiết",
         "any attached device": "thiết bị nào cũng được",
         "any": "bất kỳ",
         "stop watching": "dừng xem",

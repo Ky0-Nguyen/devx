@@ -1335,6 +1335,403 @@ do {
           "a lone column takes the whole width")
 }
 
+do {
+    // Reading a captured HTTP body. The old view tested
+    // `!row["response_body"].text.isEmpty`, which read three different facts
+    // as one -- detail was never captured, the runtime had nothing to give,
+    // and a real zero-byte body -- and rendered all three as nothing.
+    func row(_ body: String) -> JSON { parse(body) }
+
+    // Absent key, nothing said: nobody looked.
+    let none = BodyFormat.classify(row("{\"url\":\"https://x\"}"), .response)
+    check(none.state == .notCaptured, "an absent body with no reason is 'not captured'")
+    check(none.raw == nil, "and carries no raw bytes, because there are none")
+    check(!none.isBodyText, "it is a statement, not a body")
+
+    // Absent key, with a reason: someone looked and there was nothing.
+    let gone = BodyFormat.classify(
+        row("{\"response_body_unavailable\":\"No data found for resource\"}"),
+        .response)
+    check(gone.state == .unavailable("No data found for resource"),
+          "an absent body with a reason reports the reason")
+    check(gone.state != .notCaptured,
+          "which is not the same answer as never having looked")
+
+    // Present and empty: a real captured zero-byte body. This is the case the
+    // old test could not express at all.
+    let blank = BodyFormat.classify(row("{\"response_body\":\"\"}"), .response)
+    check(blank.state == .empty, "a captured empty body is 'empty', not absent")
+    check(blank.raw == "", "and its raw value is the empty string it really is")
+
+    // A 204's reason must not be preferred over a body that was captured.
+    let both = BodyFormat.classify(
+        row("{\"response_body\":\"\",\"response_body_unavailable\":\"stale\"}"),
+        .response)
+    check(both.state == .empty,
+          "a present body wins over a leftover unavailable note")
+
+    // JSON is re-printed with indentation and sorted keys.
+    let js = BodyFormat.classify(
+        row("{\"response_body\":\"{\\\"b\\\":1,\\\"a\\\":[2,3]}\"}"), .response)
+    if case .json(let text) = js.state {
+        check(text.contains("\n"), "a JSON body comes back across lines")
+        check(text.contains("  "), "indented")
+        let a = text.range(of: "\"a\"")
+        let b = text.range(of: "\"b\"")
+        check(a != nil && b != nil && b!.lowerBound < a!.lowerBound,
+              "with the document's own key order kept -- sorting would make "
+              + "this not the document that arrived")
+    } else {
+        check(false, "a JSON body is recognised as JSON")
+    }
+    check(js.raw == "{\"b\":1,\"a\":[2,3]}",
+          "and the bytes as they arrived are kept, so the formatting is checkable")
+
+    // Not JSON: shown as it arrived, never repaired.
+    let html = BodyFormat.classify(
+        row("{\"response_body\":\"<html>not json</html>\"}"), .response)
+    check(html.state == .text("<html>not json</html>"),
+          "a non-JSON body is shown as it arrived")
+    check(BodyFormat.prettyJSON("{\"a\": ") == nil,
+          "truncated JSON is not guessed at -- a repair would show what the "
+          + "server never sent")
+
+    // A bare string or number body is still JSON; a real API returns them.
+    check(BodyFormat.prettyJSON("42") != nil, "a bare number is JSON")
+    check(BodyFormat.prettyJSON("\"ok\"") != nil, "so is a bare string")
+
+    // Slashes stay readable: a URL inside a body is the thing people read.
+    if let p = BodyFormat.prettyJSON("{\"u\":\"https://x/y\"}") {
+        check(p.contains("https://x/y"),
+              "a URL in a body is not escaped into https:\\/\\/")
+    } else {
+        check(false, "a body with a URL still parses")
+    }
+
+    // Base64 is reported, never decoded: the runtime drew the distinction
+    // between text and not-text, and decoding here would destroy it.
+    let b64 = BodyFormat.classify(
+        row("{\"response_body\":\"AAEC\",\"response_body_base64\":true}"),
+        .response)
+    check(b64.state == .base64("AAEC"), "a base64 body is reported as base64")
+    if case .json = b64.state { check(false, "base64 is never parsed as JSON") }
+
+    // The flag applies to the response only -- a request body is whatever the
+    // app posted.
+    let req = BodyFormat.classify(
+        row("{\"request_body\":\"{\\\"q\\\":1}\",\"response_body_base64\":true}"),
+        .request)
+    if case .json = req.state {} else {
+        check(false, "a request body is not read through the response's flag")
+    }
+
+    // A long body is cut, and says so. A body shortened in silence is
+    // indistinguishable from a body that was always that short.
+    let long = String(repeating: "x", count: 500)
+    let cut = BodyFormat.classify(row("{\"response_body\":\"\(long)\"}"),
+                                 .response, limit: 100)
+    check(cut.display.count == 100, "the display is cut to the limit")
+    check(cut.note.contains("100") && cut.note.contains("500"),
+          "and the note states both what is shown and what was captured")
+    check(!cut.note.lowercased().contains("export"),
+          "without claiming the body is exported -- nobody traced whether an "
+          + "inspect report reaches a session package")
+    check(cut.raw?.count == 500, "while the whole body is still carried")
+
+    let short = BodyFormat.classify(row("{\"response_body\":\"ok\"}"),
+                                    .response, limit: 100)
+    check(short.note.isEmpty,
+          "a body that fits makes no claim about being cut")
+
+    // Cutting at exactly the limit is not a cut.
+    let exact = BodyFormat.cut(String(repeating: "y", count: 10), to: 10)
+    check(exact.0.count == 10 && exact.1.isEmpty,
+          "a string exactly at the limit is whole")
+}
+
+do {
+    // The re-indenter's contract: whitespace only. Every token must come out
+    // byte-for-byte as it went in, because the obvious implementation --
+    // parse to objects and print them back -- quietly changes the data, and
+    // then what is on screen is not the response body.
+    //
+    // Measured with Foundation before this was written:
+    //     {"v":1.0}     -> {"v": 1}    1.0 becomes 1
+    //     {"a":1,"a":2} -> {"a": 1}    a duplicate key disappears
+
+    /// Strips whitespace that sits outside strings -- the normal form the
+    /// re-indenter must preserve.
+    func bare(_ s: String) -> String {
+        var out = ""
+        var inString = false, escaped = false
+        for c in s {
+            if inString {
+                out.append(c)
+                if escaped { escaped = false }
+                else if c == "\\" { escaped = true }
+                else if c == "\"" { inString = false }
+                continue
+            }
+            if c == "\"" { inString = true; out.append(c); continue }
+            if c == " " || c == "\t" || c == "\n" || c == "\r" { continue }
+            out.append(c)
+        }
+        return out
+    }
+
+    let docs = [
+        "{}",
+        "[]",
+        "{\"a\":1}",
+        "{\"b\":1,\"a\":[2,3]}",
+        "{\"v\":1.0}",
+        "{\"id\":9007199254740993}",
+        "{\"a\":1,\"a\":2}",
+        "{\"n\":null,\"t\":true,\"f\":false}",
+        "{\"s\":\"has spaces and \\\"quotes\\\"\"}",
+        "{\"s\":\"a{b}c,d:e[f]\"}",
+        "{\"u\":\"\\u0041\"}",
+        "{\"nested\":{\"deep\":{\"deeper\":[{},[],{\"x\":1}]}}}",
+        "[1,2,[3,[4,[5]]]]",
+        "{\"empty\":{},\"alsoEmpty\":[]}",
+        "42",
+        "\"bare string\"",
+        "{\"url\":\"https://x/y?a=b&c=d\"}",
+        "{\"esc\":\"back\\\\slash\"}",
+    ]
+    var fidelityHeld = true
+    for d in docs {
+        let r = BodyFormat.reindent(d)
+        if bare(r) != bare(d) { fidelityHeld = false }
+    }
+    check(fidelityHeld,
+          "re-indenting changes only whitespace outside strings, on every "
+          + "shape tested")
+
+    // The two corruptions that motivated this, pinned individually.
+    check(BodyFormat.reindent("{\"v\":1.0}").contains("1.0"),
+          "a trailing .0 survives -- a server that sent 1.0 did not send 1")
+    let dup = BodyFormat.reindent("{\"a\":1,\"a\":2}")
+    check(dup.contains("1") && dup.contains("2"),
+          "a duplicate key is not silently dropped")
+    check(BodyFormat.reindent("{\"id\":9007199254740993}")
+              .contains("9007199254740993"),
+          "an integer past 2^53 keeps every digit")
+
+    // Structure: it actually indents, and empties stay on one line.
+    let nested = BodyFormat.reindent("{\"a\":{\"b\":1}}")
+    check(nested.contains("\n"), "a nested object is broken across lines")
+    check(nested.contains("    \"b\""),
+          "and nesting is indented by two spaces per level")
+    check(BodyFormat.reindent("{\"e\":{}}").contains("{}"),
+          "an empty object stays on one line rather than becoming two")
+    check(BodyFormat.reindent("{\"e\":[]}").contains("[]"),
+          "and so does an empty array")
+
+    // Braces and commas inside a string must not drive layout.
+    let tricky = BodyFormat.reindent("{\"s\":\"a,b{c}\"}")
+    check(tricky.contains("\"a,b{c}\""),
+          "punctuation inside a string is left exactly alone")
+
+    // Existing layout is replaced, not added to: a body that arrived
+    // pretty-printed must not come out double-spaced.
+    let already = "{\n  \"a\": 1\n}"
+    check(bare(BodyFormat.reindent(already)) == bare(already),
+          "an already-formatted body re-indents to the same normal form")
+    check(!BodyFormat.reindent(already).contains("\n\n"),
+          "and gains no blank lines")
+
+    // Not JSON: nil, so the raw body is shown instead of a half-reformat.
+    check(BodyFormat.prettyJSON("<html>") == nil, "HTML is not JSON")
+    check(BodyFormat.prettyJSON("{\"a\":") == nil,
+          "and truncated JSON is refused rather than guessed at")
+    check(BodyFormat.prettyJSON("") == nil, "an empty string is not JSON")
+
+    // A body past the format ceiling is left alone rather than chewed on.
+    let huge = "\"" + String(repeating: "x", count: BodyFormat.formatLimit) + "\""
+    check(BodyFormat.prettyJSON(huge) == nil,
+          "a body past the format ceiling is shown as it arrived")
+}
+
+do {
+    // Resolving what the detail pane shows. Keyed by request_id, never by an
+    // index: the rendered list is afterClear(captured) then filtered, and both
+    // shift every offset -- clear drops from the front, the filter removes
+    // from the middle. An index-keyed selection lands on a different request.
+    func ex(_ id: String) -> JSON { parse("{\"request_id\":\"\(id)\"}") }
+    let captured = [ex("r1"), ex("r2"), ex("r3"), ex("r4")]
+
+    check(InspectSelection.resolve(selectedId: "", captured: [],
+                                   afterClear: [], shown: []) == .noDocument,
+          "no observation is not the same as nothing selected")
+    check(InspectSelection.resolve(selectedId: "", captured: captured,
+                                   afterClear: captured,
+                                   shown: captured) == .nothingSelected,
+          "an observation with nothing picked asks the reader to pick")
+
+    // Visible: the ordinary case.
+    let vis = InspectSelection.resolve(selectedId: "r2", captured: captured,
+                                       afterClear: captured, shown: captured)
+    if case .exchange(let row, let v, let i) = vis {
+        check(row["request_id"].text == "r2", "the picked row comes back")
+        check(v == .visible, "and is marked visible")
+        check(i == 1, "with its position in the captured list")
+    } else { check(false, "a picked, visible request resolves to an exchange") }
+
+    // Hidden by the filter: survived the clear, removed by the needle. The
+    // pane must blame the filter, not clear.
+    let filtered = InspectSelection.resolve(
+        selectedId: "r2", captured: captured, afterClear: captured,
+        shown: [captured[0], captured[2]])
+    if case .exchange(_, let v, _) = filtered {
+        check(v == .hiddenByFilter, "a row the filter removed blames the filter")
+    } else { check(false, "a filtered-out selection still shows its detail") }
+
+    // Held by clear: gone before the filter ever saw it. networkPanel applies
+    // the clear FIRST, so blaming the filter here would name the wrong cause.
+    let cleared = InspectSelection.resolve(
+        selectedId: "r1", captured: captured,
+        afterClear: [captured[1], captured[2], captured[3]],
+        shown: [captured[1], captured[2], captured[3]])
+    if case .exchange(_, let v, _) = cleared {
+        check(v == .heldByClear, "a row clear held back blames clear")
+    } else { check(false, "a cleared selection still shows its detail") }
+
+    // Both clear and filter removed it: clear happened first, so clear is the
+    // cause to name.
+    let both = InspectSelection.resolve(
+        selectedId: "r1", captured: captured,
+        afterClear: [captured[1]], shown: [])
+    if case .exchange(_, let v, _) = both {
+        check(v == .heldByClear,
+              "when both could explain it, the one that happened first does")
+    } else { check(false, "still resolves") }
+
+    // Gone: the app reloaded and the observation started over.
+    check(InspectSelection.resolve(selectedId: "r9", captured: captured,
+                                   afterClear: captured,
+                                   shown: captured) == .gone,
+          "a selection no longer in the observation is 'gone', not 'nothing "
+          + "selected' -- the reader did pick something")
+
+    // An index-keyed selection would break exactly here: clear drops r1, so
+    // every offset shifts by one, and index 1 now means r3 instead of r2.
+    let shifted = InspectSelection.resolve(
+        selectedId: "r2", captured: captured,
+        afterClear: [captured[1], captured[2], captured[3]],
+        shown: [captured[1], captured[2], captured[3]])
+    if case .exchange(let row, _, _) = shifted {
+        check(row["request_id"].text == "r2",
+              "after a clear shifts every offset, the id still resolves to "
+              + "the request the reader picked")
+    } else { check(false, "resolves after a clear") }
+
+    // A row with no id is not selectable rather than falling back to an index
+    // the next clear would invalidate.
+    check(!InspectSelection.isSelectable(parse("{}")),
+          "a row with no request_id cannot be selected")
+    check(!InspectSelection.isSelectable(parse("{\"request_id\":\"\"}")),
+          "nor can one whose id is empty")
+    check(InspectSelection.isSelectable(ex("r1")), "a row with an id can be")
+    check(InspectSelection.resolve(selectedId: "", captured: [parse("{}")],
+                                   afterClear: [parse("{}")],
+                                   shown: [parse("{}")]) == .nothingSelected,
+          "an unselectable list still reports an observation, not no document")
+}
+
+do {
+    // The shape that prompted this work, taken from the screenshot the
+    // request came with: an award-badges response whose values are AWS
+    // presigned URLs a couple of thousand characters long. One raw line of
+    // this is what "có cách nào format response của API ko?" was about.
+    let sig = String(repeating: "A", count: 700)
+    let url = "https://yum-hutbot-backend-feeds-staging.s3.eu-west-1."
+            + "amazonaws.com/feeds/awards/perfect_product.png"
+            + "?X-Amz-Security-Token=\(sig)&X-Amz-Algorithm=AWS4-HMAC-SHA256"
+            + "&X-Amz-Signature=\(sig)"
+    // Built with JSONSerialization so the escaping is right, then read back
+    // through the code under test.
+    let payload: [String: Any] = [
+        "id": 1,
+        "name": "Standards",
+        "badges": [["id": 2, "title": "Perfect Product", "iconUrl": url,
+                    "prefilledContents": [["content": "Well done."]]]],
+    ]
+    let bodyData = try! JSONSerialization.data(
+        withJSONObject: payload, options: [.withoutEscapingSlashes])
+    let body = String(data: bodyData, encoding: .utf8)!
+    check(body.count > 1400, "the fixture is realistically large")
+    check(!body.contains("\n"), "and arrives as one unbroken line")
+
+    // Wrapped into a row the way the core emits one.
+    let rowJSON = try! JSONSerialization.data(withJSONObject: [
+        "request_id": "req-1",
+        "method": "GET",
+        "status": 200,
+        "url": "https://staging.api.superapp.yum.com/v1/activity-feeds/award-badges",
+        "response_body": body,
+        "response_headers": ["authorization": "Bearer \(sig)",
+                             "content-type": "application/json"],
+    ])
+    let row = parse(String(data: rowJSON, encoding: .utf8)!)
+
+    let b = BodyFormat.classify(row, .response, limit: 500)
+    if case .json(let shown) = b.state {
+        check(shown.contains("\n"), "a real response body comes back readable")
+        check(shown.contains("  "), "and indented")
+        // The signature must survive byte-for-byte: a presigned URL with one
+        // character changed is a URL that does not work, and a reader
+        // comparing it against a server log needs the real one.
+        check(b.raw == body, "the bytes as they arrived are kept whole")
+    } else {
+        check(false, "a real JSON response body is recognised as JSON")
+    }
+
+    // Slashes stay readable -- a presigned URL escaped into https:\/\/ is
+    // unusable for the copy-paste this pane exists to support.
+    if case .json(let shown) = b.state {
+        check(shown.contains("https://yum-hutbot"),
+              "a URL inside the body stays copy-pasteable")
+    }
+
+    // It is cut, and says how much of what.
+    check(b.display.count == 500, "the display honours the limit")
+    check(b.note.contains("500"), "and the note says how much is shown")
+    check(b.note.contains("\(b.raw!.count)") || b.note.contains("of"),
+          "alongside the total, so the cut is not mistaken for the whole")
+
+    // A server that DOES escape its slashes gets them back unchanged. This
+    // started as a wrong expectation in this test -- the fixture escaped its
+    // own slashes and the re-indenter faithfully kept them, which is correct
+    // and was worth pinning rather than papering over.
+    let escaped = "{\"u\":\"https:\\/\\/x\\/y\"}"
+    check(BodyFormat.reindent(escaped).contains("https:\\/\\/x\\/y"),
+          "an escaped slash is preserved: the pane shows what arrived, and a "
+          + "value silently unescaped is not the value the server sent")
+
+    // The credential warning names headers, and never asserts from a value.
+    let names = row["response_headers"].keys
+    let note = InspectSecrets.credentialNote(names)
+    check(note != nil, "an authorization header is called out")
+    check(note!.contains("authorization"), "by name")
+    check(!note!.contains(sig),
+          "and the note never repeats the token it is warning about")
+    check(!note!.contains("carries"),
+          "the wording is hedged: this has only seen a name, so it says these "
+          + "headers *usually* carry a credential rather than asserting it")
+
+    // A header that merely contains a credential-ish word is not flagged: a
+    // warning that fires on the wrong thing gets ignored on the right thing.
+    check(InspectSecrets.credentialHeaderNames(["x-monkey-id", "content-type"])
+              .isEmpty,
+          "'x-monkey-id' is not flagged for containing 'key'")
+    check(InspectSecrets.credentialHeaderNames(["Authorization"])
+              == ["Authorization"],
+          "matching is case-insensitive and reports the name as given")
+    check(InspectSecrets.credentialNote(["content-type"]) == nil,
+          "a header list with no credential header gets no note")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
