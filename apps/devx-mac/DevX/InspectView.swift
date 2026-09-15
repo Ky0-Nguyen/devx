@@ -8,67 +8,6 @@
 // means, and the fact that a debugger was attached while this was recorded.
 import SwiftUI
 
-/// Headers and bodies for one exchange.
-///
-/// Collapsed by default even when captured: a request with twenty headers
-/// would bury the next request, and the list is the thing being scanned.
-private struct ExchangeDetail: View {
-    let row: JSON
-    @State private var open = false
-
-    var body: some View {
-        let reqH = row["request_headers"]
-        let resH = row["response_headers"]
-        let hasBody = !row["response_body"].text.isEmpty
-            || !row["request_body"].text.isEmpty
-        let count = reqH.keys.count + resH.keys.count
-        if count > 0 || hasBody {
-            VStack(alignment: .leading, spacing: 2) {
-                Button(open ? tr("hide detail")
-                            : tr("detail") + " (\(count) " + tr("headers") + ")") {
-                    open.toggle()
-                }
-                .buttonStyle(TermButtonStyle())
-                if open {
-                    ForEach(reqH.keys, id: \.self) { k in
-                        Text("> \(k): " + reqH[k].text)
-                            .font(Term.micro).foregroundStyle(Term.dim)
-                            .textSelection(.enabled)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    if !row["request_body"].text.isEmpty {
-                        Text("> " + row["request_body"].text)
-                            .font(Term.micro).foregroundStyle(Term.ink)
-                            .textSelection(.enabled)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    ForEach(resH.keys, id: \.self) { k in
-                        Text("< \(k): " + resH[k].text)
-                            .font(Term.micro).foregroundStyle(Term.dim)
-                            .textSelection(.enabled)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    if !row["response_body"].text.isEmpty {
-                        // The encoding matters: text shown as base64 is
-                        // unreadable, and base64 shown as text is nonsense.
-                        let b64 = row["response_body_base64"].bool == true
-                        Text("< " + (b64 ? tr("body (base64)") + " " : "")
-                             + row["response_body"].text)
-                            .font(Term.micro).foregroundStyle(Term.ink)
-                            .textSelection(.enabled)
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else if !row["response_body_unavailable"].text.isEmpty {
-                        Text("< " + row["response_body_unavailable"].text)
-                            .font(Term.micro).foregroundStyle(Term.cyan)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            .padding(.leading, 60)
-        }
-    }
-}
-
 /// A pulsing dot, so "watching" is visible without reading a label.
 private struct LiveDot: View {
     @State private var bright = false
@@ -87,6 +26,29 @@ struct InspectView: View {
     @EnvironmentObject var state: AppState
 
     var body: some View {
+        // The split is the ROOT of the pane, as in IssuesView, and the two
+        // scrollers are siblings -- neither is inside the other. A ScrollView
+        // nested in a scrolling parent is handed no height to resolve
+        // against, so it resolves to its content's height and reports THAT
+        // outward, which is how a 2000-point list ended up stretching a
+        // window (the same failure is recorded at Views.swift:420 and
+        // TimelineView.swift:76).
+        //
+        // Both children must be told to fill, and so must the HSplitView: it
+        // sizes to its children's ideal height otherwise, which collapsed a
+        // pane into a band floating mid-window (IssuesView.swift:20).
+        HSplitView {
+            activityColumn
+                .frame(minWidth: 420, idealWidth: 480, maxHeight: .infinity)
+            exchangeColumn
+                .frame(minWidth: 360, idealWidth: 370, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("~/inspect")
+        .onAppear { state.loadInspectTargetsIfNeeded() }
+    }
+
+    private var activityColumn: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(tr("A React Native debug build already runs an inspector "
@@ -122,8 +84,76 @@ struct InspectView: View {
             }
             .padding(14)
         }
-        .navigationTitle("~/inspect")
-        .onAppear { state.loadInspectTargetsIfNeeded() }
+    }
+
+    // MARK: - The detail column
+
+    /// One request, read at length, in its own scroller.
+    ///
+    /// Stacked named sections rather than a DevTools tab strip. A tab is
+    /// always visible whether or not it has anything behind it, so an empty
+    /// "Timing" tab reads as "this request had no timing" when the truth is
+    /// that nothing here measured it -- the distinction the core's SourceState
+    /// exists to keep. A section that cannot be filled is not rendered, and
+    /// what this pane cannot show is stated once, on every selection, so its
+    /// absence can never be read as a claim either.
+    private var exchangeColumn: some View {
+        let captured = state.inspectDoc["network"].array
+        let afterClear = InspectFilter.afterClear(
+            captured, clearedCount: state.clearedNetwork)
+        let shown = InspectFilter.network(afterClear, kinds: state.inspectKinds,
+                                          needle: state.inspectNeedle).shown
+        let pane = InspectSelection.resolve(selectedId: state.selectedRequestId,
+                                            captured: captured,
+                                            afterClear: afterClear,
+                                            shown: shown)
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                switch pane {
+                case .noDocument:
+                    TermEmpty(title: "no request selected",
+                              detail: tr("Observe or watch an app on the left."),
+                              hint: "mpi inspect --detail")
+                case .nothingSelected:
+                    TermEmpty(title: "no request selected",
+                              detail: detailInvitation,
+                              hint: "mpi inspect --detail")
+                case .gone:
+                    TermEmpty(title: "that request is no longer in the list",
+                              detail: tr("The list on the left is the current "
+                                       + "one."),
+                              hint: "")
+                case .exchange(let row, let visibility, let index):
+                    ExchangeColumn(row: row, visibility: visibility,
+                                   index: index, capture: captureState)
+                }
+            }
+            .padding(14)
+        }
+    }
+
+    /// What clicking a row will actually get you, which depends on whether
+    /// detail was captured. Promising headers and a body when the toggle was
+    /// off would be an invitation to a sentence saying there is nothing here.
+    private var detailInvitation: String {
+        captureState == .on
+            ? tr("Pick a request on the left to read its headers and body.")
+            : tr("Pick a request on the left.")
+    }
+
+    /// Whether headers and bodies were captured for the observation on
+    /// screen.
+    ///
+    /// From what was recorded when that observation started, not from the
+    /// live toggle -- the toggle governs the next capture, and reading it
+    /// here made the pane claim that bodies it was displaying had never been
+    /// captured as soon as someone switched it off.
+    private var captureState: DetailCapture {
+        switch state.inspectDocCapturedDetail {
+        case .some(true): return .on
+        case .some(false): return .off
+        case nil: return .unknown
+        }
     }
 
     @ViewBuilder private var targetsPanel: some View {
@@ -377,38 +407,33 @@ struct InspectView: View {
                     .font(Term.small).foregroundStyle(Term.dim)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
-                        HStack(spacing: 8) {
-                            Text(r["method"].text).font(Term.small)
-                                .frame(width: 52, alignment: .leading)
-                            // A status nobody sent renders as a dash. The
-                            // accessors are optional for exactly this
-                            // reason -- an absent status coerced to 0 would
-                            // show as a failed request.
-                            let status = r["status"].int
-                            Chip(text: status.map(String.init)
-                                     ?? (r["failed"].bool == true ? "fail" : "—"),
-                                 tone: status == nil ? .neutral
-                                     : (status! >= 400 ? .bad : .good))
-                            Text(r["duration_ms"].double
-                                    .map { String(format: "%.0f ms", $0) } ?? "—")
-                                .font(Term.small).foregroundStyle(Term.dim)
-                                .frame(width: 70, alignment: .trailing)
-                            Text(r["url"].text).font(Term.small)
-                                .lineLimit(1).truncationMode(.head)
-                            Spacer(minLength: 0)
+                // Capped, with its own scroller. The ask was "maxheight cho
+                // session network ... cần thì scroll trong mỗi session" -- fit
+                // one screen, scroll inside a section rather than growing the
+                // page. Nothing is hidden by the cap: everything above it is
+                // reachable by scrolling, and the Panel title already carries
+                // the count, so the height says nothing about how many there
+                // are.
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                            NetworkRow(row: r,
+                                       selected: InspectSelection.id(of: r)
+                                           == state.selectedRequestId)
+                                .onTapGesture {
+                                    // A row with no request_id is not
+                                    // selectable: an index fallback would
+                                    // point at a different request after the
+                                    // next clear.
+                                    guard InspectSelection.isSelectable(r)
+                                    else { return }
+                                    state.selectedRequestId =
+                                        InspectSelection.id(of: r)
+                                }
                         }
-                        if r["incomplete"].bool == true {
-                            Text(tr("still in flight when the window closed: "
-                                  + "evidence of the request, none of its "
-                                  + "outcome"))
-                                .font(Term.micro).foregroundStyle(Term.cyan)
-                                .padding(.leading, 60)
-                        }
-                        if state.inspectDetail { ExchangeDetail(row: r) }
                     }
                 }
+                .frame(maxHeight: 280)
             }
         }
     }
@@ -433,6 +458,11 @@ struct InspectView: View {
                 Text(tr("The app logged nothing in this window."))
                     .font(Term.small).foregroundStyle(Term.dim)
             } else {
+                // Capped with its own scroller, like the request list: the
+                // page should fit one screen and a long section should scroll
+                // inside itself. The count is in the Panel title, so the
+                // height makes no claim about how many lines there are.
+                ScrollView {
                 VStack(alignment: .leading, spacing: 5) {
                     ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
                         let level = r["level"].text
@@ -456,6 +486,8 @@ struct InspectView: View {
                         }
                     }
                 }
+                }
+                .frame(maxHeight: 280)
             }
         }
     }
@@ -536,9 +568,17 @@ struct InspectView: View {
                           + "yet"))
                         .font(Term.small).foregroundStyle(Term.dim)
                 }
-                ForEach(Array(records.enumerated()), id: \.offset) { _, rec in
-                    ReduxRecordRow(record: rec)
+                // Capped with its own scroller. This is the list that grows
+                // fastest -- a single tap can produce dozens of records.
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(records.enumerated()),
+                                id: \.offset) { _, rec in
+                            ReduxRecordRow(record: rec)
+                        }
+                    }
                 }
+                .frame(maxHeight: 280)
                 if !rx["note"].text.isEmpty {
                     Text(rx["note"].text).font(Term.micro)
                         .foregroundStyle(Term.dim)
@@ -776,5 +816,375 @@ private struct ClearBar: View {
         case .log: return state.inspectDoc["console"].array.isEmpty
         case .redux: return state.inspectDoc["redux"]["records"].array.isEmpty
         }
+    }
+}
+
+/// Whether headers and bodies were captured, as far as anything knows.
+///
+/// Three-valued on purpose. `off` is a negative claim -- they were not
+/// captured -- and it can only be made about an observation the current
+/// setting actually describes. `unknown` is what to say otherwise, because a
+/// report whose provenance nobody recorded must not have a negative claim
+/// made about it.
+enum DetailCapture: Equatable {
+    case on
+    case off
+    case unknown
+}
+
+/// One request's detail, in named sections.
+private struct ExchangeColumn: View {
+    let row: JSON
+    let visibility: ExchangeVisibility
+    let index: Int
+    let capture: DetailCapture
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            summary
+            visibilityNote
+            captureNote
+            HeaderSection(title: "Request headers", row: row,
+                          key: "request_headers", capture: capture,
+                          emptyText: tr("no request headers were recorded"))
+            HeaderSection(title: "Response headers", row: row,
+                          key: "response_headers", capture: capture,
+                          emptyText: tr("no response headers were recorded"))
+            BodySection(title: "Request body", row: row, field: .request,
+                        capture: capture)
+            BodySection(title: "Response body", row: row, field: .response,
+                        capture: capture)
+            limits
+        }
+    }
+
+    @ViewBuilder private var summary: some View {
+        Panel(title: "Request", subtitle: "what was asked for") {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 7) {
+                    Text(row["method"].display("?"))
+                        .font(Term.font(12, .medium))
+                    // A status nobody sent is a dash, never a zero: a 0 reads
+                    // as a failed request that never happened.
+                    let status = row["status"].int
+                    Chip(text: status.map(String.init)
+                             ?? (row["failed"].bool == true ? "fail" : "—"),
+                         tone: status == nil ? .neutral
+                             : (status! >= 400 ? .bad : .good))
+                    Spacer(minLength: 0)
+                    Text("#\(index + 1)").font(Term.micro)
+                        .foregroundStyle(Term.dim)
+                }
+                Text(row["url"].display("no url recorded"))
+                    .font(Term.font(11)).textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                Field(label: "duration") {
+                    Text(row["duration_ms"].double
+                            .map { String(format: "%.0f ms", $0) } ?? "—")
+                        .font(Term.small)
+                }
+                Field(label: "bytes on the wire") {
+                    Text(row["encoded_bytes"].int.map(String.init) ?? "—")
+                        .font(Term.small)
+                }
+                Field(label: "content type") {
+                    Text(row["mime_type"].text.isEmpty
+                            ? tr("not stated") : row["mime_type"].text)
+                        .font(Term.small)
+                }
+                if row["failed"].bool == true {
+                    Text(row["failure"].text.isEmpty
+                            ? tr("the runtime reported this request as failed "
+                               + "and gave no reason")
+                            : row["failure"].text)
+                        .font(Term.small).foregroundStyle(Term.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if row["incomplete"].bool == true {
+                    Text(tr("still in flight when the window closed: evidence "
+                          + "of the request, none of its outcome"))
+                        .font(Term.micro).foregroundStyle(Term.cyan)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    /// The selected request is not in the list on the left. Said here because
+    /// the reader is looking at a request they cannot see beside it, and the
+    /// two causes are separate ideas with separate controls.
+    @ViewBuilder private var visibilityNote: some View {
+        switch visibility {
+        case .visible:
+            EmptyView()
+        case .hiddenByFilter:
+            Text(tr("this request is hidden by the filter. It is still "
+                  + "captured."))
+                .font(Term.micro).foregroundStyle(Term.cyan)
+                .fixedSize(horizontal: false, vertical: true)
+        case .heldByClear:
+            Text(tr("this request is held back by clear. It is still "
+                  + "captured."))
+                .font(Term.micro).foregroundStyle(Term.dim)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder private var captureNote: some View {
+        switch capture {
+        case .on:
+            EmptyView()
+        case .off:
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tr("headers and bodies were not captured for this "
+                      + "observation"))
+                Text(tr("switch on \"capture headers and response bodies\" "
+                      + "before the next observation"))
+                    .foregroundStyle(Term.dim)
+            }
+            .font(Term.micro).foregroundStyle(Term.cyan)
+            .fixedSize(horizontal: false, vertical: true)
+        case .unknown:
+            Text(tr("whether headers and bodies were captured for this "
+                  + "observation is not recorded, so their absence here says "
+                  + "nothing either"))
+                .font(Term.micro).foregroundStyle(Term.cyan)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Stated on every selection, never conditionally.
+    ///
+    /// A DevTools reader arrives expecting Timing, Cookies and an initiator
+    /// stack. None of the three is measured here, and a tab strip with three
+    /// empty tabs would answer "this request had none" instead of "nothing
+    /// looked". Rendering this unconditionally is what stops its absence from
+    /// becoming a claim of its own.
+    @ViewBuilder private var limits: some View {
+        Panel(title: "What this pane cannot show",
+              subtitle: "not measured, rather than measured as nothing") {
+            BulletList(title: "", items: [
+                tr("no timing breakdown: one duration is recorded, and the "
+                 + "DNS, connect, TLS and time-to-first-byte phases are not"),
+                tr("no cookies: the inspector reports an empty cookie list "
+                 + "for every request, so nothing here distinguishes that "
+                 + "from a request that sent none"),
+                tr("no initiator: what in the app made this call is not "
+                 + "captured"),
+            ])
+        }
+    }
+}
+
+/// One header map, with four distinguishable empty states.
+private struct HeaderSection: View {
+    let title: String
+    let row: JSON
+    let key: String
+    let capture: DetailCapture
+    let emptyText: String
+
+    var body: some View {
+        // Absent means the key was never emitted; present-and-empty means the
+        // map was captured and had nothing in it. `isAbsent` is the only test
+        // that separates them.
+        let absent = row.isAbsent(key)
+        let names = row[key].keys
+        Panel(title: title + (absent ? "" : " (\(names.count))"),
+              subtitle: nil) {
+            if absent {
+                switch capture {
+                case .off:
+                    Text(tr("headers and bodies were not captured for this "
+                          + "observation"))
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                case .unknown, .on:
+                    // `.on` and still absent: the setting says they were
+                    // asked for and this row has none, which is a gap in what
+                    // arrived rather than a gap in what was requested.
+                    Text(tr("not recorded for this request"))
+                        .font(Term.micro).foregroundStyle(Term.cyan)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else if names.isEmpty {
+                Text(emptyText)
+                    .font(Term.micro).foregroundStyle(Term.cyan)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 3) {
+                    if let note = InspectSecrets.credentialNote(names) {
+                        Text(note)
+                            .font(Term.micro).foregroundStyle(Term.amber)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    ForEach(names, id: \.self) { name in
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(name).font(Term.micro)
+                                .foregroundStyle(Term.dim)
+                            Text(row[key][name].text)
+                                .font(Term.micro).foregroundStyle(Term.ink)
+                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// One body, formatted, with every state it can be in kept apart.
+private struct BodySection: View {
+    let title: String
+    let row: JSON
+    let field: BodyField
+    let capture: DetailCapture
+    /// Bodies are revealed a step at a time. A 260 KB response re-indents to
+    /// thousands of lines, and rendering all of it is seconds of layout on
+    /// exactly the captures people most want to read.
+    @State private var steps = 1
+
+    private var limit: Int { BodyFormat.displayLimit * steps }
+
+    var body: some View {
+        let b = BodyFormat.classify(row, field, limit: limit)
+        Panel(title: title, subtitle: nil) {
+            VStack(alignment: .leading, spacing: 4) {
+                switch b.state {
+                case .notCaptured:
+                    notCapturedText
+                case .unavailable(let why):
+                    // The runtime's own words, never translated: the core
+                    // writes this only when a body was asked for and there
+                    // was none, and rewording it would be putting our
+                    // sentence in its mouth.
+                    Text(why).font(Term.micro).foregroundStyle(Term.cyan)
+                        .fixedSize(horizontal: false, vertical: true)
+                case .empty:
+                    Text(tr("the body was fetched and was zero bytes"))
+                        .font(Term.micro).foregroundStyle(Term.cyan)
+                        .fixedSize(horizontal: false, vertical: true)
+                case .base64:
+                    Text(tr("not text: the runtime returned this body base64, "
+                          + "and it is shown as it arrived rather than decoded"))
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                    bodyText(b)
+                case .json:
+                    Text(tr("re-indented: every value is the bytes that "
+                          + "arrived; only the whitespace between them "
+                          + "changed"))
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                    bodyText(b)
+                case .text:
+                    Text(tr("shown as captured: this is not JSON"))
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                    bodyText(b)
+                }
+            }
+        }
+    }
+
+    /// Why a body is absent. `incomplete` and `failed` each prove the body was
+    /// never asked for -- the core only requests one for a finished request --
+    /// so on those rows the cause is in the document and must not be blamed on
+    /// a setting.
+    @ViewBuilder private var notCapturedText: some View {
+        let words: String = {
+            if row["incomplete"].bool == true {
+                return tr("still in flight when the window closed, so no body "
+                        + "was ever asked for")
+            }
+            if row["failed"].bool == true {
+                return tr("the request failed, so no body was ever asked for")
+            }
+            switch capture {
+            case .off:
+                return tr("headers and bodies were not captured for this "
+                        + "observation")
+            case .unknown:
+                return tr("whether headers and bodies were captured for this "
+                        + "observation is not recorded, so their absence here "
+                        + "says nothing either")
+            case .on:
+                return tr("the body was asked for and no answer came back")
+            }
+        }()
+        Text(words).font(Term.micro).foregroundStyle(Term.cyan)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// The body itself: one Text, not one per line.
+    ///
+    /// One Text per line would instantiate thousands of views for a real
+    /// response. A single Text of a bounded prefix renders in one pass, and
+    /// the bound is stated rather than silent.
+    @ViewBuilder private func bodyText(_ b: FormattedBody) -> some View {
+        Text(b.display)
+            .font(Term.micro).foregroundStyle(Term.ink)
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+        if !b.note.isEmpty {
+            HStack(spacing: 8) {
+                Text(b.note).font(Term.micro).foregroundStyle(Term.cyan)
+                Button(tr("show more")) { steps += 1 }
+                    .buttonStyle(TermButtonStyle())
+                Spacer(minLength: 0)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// One row in the request list.
+///
+/// Selection is a left bar and a tint, not `termCard(selected:)`: that
+/// modifier's unselected fill is Term.panel -- the same colour as the Panel
+/// around it -- so every row would gain a visible box and the list would stop
+/// reading as a list.
+private struct NetworkRow: View {
+    let row: JSON
+    let selected: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Rectangle()
+                .fill(selected ? Term.green : Color.clear)
+                .frame(width: 2)
+            Text(row["method"].text).font(Term.small)
+                .frame(width: 48, alignment: .leading)
+            // A status nobody sent renders as a dash. The accessors are
+            // optional for exactly this reason -- an absent status coerced to
+            // 0 would show as a failed request.
+            let status = row["status"].int
+            Chip(text: status.map(String.init)
+                     ?? (row["failed"].bool == true ? "fail" : "—"),
+                 tone: status == nil ? .neutral
+                     : (status! >= 400 ? .bad : .good))
+            Text(row["duration_ms"].double
+                    .map { String(format: "%.0f ms", $0) } ?? "—")
+                .font(Term.small).foregroundStyle(Term.dim)
+                .frame(width: 64, alignment: .trailing)
+            // Head-truncated: a URL's path is what identifies it, and cutting
+            // the end leaves every request from one host looking identical.
+            Text(row["url"].text).font(Term.small)
+                .lineLimit(1).truncationMode(.head)
+            Spacer(minLength: 0)
+            if row["incomplete"].bool == true {
+                // A marker rather than a sentence under the row: the sentence
+                // is in the detail pane, and repeating it per row was what
+                // made this list hard to scan.
+                Text("⋯").font(Term.micro).foregroundStyle(Term.cyan)
+                    .help(tr("still in flight when the window closed: "
+                           + "evidence of the request, none of its outcome"))
+            }
+        }
+        .padding(.vertical, 2)
+        .padding(.trailing, 4)
+        .background(selected ? Term.green.opacity(0.10) : Color.clear)
+        .contentShape(Rectangle())
     }
 }

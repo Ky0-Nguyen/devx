@@ -223,6 +223,23 @@ final class AppState: ObservableObject {
     /// load, so the list shortens from the front and a count would hide the
     /// wrong rows.
     @Published var clearedReduxSeq: Int = 0
+    /// Which request the detail column is showing, by request_id.
+    ///
+    /// An id and not an index: the rendered list is afterClear(captured) then
+    /// filtered, and both shift every offset, so an index-keyed selection
+    /// silently lands on a different request.
+    @Published var selectedRequestId: String = ""
+    /// Whether detail was asked for when the observation on screen was
+    /// started. nil means nobody recorded it.
+    ///
+    /// Not the live toggle. `inspectDetail` is a control for the *next*
+    /// observation, and reading it to describe the document already on screen
+    /// meant that switching it off after a capture made the pane claim the
+    /// bodies it was displaying had never been captured. The report itself
+    /// carries no such flag, so this is the only record there is -- and when
+    /// there is none, the honest answer is that it is unknown rather than a
+    /// negative claim about someone else's data.
+    @Published var inspectDocCapturedDetail: Bool? = nil
     @Published var inspectScreenshots: Bool = false
     /// Capture request/response headers and bodies. Off by default and
     /// deliberately not remembered: this is the data in flight, including
@@ -677,6 +694,8 @@ final class AppState: ObservableObject {
                 atPath: dir, withIntermediateDirectories: true)
         }
         Core.resetCancel()
+        inspectDocCapturedDetail = detail
+        selectedRequestId = ""
         run("Observing \(app) for \(seconds)s…", {
             Core.inspect(appId: app, seconds: seconds, metroPort: 8081,
                          redux: redux, reduxValues: values,
@@ -745,6 +764,8 @@ final class AppState: ObservableObject {
                 atPath: dir, withIntermediateDirectories: true)
         }
         inspectDisconnect = ""
+        inspectDocCapturedDetail = detail
+        selectedRequestId = ""
         run("Attaching to \(app)…", {
             Core.inspectStreamStart(appId: app, metroPort: 8081,
                                     redux: redux, reduxValues: values,
