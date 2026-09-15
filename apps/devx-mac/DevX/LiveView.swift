@@ -65,6 +65,37 @@ struct LiveView: View {
                             value: $state.liveCpuWindowMs, in: 1000...30000, step: 1000)
                         .frame(maxWidth: 170).disabled(state.liveRunning)
                 }
+                Field(label: "stacks") {
+                    HStack(spacing: 8) {
+                        Toggle(tr("profile stacks at the end"), isOn: Binding(
+                            get: { state.liveStackProfileSeconds > 0 },
+                            set: { on in
+                                state.liveStackProfileSeconds = on ? 3 : 0
+                            }))
+                            .toggleStyle(.checkbox)
+                        if state.liveStackProfileSeconds > 0 {
+                            Stepper(value: $state.liveStackProfileSeconds,
+                                    in: 1...30) {
+                                Text("\(state.liveStackProfileSeconds) s")
+                                    .font(Term.body)
+                            }
+                            .frame(width: 110)
+                        }
+                    }
+                    .disabled(state.liveRunning)
+                }
+                if state.liveStackProfileSeconds > 0 {
+                    // Both facts matter, and the second more: this is an
+                    // aggregate with no timestamps, so it says where the
+                    // samples were and never when.
+                    Text(tr("iOS simulator only. It runs `sample` for that "
+                          + "long when you stop, so the stop waits — and what "
+                          + "it returns is an aggregate with no timestamps: "
+                          + "where the samples were, never when."))
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                        .padding(.leading, 138)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Field(label: "sources") {
                     HStack(spacing: 14) {
                         Toggle("frames", isOn: $state.recordFrames)
