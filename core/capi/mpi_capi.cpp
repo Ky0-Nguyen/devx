@@ -350,7 +350,7 @@ char* mpi_preflight_json(const char* device_id, const char* app_identifier,
       po_build.timeout = std::chrono::milliseconds(
           timeout_ms > 0 ? timeout_ms : 15000);
       po_build.cancel = cancel_registry().token();
-      if (!android::read_app_build_facts("adb", dev->device_id, app, po_build,
+      if (!android::read_app_build_facts(android::default_adb_path(), dev->device_id, app, po_build,
                                          build, build_error) &&
           !build_error.empty()) {
         root.set("build_facts_error", json::Value::string(build_error));

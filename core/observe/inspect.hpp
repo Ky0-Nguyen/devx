@@ -99,6 +99,18 @@ struct NetworkExchange {
   std::string mime_type;
   std::optional<std::int64_t> encoded_bytes;
   model::TimeNs started_ns = 0;
+  /// When the request was sent, on the wall clock, in nanoseconds since the
+  /// epoch.
+  ///
+  /// Separate from `started_ns`, which is CDP's `timestamp` -- monotonic
+  /// seconds from an arbitrary origin, useful for durations and meaningless
+  /// as a time of day. `Network.requestWillBeSent` also carries `wallTime`,
+  /// which is seconds since the epoch, and that is what this holds.
+  ///
+  /// Optional because only `requestWillBeSent` carries it: an exchange
+  /// assembled from a later event alone has no wall clock, and absent is the
+  /// honest answer rather than an epoch of 1970.
+  std::optional<model::TimeNs> wall_ns;
   std::optional<model::TimeNs> finished_ns;
   bool failed = false;
   std::string failure;

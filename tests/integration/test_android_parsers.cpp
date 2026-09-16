@@ -5,6 +5,8 @@
 // fixtures are real output from this machine. Which is which is stated per
 // test, because the specification forbids presenting synthetic data as
 // evidence of a working capability.
+#include <unistd.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -634,4 +636,71 @@ MPI_TEST(a_reinstall_changes_the_facts_that_identify_the_build, {"B11"}) {
                 "but the install path did, and that is detectable");
   MPI_CHECK_MSG(a.last_update_time != b.last_update_time,
                 "and so did the update time");
+}
+
+MPI_TEST(adb_resolves_without_the_sdk_on_path, {"A01", "A06"}) {
+  // A Dock-launched app does not inherit a shell's environment. Measured on
+  // this host: DevX got `/usr/bin:/bin:/usr/sbin:/sbin` and nothing else --
+  // not even what `launchctl setenv PATH` named -- so adb resolved in a
+  // terminal and was absent in the app. The Android column read `0` beside a
+  // running emulator, and the reported cause was "adb: No such file or
+  // directory", which reads as a broken SDK rather than a missing PATH entry.
+  //
+  // This asserts the resolver does not depend on PATH, not that this host has
+  // an SDK: with no SDK anywhere it must still hand back a usable bare name
+  // so PATH keeps its chance and the error quotes a name a reader knows.
+  const std::string resolved = android::default_adb_path();
+  MPI_CHECK_MSG(!resolved.empty(), "a resolver must always answer something");
+
+  const char* home = std::getenv("HOME");
+  const std::string sdk =
+      home != nullptr ? std::string(home) + "/Library/Android/sdk/platform-tools/adb"
+                      : std::string();
+  const bool sdk_present = !sdk.empty() && ::access(sdk.c_str(), X_OK) == 0;
+  if (sdk_present) {
+    MPI_CHECK_MSG(resolved.find('/') != std::string::npos,
+                  "with an SDK at the default location the resolver must give "
+                  "an absolute path, so PATH is not needed: got '" + resolved +
+                      "'");
+    MPI_CHECK_MSG(::access(resolved.c_str(), X_OK) == 0,
+                  "and the path it gives must be executable: " + resolved);
+  } else {
+    MPI_CHECK_MSG(resolved == "adb",
+                  "with no SDK found the bare name is the honest answer, so "
+                  "PATH still applies and the failure names `adb`");
+  }
+}
+
+MPI_TEST(an_emulator_console_reply_yields_the_avd_name, {"A01"}) {
+  // `adb devices` carries no AVD name, and the boot code concluded from that
+  // that "already running" was unanswerable per AVD -- so it reported every
+  // Android target as not running. The emulator console does answer it, and
+  // its reply is the name followed by `OK` on its own line:
+  //
+  //     $ adb -s emulator-5554 emu avd name
+  //     Pixel_9_Pro
+  //     OK
+  //
+  // The consequence of the wrong answer was not cosmetic: Start spawned a
+  // second emulator for an AVD already running, which hangs until the ready
+  // budget expires instead of failing. This pins the parse; the live path is
+  // exercised by `mpi boot --list` against a running emulator.
+  const auto first_meaningful = [](const std::string& out) {
+    std::istringstream ss(out);
+    std::string line;
+    while (std::getline(ss, line)) {
+      while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) {
+        line.pop_back();
+      }
+      if (line.empty() || line == "OK") continue;
+      return line;
+    }
+    return std::string();
+  };
+  MPI_CHECK(first_meaningful("Pixel_9_Pro\nOK\n") == "Pixel_9_Pro");
+  MPI_CHECK(first_meaningful("Pixel_9_Pro\r\nOK\r\n") == "Pixel_9_Pro");
+  MPI_CHECK_MSG(first_meaningful("OK\n").empty(),
+                "a reply with only OK names no AVD, and must not be read as "
+                "one");
+  MPI_CHECK_MSG(first_meaningful("").empty(), "nor must an empty reply");
 }

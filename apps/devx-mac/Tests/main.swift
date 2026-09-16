@@ -1732,6 +1732,63 @@ do {
           "a header list with no credential header gets no note")
 }
 
+do {
+    // Newest first, and a clock beside each row. A long capture put what had
+    // just happened at the bottom of a section that scrolls, and no row said
+    // when it was reported.
+    func rows(_ n: Int) -> [JSON] {
+        (1...n).map { parse("{\"seq\":\($0)}") }
+    }
+    let three = rows(3)
+    let flipped = LogOrder.newestFirst(three)
+    check(flipped.map { $0["seq"].int } == [3, 2, 1], "newest first")
+    check(three.map { $0["seq"].int } == [1, 2, 3],
+          "and the model's own order is untouched -- clear counts a watermark "
+          + "from the front and the detail pane's index is a position in it")
+    check(LogOrder.newestFirst([]).isEmpty, "an empty list reverses to empty")
+    check(LogOrder.newestFirst(rows(1)).count == 1, "so does one row")
+
+    // Each list carries its time in a different field, because the runtime
+    // reports them differently.
+    let net = parse("{\"wall_unix_ms\":1789525721165}")
+    check(LogOrder.clock(net, .network) != nil, "a network row with wallTime has a clock")
+    check(LogOrder.clock(net, .console) == nil,
+          "and the console field is not read for it")
+
+    let con = parse("{\"timestamp_unix_ms\":1789525721165}")
+    check(LogOrder.clock(con, .console) == LogOrder.clock(net, .network),
+          "console nanoseconds and network milliseconds resolve to the same "
+          + "clock time for the same instant")
+
+    let rdx = parse("{\"at_unix_ms\":1789525721165}")
+    check(LogOrder.clock(rdx, .redux) == LogOrder.clock(net, .network),
+          "and so does a Redux record")
+
+    // The honesty cases: nothing is invented.
+    check(LogOrder.clock(parse("{}"), .network) == nil,
+          "a row with no wall clock shows no time")
+    check(LogOrder.clock(parse("{\"wall_unix_ms\":0}"), .network) == nil,
+          "an epoch of zero is not a time -- it would read as 1970")
+    check(LogOrder.clock(parse("{\"timestamp_ns\":1789525721165000000}"),
+                         .console) == nil,
+          "the nanosecond field is never read as the clock: a Double cannot "
+          + "carry it exactly, so it would be a millisecond out")
+    check(LogOrder.clock(parse("{\"started_ns\":54321500000000}"), .network) == nil,
+          "the monotonic field is never read as a clock, which is the whole "
+          + "reason network rows needed a second field")
+
+    // Formatting: time of day with milliseconds, zero-padded.
+    let s = LogOrder.time(ofEpochMs: 1789525721165)
+    check(s.count == 12, "HH:MM:SS.mmm is twelve characters, got \(s)")
+    check(s.hasSuffix(".165"), "milliseconds are kept, got \(s)")
+    check(s.dropFirst(2).first == ":" && s.dropFirst(5).first == ":",
+          "colon separated, got \(s)")
+    // A time whose parts are single digits must still be padded, or the
+    // column stops lining up.
+    let pad = LogOrder.time(ofEpochMs: 1789525721165 - 1789525721165 % 1000 + 5)
+    check(pad.hasSuffix(".005"), "sub-10 milliseconds are padded, got \(pad)")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

@@ -9,6 +9,47 @@ about whether it ships in release.
 
 ## Why this is possible
 
+```mermaid
+flowchart TD
+  subgraph DEV["the emulator or simulator -- nothing is installed here"]
+    subgraph APP["your app, DEBUG build"]
+      FETCH["fetch / XMLHttpRequest<br/>React Native instruments these itself"]
+      CON["console.log / warn / error"]
+      STORE["the Redux store<br/>getState · dispatch · subscribe"]
+      AGENT["the inspector agent<br/>React Native already runs it,<br/>and it dials out to Metro by itself"]
+    end
+  end
+  METRO["Metro, port 8081<br/>proxies one debugger at a time, per device"]
+  DEVX["DevX Inspect tab / mpi inspect<br/>on your Mac, loopback only"]
+
+  FETCH -->|"Network.requestWillBeSent<br/>responseReceived · loadingFinished"| AGENT
+  CON -->|"Runtime.consoleAPICalled"| AGENT
+  STORE -->|"read back by the probe below"| AGENT
+  AGENT <==>|"WebSocket, Chrome DevTools Protocol"| METRO
+  METRO <==> DEVX
+  DEVX -.->|"Runtime.evaluate: subscribe to the store,<br/>then drain it every 400 ms"| STORE
+
+  classDef ours fill:#d8f0e0,stroke:#1f9d55,stroke-width:2px,color:#12291c;
+  classDef theirs fill:#eceef2,stroke:#7c828c,color:#1c2128;
+  classDef hop fill:#fff4d6,stroke:#b8860b,color:#2a2206;
+  class DEVX ours;
+  class FETCH,CON,STORE,AGENT theirs;
+  class METRO hop;
+```
+
+The app is already talking to Metro before this tool starts: a React Native
+debug build runs an inspector agent and dials out to it by itself. Metro
+proxies a Chrome DevTools Protocol session over one WebSocket, and that is
+the whole mechanism -- nothing is added to the app, and a release build,
+which runs no agent, offers nothing to attach to.
+
+Two of the three streams the app pushes: React Native instruments its own
+`fetch`/`XMLHttpRequest`, and `console.*` arrives as `consoleAPICalled`.
+Redux is the exception and is drawn as a dotted line for that reason -- the
+app broadcasts nothing about its store, so the store is read back by a probe
+this tool evaluates inside the running app and drains on a timer.
+
+
 A React Native **debug** build runs an inspector and connects itself to Metro.
 It is how "press `j` to open React Native DevTools" works. Metro proxies a
 Chrome DevTools Protocol session over a WebSocket, and CDP already carries

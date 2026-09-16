@@ -116,9 +116,22 @@ bool read_app_build_facts(const std::string& adb_path,
                           const proc::Options& opts,
                           model::BuildProfile& out, std::string& error);
 
+/// Where `adb` is, on a machine that has not put the SDK on PATH.
+///
+/// PATH alone is not enough, and this was measured rather than assumed: an
+/// app launched from the Dock gets `/usr/bin:/bin:/usr/sbin:/sbin` and
+/// nothing else -- not even what `launchctl setenv PATH` names -- so adb
+/// resolved in a terminal and was absent in DevX. The Android column read
+/// `0` beside a running emulator, and the error was "adb: No such file or
+/// directory", which reads as a broken SDK rather than a missing PATH
+/// entry. `core/discovery/boot.cpp` already resolved the emulator binary
+/// this way, which is why an AVD list appeared in the same window that
+/// could not see the device it started.
+std::string default_adb_path();
+
 class AdbAdapter final : public discovery::Provider {
  public:
-  explicit AdbAdapter(std::string adb_path = "adb");
+  explicit AdbAdapter(std::string adb_path = default_adb_path());
 
   model::Platform platform() const override { return model::Platform::kAndroid; }
   std::string name() const override { return "adb"; }

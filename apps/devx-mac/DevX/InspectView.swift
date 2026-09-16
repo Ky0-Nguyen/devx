@@ -416,7 +416,8 @@ struct InspectView: View {
                 // are.
                 ScrollView {
                     VStack(alignment: .leading, spacing: 2) {
-                        ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                        ForEach(Array(LogOrder.newestFirst(rows).enumerated()),
+                                id: \.offset) { _, r in
                             NetworkRow(row: r,
                                        selected: InspectSelection.id(of: r)
                                            == state.selectedRequestId)
@@ -464,10 +465,17 @@ struct InspectView: View {
                 // height makes no claim about how many lines there are.
                 ScrollView {
                 VStack(alignment: .leading, spacing: 5) {
-                    ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                    ForEach(Array(LogOrder.newestFirst(rows).enumerated()),
+                            id: \.offset) { _, r in
                         let level = r["level"].text
                         VStack(alignment: .leading, spacing: 1) {
                             HStack(alignment: .top, spacing: 8) {
+                                // Blank when the runtime sent no timestamp,
+                                // never a zero rendered as a time.
+                                Text(LogOrder.clock(r, .console) ?? "")
+                                    .font(Term.micro)
+                                    .foregroundStyle(Term.dim)
+                                    .frame(width: 84, alignment: .leading)
                                 Chip(text: level.isEmpty ? "log" : level,
                                      tone: level == "error" ? .bad
                                          : level == "warning" ? .caution
@@ -572,7 +580,7 @@ struct InspectView: View {
                 // fastest -- a single tap can produce dozens of records.
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(records.enumerated()),
+                        ForEach(Array(LogOrder.newestFirst(records).enumerated()),
                                 id: \.offset) { _, rec in
                             ReduxRecordRow(record: rec)
                         }
@@ -663,6 +671,9 @@ private struct ReduxRecordRow: View {
                 HStack(spacing: 8) {
                     Image(systemName: isOpen ? "chevron.down" : "chevron.right")
                         .font(Term.micro).foregroundStyle(Term.dim)
+                    Text(LogOrder.clock(record, .redux) ?? "")
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .frame(width: 84, alignment: .leading)
                     if let type = record["action_type"].string {
                         // Printed whole. An action type is identified by its
                         // head, so cutting the end of it loses the name.
@@ -1154,6 +1165,12 @@ private struct NetworkRow: View {
             Rectangle()
                 .fill(selected ? Term.green : Color.clear)
                 .frame(width: 2)
+            // From CDP's wallTime. Blank when the runtime sent none -- the
+            // monotonic `started_ns` beside it is not a clock and would date
+            // every request to 1970.
+            Text(LogOrder.clock(row, .network) ?? "")
+                .font(Term.micro).foregroundStyle(Term.dim)
+                .frame(width: 84, alignment: .leading)
             Text(row["method"].text).font(Term.small)
                 .frame(width: 48, alignment: .leading)
             // A status nobody sent renders as a dash. The accessors are
