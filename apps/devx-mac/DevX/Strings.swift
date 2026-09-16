@@ -1010,6 +1010,18 @@ enum Strings {
         + "another.":
             "Mỗi họ chỉ số là một phép đo riêng và không bao giờ được cộng "
             + "dồn với họ khác.",
+        "CPU time": "Thời gian CPU",
+        "Other counters": "Chỉ số khác",
+        "Process CPU time is cumulative since the process started, not "
+        + "since this capture began, so a capture of an app that has been "
+        + "running for hours opens at hours.":
+            "Thời gian CPU của tiến trình được tính dồn từ lúc tiến trình "
+            + "bắt đầu chạy, không phải từ lúc bắt đầu phiên đo này, nên đo "
+            + "một app đã chạy nhiều giờ thì con số mở đầu đã là nhiều giờ.",
+        "These counters arrived without a family, so they are listed "
+        + "rather than grouped under one.":
+            "Những chỉ số này không kèm họ chỉ số, nên chúng được liệt kê "
+            + "chứ không được gộp vào một họ nào.",
         "Each source is independent: one failing does not stop the "
         + "others, and a source that did not run becomes a coverage gap "
         + "rather than an absence of events.":

@@ -153,17 +153,17 @@ enum HelpTopics {
                     english: "The managed Java and Kotlin heap on Android, the part the garbage collector owns. Saw-tooth movement here is normal -- it is collection happening -- while a rising floor between collections is not.",
                     vietnamese: "Heap Java và Kotlin có quản lý trên Android, phần do garbage collector nắm. Dao động hình răng cưa ở đây là bình thường -- đó là lúc GC chạy -- nhưng nếu mức đáy giữa các lần GC cứ cao dần thì không bình thường."),
                 HelpField(
-                    name: "cpu.process_time_ns",
-                    english: "Total CPU time the process has consumed, in nanoseconds -- user plus system. It is a duration and not a size, and it can exceed elapsed time on more than one core. It used to render as gigabytes here, because the unit was not travelling with the value.",
-                    vietnamese: "Tổng thời gian CPU mà process đã dùng, tính bằng nanosecond -- user cộng system. Đây là một khoảng thời gian chứ không phải dung lượng, và nó có thể vượt quá elapsed nếu chạy trên nhiều core. Trước đây chỗ này hiện ra thành gigabyte, vì đơn vị không đi kèm giá trị."),
+                    name: "process_time",
+                    english: "`cpu.process_time_ns` in a report or an export. Total CPU time the process has consumed, in nanoseconds -- user plus system. It is a duration and not a size, and it can exceed elapsed time on more than one core. It is also cumulative since the process started, not since this capture began, so a capture of an app that has been running for hours opens at hours rather than at zero.",
+                    vietnamese: "Trong report hay bản export thì nó là `cpu.process_time_ns`. Tổng thời gian CPU mà process đã dùng, tính bằng nanosecond -- user cộng system. Đây là một khoảng thời gian chứ không phải dung lượng, và nó có thể vượt quá elapsed nếu chạy trên nhiều core. Nó cũng được tính dồn từ lúc process bắt đầu chạy, không phải từ lúc bắt đầu phiên đo này, nên đo một app đã chạy nhiều giờ thì con số mở đầu đã là nhiều giờ chứ không phải số không."),
                 HelpField(
-                    name: "cpu.process_user_time_ns",
-                    english: "The part of that CPU time spent running the code of the app itself, as opposed to running kernel code on its behalf.",
-                    vietnamese: "Phần thời gian CPU dùng để chạy code của chính app, khác với phần chạy code kernel thay cho nó."),
+                    name: "process_user_time",
+                    english: "`cpu.process_user_time_ns` in a report. The part of that CPU time spent running the code of the app itself, as opposed to running kernel code on its behalf.",
+                    vietnamese: "Trong report là `cpu.process_user_time_ns`. Phần thời gian CPU dùng để chạy code của chính app, khác với phần chạy code kernel thay cho nó."),
                 HelpField(
-                    name: "cpu.process_system_time_ns",
-                    english: "The part spent inside the kernel on behalf of this process -- file and network I/O, memory mapping, locks. A large share here points at syscalls rather than at computation.",
-                    vietnamese: "Phần thời gian chạy trong kernel thay cho process này -- I/O file và mạng, map bộ nhớ, lock. Tỉ lệ ở đây lớn thì vấn đề nằm ở syscall chứ không phải ở tính toán."),
+                    name: "process_system_time",
+                    english: "`cpu.process_system_time_ns` in a report. The part spent inside the kernel on behalf of this process -- file and network I/O, memory mapping, locks. A large share here points at syscalls rather than at computation.",
+                    vietnamese: "Trong report là `cpu.process_system_time_ns`. Phần thời gian chạy trong kernel thay cho process này -- I/O file và mạng, map bộ nhớ, lock. Tỉ lệ ở đây lớn thì vấn đề nằm ở syscall chứ không phải ở tính toán."),
                 HelpField(
                     name: "available / limited / unsupported",
                     english: "The state of a source. available means it is measuring. limited means it is measuring something narrower than the name suggests, and the note beside it says what. unsupported means it was tried and genuinely cannot work here -- a different answer from not tried.",
