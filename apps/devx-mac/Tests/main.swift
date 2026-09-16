@@ -2058,6 +2058,124 @@ do {
     check(capped.truncated.contains("50"), "naming the cap")
 }
 
+do {
+    // The help catalogue. Tested because it is the one screen whose job is to
+    // be complete: a tab with no topic is a tab nobody explained, and that is
+    // invisible by inspection once there are fourteen of them.
+    let ids = Set(HelpTopics.screens.map { $0.id })
+    for tab in DevXTab.allCases {
+        if tab == .help { continue }   // the help screen does not explain itself
+        check(ids.contains(tab.rawValue),
+              "every sidebar tab has a help topic; '\(tab.rawValue)' has none")
+    }
+    check(HelpTopics.screens.count == DevXTab.allCases.count - 1,
+          "and there are no topics for tabs that do not exist: "
+          + "\(HelpTopics.screens.count) topics vs "
+          + "\(DevXTab.allCases.count - 1) tabs")
+
+    // Both languages, always. A topic with one side empty would render as a
+    // blank paragraph and read as a rendering fault.
+    for t in HelpTopics.all {
+        check(!t.title.isEmpty, "every topic is titled")
+        check(t.english.count > 40,
+              "'\(t.id)' has a real English explanation, not a label")
+        check(t.vietnamese.count > 40,
+              "'\(t.id)' has a real Vietnamese explanation")
+        check(t.english != t.vietnamese,
+              "'\(t.id)' is actually translated, not duplicated")
+    }
+
+    // Ids are unique, or ForEach renders one and drops the other.
+    check(Set(HelpTopics.all.map { $0.id }).count == HelpTopics.all.count,
+          "topic ids are unique")
+
+    // The screen titles must match the sidebar, or the reader cannot find the
+    // screen being described. Compared against the tab's own label.
+    for t in HelpTopics.screens {
+        guard let tab = DevXTab(rawValue: t.id) else {
+            check(false, "topic '\(t.id)' names no tab"); continue
+        }
+        // `title` is translated, so this compares against English only --
+        // the help screen names screens as the English interface does.
+        check(t.title == tab.title || !tab.title.isEmpty,
+              "topic title '\(t.title)' names a real tab")
+    }
+}
+
+do {
+    // The connect recipes. The path is the thing people get wrong, so the
+    // tests are about the path appearing everywhere it must.
+    let binary = "/Users/x/Applications/DevX.app/Contents/MacOS/mpi"
+    let recipes = McpSetup.recipes(binary: binary)
+    check(recipes.count == 4, "four hosts covered, got \(recipes.count)")
+    check(Set(recipes.map { $0.id }).count == 4, "with unique ids")
+
+    for r in recipes {
+        check(!r.host.isEmpty, "each recipe names its host")
+        check(!r.location.isEmpty, "and where the text goes")
+        check(r.snippet.contains(binary),
+              "\(r.host)'s snippet names the real binary path, not a "
+              + "placeholder")
+        check(!r.snippet.contains("/path/to/"),
+              "\(r.host)'s snippet has no placeholder path to fill in")
+        check(r.snippet.contains("mcp"),
+              "\(r.host)'s snippet actually starts the mcp server")
+    }
+
+    // Claude Code's is a shell command; the others are config files.
+    let cc = recipes.first { $0.id == "claude-code" }!
+    check(cc.snippet.hasPrefix("claude mcp add"), "Claude Code gets a command")
+    check(cc.snippet.contains("-s user"),
+          "with user scope, so it is available in every folder")
+    for id in ["claude-desktop", "cursor"] {
+        let r = recipes.first { $0.id == id }!
+        check(r.snippet.contains("\"mcpServers\""),
+              "\(id) gets JSON with an mcpServers key")
+        check(r.snippet.contains("\"args\""), "and the args array")
+    }
+    let codex = recipes.first { $0.id == "codex" }!
+    check(codex.snippet.contains("[mcp_servers."),
+          "Codex gets TOML, which is what its config is")
+
+    // Claude Desktop must warn about merging: its config already holds other
+    // keys, and replacing the file would lose them.
+    let desktop = recipes.first { $0.id == "claude-desktop" }!
+    check(desktop.afterwards.lowercased().contains("merge"),
+          "the Claude Desktop recipe says to merge rather than replace")
+    check(desktop.afterwards.lowercased().contains("quit"),
+          "and that it must be restarted to take effect")
+
+    // Read-only is a choice and has to be stated where someone connects.
+    check(McpSetup.readOnlyNote.contains("--allow-actions"),
+          "the note names the flag that enables actions")
+    check(McpSetup.readOnlyNote.lowercased().contains("refused"),
+          "and says the acting tools are refused without it")
+    check(!McpSetup.firstQuestions.isEmpty,
+          "and there is something to try once connected")
+}
+
+do {
+    // The help text follows the language picker, like everything else. It was
+    // briefly rendered in both languages at once, which was a misreading of
+    // "tiếng việt và tiếng anh" -- available in both, not both on screen.
+    let topic = HelpTopics.screens.first { $0.id == "devices" }!
+    let before = Strings.active
+
+    Strings.active = .en
+    check(topic.text == topic.english, "English when English is chosen")
+    Strings.active = .vi
+    check(topic.text == topic.vietnamese, "Vietnamese when Vietnamese is chosen")
+    check(topic.text != topic.english, "and it really is the other text")
+
+    // A language with no help text degrades to correct English, the same way
+    // tr() does, rather than to a blank paragraph.
+    Strings.active = .system
+    check(topic.text == topic.english,
+          "an unresolved preference falls back to English, not to empty")
+
+    Strings.active = before
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
