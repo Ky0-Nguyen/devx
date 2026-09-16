@@ -1,5 +1,6 @@
 #include "core/discovery/boot.hpp"
 
+#include <set>
 #include <cstdlib>
 #include <thread>
 
@@ -43,6 +44,40 @@ bool file_exists(const std::string& path) {
   return r.ok();
 }
 
+/// Where `adb` is, on a machine that has not put the SDK on PATH.
+///
+/// PATH is the obvious answer and it is not enough on its own. An app
+/// launched from the Dock does not inherit a shell's environment, and on
+/// this host a Finder launch gets `/usr/bin:/bin:/usr/sbin:/sbin` and
+/// nothing else -- not even what `launchctl setenv PATH` was set to, which
+/// was measured rather than assumed. So a tool that resolves in a terminal
+/// is simply absent in DevX, and the failure read as a broken Android SDK:
+/// "adb: No such file or directory", beside an emulator list that had just
+/// been produced successfully, because the emulator already resolved
+/// through the SDK location below and adb did not.
+///
+/// Same chain as `resolve_emulator_path`, for the same reason and in the
+/// same order: an explicit setting, then the environment variables that
+/// name a specific SDK, then the default install location, then PATH.
+std::string resolve_adb_path(const std::string& configured) {
+  if (!configured.empty() && configured != "adb") return configured;
+  for (const char* key : {"ANDROID_HOME", "ANDROID_SDK_ROOT"}) {
+    const auto root = env(key);
+    if (root.empty()) continue;
+    const auto candidate = root + "/platform-tools/adb";
+    if (file_exists(candidate)) return candidate;
+  }
+  const auto home = env("HOME");
+  if (!home.empty()) {
+    const auto candidate = home + "/Library/Android/sdk/platform-tools/adb";
+    if (file_exists(candidate)) return candidate;
+  }
+  // Nothing found: keep the bare name so PATH still gets its chance, and so
+  // a failure quotes the name the reader recognises.
+  return configured.empty() ? std::string("adb") : configured;
+}
+
+
 // Every serial adb can see, with its state.
 //
 // The state is kept rather than filtered on, because "a new serial appeared
@@ -57,7 +92,7 @@ std::vector<std::pair<std::string, std::string>> adb_devices_with_state(
   proc::Options po;
   po.timeout = timeout;
   po.cancel = opts.cancel;
-  const auto r = proc::run({opts.adb_path, "devices"}, po);
+  const auto r = proc::run({resolve_adb_path(opts.adb_path), "devices"}, po);
   std::vector<std::pair<std::string, std::string>> out;
   if (tool_error != nullptr) tool_error->clear();
   if (!r.ok()) {
@@ -87,6 +122,44 @@ std::vector<std::pair<std::string, std::string>> adb_devices_with_state(
   return out;
 }
 
+/// The AVD a running emulator serial is an instance of, or empty.
+///
+/// `adb devices` lists serials and never AVD names, and this code used to
+/// conclude from that that the question was unanswerable, leaving every
+/// Android target marked not-running. It is answerable -- the emulator
+/// console answers it per serial. Measured on this host:
+///
+///     $ adb -s emulator-5554 emu avd name
+///     Pixel_9_Pro
+///     OK
+///
+/// Getting it wrong was not cosmetic. `boot()` already has a no-op path for
+/// a target that is running; with the flag always false, Start spawned a
+/// *second* emulator for an AVD already running, which does not fail
+/// quickly -- it hangs until the ready budget expires.
+///
+/// One call per connected serial, and emulators are heavy enough that there
+/// are never many. A serial that is not an emulator answers with an error,
+/// treated here as "no name" rather than a failure worth reporting: the only
+/// thing riding on it is whether a target can be marked running.
+std::string avd_name_of_serial(const std::string& serial,
+                               const BootOptions& opts) {
+  proc::Options po;
+  po.timeout = std::chrono::milliseconds(5000);
+  po.cancel = opts.cancel;
+  const auto r = proc::run(
+      {resolve_adb_path(opts.adb_path), "-s", serial, "emu", "avd", "name"},
+      po);
+  if (!r.ok()) return {};
+  // The console replies with the name, then `OK` on its own line.
+  for (const auto& line : lines_of(r.out)) {
+    const auto name = trim(line);
+    if (name.empty() || name == "OK") continue;
+    return name;
+  }
+  return {};
+}
+
 std::vector<std::string> adb_serials(const BootOptions& opts) {
   std::vector<std::string> out;
   for (const auto& [serial, state] : adb_devices_with_state(opts)) {
@@ -102,7 +175,8 @@ bool android_boot_completed(
   po.timeout = timeout;
   po.cancel = opts.cancel;
   const auto r = proc::run(
-      {opts.adb_path, "-s", serial, "shell", "getprop", "sys.boot_completed"},
+      {resolve_adb_path(opts.adb_path), "-s", serial, "shell", "getprop",
+       "sys.boot_completed"},
       po);
   return r.ok() && trim(r.out) == "1";
 }
@@ -192,6 +266,13 @@ BootTargets list_boot_targets(const BootOptions& opts) {
                            (r.spawned ? trim(r.err) : r.spawn_error));
     } else {
       const auto running = adb_serials(opts);
+      // Which AVDs those serials are instances of, so one already running
+      // is reported as running instead of started a second time.
+      std::set<std::string> running_avds;
+      for (const auto& serial : running) {
+        const auto avd = avd_name_of_serial(serial, opts);
+        if (!avd.empty()) running_avds.insert(avd);
+      }
       for (const auto& name : lines_of(r.out)) {
         if (name.empty()) continue;
         // The listing prints warnings on stdout on some SDKs; anything with a
@@ -202,10 +283,11 @@ BootTargets list_boot_targets(const BootOptions& opts) {
         t.identifier = name;
         t.display_name = name;
         t.provider = "emulator -list-avds";
-        // An AVD's name is not in adb's listing, so "already running" cannot
-        // be answered per AVD from adb alone. It is left false and the note
-        // on the result says so rather than guessing from the serial.
-        t.already_running = false;
+// Answered per serial by the emulator console rather than guessed
+          // from adb's listing, which carries no AVD name. Leaving this
+          // false let Start launch a second emulator for an AVD already
+          // running, and that hangs rather than failing.
+          t.already_running = running_avds.count(name) > 0;
         out.targets.push_back(std::move(t));
       }
       if (!running.empty()) {
@@ -435,6 +517,34 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
   if (target.platform != model::Platform::kAndroid) {
     res.error = "no way to boot a target on platform '" +
                 std::string(model::to_string(target.platform)) + "'";
+    return res;
+  }
+
+  if (target.already_running) {
+    // The same no-op the iOS branch takes, which Android never needed while
+    // `already_running` was hardcoded false. Starting a second emulator for
+    // an AVD already running does not fail fast: it spawns, the new instance
+    // cannot claim the AVD, and the wait runs to the end of the ready budget
+    // -- which is what "sometimes it will not start" looked like.
+    //
+    // The serial is looked up rather than assumed: a BootTarget's identifier
+    // is an AVD name on Android, never a device id, and the caller needs the
+    // id to record against.
+    res.started = true;
+    res.ready = true;
+    res.was_already_running = true;
+    for (const auto& serial : adb_serials(opts)) {
+      if (avd_name_of_serial(serial, opts) == target.identifier) {
+        res.device_id = serial;
+        break;
+      }
+    }
+    res.notes.push_back(
+        res.device_id.empty()
+            ? "this AVD is already running; nothing was started. Its serial "
+              "could not be confirmed, so no device id is claimed here."
+            : "this AVD is already running as " + res.device_id +
+                  "; nothing was started");
     return res;
   }
 

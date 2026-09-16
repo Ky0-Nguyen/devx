@@ -1345,7 +1345,7 @@ session::Collector::LaunchReport AdbCollector::launch(
   }
   // Clearing the log first so the Displayed line read afterwards belongs to
   // this launch and not to an earlier one.
-  proc::run({"adb", "-s", device.device_id, "logcat", "-c"}, po);
+  proc::run({adb_path_, "-s", device.device_id, "logcat", "-c"}, po);
 
   // The device clock is read immediately before the launch so the marker sits
   // on the same timeline as the rest of the capture.
@@ -1392,7 +1392,7 @@ session::Collector::LaunchReport AdbCollector::launch(
   // The platform's own first-frame figure, which is a different endpoint from
   // TotalTime and is kept as its own marker rather than averaged with it.
   const auto log = proc::run(
-      {"adb", "-s", device.device_id, "logcat", "-d", "-s",
+      {adb_path_, "-s", device.device_id, "logcat", "-d", "-s",
        "ActivityTaskManager"},
       po);
   if (log.ok()) {

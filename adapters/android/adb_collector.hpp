@@ -33,6 +33,7 @@
 #include <thread>
 #include <vector>
 
+#include "adapters/android/adb_adapter.hpp"
 #include "core/session/collector.hpp"
 
 namespace mpi::android {
@@ -148,7 +149,10 @@ bool parse_leading_double(const std::string& text, double& out);
 
 class AdbCollector final : public session::Collector {
  public:
-  explicit AdbCollector(std::string adb_path = "adb");
+  // Defaults to the resolver, not the bare name: a Dock-launched app has
+  // no SDK on PATH, and the capture then failed per source with "adb: No
+  // such file or directory" while discovery had already found the device.
+  explicit AdbCollector(std::string adb_path = default_adb_path());
 
   std::string id() const override { return "android.adb.text-sources"; }
   model::Platform platform() const override { return model::Platform::kAndroid; }

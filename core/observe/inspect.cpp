@@ -248,6 +248,27 @@ void InspectAssembler::feed(const json::Value& message) {
       if (!first_timestamp_.has_value()) first_timestamp_ = seconds;
       ex.started_ns = seconds_to_ns(seconds);
     }
+    // The wall clock, which `timestamp` above is not: that one is monotonic
+    // from an arbitrary origin, so it measures durations and cannot say what
+    // time a request was sent. Only this event carries `wallTime`.
+    const json::Value* wall = field(params, "wallTime");
+    if (wall != nullptr && wall->is_number()) {
+      const double epoch_seconds = wall->as_double();
+      // A non-positive value is not a time; leave it absent rather than
+      // rendering 1970 beside a request from today.
+      //
+      // Rounded to milliseconds and then scaled, rather than multiplied
+      // straight to nanoseconds: at epoch magnitudes `seconds * 1e9` needs
+      // nineteen significant digits and a double carries about sixteen, so
+      // the last digits are an artefact of the conversion. Milliseconds are
+      // also the resolution the runtime actually reports, and what this is
+      // exported as, so rounding there keeps the value exact instead of
+      // carrying six digits nobody measured.
+      if (epoch_seconds > 0 && std::isfinite(epoch_seconds)) {
+        const std::int64_t ms = std::llround(epoch_seconds * 1000.0);
+        ex.wall_ns = static_cast<model::TimeNs>(ms) * 1000000;
+      }
+    }
     return;
   }
   if (method == "Network.responseReceived") {
@@ -509,6 +530,10 @@ json::Value InspectReport::to_json() const {
                         ? json::Value::integer(*e.status)
                         : json::Value::null());
     v.set("mime_type", json::Value::string(e.mime_type));
+    // Absent, not zero, when the runtime never sent a wall clock.
+    if (e.wall_ns.has_value()) {
+      v.set("wall_unix_ms", json::Value::integer(*e.wall_ns / 1000000));
+    }
     v.set("encoded_bytes", e.encoded_bytes.has_value()
                                ? json::Value::integer(*e.encoded_bytes)
                                : json::Value::null());
@@ -553,6 +578,16 @@ json::Value InspectReport::to_json() const {
   for (const ConsoleEntry& c : console) {
     json::Value v = json::Value::object();
     v.set("timestamp_ns", json::Value::integer(c.timestamp_ns));
+    // Also in milliseconds, which is the resolution the runtime reports and
+    // the only one a reader can consume exactly. A JSON number is a double
+    // to some readers -- the SwiftUI app's is -- and an epoch in nanoseconds
+    // is about 1.8e18, past the 2^53 where a double still counts by ones, so
+    // it arrives a millisecond short. `wall_unix_ms` on a network row exists
+    // for the same reason.
+    if (c.timestamp_ns > 0) {
+      v.set("timestamp_unix_ms",
+            json::Value::integer(c.timestamp_ns / 1000000));
+    }
     v.set("level", json::Value::string(c.level));
     v.set("text", json::Value::string(c.text));
     if (!c.source_url.empty()) {

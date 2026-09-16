@@ -157,7 +157,7 @@ ExitCode cmd_record(const Invocation& inv) {
     build_po.timeout = std::chrono::milliseconds(inv.global.timeout_ms);
     build_po.cancel = inv.global.cancel;
     std::string build_error;
-    if (!android::read_app_build_facts("adb", device.device_id,
+    if (!android::read_app_build_facts(android::default_adb_path(), device.device_id,
                                        target->key.app_identifier, build_po,
                                        trace.build, build_error) &&
         !build_error.empty()) {

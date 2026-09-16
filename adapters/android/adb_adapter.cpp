@@ -1,5 +1,7 @@
 #include "adapters/android/adb_adapter.hpp"
 
+#include <unistd.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -418,6 +420,27 @@ bool read_app_build_facts(const std::string& adb_path,
   return true;
 }
 
+
+std::string default_adb_path() {
+  // Same chain as core/discovery/boot.cpp's emulator and adb resolvers, in
+  // the same order: the environment variables that name a specific SDK,
+  // then the default install location, then PATH.
+  for (const char* key : {"ANDROID_HOME", "ANDROID_SDK_ROOT"}) {
+    const char* root = std::getenv(key);
+    if (root == nullptr || *root == '\0') continue;
+    const std::string candidate = std::string(root) + "/platform-tools/adb";
+    if (::access(candidate.c_str(), X_OK) == 0) return candidate;
+  }
+  const char* home = std::getenv("HOME");
+  if (home != nullptr && *home != '\0') {
+    const std::string candidate =
+        std::string(home) + "/Library/Android/sdk/platform-tools/adb";
+    if (::access(candidate.c_str(), X_OK) == 0) return candidate;
+  }
+  // Nothing found: the bare name, so PATH still gets its chance and a
+  // failure quotes the name the reader recognises.
+  return "adb";
+}
 
 AdbAdapter::AdbAdapter(std::string adb_path) : adb_path_(std::move(adb_path)) {}
 

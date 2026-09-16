@@ -958,3 +958,49 @@ MPI_TEST(the_in_app_buffers_overflow_is_carried_not_hidden, {}) {
                 "drops accumulate across drains rather than being replaced");
   MPI_CHECK(out.records.size() == 2);
 }
+
+MPI_TEST(a_request_carries_the_wall_clock_and_not_the_monotonic_one, {}) {
+  // CDP sends two clocks on requestWillBeSent and they are not
+  // interchangeable: `timestamp` is monotonic seconds from an arbitrary
+  // origin -- right for a duration, meaningless as a time of day -- and
+  // `wallTime` is seconds since the epoch. The list showed no time at all
+  // because only the monotonic one was read, and printing that as a clock
+  // would have put every request in 1970.
+  mpi::observe::InspectAssembler b;
+  mpi::json::ParseError err;
+  auto sent = mpi::json::parse(
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"w1",
+         "timestamp":54321.5,"wallTime":1789525721.165,
+         "request":{"method":"GET","url":"https://x/y"}}})", &err);
+  MPI_CHECK(sent.has_value());
+  b.feed(*sent);
+  const auto one = b.finish(10).network.front();
+  MPI_CHECK_MSG(one.wall_ns.has_value(), "the wall clock is recorded");
+  MPI_CHECK_MSG(*one.wall_ns == 1789525721165000000LL,
+                "as epoch nanoseconds at millisecond resolution -- which is "
+                "what the runtime reports -- from wallTime, not timestamp");
+  MPI_CHECK_MSG(one.started_ns == 54321500000000LL,
+                "while the monotonic one is kept separately, for durations");
+
+  // No wallTime: absent, never an epoch of zero.
+  mpi::observe::InspectAssembler c;
+  auto bare = mpi::json::parse(
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"w2",
+         "timestamp":1.0,"request":{"method":"GET","url":"https://x"}}})", &err);
+  MPI_CHECK(bare.has_value());
+  c.feed(*bare);
+  MPI_CHECK_MSG(!c.finish(10).network.front().wall_ns.has_value(),
+                "a request with no wallTime has no wall clock, rather than "
+                "one in 1970");
+
+  // A non-positive wallTime is not a time.
+  mpi::observe::InspectAssembler d;
+  auto zero = mpi::json::parse(
+      R"({"method":"Network.requestWillBeSent","params":{"requestId":"w3",
+         "timestamp":1.0,"wallTime":0,
+         "request":{"method":"GET","url":"https://x"}}})", &err);
+  MPI_CHECK(zero.has_value());
+  d.feed(*zero);
+  MPI_CHECK_MSG(!d.finish(10).network.front().wall_ns.has_value(),
+                "a wallTime of 0 is refused rather than rendered");
+}
