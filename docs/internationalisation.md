@@ -1,7 +1,7 @@
 # More than one language
 
 DevX's interface is available in English and Vietnamese. Choose it in the
-Export tab under **Language / Ngôn ngữ**, or leave it on *System*, which
+DevX's interface is available in English and Vietnamese. Choose it from the **Language** menu, from the small picker at the foot of the sidebar, or in the Export tab's **Language** panel, or leave it on *System*, which follows the Mac's preferred languages. The control was only in the Export tab at first, and someone looking for it could not find it: a global preference behind a tab named after something else., or leave it on *System*, which
 follows the Mac's preferred languages.
 
 ## The catalog is keyed by the English text
@@ -53,13 +53,13 @@ dead.
 ## What is *still* not translated, and why
 
 Detector findings, coverage notes, threshold origins, refusal messages and
-everything else the C++ core emits stay in English.
+What the C++ core emits stays in English **on disk**: the session package, the JSON and Markdown exports, and everything `mpi compare` reads. On screen, `Strings.vietnameseCore` translates detector titles, evidence requirements, threshold origins and caveats at the moment they are drawn; what still reaches the screen in English is listed below..
 
-They are **evidence, not interface**. They are written into the session
+The stored text is **evidence, not interface**. It is written into the session package, exported, and compared across runs, so it is never translated: two captures of the same app taken on two machines configured differently must stay comparable, and `mpi compare` must diff measurements rather than prose. That rule is about what is on disk; the display lookup does not touch it. They are written into the session
 package, exported, and compared across runs. Translating them would mean two
 captures of the same app, taken on two machines configured differently, would
 no longer be comparable — and `mpi compare` would be diffing prose rather than
-measurements. The Language panel says this on screen, because a Vietnamese
+measurements. The Language panel still carries a note saying this text stays in English (`SettingsView.swift`, `languagePanel`). It was written before the core catalog existed and now describes the on-disk rule as if it applied on screen; the header comment at the top of `Strings.swift` says the same. Both are out of date and should say what this section says., because a Vietnamese
 reader who sees the tabs translated will otherwise read the English in the
 Issues tab as an unfinished job rather than a deliberate boundary.
 
@@ -68,8 +68,10 @@ For the same reason these are left verbatim *inside* translated sentences:
 - values the core emits — `unknown`, `not_tested`, `unsupported`, `offline`,
   `running`. A sentence explaining what `unknown` means must point at the word
   that actually appears on screen.
-- command lines — `mpi analyze <session>`, `dumpsys gfxinfo framestats`,
+- command lines — `mpi record --heap`, `mpi analyze --suppressions`. A translated command does not run. The `mpi …` hints under empty states (`mpi analyze <session>`, `mpi compare <baseline> <candidate>`) are whole strings rather than words inside a sentence; they have no catalog entry and fall back.,
   `xctrace record`. A translated command does not run.
+
+- technical terms the reader already uses in English -- React Native's thread names `UI`, `JS` and `native` inside the Threads labels, and the Inspect filters `API`, `Redux`, `Log`, `Console`, `Request`. Translating them would make the labels harder to match against the documentation, not easier. The filter names reach `tr()` with no catalog entry and fall back on purpose. The catalog's own comment about the thread names is why the checker drops whole-line comments before reading it: the quoted tokens were once read as a catalog entry and reported as a dead translation.
 
 ## Placeholders
 
@@ -84,12 +86,14 @@ A translator can see what goes where, a mistyped token cannot silently swap
 two values, and a translation that dropped a placeholder leaves the sentence
 short rather than inserting a stray number.
 
+Interpolating a Swift value inside the literal -- `tr("\(result.hidden) request(s) are hidden by the filter")` -- produces a different string on every render, so no catalog key can match it and the sentence falls back to English on every machine. Six such sentences went in with the device and request filters (`Views.swift`, `InspectView.swift`). The form that works is already in the device list: `DeviceFreshness.fill(tr("{n} hidden by the filter"), "{n}", count)` looks the template up first and substitutes afterwards. The checker cannot tell this case from an ordinary untranslated string; it shows in `--coverage` as a fall-back whose text begins with `\(`.
+
 ## Keeping it honest: `tools/check-i18n.py`
 
 A catalog keyed by English text cannot fail loudly. Edit a sentence in a view
 and its translation silently stops applying — no compiler error, nothing on
 screen to say that the Vietnamese interface just lost a paragraph. So the
-check is part of the smoke test, and it reports three things:
+check is part of the smoke test, and it reports five things:
 
 - **stale keys** — a catalog entry whose English no longer appears in any view.
   This is an error.
@@ -106,13 +110,17 @@ Both sides join `+`-concatenated literal runs before comparing, because the
 prose here is written across several source lines and the string that reaches
 the screen is the joined one.
 
-Current state: **196 of 209** translatable strings covered. The 13 that fall
-back are the `mpi …` command examples and two technical labels (`Device id`,
-`Heap dump (am dumpheap)`), none of which should be translated.
+Current state: **369 of 398** translatable UI strings covered, and all 110 core translations still emitted.
+The 29 that fall back are of three kinds. Six `mpi …` hints under empty states and a dozen technical labels -- `Device id`, `Heap dump (am dumpheap)`, the Inspect filters `API`, `Redux`, `Log`, `Console`, `Request`, the Live counters `tick`, `ticks`, `stacks`, `payload:`, the search field's `url, action, status…` -- should not be translated. Six are sentences that interpolate a Swift value inside `tr()` -- "\(result.hidden) request(s) are hidden by the filter…" and its siblings for lines and devices, the two Ambiguous-target banners, `observe for \(n)s` -- which no catalog key can ever match; they should use the `{placeholder}` form above. Five are not strings a user sees: a `DispatchQueue` label, picked up because `label:` marks a translating call, and four fragments cut short where an interpolation's inner quote ends the checker's literal regex. (`Device id`,
+
+- **translations identical to their English, or empty** -- almost always a forgotten entry rather than a word that happens to be the same. An error, in both catalogs.
+- **core keys no longer in any C++ source** -- the core catalog's stale-key check, run against `core/` and `adapters/` (`.cpp`, `.hpp`) rather than the views, since that text never appears in a `.swift` file. An error.
+
+`--quiet` prints nothing on success, which is how the smoke test calls it. `--coverage` prints the strings that fall back, one per line, and nothing else; the numbers below are read off that list.
 
 ## No `.lproj`
 
-The catalog is compiled into the binary. ADR-0002 keeps this tree free of
+The catalog is compiled into the binary. This tree carries no binary asset a reviewer cannot read -- the icon itself is drawn at build time by `tools/gen-icon.swift` for that reason, see `docs/packaging-and-signing.md` -- and the bundle carries only that icon; `.lproj` directories would be the first localisation payload and would need matching Info.plist entries.
 binary assets and the bundle carries only its icon; `.lproj` directories would
 be the first localisation payload and would need matching Info.plist entries.
 A Swift dictionary needs neither, and `docs/packaging-and-signing.md`'s claim

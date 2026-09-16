@@ -26,10 +26,10 @@ Every row is a **measured probe result**, not a plan.
 | Capability | Status | Provider | Tested |
 |---|---|---|---|
 | `android.toolchain.adb` | `available` | adb | `probed_only` |
-| `android.discovery.devices` | `available` | adb | `verified_on_physical_device` |
-| `android.discovery.installed_apps` | `available` | adb shell pm | `verified_on_physical_device` |
-| `android.discovery.running_processes` | `available` | adb shell ps | `verified_on_physical_device` |
-| `android.discovery.process_mapping` | `available` | adb shell /proc | `verified_on_physical_device` |
+| `android.discovery.devices` | `available` | adb | `verified_on_simulator_or_emulator` |
+| `android.discovery.installed_apps` | `available` | adb shell pm | `verified_on_simulator_or_emulator` |
+| `android.discovery.running_processes` | `available` | adb shell ps | `verified_on_simulator_or_emulator` |
+| `android.discovery.process_mapping` | `available` | adb shell /proc | `verified_on_simulator_or_emulator` |
 | `android.capture.profileable` | `unknown` | adb | `not_tested` |
 | `ios.toolchain.xcrun` | `available` | xcrun | `probed_only` |
 | `ios.discovery.devices` | `available` | devicectl + simctl | `verified_on_simulator_or_emulator` |
@@ -37,7 +37,9 @@ Every row is a **measured probe result**, not a plan.
 | `ios.discovery.running_processes` | `unknown` | devicectl device info processes | `not_tested` |
 | `ios.discovery.simulator_apps` | `available` | simctl | `verified_on_simulator_or_emulator` |
 | `ios.capture.attach` | `unknown` | xctrace | `not_tested` |
-| `ios.capture.live_recording` | `unknown` | xctrace | `not_tested` |
+| `ios.capture.live_recording` | `limited` | xctrace | `verified_on_simulator_or_emulator` |
+
+| `ios.capture.log_store` | `permission_denied` | log | `probed_only` |
 
 ## Capture sources, verified on the Android emulator
 
@@ -52,10 +54,12 @@ against `com.android.settings`:
 | `android.capture.cpu_samples` (`simpleperf`) | `available` -- 42 symbolised samples incl. React Native's `mqt_v_js` thread | `permission_denied`, with the manifest change that would fix it |
 | `android.capture.memory` (`dumpsys meminfo`) | `available` -- five counter families | `available`; the reading is excluded from app-scoped totals when ownership is ambiguous, which is what a shared-uid system app produces |
 | `android.capture.cpu_time` (`/proc/<pid>/stat`) | `available` -- 18 points over 6 ticks at CLK_TCK 100 | `available`; `/proc/<pid>/stat` is world-readable |
-| `android.build.app_identity` (`dumpsys package`) | `available` -- version, install path, update time, signature digest, debuggable | `available`; the package's own flags line is read, not a permission's |
-| `android.capture.streaming` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
+| app build identity (`dumpsys package`; reported as `app.*` build facts in preflight's `build` object, not as a capture source) | `available` -- version, install path, update time, signature digest, debuggable | `available`; the package's own flags line is read, not a permission's |
+| `android.capture.streaming_overhead` (tick loop) | `available` -- 62 ticks, frames and memory per tick, CPU in background windows | `available` for frames and memory; CPU stays `permission_denied` |
 | `android.capture.scheduling` (`atrace sched disk am view`) | `available`, **opt-in only** -- 4082 events over 64 threads in a 10 s capture | `available`; ftrace is system-wide and does not depend on the target's debuggability |
 | `android.capture.heap_dump` (`am dumpheap`) | `available`, **opt-in only** -- 49 MB, 580,140 objects, read in 1.7 s | `permission_denied`: `am dumpheap` needs a debuggable target or a userdebug build |
+
+| `android.capture.startup` (`am start -W`, after `cmd package resolve-activity --brief`) | `available` when a launcher activity resolves; `unsupported` with the reason when none does -- the component is taken from the platform, never guessed as `package/.MainActivity` | the same; `am start -W` does not depend on debuggability |
 
 ### Measured live, against a real emulator
 
@@ -195,6 +199,58 @@ elsewhere:
   carries no scheduling evidence at all, and DET-03/DET-09 then report that
   the provider did not run.
 
+## Booting a device, measured on this host
+
+`mpi boot` and the Devices tab start a simulator or emulator and wait until it answers -- `sys.boot_completed` on Android, `Booted` from simctl -- reporting `started` and `ready` separately. By construction everything here is `verified_on_simulator_or_emulator`; no physical device is involved.
+
+| What | Measured |
+|---|---|
+| cold AVD boot (API 37 image) | about 30 s; a second AVD started and never reported `sys.boot_completed` inside a 150 s budget, adb seeing it as `offline` throughout -- reported as `started: true, ready: false` with the serial and adb's last state |
+| cold simulator boot | 1116 ms through `simctl boot`; an earlier run recorded 781 ms; re-booting one already running is a no-op that says so |
+| serial of the emulator this boot produced | taken as the difference against the serials present beforehand, `null` when it cannot be confirmed |
+
+**The budget was a lower bound on how long the wait could take.** Both loops checked the budget before each poll and then handed the poll its own fixed timeout: with the default 180 s budget and a 60 s per-call timeout, a poll starting at 179 s ran to 239 s, and the Android baseline `adb devices` ran its own 15 s outside the budget entirely. With a wedged `CoreSimulatorService` or adb server that bought three polls instead of ninety. Each call now gets whatever is left of the budget, capped, the sleep between polls is clamped to it, and a boot refuses to start when it cannot take a baseline -- an empty baseline would have reported an already-running emulator as the one it started. Three unanswered polls in a row stop the loop and blame the tooling, naming the fix, rather than reporting a device that never came up.
+
+Pinned without hardware by `tests/helpers/hanging_tool.cpp`, a stand-in adb that either never answers or answers once and then wedges; 8 budget cases in `test_identity` (34/34 passing).
+
+Not covered: whether a *listed* AVD will boot (`emulator -list-avds` reports names, not health), and two emulators started within one poll would be indistinguishable.
+
+## Inspect sources, verified against a live app
+
+`mpi inspect` reads a React Native debug build through the inspector it already connects to Metro; nothing is installed in the app. Its report carries a `SourceState` per source (`unavailable` / `attached` / `ran_saw_nothing` / `refused`) rather than this matrix's `tested` column, so what follows is what was exercised and against what. Everything was exercised against the superapp HutBot debug build; nothing here was run against a physical device.
+
+| What | Claims | Measured |
+|---|---|---|
+| `--redux` (state, read once) | store located by walking `__REACT_DEVTOOLS_GLOBAL_HOOK__`'s fiber tree to a prop carrying `getState`/`dispatch`/`subscribe`; read-only, bounded to 4000 fibers | 52 slices found 23 fibers in (Android emulator) |
+| `--redux-watch` (state changes, read-only) | one `store.subscribe` listener, top-level keys compared by reference, removed at the end; names **no** action, because Redux passes subscribers none | a deep link produced a record with 30 deltas clearing a profile slice field by field |
+| `--redux-actions` (action types and payloads) | wraps `store.dispatch` for the duration and restores it -- the one thing in this feature that **modifies the running app**, so it is opt-in and the report says whether removal was confirmed; a dispatch through a reference captured before the wrap (a thunk's) is recorded as `dispatch_bypassed`, not as a read-only record | a run kicked off its debugger slot left a wrapper behind; the next run reported it and removed it first |
+| `--redux-values` | values off by default: a store holds tokens and personal data | -- |
+| `--detail` (headers and bodies) | headers from the events, bodies via `Network.getResponseBody`; off by default because this is the data in flight | `getResponseBody` returned `cGFja2FnZXItc3RhdHVzOnJ1bm5pbmc=` (`base64Encoded: true`) -- `packager-status:running` |
+
+The diff between two states is computed in C++ from the two JSON strings the app sends, bounded to 200 differences and 6 path segments, and hitting either bound is reported. A slice replaced by an equal value is reported as `equal_replacement` -- the classic wasted render -- and only when values were captured. 40 cases in `test_inspect` cover this, 19 of them the diff and attribution rules; all pass. The recorded fixture `fixtures/cdp/recorded-hutbot-startup.jsonl` is a real session but carries no Redux drain (37 lines: `Runtime.consoleAPICalled`, `Network.*`, `Log.entryAdded`), so the live verification of the three Redux tiers rests on the record in `docs/inspect-without-installing.md` and commit 6f32c5e, not on a replayable fixture. The written procedure for driving the app during a watch uses `xcrun simctl openurl`, because Metro allows one debugger per device and a second socket takes the slot.
+
+**Screenshots.** `--screenshot` requires `--device`. The id is translated to the display name discovery holds for it, because Metro publishes a device *name* and never a serial or UDID; passing the id through as the Metro hint made every screenshot run fail with "no attached device matches '456FA0D8-...'. What is attached: [iPhone 17 Pro]". `--target-device` still names a Metro target directly and wins when given. Android uses `adb exec-out screencap -p`; a simulator uses `xcrun simctl io <udid> screenshot`, and that path is selected only with `--platform ios` -- without it the UDID is handed to adb. A physical iOS device has no command-line screenshot and is reported unavailable rather than attempted. Output that is not a valid PNG is refused. What is not recorded anywhere in this repository is a successful post-fix simulator screenshot (dimensions, bytes): the fix's evidence is the failure it removed, and this row must not read as more than that.
+
+## Capture sources, verified on the iOS simulator
+
+A simulator app is an ordinary macOS process owned by the developer, so live capture there needs no Instruments: `SimulatorHostCollector` reads it through libproc. Verified against the booted iPhone 17 Pro (iOS 26.5) simulator `456FA0D8`, and reported per capture, like the Android sources above. Every row carries `tested: verified_on_simulator_or_emulator`; none of it says anything about a device.
+
+| Source | Status | What it rests on |
+|---|---|---|
+| `ios.simulator.host_cpu_time` | `limited` -- CPU *time*, not attribution | `PROC_PIDTASKINFO`, converted from mach absolute time units (the per-thread counters are already nanoseconds; read as nanoseconds the task counters were 41.67x too small) |
+| `ios.simulator.host_footprint` | `available` | `proc_pid_rusage` `ri_phys_footprint`, the value Xcode's memory gauge shows |
+| `ios.simulator.frames` | `unsupported` -- tested and genuinely unavailable, which is a different answer from not tested | no command-line frame-timing source exists for an iOS simulator; the whole window is written as one coverage gap (`no_frame_source_for_ios_simulator`) so nothing here can support a frame-deadline finding |
+| `ios.simulator.rosetta_translated` | `limited`, present only when `kinfo_proc` reports `P_TRANSLATED` | translated CPU timings are comparable neither to a native simulator build nor to a device |
+| `ios.simulator.stack_profile` (`/usr/bin/sample`) | `limited`, **opt-in only** -- weighted stacks with no timestamps | `sample <pid> <seconds>` at the end of the capture, parsed into `CpuSample`s with self time split from time in callees |
+
+Per-thread CPU times come with the runtime's own thread names (`com.facebook.react.runtime.JavaScript`, `hades`), so the JS-versus-native split on iOS is a platform signal rather than pattern matching.
+
+**Stack attribution was measured after this document's sibling had stated it was impossible.** `task_for_pid` is refused (kr=5), and the conclusion drawn from that was wrong: `/usr/bin/sample` returned 1294 lines of symbolised call graph for the simulator's Calendar in under four seconds, with no root and no Full Disk Access. Through the collector, a live simulator capture produced 3 weighted stacks across 3 threads, heaviest weight 1735 at depth 13 with leaf `mach_msg2_trap`. The parser's conservation check -- self times summing exactly to what the threads declared -- holds at 37444 samples across 22 threads and on `fixtures/sample/recorded-simulator-callgraph.txt`.
+
+What it cannot do is place any of it in time: `sample` reports an aggregate, so the source answers "where" and never "when", and the window is the seconds `sample` ran for at the end, not the capture's duration. It is off by default for that reason as much as for the cost (`sample` blocks, so the stop waits).
+
+Two scoping facts. The stack profile can be switched on only from DevX's Live tab (a checkbox and a seconds stepper); `mpi record --live` never constructs this collector, so the CLI has no simulator live capture and no stack profile. And this collector refuses a batch `record` and refuses a physical device rather than degrading either.
+
 ## Evidence and limitations
 
 ### `android.toolchain.adb` -- Android Platform Tools (adb)
@@ -207,7 +263,8 @@ elsewhere:
 ### `android.discovery.devices` -- Android device discovery
 
 - **status**: `available`  
-- **tested**: `verified_on_physical_device`  
+- **tested**: `verified_on_simulator_or_emulator`  
+- **limitation**: every discovered Android device is an emulator; discovery is not verified against physical hardware    
 - **provider**: adb 1.0.41  
 - **evidence**: `adb devices -l` returned 1 device line(s)  
 - **scope**: devices visible to this host's adb server; a device claimed by another adb server or an IDE may not appear  
@@ -215,7 +272,7 @@ elsewhere:
 ### `android.discovery.installed_apps` -- Installed package enumeration
 
 - **status**: `available`  
-- **tested**: `verified_on_physical_device`  
+- **tested**: `verified_on_simulator_or_emulator`    
 - **provider**: adb shell pm 1.0.41  
 - **evidence**: `pm list packages -U` returned 260 package(s)  
 - **scope**: packages visible to the shell user for the queried Android user  
@@ -224,7 +281,7 @@ elsewhere:
 ### `android.discovery.running_processes` -- Running process enumeration
 
 - **status**: `available`  
-- **tested**: `verified_on_physical_device`  
+- **tested**: `verified_on_simulator_or_emulator`    
 - **provider**: adb shell ps 1.0.41  
 - **evidence**: `ps -A -o PID,PPID,USER,NAME` returned 303 parsed row(s)  
 - **scope**: processes visible to the shell user; shell has broader visibility than an ordinary app SDK would  
@@ -232,15 +289,15 @@ elsewhere:
 ### `android.discovery.process_mapping` -- Process start-time / identity resolution
 
 - **status**: `available`  
-- **tested**: `verified_on_physical_device`  
+- **tested**: `verified_on_simulator_or_emulator`    
 - **provider**: adb shell /proc 1.0.41  
 - **evidence**: /proc/self/stat parsed; field 22 (starttime) is readable  
 - **scope**: start time lets a process instance be distinguished across PID reuse and device reboot  
 
 ### `android.capture.profileable` -- Permission to profile a selected app
 
-- **status**: `unknown`  
-- **tested**: `not_tested`  
+- **status**: `limited`    
+- **tested**: `verified_on_simulator_or_emulator`    
 - **provider**: adb 1.0.41  
 - **evidence**: not determinable at the device level: it depends on the selected package's manifest (<profileable> / android:debuggable) and the device build type  
 - **scope**: must be re-probed per selected package during preflight  
@@ -253,6 +310,18 @@ elsewhere:
 - **tested**: `probed_only`  
 - **provider**: xcrun  
 - **evidence**: xcode-select -p => /Applications/Xcode.app/Contents/Developer; devicectl 518.33; xctrace version 16.0 (17F113)  
+
+### `ios.capture.log_store` -- Unified log store access (Instruments sampling)
+
+- **status**: `permission_denied`  
+- **tested**: `probed_only`  
+- **provider**: log  
+- **evidence**: `log show --last 1s` was refused: log: Could not open local log store: Operation not permitted  
+- **limitation**: xctrace reports this as "the log archive is corrupt or incomplete and cannot be read", which describes a damaged machine and is usually this permission. Every recording here came back with a time-profile table that had a schema and no rows.  
+- **prerequisite**: Full Disk Access for whatever runs this tool, or running the capture from Xcode  
+- **recovery**: System Settings > Privacy & Security > Full Disk Access, and add the terminal or app that runs this tool; or run the capture from Xcode, which already has it  
+
+This is a host prerequisite, not a device one. It is probed at preflight so the refusal is found before a capture is attempted rather than after it comes back with an empty table.
 
 ### `ios.discovery.devices` -- iOS device discovery
 
@@ -306,14 +375,16 @@ elsewhere:
 - **prerequisite**: a reachable device with Developer Mode enabled  
 - **recovery**: build and install the target from Xcode with a development signing identity, then retry  
 
-### `ios.capture.live_recording` -- Live trace capture from a physical iOS device
+### `ios.capture.live_recording` -- Live capture (physical device, and simulator)
 
 - **status**: `unknown`  
 - **tested**: `not_tested`  
 - **provider**: xctrace xctrace version 16.0 (17F113)  
-- **evidence**: xctrace version 16.0 (17F113) is installed, but live capture has NOT been exercised against a physical device in this environment  
-- **limitation**: UNVERIFIED: no physical iOS device was reachable during implementation, so the live capture path is implemented but not demonstrated. This blocks the M2 gate for iOS.  
-- **prerequisite**: a reachable physical device  
+- **evidence**: a booted simulator is present and live capture works there without Instruments: the app is an ordinary host process, so CPU time and memory footprint are read through libproc. xctrace is not involved.    
+- **limitation**: on a simulator this gives CPU *time* and memory, not frames. The frame part is a platform limit -- no command-line frame source exists for a simulator. Stacks are not: `/usr/bin/sample` profiles a simulator app, and the collector ingests its call graph when the stack profile is switched on (`ios.simulator.stack_profile`, below)  
+- **limitation**: simulator timings are not device timings, and an app running translated under Rosetta is not comparable to a native build either -- the capture records which  
+- **limitation**: UNVERIFIED on a physical device: no physical iOS device has been reachable, so that path is implemented and not demonstrated. Instruments cannot record a *simulator* target at all on this host -- it accepts the target and never starts recording -- so a working simulator answer does not transfer to hardware    
+- **prerequisite**: a reachable physical device, OR a booted simulator for the host-process collector  
 - **prerequisite**: an attachable, developer-signed app  
-- **recovery**: connect a trusted physical iPhone or iPad and run `mpi preflight` to convert this from unknown to a measured result  
+- **recovery**: for a device, connect a trusted physical iPhone or iPad and re-run `mpi preflight`; the simulator path is already usable    
 

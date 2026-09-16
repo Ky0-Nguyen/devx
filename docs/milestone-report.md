@@ -17,30 +17,145 @@ Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 > - **Realtime streaming works**: `mpi record --live` and DevX's Live tab keep
 >   the window open and show evidence as it arrives, with every pre-close
 >   snapshot marked preliminary.
-> - **The streaming ingest reader** named as step 1 of section 5 is done.
-> - **All twelve detectors are implemented**, not seven. DET-03,
+> - **The streaming ingest reader** named as step 1 of section 5 is done: the
+>   same 1 GiB fixture takes 7.7 s and 5.15 GB peak, from 12.5 s and 10.2 GB.
+>   Section 1's stress result is the before figure; `known-limitations.md`
+>   section 3 has both.
+> - **All twelve detectors are implemented**, not four. DET-03,
 >   DET-05, DET-06, DET-07, DET-08, DET-09, DET-10 and DET-11 have landed
 >   since, DET-06 over a real `am dumpheap` heap graph. Section 4 of
 >   `known-limitations.md` is the current account.
+>   On the healthy fixture the summary still reads `4 detector(s) ran, 0 found
+>   something, 8 could not run`, but the eight are implemented detectors
+>   skipping for want of evidence -- scheduling, SDK markers, a heap dump, a
+>   launch, a run-set pair -- and each names the flag that would collect it,
+>   not a delivery phase. Section 1's "eight unimplemented ones carrying its
+>   phase and blocker" is the older state.
 > - **The desktop UI exists.** DevX is a SwiftUI/AppKit app, so the "not
->   implemented (M2)" row in section 6 and ADR-0004's open framework question
+>   implemented (M2)" row in section 3 and ADR-0004's open framework question
 >   are both closed.
 > - **The app SDK exists for React Native** (`sdk/react-native`), with a
 >   token-gated loopback transport and a build handshake, so section 6's
->   "`sdk/*` are empty directories" is true only of `sdk/ios` and
->   `sdk/android`.
-> - **The test count is 407 cases in 18 binaries**, not 228 in 12.
+>   "`sdk/*` are empty directories" is false of all three: `sdk/ios` and
+>   `sdk/android` each hold a README saying why there is no native SDK.
+> - **DET-12 reports 23% on the positive fixture**, not the 16% section 1
+>   quotes; the attribution it rests on -- 405 samples to
+>   `react_native_dev_support` by a conclusive rule, the `metrocache` frame
+>   left `name_match_only_not_attributed` -- is unchanged.
+> - **Android app and process enumeration is verified**, against the same
+>   emulator: 260 packages from `pm list packages -U`, 303 rows from `ps`,
+>   `/proc/<pid>/stat` for process identity. Section 2's "absent-adb paths
+>   only" and "never run against hardware", and section 3's "implemented, not
+>   verified", predate it. Hardware, as distinct from an emulator, is still
+>   unreached.
+> - **Checklist coverage is 177 of 198**, not 109, with the 21 uncovered items
+>   and their reasons in `docs/requirement-test-map.md`; that file supersedes
+>   section 4's met and open lists, which are the M1-gate snapshot.
+> - **Of section 4's open UI items, only J12 is still open.** A16, A23, A25
+>   and I21 have tests (A16's keyboard-focus half is unverifiable here, since
+>   the automation has no Accessibility permission), and I21 was measured
+>   against the 1 GiB session. J14 is partially met, on an emulator; J15 is
+>   open. J12 stays open because the build is ad-hoc signed and there is no
+>   Developer ID in this environment.
+> - **The M0 gate's second reason is gone; its first remains.** Collectors
+>   exist on both platforms and have captured real telemetry from a real app
+>   on an Android emulator and an iOS simulator. No physical device has been
+>   reached on either, so the gate is still not met on hardware.
+> - **The M2 gate is met on Android, against an emulator, and open on iOS**
+>   (`known-limitations.md` section 1; ADR-0004). Section 4's "not met, and
+>   not claimed" is the state at the M1 gate.
+> - **iOS live capture exists for the simulator.** An app in a booted
+>   simulator is an ordinary macOS process owned by the developer, so a host-
+>   process collector streams its CPU time, utilisation, memory footprint and
+>   per-thread times through `libproc`, with no root and no Instruments, and
+>   `/usr/bin/sample` returns a symbolised call graph that becomes weighted
+>   CPU samples behind an opt-in stack-profile checkbox in the Live tab.
+>   `sample` reports an aggregate with no timestamps, so it says where and
+>   never when, and nothing from it is placed on a timeline. There are no
+>   frames: no command-line frame source exists for a simulator, and they are
+>   reported as a missing provider, never as zero. Verified on the iPhone 17
+>   Pro simulator only; the route does not exist for a device, where the app
+>   is not a host process. An earlier version of the collector stated that
+>   stack attribution was impossible, reasoning from `task_for_pid` being
+>   refused; that was wrong, and `docs/ios-live-capture-findings.md` section 7
+>   keeps the correction.
+> - **A running app can be read without installing anything in it.** `mpi
+>   inspect` and DevX's Inspect tab attach to the inspector a React Native
+>   debug build already runs and report its network exchanges, console output
+>   and Redux store -- the Reactotron questions, with nothing added to the
+>   app. Request and response headers and bodies are kept only with
+>   `--detail`, because an Authorization header carries a bearer token and the
+>   report can be exported; a test asserts a token cannot reach a report
+>   nobody asked to contain one. Values are verbatim, not redacted: a redacted
+>   header is a claim about what was sent that is not true. Redux is two tiers
+>   that claim differently. `--redux-watch` is read-only through
+>   `store.subscribe`, which is how react-redux itself watches the store, and
+>   names no action because Redux hands subscribers none. `--redux-actions`
+>   also wraps `dispatch` in the running app, which modifies it, so it is opt-
+>   in, stated in the report and put back afterwards; a thunk's injected
+>   dispatch bypasses the wrapper and such a record says so. `--screenshot`
+>   photographs the screen before and after; there is no physical-iOS route,
+>   and it is reported unavailable rather than attempted. None of this is a
+>   performance measurement -- attaching a debugger changes what the runtime
+>   does, and the report says so. It is outside the M0/M1 scope this report
+>   covers; `docs/inspect-without-installing.md` is the account.
+> - **An empty iOS recording is diagnosed rather than reported as empty.**
+>   Instruments samples through the unified log store, and a process without
+>   Full Disk Access cannot open it; `xctrace` describes that as "the log
+>   archive is corrupt or incomplete", which is not what is wrong. `mpi
+>   preflight` now probes it as `ios.capture.log_store` -- one `log show
+>   --last 1s`, reported as available or `permission_denied`, never unknown --
+>   so the problem is found before a capture is attempted, and a capture that
+>   hits it reports the permission and the fix instead of `limited`.
+>   Separately, `time-profile` is not the only table that carries samples: a
+>   recording on this host held 0 `time-profile` rows and 2 `time-sample`
+>   rows, so an empty `time-profile` now triggers a row count over the tables
+>   that plausibly carry samples and reports how many exist, in which schema,
+>   that this build does not read it, and where the bundle is. Parsing `time-
+>   sample` is not attempted, because the only specimen is two rows from a
+>   recording that failed, and a parser that looks like support is worse than
+>   none. Section 1's preflight paragraph predates the capability.
+> - **A simulator or emulator can be started from the tool.** `mpi boot` and
+>   the Devices tab keep "started" and "ready" apart and report the device id
+>   observed afterwards rather than the AVD name. The wait loops' budget was a
+>   lower bound on how long the wait could take, not an upper one: each poll
+>   was handed its own fixed timeout after the budget was checked, so a 180 s
+>   budget could run to 239 s against a wedged CoreSimulatorService, and a
+>   poll that never answered was indistinguishable from "not booted yet", so a
+>   broken tool was reported as a device that never came up. Each poll now
+>   gets what is left of the budget, three unanswered polls stop the loop and
+>   name the tooling failure and its fix, and the Android path refuses to
+>   start when it cannot take a baseline `adb devices` snapshot, since an
+>   empty baseline would report someone else's emulator as the one it started.
+>   Pinned by a stub that wedges. `known-limitations.md` section 11 has what
+>   was measured.
+> - **A v0.1.0 build has been cut** (`docs/RELEASE-v0.1.0.md`): a `DevX.dmg`
+>   produced by the `devx_dmg` target, Apple Silicon only, macOS 14 or newer.
+>   It is ad-hoc signed and not notarized, so Gatekeeper refuses it on first
+>   launch with a message that sounds like a damaged file; the notes lead with
+>   the right-click-Open step because that refusal is the most common way a
+>   tool like this gets written off as broken. J12 is unchanged by the
+>   release: there is no Developer ID in this environment.
+> - **The test count is 543 cases in 23 C++ binaries, plus 502 Swift checks and
+>   78 smoke checks**, not 228 in 12 -- read from the binaries on 2026-09-16,
+>   not remembered. Section 1's 24 comparison-engine cases are 40 now.
 >
 > **Still open**, unchanged from this report: no physical device has been
 > reached on either platform, and no iOS recording has ever completed. An
 > `xctrace` collector now exists and its export path is tested against real
 > Instruments output, but `xctrace record` does not terminate against the
-> simulator on this host, so the cross-platform live-capture claim in the gate
-> assessment stands as it was written.
+> simulator on this host. iOS live capture exists by a different route: a
+> host-process collector streams CPU time, utilisation, memory footprint and
+> per-thread times from an app in a booted simulator, and `/usr/bin/sample`
+> gives it stack attribution -- verified on the simulator, and not possible on
+> a device, where the app is not a host process. So of the two reasons the
+> gate assessment gives, "no collector exists" no longer holds on either
+> platform and "no physical device was reachable" still does.
 >
-> `docs/known-limitations.md` and
-> `docs/capabilities/tested-capability-matrix.md` are the current
-> authorities.
+> `docs/known-limitations.md`, `docs/capabilities/tested-capability-matrix.md`
+> and, for everything iOS, `docs/ios-live-capture-findings.md` are the current
+> authorities. The last was rewritten on 2026-09-15 to state the current
+> state first and keep its corrections as history.
 
 ---
 
