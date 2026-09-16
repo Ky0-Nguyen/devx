@@ -257,6 +257,46 @@ else
   printf '  FAIL the translation catalog has drifted from the views\n'; fail=$((fail+1))
 fi
 
+
+echo "== mcp server over stdio =="
+
+# The dispatcher has unit tests; the transport does not, and the transport is
+# where a host-visible regression lives. Three things are asserted here that
+# no unit test can reach: that stdout carries only protocol, that a
+# notification draws no reply, and that a mutating tool stays refused.
+
+MCP_INIT='{"jsonrpc":"2.0","id":1,"method":"initialize"}'
+MCP_NOTE='{"jsonrpc":"2.0","method":"notifications/initialized"}'
+MCP_LIST='{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+MCP_BOOT='{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"boot_device","arguments":{"identifier":"x"}}}'
+
+# Every line of stdout must be a JSON object, and there must be exactly two:
+# a stray log line is a parse error at the host, which surfaces as "the server
+# crashed on startup" with nothing saying why, and a reply to the notification
+# would be a third.
+check "stdout is exactly two JSON responses, and a notification draws none" 0 \
+  sh -c "printf '%s\n%s\n%s\n' '$MCP_INIT' '$MCP_NOTE' '$MCP_LIST' \
+         | '$MPI' mcp 2>/dev/null \
+         | python3 -c 'import json,sys; ls=[l for l in sys.stdin if l.strip()]; [json.loads(l) for l in ls]; sys.exit(0 if len(ls)==2 else 1)'"
+
+check_contains "initialize names the protocol revision" "2024-11-05" \
+  sh -c "printf '%s\n' '$MCP_INIT' | '$MPI' mcp 2>/dev/null"
+
+check_contains "tools/list offers the report tools" "read_session" \
+  sh -c "printf '%s\n%s\n' '$MCP_INIT' '$MCP_LIST' | '$MPI' mcp 2>/dev/null"
+
+check_contains "a read-only server refuses a mutating tool" "Nothing was done" \
+  sh -c "printf '%s\n%s\n' '$MCP_INIT' '$MCP_BOOT' | '$MPI' mcp 2>/dev/null"
+
+check_contains "and names the flag that would allow it" "allow-actions" \
+  sh -c "printf '%s\n%s\n' '$MCP_INIT' '$MCP_BOOT' | '$MPI' mcp 2>/dev/null"
+
+check_contains "a call before initialize is refused" "initialize must be called" \
+  sh -c "printf '%s\n' '$MCP_LIST' | '$MPI' mcp 2>/dev/null"
+
+check_contains "a line that is not JSON is a parse error, not a crash" "-32700" \
+  sh -c "printf 'not json\n' | '$MPI' mcp 2>/dev/null"
+
 echo "== app bundle =="
 # The icon is generated at build time, so its absence is a build wiring
 # failure rather than a missing file someone forgot to commit -- and a
