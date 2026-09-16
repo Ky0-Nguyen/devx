@@ -1849,6 +1849,215 @@ do {
           "an unselectable list still reports findings exist")
 }
 
+do {
+    // A captured request as a curl command, for another team to run. The
+    // escaping is the part that has to be right: a body with an apostrophe
+    // in it is common, and a broken quote hands someone a command that does
+    // not run or, worse, runs differently.
+    func req(_ body: String) -> JSON { parse(body) }
+
+    let plain = req("{\"method\":\"GET\",\"url\":\"https://x/y?a=b\"}")
+    let g = CurlCommand.build(plain, capture: .on)!
+    check(g.contains("curl 'https://x/y?a=b'"), "the url is quoted: \(g)")
+    check(!g.contains("-X GET"), "GET is curl's default and is not restated")
+
+    let post = req("{\"method\":\"POST\",\"url\":\"https://x\"}")
+    check(CurlCommand.build(post, capture: .on)!.contains("-X POST"),
+          "a non-GET method is stated")
+    let head = req("{\"method\":\"HEAD\",\"url\":\"https://x\"}")
+    check(CurlCommand.build(head, capture: .on)!.contains("-I"),
+          "HEAD is -I, not -X HEAD, or curl waits for a body that never comes")
+
+    // Headers: request only, never the response's.
+    let withHeaders = req("""
+      {"method":"GET","url":"https://x",
+       "request_headers":{"accept":"application/json","x-trace":"abc"},
+       "response_headers":{"server":"nginx"}}
+      """)
+    let h = CurlCommand.build(withHeaders, capture: .on)!
+    check(h.contains("-H 'accept: application/json'"), "a request header is sent")
+    check(h.contains("-H 'x-trace: abc'"), "all of them")
+    check(!h.contains("nginx"),
+          "a response header is never put in a request -- it was not sent")
+
+    // The escaping cases.
+    check(CurlCommand.quote("plain") == "'plain'", "simple values are quoted")
+    check(CurlCommand.quote("it's") == "'it'\\''s'",
+          "an apostrophe closes, escapes and reopens: got \(CurlCommand.quote("it's"))")
+    check(CurlCommand.quote("$HOME `id` !!") == "'$HOME `id` !!'",
+          "single quotes stop the shell expanding anything, so these survive")
+    let json = "{\"note\":\"it's fine\",\"cmd\":\"$(rm -rf /)\"}"
+    let quoted = CurlCommand.quote(json)
+    check(quoted.hasPrefix("'") && quoted.hasSuffix("'"), "wrapped")
+    check(!quoted.contains("''\""),
+          "and a body carrying both an apostrophe and a substitution is still "
+          + "one argument")
+
+    // A request body goes in as the captured bytes.
+    let withBody = req("""
+      {"method":"POST","url":"https://x","request_body":"{\\"q\\":1}"}
+      """)
+    let wb = CurlCommand.build(withBody, capture: .on)!
+    check(wb.contains("--data-raw '{\"q\":1}'"), "the body is sent: \(wb)")
+
+    // Base64 is not reproduced: emitting it would send what the app did not.
+    let b64 = req("""
+      {"method":"POST","url":"https://x","request_body":"AAEC",
+       "response_body_base64":true}
+      """)
+    check(CurlCommand.build(b64, capture: .on)!.contains("--data-raw"),
+          "the response's base64 flag does not apply to the request body")
+
+    // Detail off: the command is honest about what it does not have.
+    let off = CurlCommand.build(plain, capture: .off)!
+    check(off.hasPrefix("#"),
+          "a command built without headers leads with a comment saying so")
+    check(off.contains("were not captured"), "and says which: \(off.prefix(70))")
+    let unknown = CurlCommand.build(plain, capture: .unknown)!
+    check(unknown.contains("not recorded"),
+          "unknown capture is not reported as absent")
+    check(CurlCommand.build(plain, capture: .on)!.hasPrefix("curl"),
+          "with detail on there is no comment to explain away")
+
+    // No url, no command -- rather than `curl ''`.
+    check(CurlCommand.build(req("{\"method\":\"GET\"}"), capture: .on) == nil,
+          "a row with no url yields no command")
+
+    // The credential warning names no value.
+    let auth = req("""
+      {"method":"GET","url":"https://x",
+       "request_headers":{"authorization":"Bearer secret-token-value"}}
+      """)
+    let warn = CurlCommand.credentialWarning(auth)
+    check(warn != nil, "an authorization header is called out")
+    check(!(warn!).contains("secret-token-value"),
+          "and the warning never repeats the token")
+    check(CurlCommand.credentialWarning(
+            req("{\"request_headers\":{\"accept\":\"x\"}}")) == nil,
+          "a request with no credential header gets no warning")
+}
+
+do {
+    // Searching a body. A 260 KB response is searched, not read.
+    let body = """
+    {
+      "users": [
+        { "id": 104839, "name": "Tuan" },
+        { "id": 200001, "name": "Other" }
+      ]
+    }
+    """
+    let hit = BodySearch.find(in: body, needle: "104839")!
+    check(hit.total == 1, "one line matches")
+    check(hit.lines.first!.number == 3,
+          "reported with the body's own line number, got \(hit.lines.first!.number)")
+    check(hit.lines.first!.text.contains("Tuan"), "and the whole line")
+    check(hit.scanned == 6, "out of the lines searched, got \(hit.scanned)")
+
+    check(BodySearch.find(in: body, needle: "TUAN")!.total == 1,
+          "case-insensitive: a reader does not know how the server cased it")
+    check(BodySearch.find(in: body, needle: "name")!.total == 2,
+          "every matching line is counted")
+
+    let none = BodySearch.find(in: body, needle: "zzz")!
+    check(none.total == 0, "no match is a real answer")
+    check(BodySearch.summary(none).contains("no match"),
+          "stated as one: \(BodySearch.summary(none))")
+    check(BodySearch.summary(none).contains("6"),
+          "with the denominator, so it is not read as 'not in the response'")
+
+    check(BodySearch.find(in: body, needle: "") == nil,
+          "an empty needle is not a search, so the body renders unfiltered")
+    check(BodySearch.find(in: body, needle: "   ") == nil,
+          "nor is whitespace")
+
+    // The cap is reported rather than silently shortening.
+    let many = (1...500).map { "line \($0) x" }.joined(separator: "\n")
+    let capped = BodySearch.find(in: many, needle: "x", limit: 10)!
+    check(capped.lines.count == 10, "the list is capped")
+    check(capped.total == 500, "while the total is the real one")
+    check(capped.truncated.contains("10"), "and the cut is stated")
+    check(BodySearch.summary(capped).contains("500"),
+          "the summary reports all 500 matches, not the 10 shown")
+}
+
+do {
+    // A body as a foldable tree. This is a *rendering* -- it is parsed, and
+    // parsing is what BodyFormat's re-indenter refuses to do -- so the tests
+    // pin both what it shows and what it does not claim.
+    let body = """
+    {"user":{"id":104839,"name":"Tuan","tags":["a","b"]},"ok":true,"n":null}
+    """
+    let parsed = JSONTree.parse(body)
+    let root = parsed.root
+    check(root != nil, "a JSON body parses into a tree")
+    check(parsed.truncated.isEmpty, "a small body is not truncated")
+
+    // Level one only: the shape of a response is a few keys holding a lot.
+    let shallow = JSONTree.visibleRows(root!, folded: [], expandAll: false,
+                                       openDepth: 1)
+    check(shallow.count == 4,
+          "root plus its three keys, and no deeper: got \(shallow.count)")
+    check(shallow.map { $0.node.label } == ["", "n", "ok", "user"],
+          "keys sorted, because a dictionary has no order to keep: "
+          + "\(shallow.map { $0.node.label })")
+
+    // The container says how much it is hiding.
+    let user = shallow.first { $0.node.label == "user" }!.node
+    check(user.summary == "{3}", "a folded object states its size, got \(user.summary)")
+    check(user.isContainer, "and is a container")
+
+    // Expand all reaches the leaves.
+    let deep = JSONTree.visibleRows(root!, folded: [], expandAll: true,
+                                    openDepth: 1)
+    check(deep.count > shallow.count, "expand all shows more")
+    let labels = deep.map { $0.node.label }
+    check(labels.contains("id") && labels.contains("[0]"),
+          "including array elements: \(labels)")
+
+    // One node shut by hand stays shut while everything else is open.
+    let exception = JSONTree.visibleRows(root!, folded: [user.id],
+                                         expandAll: true, openDepth: 1)
+    check(exception.count < deep.count,
+          "folding one subtree removes its rows even under expand all")
+    check(exception.contains { $0.node.label == "user" },
+          "the folded node itself is still listed")
+    check(!exception.contains { $0.node.label == "id" },
+          "but its children are not")
+
+    // And a node opened by hand survives a collapsed baseline.
+    let opened = JSONTree.visibleRows(root!, folded: [user.id],
+                                      expandAll: false, openDepth: 1)
+    check(opened.contains { $0.node.label == "id" },
+          "toggling a node against a closed baseline opens it")
+
+    // Scalars: rendered so the type is not lost.
+    let all = JSONTree.visibleRows(root!, folded: [], expandAll: true,
+                                   openDepth: 1)
+    func value(_ label: String) -> String {
+        all.first { $0.node.label == label }?.node.value ?? "<missing>"
+    }
+    check(value("id") == "104839", "an integer keeps its digits, got \(value("id"))")
+    check(value("name") == "\"Tuan\"",
+          "a string is quoted, so \"123\" cannot read as a number")
+    check(value("ok") == "true", "a bool is a bool")
+    check(value("n") == "null", "and null is null, not an empty cell")
+    check(JSONTree.scalar("") == "\"\"",
+          "an empty string shows as \"\" rather than as nothing")
+
+    // Not JSON: no tree, and the caller falls back to the text.
+    check(JSONTree.parse("<html>").root == nil, "HTML has no tree")
+    check(JSONTree.parse("{\"a\":").root == nil, "nor does truncated JSON")
+
+    // The node cap is reported, not silent.
+    let wide = "[" + (1...500).map { "{\"i\":\($0)}" }.joined(separator: ",") + "]"
+    let capped = JSONTree.parse(wide, limit: 50)
+    check(capped.root != nil, "a large body still gives a tree")
+    check(!capped.truncated.isEmpty,
+          "and says it is partial rather than looking complete")
+    check(capped.truncated.contains("50"), "naming the cap")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

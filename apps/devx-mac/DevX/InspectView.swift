@@ -830,19 +830,6 @@ private struct ClearBar: View {
     }
 }
 
-/// Whether headers and bodies were captured, as far as anything knows.
-///
-/// Three-valued on purpose. `off` is a negative claim -- they were not
-/// captured -- and it can only be made about an observation the current
-/// setting actually describes. `unknown` is what to say otherwise, because a
-/// report whose provenance nobody recorded must not have a negative claim
-/// made about it.
-enum DetailCapture: Equatable {
-    case on
-    case off
-    case unknown
-}
-
 /// One request's detail, in named sections.
 private struct ExchangeColumn: View {
     let row: JSON
@@ -870,7 +857,9 @@ private struct ExchangeColumn: View {
     }
 
     @ViewBuilder private var summary: some View {
-        Panel(title: "Request", subtitle: "what was asked for") {
+        // Open: three lines, and it is what identifies the row the reader
+        // just clicked.
+        DisclosureSection(title: "Request", summary: nil, startsOpen: true) {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 7) {
                     Text(row["method"].display("?"))
@@ -916,6 +905,23 @@ private struct ExchangeColumn: View {
                           + "of the request, none of its outcome"))
                         .font(Term.micro).foregroundStyle(Term.cyan)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                if let curl = CurlCommand.build(row, capture: capture) {
+                    HStack(spacing: 8) {
+                        Button(tr("copy as curl")) {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(curl, forType: .string)
+                        }
+                        .buttonStyle(TermButtonStyle())
+                        .help(tr("reproduces the request as it was sent, for "
+                               + "someone else to run"))
+                        Spacer(minLength: 0)
+                    }
+                    if let warning = CurlCommand.credentialWarning(row) {
+                        Text(warning)
+                            .font(Term.micro).foregroundStyle(Term.amber)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
         }
@@ -972,8 +978,12 @@ private struct ExchangeColumn: View {
     /// looked". Rendering this unconditionally is what stops its absence from
     /// becoming a claim of its own.
     @ViewBuilder private var limits: some View {
-        Panel(title: "What this pane cannot show",
-              subtitle: "not measured, rather than measured as nothing") {
+        // Closed, and deliberately still present: the title is the claim --
+        // that there are things this pane cannot show -- so collapsing it
+        // hides the list, never the fact.
+        DisclosureSection(title: "What this pane cannot show",
+                          summary: tr("not measured, rather than measured as "
+                                    + "nothing")) {
             BulletList(title: "", items: [
                 tr("no timing breakdown: one duration is recorded, and the "
                  + "DNS, connect, TLS and time-to-first-byte phases are not"),
@@ -1001,8 +1011,14 @@ private struct HeaderSection: View {
         // that separates them.
         let absent = row.isAbsent(key)
         let names = row[key].keys
-        Panel(title: title + (absent ? "" : " (\(names.count))"),
-              subtitle: nil) {
+        // Closed by default: one `authorization` header can be two thousand
+        // characters, and open-by-default meant a single row pushed the rest
+        // of the pane off the screen.
+        DisclosureSection(
+            title: title,
+            summary: absent ? BodySummary.short(
+                        FormattedBody(state: .notCaptured, raw: nil, note: ""))
+                            : "(\(names.count))") {
             if absent {
                 switch capture {
                 case .off:
@@ -1046,6 +1062,9 @@ private struct HeaderSection: View {
 }
 
 /// One body, formatted, with every state it can be in kept apart.
+/// Which rendering of a body is on screen.
+enum BodyView: Hashable { case tree, text }
+
 private struct BodySection: View {
     let title: String
     let row: JSON
@@ -1055,12 +1074,22 @@ private struct BodySection: View {
     /// thousands of lines, and rendering all of it is seconds of layout on
     /// exactly the captures people most want to read.
     @State private var steps = 1
+    /// Per-section, not shared: a reader searching the response body has no
+    /// use for the same needle in the request body.
+    @State private var needle = ""
+    /// Tree by default, because folding is what was asked for. The text view
+    /// is one click away and is the authoritative one.
+    @State private var view: BodyView = .tree
 
     private var limit: Int { BodyFormat.displayLimit * steps }
 
     var body: some View {
         let b = BodyFormat.classify(row, field, limit: limit)
-        Panel(title: title, subtitle: nil) {
+        // The response body opens; everything else starts closed. It is the
+        // thing a reader clicked the row for, and the request body is
+        // usually absent or a few dozen bytes.
+        DisclosureSection(title: title, summary: BodySummary.short(b),
+                          startsOpen: field == .response) {
             VStack(alignment: .leading, spacing: 4) {
                 switch b.state {
                 case .notCaptured:
@@ -1083,12 +1112,47 @@ private struct BodySection: View {
                         .fixedSize(horizontal: false, vertical: true)
                     bodyText(b)
                 case .json:
-                    Text(tr("re-indented: every value is the bytes that "
-                          + "arrived; only the whitespace between them "
-                          + "changed"))
-                        .font(Term.micro).foregroundStyle(Term.dim)
-                        .fixedSize(horizontal: false, vertical: true)
-                    bodyText(b)
+                    // Two views of one body, and they are not the same kind
+                    // of thing. The tree folds and is parsed -- which turns
+                    // 1.0 into 1 and drops a duplicate key -- so the text is
+                    // the one that is the bytes that arrived.
+                    Picker("", selection: $view) {
+                        Text(tr("tree")).tag(BodyView.tree)
+                        Text(tr("text")).tag(BodyView.text)
+                    }
+                    .pickerStyle(.segmented).labelsHidden()
+                    .frame(maxWidth: 180)
+                    if view == .tree {
+                        let parsed = JSONTree.parse(b.raw ?? b.display)
+                        if let root = parsed.root {
+                            Text(tr("a parsed rendering, so it folds -- "
+                                  + "switch to text for the bytes that "
+                                  + "arrived"))
+                                .font(Term.micro).foregroundStyle(Term.dim)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if !parsed.truncated.isEmpty {
+                                Text(parsed.truncated)
+                                    .font(Term.micro)
+                                    .foregroundStyle(Term.amber)
+                                    .fixedSize(horizontal: false,
+                                               vertical: true)
+                            }
+                            JSONTreeView(root: root)
+                        } else {
+                            Text(tr("this body could not be parsed into a "
+                                  + "tree; the text below is what arrived"))
+                                .font(Term.micro).foregroundStyle(Term.amber)
+                                .fixedSize(horizontal: false, vertical: true)
+                            bodyText(b)
+                        }
+                    } else {
+                        Text(tr("re-indented: every value is the bytes that "
+                              + "arrived; only the whitespace between them "
+                              + "changed"))
+                            .font(Term.micro).foregroundStyle(Term.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                        bodyText(b)
+                    }
                 case .text:
                     Text(tr("shown as captured: this is not JSON"))
                         .font(Term.micro).foregroundStyle(Term.dim)
@@ -1134,10 +1198,46 @@ private struct BodySection: View {
     /// response. A single Text of a bounded prefix renders in one pass, and
     /// the bound is stated rather than silent.
     @ViewBuilder private func bodyText(_ b: FormattedBody) -> some View {
-        Text(b.display)
-            .font(Term.micro).foregroundStyle(Term.ink)
-            .textSelection(.enabled)
-            .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 8) {
+            TextField(tr("search this body…"), text: $needle)
+                .textFieldStyle(TermFieldStyle()).frame(maxWidth: 240)
+            if !needle.isEmpty {
+                Button(tr("clear")) { needle = "" }
+                    .buttonStyle(TermButtonStyle())
+            }
+            Spacer(minLength: 0)
+        }
+        if let m = BodySearch.find(in: b.display, needle: needle) {
+            // Says how many matched out of how much was searched: "3
+            // matches" against a body the pane has only partly loaded would
+            // read as three in the whole response.
+            Text(BodySearch.summary(m))
+                .font(Term.micro)
+                .foregroundStyle(m.total == 0 ? Term.amber : Term.cyan)
+                .fixedSize(horizontal: false, vertical: true)
+            if !m.truncated.isEmpty {
+                Text(m.truncated).font(Term.micro).foregroundStyle(Term.dim)
+            }
+            // The body's own line numbers, so a match stays locatable in the
+            // unfiltered text.
+            ForEach(m.lines, id: \.number) { line in
+                HStack(alignment: .top, spacing: 8) {
+                    Text("\(line.number)")
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .frame(width: 46, alignment: .trailing)
+                    Text(line.text)
+                        .font(Term.micro).foregroundStyle(Term.ink)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+            }
+        } else {
+            Text(b.display)
+                .font(Term.micro).foregroundStyle(Term.ink)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        }
         if !b.note.isEmpty {
             HStack(spacing: 8) {
                 Text(b.note).font(Term.micro).foregroundStyle(Term.cyan)

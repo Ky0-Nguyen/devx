@@ -26,6 +26,19 @@
 // one of them is about the app.
 import Foundation
 
+/// Whether headers and bodies were captured, as far as anything knows.
+///
+/// Three-valued on purpose. `off` is a negative claim -- they were not
+/// captured -- and it can only be made about an observation the current
+/// setting actually describes. `unknown` is what to say otherwise, because a
+/// report whose provenance nobody recorded must not have a negative claim
+/// made about it.
+enum DetailCapture: Equatable {
+    case on
+    case off
+    case unknown
+}
+
 /// Which of an exchange's two bodies is being read.
 enum BodyField {
     case request
@@ -276,5 +289,41 @@ enum BodyFormat {
         template
             .replacingOccurrences(of: "{shown}", with: "\(n)")
             .replacingOccurrences(of: "{total}", with: "\(total)")
+    }
+}
+
+/// What a collapsed section can say about itself without being opened.
+///
+/// A section header that reads only "Response body" makes the reader open it
+/// to find out whether it is worth opening. The screenshot that prompted
+/// collapsing by default had a 2000-character bearer token flooding the
+/// pane; the fix is only an improvement if the closed state still answers
+/// "is there anything in here, and how much".
+enum BodySummary {
+    /// A short, honest description: the state, and the size when there is one.
+    ///
+    /// Never invents a size for a body that was not captured -- that is the
+    /// distinction the six states exist to keep.
+    static func short(_ b: FormattedBody) -> String {
+        switch b.state {
+        case .notCaptured:      return tr("not captured")
+        case .unavailable:      return tr("none to give")
+        case .empty:            return tr("0 bytes")
+        case .base64:           return tr("base64") + " · " + size(b)
+        case .json:             return "JSON · " + size(b)
+        case .text:             return tr("text") + " · " + size(b)
+        }
+    }
+
+    /// The captured size, from the bytes as they arrived rather than from the
+    /// re-indented view -- the whitespace this tool added is not size the
+    /// server sent.
+    static func size(_ b: FormattedBody) -> String {
+        let n = b.raw?.count ?? 0
+        if n < 1024 { return "\(n) B" }
+        if n < 1024 * 1024 {
+            return String(format: "%.1f KB", Double(n) / 1024)
+        }
+        return String(format: "%.1f MB", Double(n) / (1024 * 1024))
     }
 }
