@@ -300,6 +300,39 @@ std::optional<ProcCpuTime> parse_proc_stat_cpu_time(const std::string& stat_line
   return t;
 }
 
+std::optional<int> parse_cpu_present_count(const std::string& text) {
+  const std::string t = trim(text);
+  if (t.empty()) return std::nullopt;
+  int total = 0;
+  std::size_t at = 0;
+  while (at <= t.size()) {
+    const std::size_t comma = t.find(',', at);
+    const std::string part =
+        trim(t.substr(at, comma == std::string::npos ? std::string::npos
+                                                     : comma - at));
+    if (part.empty()) return std::nullopt;
+    const std::size_t dash = part.find('-');
+    if (dash == std::string::npos) {
+      if (!all_digits(part)) return std::nullopt;
+      total += 1;
+    } else {
+      const std::string lo = part.substr(0, dash);
+      const std::string hi = part.substr(dash + 1);
+      if (!all_digits(lo) || !all_digits(hi)) return std::nullopt;
+      const long long a = std::atoll(lo.c_str());
+      const long long b = std::atoll(hi.c_str());
+      // A descending range is not a cpulist this parser understands, and
+      // reading it as one CPU would be a guess.
+      if (b < a) return std::nullopt;
+      total += static_cast<int>(b - a + 1);
+    }
+    if (comma == std::string::npos) break;
+    at = comma + 1;
+  }
+  if (total <= 0) return std::nullopt;
+  return total;
+}
+
 PackageFlags parse_dumpsys_package_flags(const std::string& text) {
   PackageFlags f;
   for (const auto& line : split_lines(text)) {

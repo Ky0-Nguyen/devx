@@ -84,6 +84,24 @@ struct LiveSnapshot {
     std::string name;
     double value = 0;
     std::string unit;
+    // Whether `value` is a running total or a reading at that instant.
+    bool cumulative = false;
+    // What a percentage is a percentage of, as declared by the series
+    // (spec section 8 / E12). "not_applicable" for everything that is not
+    // one.
+    std::string cpu_normalization;
+    // For a cumulative counter, the change across the points this capture
+    // actually collected, and the span they cover.
+    //
+    // This is the number a reader of a live capture wants: `value` for
+    // `cpu.process_time_ns` is the process's whole life, so a 67 s window on
+    // an app that had been running for hours read 3.18 h. The delta is what
+    // the window cost.
+    //
+    // Absent when the series has fewer than two points, because a difference
+    // needs two -- not zero, which would claim the app used no CPU.
+    std::optional<double> delta;
+    std::optional<std::int64_t> delta_span_ns;
   };
   std::vector<LatestCounter> latest_counters;
 

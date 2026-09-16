@@ -768,8 +768,10 @@ std::int64_t AdbCollector::collect_memory_once(
   // This is the one counter that separates a process that was *busy* from one
   // that was *waiting*: wall-clock time cannot tell those apart, and every
   // CPU finding gets read as though it could. It is cumulative since the
-  // process started, so a reader takes a difference -- and because that is
-  // what the kernel reports, no rate is invented here.
+  // process started, so the counter is what gets stored -- a counter is
+  // lossless and any window's cost is a difference of two readings, while a
+  // stored rate has already thrown that away. The rate is derived on top of
+  // it, from two measured readings, and only once two exist.
   added += collect_cpu_time_once(device, config, at_ns, out);
 
   source_ok = true;
@@ -817,6 +819,18 @@ std::int64_t AdbCollector::collect_cpu_time_once(
   const auto cpu = parse_proc_stat_cpu_time(r.out);
   if (!cpu.has_value()) return 0;
 
+  // The device's CPU count, for the ceiling a per-core percentage is read
+  // against. Read once, and its absence is recorded rather than filled in.
+  if (stream_.core_count == 0) {
+    const auto present = proc::run(
+        shell_argv(device.device_id,
+                   {"cat", "/sys/devices/system/cpu/present"}),
+        po);
+    const auto parsed = present.ok() ? parse_cpu_present_count(present.out)
+                                     : std::nullopt;
+    stream_.core_count = parsed.has_value() ? *parsed : -1;
+  }
+
   const double ns_per_tick = 1e9 / static_cast<double>(stream_.clk_tck);
   const struct {
     const char* name;
@@ -845,6 +859,10 @@ std::int64_t AdbCollector::collect_cpu_time_once(
       // Its own family: CPU time is not memory and must never be totalled
       // with one, which is what keeping families apart is for.
       c.family = spec.family;
+      // Counted since the process started, not since this capture began. A
+      // reader that takes the absolute figure for the capture's cost is off
+      // by the whole life of the process.
+      c.cumulative = true;
       out.counters.push_back(std::move(c));
       target = &out.counters.back();
     }
@@ -852,6 +870,43 @@ std::int64_t AdbCollector::collect_cpu_time_once(
         at_ns, static_cast<double>(spec.ticks) * ns_per_tick);
     ++added;
   }
+
+  // The rate, derived from this reading and the previous one. iOS has
+  // published this since the beginning; Android published only the counter,
+  // which left the two platforms answering different questions and left the
+  // Live tab with nothing but a ramp to draw.
+  const double total_ns = static_cast<double>(cpu->total_ticks()) * ns_per_tick;
+  if (stream_.last_cpu_ns.has_value() && stream_.last_cpu_at_ns.has_value()) {
+    if (const auto pct = model::cpu_utilisation_percent(
+            *stream_.last_cpu_at_ns, *stream_.last_cpu_ns, at_ns, total_ns)) {
+      model::CounterSeries* target = nullptr;
+      for (auto& c : out.counters) {
+        if (c.name == "cpu.utilisation_percent") {
+          target = &c;
+          break;
+        }
+      }
+      if (target == nullptr) {
+        model::CounterSeries c;
+        c.name = "cpu.utilisation_percent";
+        c.unit = "percent";
+        c.provider = "/proc/<pid>/stat";
+        c.process_instance_id = stream_.process_key;
+        c.family = "cpu_utilisation";
+        // A reading over an interval, not a running total.
+        c.cumulative = false;
+        // A percentage of one core, all of the app's threads counted
+        // together. Undeclared, it would mean nothing (spec section 8 / E12).
+        c.cpu_normalization = model::CpuNormalization::kSingleCore;
+        out.counters.push_back(std::move(c));
+        target = &out.counters.back();
+      }
+      target->points.emplace_back(at_ns, *pct);
+      ++added;
+    }
+  }
+  stream_.last_cpu_ns = total_ns;
+  stream_.last_cpu_at_ns = at_ns;
   return added;
 }
 
@@ -1882,8 +1937,28 @@ session::CaptureResult AdbCollector::finish(
           "whole-process, all threads together: it says the app used CPU, "
           "never which thread did");
       cpu_time.limitations.push_back(
-          "cumulative since the process started, so a rate is a difference "
-          "the reader takes -- none is computed here");
+          "cumulative since the process started, so the absolute figure is "
+          "not this capture's cost: a 67 s window on an app that had been "
+          "running for hours opened at 3.18 h. The capture's cost is the "
+          "difference between two readings");
+      cpu_time.limitations.push_back(
+          stream_.core_count > 0
+              ? "cpu.utilisation_percent is derived from consecutive readings "
+                "as a percentage of ONE core, all threads of the process "
+                "together, so this " +
+                    std::to_string(stream_.core_count) +
+                    "-CPU device is saturated at " +
+                    std::to_string(stream_.core_count * 100) +
+                    "% and not at 100%"
+              : "cpu.utilisation_percent is derived from consecutive readings "
+                "as a percentage of ONE core, all threads of the process "
+                "together. The device's CPU count could not be read from "
+                "/sys/devices/system/cpu/present, so the ceiling this "
+                "saturates at is unknown rather than assumed");
+      cpu_time.limitations.push_back(
+          "no utilisation is published for the first reading of a capture: a "
+          "rate needs two, and 0% would read as an idle app at the one "
+          "moment it is certainly not");
       cpu_time.limitations.push_back(
           "user and system time are reported separately and never summed with "
           "a memory family; CPU time is not memory");

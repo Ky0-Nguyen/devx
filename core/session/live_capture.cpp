@@ -59,6 +59,18 @@ json::Value LiveSnapshot::to_json() const {
       // that defaults a missing unit to bytes is how nanoseconds became
       // gigabytes on the Live tab.
       if (!c.unit.empty()) e.set("unit", json::Value::string(c.unit));
+      e.set("cumulative", json::Value::boolean(c.cumulative));
+      if (!c.cpu_normalization.empty()) {
+        e.set("cpu_normalization", json::Value::string(c.cpu_normalization));
+      }
+      // Absent when there was no pair to difference. A zero here would be
+      // read as "this capture used none of it".
+      if (c.delta.has_value()) {
+        e.set("delta", json::Value::number(*c.delta));
+      }
+      if (c.delta_span_ns.has_value()) {
+        e.set("delta_span_ns", json::Value::integer(*c.delta_span_ns));
+      }
     latest.push_back(std::move(e));
   }
   v.set("latest_counters", std::move(latest));
@@ -329,8 +341,21 @@ void LiveSession::refresh_snapshot(const LiveUpdate* update, bool run_analysis) 
         // bare grouped number, so `memory.rss_total_bytes` read as
         // "1 105 149 952" and `cpu.process_time_ns` as
         // "10 808 890 000 000". The series has carried a unit all along.
-        snapshot_.latest_counters.emplace_back(c.name, c.points.back().second,
-                                               c.unit);
+        LiveSnapshot::LatestCounter latest;
+        latest.name = c.name;
+        latest.value = c.points.back().second;
+        latest.unit = c.unit;
+        latest.cumulative = c.cumulative;
+        latest.cpu_normalization = model::to_string(c.cpu_normalization);
+        // What this capture cost, for a counter whose absolute value is the
+        // process's whole life. Two points or it stays absent: a difference
+        // needs two, and zero would be a claim.
+        if (c.cumulative && c.points.size() >= 2) {
+          latest.delta = c.points.back().second - c.points.front().second;
+          latest.delta_span_ns =
+              c.points.back().first - c.points.front().first;
+        }
+        snapshot_.latest_counters.push_back(std::move(latest));
       }
     }
     snapshot_.counter_points = points;

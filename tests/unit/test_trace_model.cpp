@@ -139,6 +139,89 @@ MPI_TEST(cpu_percentage_declares_its_normalization, {"E12"}) {
                std::string("all_cores"));
 }
 
+MPI_TEST(a_counter_series_declares_whether_it_is_a_running_total, {"E11", "E12"}) {
+  // Which number means anything depends on this. `cpu.process_time_ns` is
+  // counted from when the process started, so a 67-second capture of an app
+  // that had been running for hours read 3.18 h -- true, and not the
+  // capture's cost. The cost is a difference between two points. For an
+  // instantaneous series the point itself is the answer. Nothing in the name
+  // says which, so the series says it.
+  CounterSeries cpu;
+  cpu.name = "cpu.process_time_ns";
+  cpu.unit = "ns";
+  cpu.family = "cpu_time";
+  cpu.cumulative = true;
+  MPI_CHECK_EQ(cpu.to_json().find("cumulative")->as_bool(), true);
+
+  CounterSeries rss;
+  rss.name = "memory.rss_total_bytes";
+  rss.unit = "bytes";
+  rss.family = "rss";
+  MPI_CHECK_MSG(rss.to_json().find("cumulative")->as_bool() == false,
+                "a reading at an instant is the default, since differencing "
+                "rss across a window answers a different question");
+}
+
+MPI_TEST(a_counter_percentage_declares_its_normalization, {"E12"}) {
+  // The same rule `Metric` has always carried (spec section 8 / E12), which a
+  // counter series published percentages without: on an eight-core device
+  // 100% is either one core saturated or the whole SoC, and undeclared it is
+  // neither.
+  CounterSeries util;
+  util.name = "cpu.utilisation_percent";
+  util.unit = "percent";
+  util.family = "cpu_utilisation";
+  util.cpu_normalization = CpuNormalization::kSingleCore;
+  MPI_CHECK_EQ(util.to_json().find("cpu_normalization")->as_string(),
+               std::string("single_core"));
+
+  CounterSeries rss;
+  rss.unit = "bytes";
+  MPI_CHECK_MSG(
+      rss.to_json().find("cpu_normalization")->as_string() == "not_applicable",
+      "a series that is not a CPU percentage says so rather than leaving the "
+      "field to be read as single-core");
+}
+
+MPI_TEST(cpu_utilisation_is_a_difference_or_it_is_absent, {"E11", "E12"}) {
+  // The kernel publishes a counter, never a rate, on both platforms. A rate
+  // is therefore derived from two measured readings -- and every case where
+  // there is no such pair yields no answer rather than a zero.
+  const TimeNs t0 = 1'000'000'000;
+  const TimeNs t1 = t0 + 500'000'000;  // half a second later
+
+  // 250 ms of CPU over 500 ms of wall clock is half of one core.
+  const auto half = cpu_utilisation_percent(t0, 0.0, t1, 250'000'000.0);
+  MPI_CHECK(half.has_value());
+  MPI_CHECK_MSG(*half > 49.9 && *half < 50.1,
+                "expected 50% of one core, got " + std::to_string(*half));
+
+  // Above 100% is legitimate: all of the process's threads are counted
+  // together, so two cores working give 200% of one core.
+  const auto two_cores = cpu_utilisation_percent(t0, 0.0, t1, 1'000'000'000.0);
+  MPI_CHECK(two_cores.has_value());
+  MPI_CHECK_MSG(*two_cores > 199.0,
+                "two busy cores read as ~200% of one core, got " +
+                    std::to_string(*two_cores));
+
+  // No interval: nothing to divide by.
+  MPI_CHECK(!cpu_utilisation_percent(t1, 0.0, t1, 1.0).has_value());
+  MPI_CHECK(!cpu_utilisation_percent(t1, 0.0, t0, 1.0).has_value());
+
+  // CPU time going backwards means the pid was reused between readings, so
+  // the pair does not describe one process. The honest answer is none, not a
+  // negative utilisation.
+  MPI_CHECK_MSG(
+      !cpu_utilisation_percent(t0, 500'000'000.0, t1, 10'000.0).has_value(),
+      "a backwards counter is a reused pid, not negative CPU");
+
+  // An idle app really does read zero, which is different from having no
+  // pair to difference -- the caller distinguishes those by presence.
+  const auto idle = cpu_utilisation_percent(t0, 7.0, t1, 7.0);
+  MPI_CHECK(idle.has_value());
+  MPI_CHECK_EQ(*idle, 0.0);
+}
+
 MPI_TEST(attribution_forbids_subtraction_structurally, {"F14", "section-9"}) {
   AttributionReport r;
   r.original_total.name = "rss_bytes";

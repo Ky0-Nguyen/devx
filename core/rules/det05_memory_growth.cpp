@@ -76,6 +76,23 @@ std::vector<Cycle> completed_cycles(const model::NormalizedTrace& t) {
 }
 
 // The counter reading at or just before an instant, with how stale it is.
+// Whether a series is one this rule can read as memory held.
+//
+// The loop below iterated every counter in the trace, which was correct while
+// the only counters were memory families and wrong as soon as anything else
+// existed. `cpu.process_time_ns` rises monotonically by construction -- it is
+// a running total -- so it presented as a perfectly clean growth trend across
+// every cycle, and the thresholds it was tested against are sizes in bytes
+// being compared to nanoseconds. A percentage series would have been read the
+// same way.
+//
+// Two conditions, because either alone would let something through: a size
+// that is a running total is not memory held at an instant, and a rate is not
+// a size however it moves.
+bool is_memory_series(const model::CounterSeries& s) {
+  return s.unit == "bytes" && !s.cumulative;
+}
+
 struct Reading {
   double value = 0.0;
   model::TimeNs at_ns = 0;
@@ -200,10 +217,16 @@ class Det05 final : public Rule {
       }
     }
 
-    if (t.counters.empty()) {
+    if (std::none_of(t.counters.begin(), t.counters.end(),
+                     is_memory_series)) {
       unmet.push_back(
           "no memory counter series was collected, so there is nothing to "
-          "compare across cycles");
+          "compare across cycles" +
+          std::string(t.counters.empty()
+                          ? ""
+                          : " (the capture has counters, but none of them is "
+                            "a size held at an instant -- CPU time is a "
+                            "running total and a utilisation is a rate)"));
     }
 
     // The clocks have to be related by measurement. Without that, the cycle
@@ -269,6 +292,10 @@ class Det05 final : public Rule {
       // both (spec section 8).
       for (const auto& series : t.counters) {
         if (ctx.cancel.cancelled()) return;
+        // Only what this rule can honestly read as memory. Not recorded as a
+        // skipped reason: a CPU counter was never a candidate for a memory
+        // finding, so naming it here would be noise rather than a gap.
+        if (!is_memory_series(series)) continue;
         if (series.points.size() < min_cycles) continue;
 
         std::vector<Reading> readings;

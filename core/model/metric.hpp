@@ -21,6 +21,29 @@ const char* to_string(MetricMethod m);
 enum class CpuNormalization { kSingleCore, kAllCores, kNotApplicable, kUnknown };
 const char* to_string(CpuNormalization n);
 
+// Utilisation between two cumulative CPU-time readings, as a percentage of
+// one core -- `CpuNormalization::kSingleCore`. All of a process's threads are
+// counted together, so a multi-threaded app can legitimately exceed 100% on
+// more than one core.
+//
+// The kernel publishes a counter, never a rate: `/proc/<pid>/stat` on Android
+// and `proc_pid_rusage` on iOS both report CPU time accumulated since the
+// process started. A rate is therefore always derived from two measured
+// readings and the interval between them -- which is a difference of
+// measurements, not an invention, provided the pair exists.
+//
+// Absent rather than zero when:
+//   - there is no earlier reading to difference against, which is the state
+//     of the first tick of every capture. Publishing 0% there would read as
+//     an idle app at the one moment it certainly is not;
+//   - the interval is not positive, so there is nothing to divide by;
+//   - CPU time went backwards, which happens when a pid is reused between
+//     readings. The honest answer then is that this pair does not describe
+//     one process, not a negative utilisation.
+std::optional<double> cpu_utilisation_percent(TimeNs earlier_at_ns,
+                                              double earlier_cpu_ns,
+                                              TimeNs at_ns, double cpu_ns);
+
 struct Metric {
   std::string name;
   std::string unit;  // "ns", "ms", "bytes", "percent", "count", "hz"

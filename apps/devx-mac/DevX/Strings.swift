@@ -1011,13 +1011,18 @@ enum Strings {
             "Mỗi họ chỉ số là một phép đo riêng và không bao giờ được cộng "
             + "dồn với họ khác.",
         "CPU time": "Thời gian CPU",
+        "cumulative": "tích luỹ",
         "Other counters": "Chỉ số khác",
-        "Process CPU time is cumulative since the process started, not "
-        + "since this capture began, so a capture of an app that has been "
-        + "running for hours opens at hours.":
+        "Process CPU time is cumulative since the process started, so the "
+        + "figure in front is what this capture cost and the running total "
+        + "is under it. Utilisation is a percentage of one core with all the "
+        + "app's threads counted together, so it passes 100% when more than "
+        + "one core is working.":
             "Thời gian CPU của tiến trình được tính dồn từ lúc tiến trình "
-            + "bắt đầu chạy, không phải từ lúc bắt đầu phiên đo này, nên đo "
-            + "một app đã chạy nhiều giờ thì con số mở đầu đã là nhiều giờ.",
+            + "bắt đầu chạy, nên con số đứng trước là phần mà phiên đo này "
+            + "tốn, còn tổng tích luỹ nằm bên dưới. Utilisation là phần trăm "
+            + "của MỘT core, tính chung mọi thread của app, nên nó vượt 100% "
+            + "khi có nhiều hơn một core đang làm việc.",
         "These counters arrived without a family, so they are listed "
         + "rather than grouped under one.":
             "Những chỉ số này không kèm họ chỉ số, nên chúng được liệt kê "

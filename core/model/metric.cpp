@@ -11,6 +11,16 @@ const char* to_string(MetricMethod m) {
   return "derived";
 }
 
+std::optional<double> cpu_utilisation_percent(TimeNs earlier_at_ns,
+                                              double earlier_cpu_ns,
+                                              TimeNs at_ns, double cpu_ns) {
+  if (at_ns <= earlier_at_ns) return std::nullopt;
+  const double cpu = cpu_ns - earlier_cpu_ns;
+  if (cpu < 0.0) return std::nullopt;
+  const double wall = static_cast<double>(at_ns - earlier_at_ns);
+  return cpu / wall * 100.0;
+}
+
 const char* to_string(CpuNormalization n) {
   switch (n) {
     case CpuNormalization::kSingleCore: return "single_core";

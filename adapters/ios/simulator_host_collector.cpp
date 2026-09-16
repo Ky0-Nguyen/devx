@@ -263,6 +263,16 @@ void SimulatorHostCollector::add_point(model::NormalizedTrace& out,
                    : kProviderMem;
   c.process_instance_id = process_key_;
   c.family = family;
+  // CPU time is counted since the process started, so the absolute figure is
+  // not the capture's cost; a memory reading and a utilisation are readings
+  // at an instant and at an interval. Decided from the family rather than at
+  // each call site, so a new series cannot forget to say which it is.
+  c.cumulative = family == "cpu_time";
+  if (family == "cpu_utilisation") {
+    // Percentage of one core, all of the process's threads together.
+    // Undeclared, a CPU percentage means nothing (spec section 8 / E12).
+    c.cpu_normalization = model::CpuNormalization::kSingleCore;
+  }
   c.points.emplace_back(at_ns, value);
   out.counters.push_back(std::move(c));
 }
@@ -429,14 +439,15 @@ session::LiveUpdate SimulatorHostCollector::tick(
     added++;
     // A rate needs two readings. The first tick publishes none rather than
     // 0%, which would read as an idle app at the moment of launch -- the one
-    // moment it is certainly not idle.
-    if (last_cpu_ns_.has_value() && last_at_ns_.has_value() &&
-        at_ns > *last_at_ns_) {
-      const double wall = static_cast<double>(at_ns - *last_at_ns_);
-      const double cpu = static_cast<double>(s.cpu_time_ns - *last_cpu_ns_);
-      if (cpu >= 0.0) {
+    // moment it is certainly not idle. The arithmetic and every case where
+    // it has no answer live in one place, shared with Android, so the two
+    // platforms cannot drift into meaning different things by "utilisation".
+    if (last_cpu_ns_.has_value() && last_at_ns_.has_value()) {
+      if (const auto pct = model::cpu_utilisation_percent(
+              *last_at_ns_, static_cast<double>(*last_cpu_ns_), at_ns,
+              static_cast<double>(s.cpu_time_ns))) {
         add_point(out, "cpu.utilisation_percent", "cpu_utilisation", "percent",
-                  at_ns, cpu / wall * 100.0);
+                  at_ns, *pct);
         added++;
       }
     }

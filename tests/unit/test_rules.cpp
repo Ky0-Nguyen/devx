@@ -790,6 +790,94 @@ MPI_TEST(det05_never_sums_memory_families_and_says_so, {"DET-05", "F08", "sectio
                     std::to_string(det05_issues) + " finding(s)");
 }
 
+MPI_TEST(det05_reads_only_series_that_are_memory_held, {"DET-05", "F08", "E11"}) {
+  // The rule iterated every counter in the trace, which was right while the
+  // only counters were memory families. A cumulative CPU counter rises
+  // monotonically by construction, so injected into that loop it is the
+  // cleanest growth trend in the capture -- and its thresholds are sizes in
+  // bytes being compared against nanoseconds. A utilisation percentage would
+  // have been read the same way.
+  auto t = load("traces/positive-memory-growth.mpi.json");
+  const std::size_t before = run(t).issues.size();
+
+  // A running total of CPU time over the same window as the real series,
+  // rising every single cycle.
+  model::CounterSeries cpu;
+  cpu.name = "cpu.process_time_ns";
+  cpu.unit = "ns";
+  cpu.family = "cpu_time";
+  cpu.cumulative = true;
+  cpu.provider = "/proc/<pid>/stat";
+  // A utilisation that climbs too, so neither escape route is left open.
+  model::CounterSeries util;
+  util.name = "cpu.utilisation_percent";
+  util.unit = "percent";
+  util.family = "cpu_utilisation";
+  util.cpu_normalization = model::CpuNormalization::kSingleCore;
+  util.provider = "/proc/<pid>/stat";
+  // A size that is a running total: bytes, but not memory held at an instant.
+  model::CounterSeries written;
+  written.name = "io.bytes_written";
+  written.unit = "bytes";
+  written.family = "io_written";
+  written.cumulative = true;
+
+  const auto& sample = t.counters.front();
+  for (std::size_t i = 0; i < sample.points.size(); ++i) {
+    const auto at = sample.points[i].first;
+    const auto step = static_cast<double>(i + 1);
+    cpu.points.emplace_back(at, 3'600'000'000'000.0 + step * 50'000'000.0);
+    util.points.emplace_back(at, 10.0 + step * 5.0);
+    written.points.emplace_back(at, step * 32.0 * 1024 * 1024);
+  }
+  t.counters.push_back(cpu);
+  t.counters.push_back(util);
+  t.counters.push_back(written);
+
+  const auto after = run(t);
+  MPI_CHECK_MSG(after.issues.size() == before,
+                "three rising non-memory series must add no memory findings: "
+                "had " + std::to_string(before) + ", now " +
+                    std::to_string(after.issues.size()));
+  for (const auto& i : after.issues) {
+    if (i.rule_id != "DET-05") continue;
+    for (const auto& m : i.metrics) {
+      MPI_CHECK_MSG(m.name.find("cpu.") == std::string::npos,
+                    "no memory finding names a CPU series: " + m.name);
+      MPI_CHECK_MSG(m.name.find("io.") == std::string::npos,
+                    "nor a cumulative byte counter: " + m.name);
+    }
+  }
+}
+
+MPI_TEST(det05_says_so_when_a_capture_has_counters_but_no_memory_ones,
+         {"DET-05", "A12"}) {
+  // An empty counter list and a list with nothing readable as memory are the
+  // same situation for this rule and used to be reported differently: the
+  // first said the prerequisite was unmet, the second passed the check and
+  // then silently found nothing.
+  auto t = load("traces/positive-memory-growth.mpi.json");
+  const auto sample = t.counters.front();
+  t.counters.clear();
+  model::CounterSeries cpu;
+  cpu.name = "cpu.process_time_ns";
+  cpu.unit = "ns";
+  cpu.family = "cpu_time";
+  cpu.cumulative = true;
+  cpu.points = sample.points;
+  t.counters.push_back(cpu);
+
+  const auto r = run(t);
+  const auto* rec = record_for(r, "DET-05");
+  MPI_CHECK(rec != nullptr);
+  if (rec == nullptr) return;
+  MPI_CHECK(rec->outcome == model::RuleOutcome::kSkipped);
+  MPI_CHECK(contains(rec->skipped_reasons, "no memory counter series"));
+  MPI_CHECK_MSG(contains(rec->skipped_reasons, "running total"),
+                "the reason distinguishes 'no counters' from 'counters, none "
+                "of them a memory size'");
+}
+
 MPI_TEST(det05_reports_native_growth_while_the_js_heap_stays_put,
          {"DET-05", "F05", "F08"}) {
   // In this fixture native_heap accumulates and dalvik_heap does not. The
