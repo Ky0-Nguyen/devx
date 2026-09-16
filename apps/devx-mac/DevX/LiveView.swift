@@ -224,7 +224,12 @@ struct LiveView: View {
                                         .lineLimit(1)
                                 }
                             }
-                            .frame(width: 116, alignment: .trailing)
+                            // Wide enough for the longest footnote this can
+                            // produce -- "27.3 min cumulative", 19 monospaced
+                            // characters at 11pt -- because the point of the
+                            // line is the word that says the number is a
+                            // total, and truncation ate exactly that.
+                            .frame(width: 150, alignment: .trailing)
                         }
                     }
                 }
