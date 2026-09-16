@@ -399,9 +399,9 @@ ExitCode cmd_record(const Invocation& inv) {
                   << " issues(preliminary)="
                   << live_snap.preliminary_analysis.issues.size()
                   << " tick=" << live_snap.last_tick_cost.count() << "ms";
-        for (const auto& kv : live_snap.latest_counters) {
-          if (kv.first != "memory.rss_total_bytes") continue;
-          std::cerr << " rss=" << static_cast<long long>(kv.second / 1048576)
+        for (const auto& c : live_snap.latest_counters) {
+          if (c.name != "memory.rss_total_bytes") continue;
+          std::cerr << " rss=" << static_cast<long long>(c.value / 1048576)
                     << "MB";
         }
         std::cerr << "\n";

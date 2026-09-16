@@ -2176,6 +2176,116 @@ do {
     Strings.active = before
 }
 
+do {
+    // The bug this exists for: the Live tab called a byte formatter on every
+    // counter, because the unit did not travel with the value. CPU process
+    // time in nanoseconds rendered as "8782.51 GB" -- the number right, the
+    // unit invented.
+    let cpuTimeNs = 8_782_510_000_000.0   // ~2.4 hours, the real observed value
+    let asBytes = CounterFormat.value(cpuTimeNs, unit: "bytes")
+    let asNs = CounterFormat.value(cpuTimeNs, unit: "ns")
+    check(asBytes.contains("GB"), "bytes still format as bytes: \(asBytes)")
+    check(!asNs.contains("GB"),
+          "nanoseconds must never render as a size, got \(asNs)")
+    check(asNs.contains("h"),
+          "a multi-hour CPU time reads as hours, got \(asNs)")
+
+    // Each unit gets its own scale.
+    check(CounterFormat.value(512, unit: "bytes") == "512 B", "bytes under 1 KB")
+    check(CounterFormat.value(1536, unit: "bytes") == "1.5 KB", "and KB above it")
+    check(CounterFormat.value(1_202_590_842, unit: "bytes").hasSuffix("GB"),
+          "1.12 GB of rss reads as GB")
+    check(CounterFormat.value(0.442, unit: "fraction") == "44.2%",
+          "a fraction is a percentage, got "
+          + CounterFormat.value(0.442, unit: "fraction"))
+
+    // Durations across the scales.
+    check(CounterFormat.duration(nanoseconds: 800) == "800 ns", "sub-microsecond")
+    check(CounterFormat.duration(nanoseconds: 1_500).hasSuffix("µs"), "microseconds")
+    check(CounterFormat.duration(nanoseconds: 5_000_000).hasSuffix("ms"), "milliseconds")
+    check(CounterFormat.duration(nanoseconds: 2_500_000_000).hasSuffix("s"), "seconds")
+    check(CounterFormat.duration(nanoseconds: 120_000_000_000).hasSuffix("min"), "minutes")
+
+    // A counter with no unit is a bare number, never guessed into bytes --
+    // guessing is what caused this.
+    let noUnit = CounterFormat.value(1_202_590_842, unit: "")
+    check(!noUnit.contains("GB") && !noUnit.contains("B"),
+          "no unit means no unit is claimed, got \(noUnit)")
+    check(noUnit.contains("1"), "but the number is still shown: \(noUnit)")
+
+    // A unit this app has not been taught is shown with the provider's own
+    // name rather than dropped or relabelled.
+    let odd = CounterFormat.value(42, unit: "joules")
+    check(odd.contains("joules"), "an unknown unit is named, got \(odd)")
+
+    // Counts are grouped so six digits are readable.
+    check(CounterFormat.count(602942) == "602 942",
+          "got \(CounterFormat.count(602942))")
+    check(CounterFormat.count(0) == "0", "zero needs no grouping")
+    check(CounterFormat.count(-1500) == "-1 500", "a negative keeps its sign")
+
+    // Labels: the memory prefix and the redundant _bytes suffix go, the cpu
+    // prefix stays or `process_time_ns` would look like a memory family.
+    check(CounterFormat.label("memory.rss_total_bytes") == "rss_total",
+          "the memory prefix and _bytes suffix are dropped")
+    check(CounterFormat.label("cpu.process_time_ns") == "cpu.process_time_ns",
+          "got \(CounterFormat.label("cpu.process_time_ns"))")
+}
+
+do {
+    // The field glossary. Screen-level paragraphs left `pss_total`,
+    // `cause: unknown` and `limited` unexplained, and those are the words
+    // someone is actually stuck on.
+    let withFields = HelpTopics.screens.filter { !$0.fields.isEmpty }
+    check(withFields.count >= 6,
+          "the screens with the most jargon carry a field list, got "
+          + "\(withFields.count)")
+
+    var total = 0
+    for t in HelpTopics.screens {
+        total += t.fields.count
+        // A name must be spelled as the screen spells it, so it matches by
+        // eye; an empty one would render as a blank heading.
+        for f in t.fields {
+            check(!f.name.isEmpty, "\(t.id): every field is named")
+            check(f.english.count > 40,
+                  "\(t.id)/\(f.name) has a real explanation, not a label")
+            check(f.vietnamese.count > 40,
+                  "\(t.id)/\(f.name) is explained in Vietnamese too")
+            check(f.english != f.vietnamese,
+                  "\(t.id)/\(f.name) is translated, not duplicated")
+        }
+        // Duplicate names inside one screen would make ForEach drop one.
+        check(Set(t.fields.map { $0.name }).count == t.fields.count,
+              "\(t.id): field names are unique within the screen")
+    }
+    check(total >= 35, "the glossary is substantial, got \(total) fields")
+
+    // Fields follow the language picker, like the topics.
+    let before = Strings.active
+    let live = HelpTopics.screens.first { $0.id == "live" }!
+    let cpu = live.fields.first { $0.name == "cpu.process_time_ns" }!
+    Strings.active = .en
+    check(cpu.text == cpu.english, "English when English is chosen")
+    Strings.active = .vi
+    check(cpu.text == cpu.vietnamese, "Vietnamese when Vietnamese is chosen")
+    Strings.active = before
+
+    // The field that motivated the unit fix must say it is a duration, since
+    // the screen used to render it as a size.
+    check(cpu.english.lowercased().contains("nanosecond"),
+          "cpu.process_time_ns is documented as nanoseconds")
+    check(cpu.english.lowercased().contains("not a size"),
+          "and explicitly not a size, which is how it rendered before")
+
+    // The three memory families people confuse must each be covered, since
+    // the panel shows them side by side and never sums them.
+    for name in ["rss_total", "pss_total", "private_dirty"] {
+        check(live.fields.contains { $0.name == name },
+              "the Live glossary explains \(name)")
+    }
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

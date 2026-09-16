@@ -144,6 +144,27 @@ struct HelpView: View {
             Text(t.text).font(Term.small)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
+            if !t.fields.isEmpty {
+                // The field list is what a screen-level paragraph leaves
+                // out: `pss_total`, `cause: unknown`, `limited` are the
+                // words someone is actually stuck on. Names are spelled as
+                // the screen spells them, so they match by eye.
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(t.fields) { f in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(f.name).font(Term.font(11, .medium))
+                                .foregroundStyle(Term.cyan)
+                                .textSelection(.enabled)
+                            Text(f.text).font(Term.micro)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+                .padding(.leading, 10)
+                .padding(.top, 2)
+            }
         }
     }
 }

@@ -73,7 +73,19 @@ struct LiveSnapshot {
 
   // Latest value per memory family, for a live readout that does not require
   // the caller to walk the counter series.
-  std::vector<std::pair<std::string, double>> latest_counters;
+  /// The newest point of each counter, with the unit it is in.
+  ///
+  /// The unit used not to travel -- this was a (name, value) pair -- and the
+  /// Live tab formatted every one of them as bytes. `cpu.process_time_ns` is
+  /// nanoseconds, so a two-and-a-half hour capture rendered as "8782.51 GB":
+  /// the number was right and the unit was a fabrication. A view cannot pick
+  /// a formatter it was never told the unit for.
+  struct LatestCounter {
+    std::string name;
+    double value = 0;
+    std::string unit;
+  };
+  std::vector<LatestCounter> latest_counters;
 
   json::Value to_json() const;
 };

@@ -58,6 +58,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTree.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/McpSetup.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpTopics.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CounterFormat.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DisclosureSection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTreeView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpView.swift
@@ -95,6 +96,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTree.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/McpSetup.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpTopics.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CounterFormat.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
 )

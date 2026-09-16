@@ -174,13 +174,16 @@ struct LiveView: View {
                         let name = c["name"].text
                         let series = state.liveSeries[name] ?? []
                         HStack(spacing: 10) {
-                            Text(name.replacingOccurrences(of: "memory.", with: "")
-                                     .replacingOccurrences(of: "_bytes", with: ""))
+                            Text(CounterFormat.label(name))
                                 .font(Term.font(11))
                                 .frame(width: 132, alignment: .leading)
                             Sparkline(values: series)
                                 .frame(height: 26)
-                            Text(formatBytes(c["value"].double ?? 0))
+                            // Formatted by the unit the provider stated, not
+                            // by assuming bytes: `cpu.process_time_ns` is
+                            // nanoseconds and used to render as gigabytes.
+                            Text(CounterFormat.value(c["value"].double ?? 0,
+                                                     unit: c["unit"].text))
                                 .font(Term.font(12, .medium))
                                 .frame(width: 86, alignment: .trailing)
                         }

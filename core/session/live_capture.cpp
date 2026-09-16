@@ -51,10 +51,14 @@ json::Value LiveSnapshot::to_json() const {
   v.set("notes", std::move(n));
 
   json::Value latest = json::Value::array();
-  for (const auto& kv : latest_counters) {
+    for (const auto& c : latest_counters) {
     json::Value e = json::Value::object();
-    e.set("name", json::Value::string(kv.first));
-    e.set("value", json::Value::number(kv.second));
+      e.set("name", json::Value::string(c.name));
+      e.set("value", json::Value::number(c.value));
+      // Absent rather than guessed when the provider stated none: a reader
+      // that defaults a missing unit to bytes is how nanoseconds became
+      // gigabytes on the Live tab.
+      if (!c.unit.empty()) e.set("unit", json::Value::string(c.unit));
     latest.push_back(std::move(e));
   }
   v.set("latest_counters", std::move(latest));
