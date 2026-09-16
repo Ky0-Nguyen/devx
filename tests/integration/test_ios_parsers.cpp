@@ -6,6 +6,7 @@
 // iOS simulator was booted, which is why the physical-device paths below are
 // asserted on real *offline* output while the simulator paths are asserted on
 // real *live* output.
+#include <map>
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -387,6 +388,42 @@ MPI_TEST(adapter_lists_real_devices_including_simulators, {"A04", "J18"}) {
   for (const auto& d : without) {
     MPI_CHECK_MSG(d.form != model::DeviceForm::kSimulator,
                   "no simulator may survive --no-simulators");
+  }
+}
+
+MPI_TEST(one_simulator_is_listed_once_not_once_per_tool, {"A04", "A15", "J18"}) {
+  // `devicectl list devices` reports simulators as well as hardware, with
+  // `reality: simulated` and the same UDID simctl uses. Both tools were
+  // appended without reconciliation, so every simulator CoreDevice happened
+  // to know was listed twice -- 7 of 23 on the host this was found on, and
+  // after booting one the same iPhone appeared twice as `authorized`, both
+  // rows selectable and both the same device.
+  //
+  // It stayed hidden while `devicectl` was failing for an unrelated reason
+  // (an unaccepted Xcode licence), which is the argument for asserting the
+  // invariant rather than the count: a device id is one device.
+  IosAdapter adapter;
+  adapter.set_include_simulators(true);
+  std::vector<std::string> errors;
+  discovery::ProviderOptions opts;
+  opts.command_timeout_ms = 45000;
+  const auto devices = adapter.list_devices(opts, errors);
+
+  std::map<std::string, int> seen;
+  for (const auto& d : devices) seen[d.device_id]++;
+  for (const auto& [id, n] : seen) {
+    MPI_CHECK_MSG(n == 1, "device id " + id + " appears " + std::to_string(n) +
+                              " times; one id is one device");
+  }
+
+  // The reconciliation must keep simctl's row, not devicectl's: simctl is
+  // what every simulator operation goes through, and it carries the boot
+  // state this adapter probes.
+  for (const auto& d : devices) {
+    if (d.form != model::DeviceForm::kSimulator) continue;
+    MPI_CHECK_MSG(d.provider == "simctl",
+                  "simulator " + d.device_id + " came from '" + d.provider +
+                      "'; simctl is the authority for a simulator");
   }
 }
 

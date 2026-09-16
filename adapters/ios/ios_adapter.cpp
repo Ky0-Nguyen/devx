@@ -1206,6 +1206,15 @@ std::vector<model::DeviceRef> IosAdapter::list_devices(
   std::string err;
   if (auto doc = run_devicectl_json({"list", "devices"}, opts, &err)) {
     for (auto& d : parse_devicectl_devices(*doc, dc_version)) {
+      // `devicectl list devices` reports simulators as well as hardware --
+      // `reality: simulated`, which parse_devicectl_devices maps to
+      // kSimulator -- so --no-simulators leaked every simulator CoreDevice
+      // knew about. The flag skipped only the simctl branch below, which
+      // read as excluding simulators for as long as devicectl was the
+      // quieter of the two tools.
+      if (!include_simulators_ && d.form == model::DeviceForm::kSimulator) {
+        continue;
+      }
       out.push_back(std::move(d));
     }
   } else {
@@ -1248,7 +1257,28 @@ std::vector<model::DeviceRef> IosAdapter::list_devices(
                   live.detail);
             }
           }
-          out.push_back(std::move(d));
+          // `devicectl list devices` reports simulators too -- with
+          // `reality: simulated` and the *same* UDID simctl uses -- so the
+          // ones CoreDevice happens to know were listed twice, once from
+          // each tool. On this host that was 7 of 23 simulators duplicated,
+          // and after booting one the same iPhone appeared twice as
+          // `authorized`, both rows selectable and both the same device.
+          //
+          // simctl's row replaces devicectl's rather than being dropped or
+          // appended: simctl is the authority for a simulator -- it is what
+          // every simulator operation here goes through, and it reports the
+          // boot state this adapter then probes -- but devicectl's row is
+          // kept when simctl never answers, so a simctl failure degrades to
+          // a shorter list instead of an empty one.
+          const auto same = std::find_if(
+              out.begin(), out.end(), [&d](const model::DeviceRef& seen) {
+                return seen.device_id == d.device_id;
+              });
+          if (same != out.end()) {
+            *same = std::move(d);
+          } else {
+            out.push_back(std::move(d));
+          }
         }
       } else {
         errors.push_back("simctl JSON parse failed: " + perr.message);
