@@ -163,20 +163,32 @@ struct LiveView: View {
         }
     }
 
+    /// One panel per measured family, never one list under a single heading.
+    ///
+    /// This was a single panel titled Memory holding every counter, so CPU
+    /// process time appeared as a memory family under a subtitle about not
+    /// summing memory families. The collector keeps them apart deliberately
+    /// -- "CPU time is not memory and must never be totalled with one" -- and
+    /// the view now shows that separation instead of collapsing it.
     @ViewBuilder private var sparklines: some View {
         let counters = snap["latest_counters"].array
-        if !counters.isEmpty {
-            Panel(title: "Memory",
-                  subtitle: "Each family is a separate measurement and is never summed "
-                          + "with another.") {
+        let families = CounterFormat.families(counters.map { $0["name"].text })
+        ForEach(Array(families.enumerated()), id: \.offset) { _, family in
+            Panel(title: family.title, subtitle: family.subtitle) {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(counters.enumerated()), id: \.offset) { _, c in
+                    ForEach(family.indices, id: \.self) { i in
+                        let c = counters[i]
                         let name = c["name"].text
                         let series = state.liveSeries[name] ?? []
                         HStack(spacing: 10) {
+                            // Truncated rather than wrapped: a label that
+                            // wrapped mid-word read as "cpu.process_user_ti"
+                            // over "me_ns", which looks like two counters.
                             Text(CounterFormat.label(name))
                                 .font(Term.font(11))
-                                .frame(width: 132, alignment: .leading)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(width: 148, alignment: .leading)
                             Sparkline(values: series)
                                 .frame(height: 26)
                             // Formatted by the unit the provider stated, not
@@ -185,7 +197,8 @@ struct LiveView: View {
                             Text(CounterFormat.value(c["value"].double ?? 0,
                                                      unit: c["unit"].text))
                                 .font(Term.font(12, .medium))
-                                .frame(width: 86, alignment: .trailing)
+                                .lineLimit(1)
+                                .frame(width: 92, alignment: .trailing)
                         }
                     }
                 }

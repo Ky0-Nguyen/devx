@@ -19,6 +19,10 @@ enum CounterFormat {
         case "bytes":    return bytes(raw)
         case "ns":       return duration(nanoseconds: raw)
         case "fraction": return String(format: "%.1f%%", raw * 100)
+        // Already a percentage when it arrives: the iOS host collector
+        // publishes `cpu.utilisation_percent` that way, and multiplying it
+        // again would report 4400% for a busy app.
+        case "percent":  return String(format: "%.1f%%", raw)
         case "count":    return count(raw)
         case "":
             // No unit stated. A bare number is the honest rendering; adding a
@@ -78,14 +82,106 @@ enum CounterFormat {
 
     /// The label to show for a counter name, with the family prefix dropped.
     ///
-    /// `memory.rss_total_bytes` reads as `rss_total`: the panel is already
-    /// titled Memory and the `_bytes` suffix is what the value's own unit
-    /// says. A `cpu.` prefix is kept, because those sit in the same list and
-    /// dropping it would leave `process_time_ns` looking like a memory family.
+    /// `memory.rss_total_bytes` reads as `rss_total` and
+    /// `cpu.process_user_time_ns` as `process_user_time`. Both halves are
+    /// stated elsewhere on the row: the family by the panel the row is in,
+    /// the unit by the value beside it.
+    ///
+    /// The `cpu.` prefix used to be kept deliberately, because every counter
+    /// sat in one list titled Memory and `process_time_ns` would have read as
+    /// a memory family there. That list is now split per family, so the
+    /// prefix is redundant -- and at 11pt in a 132pt column it wrapped
+    /// mid-word into `cpu.process_user_ti` / `me_ns`.
     static func label(_ name: String) -> String {
         var out = name
-        if out.hasPrefix("memory.") { out.removeFirst("memory.".count) }
-        if out.hasSuffix("_bytes") { out.removeLast("_bytes".count) }
+        if let dot = out.firstIndex(of: ".") {
+            out = String(out[out.index(after: dot)...])
+        }
+        for suffix in ["_bytes", "_ns"] where out.hasSuffix(suffix) {
+            out.removeLast(suffix.count)
+        }
         return out
+    }
+
+    /// The family a counter name belongs to: the part before its first dot.
+    ///
+    /// Empty for a name that states no family, which is not the same as
+    /// belonging to a default one.
+    static func familyKey(_ name: String) -> String {
+        guard let dot = name.firstIndex(of: ".") else { return "" }
+        return String(name[name.startIndex..<dot])
+    }
+
+    /// One panel's worth of counters.
+    struct Family {
+        /// The wire prefix: `memory`, `cpu`, or empty when unstated.
+        let key: String
+        let title: String
+        let subtitle: String?
+        /// Positions in the array that was passed in, in their original order.
+        let indices: [Int]
+    }
+
+    /// Counters split into the families they were measured in.
+    ///
+    /// They used to render as one list under a panel titled Memory, which put
+    /// `cpu.process_time_ns` under a heading it is not -- beside a subtitle
+    /// about never summing memory families, which the collector is explicit
+    /// about: "CPU time is not memory and must never be totalled with one".
+    ///
+    /// Known families come first in a fixed order so the panels do not
+    /// reshuffle as counters arrive tick by tick; anything else keeps the
+    /// order it was seen in, and unstated-family counters go last.
+    static func families(_ names: [String]) -> [Family] {
+        var order: [String] = []
+        var members: [String: [Int]] = [:]
+        for (i, name) in names.enumerated() {
+            let key = familyKey(name)
+            if members[key] == nil { order.append(key) }
+            members[key, default: []].append(i)
+        }
+        let known = ["memory", "cpu"]
+        let sorted = known.filter { members[$0] != nil }
+                   + order.filter { !known.contains($0) && !$0.isEmpty }
+                   + order.filter { $0.isEmpty }
+        return sorted.map { describe($0, indices: members[$0] ?? []) }
+    }
+
+    /// A family's heading and the caveat a reader needs to read its numbers.
+    ///
+    /// An unrecognised family is titled with the prefix the provider used
+    /// rather than folded under a heading this app made up, and carries no
+    /// caveat, because none is known for it.
+    static func describe(_ key: String, indices: [Int]) -> Family {
+        switch key {
+        case "memory":
+            return Family(key: key,
+                          title: "Memory",
+                          subtitle: "Each family is a separate measurement "
+                                  + "and is never summed with another.",
+                          indices: indices)
+        case "cpu":
+            // The 67-second capture that read 10 808 s of process time. The
+            // number was right; what was missing was that it is not the
+            // window's CPU time.
+            return Family(key: key,
+                          title: "CPU time",
+                          subtitle: "Process CPU time is cumulative since "
+                                  + "the process started, not since this "
+                                  + "capture began, so a capture of an app "
+                                  + "that has been running for hours opens "
+                                  + "at hours.",
+                          indices: indices)
+        case "":
+            return Family(key: key,
+                          title: "Other counters",
+                          subtitle: "These counters arrived without a "
+                                  + "family, so they are listed rather than "
+                                  + "grouped under one.",
+                          indices: indices)
+        default:
+            return Family(key: key, title: key, subtitle: nil,
+                          indices: indices)
+        }
     }
 }

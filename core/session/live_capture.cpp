@@ -324,7 +324,13 @@ void LiveSession::refresh_snapshot(const LiveUpdate* update, bool run_analysis) 
     for (const auto& c : trace_.counters) {
       points += static_cast<std::int64_t>(c.points.size());
       if (!c.points.empty()) {
-        snapshot_.latest_counters.emplace_back(c.name, c.points.back().second);
+        // With the unit. It used not to travel, and the Live tab then had
+        // nothing to pick a formatter from: every counter fell back to a
+        // bare grouped number, so `memory.rss_total_bytes` read as
+        // "1 105 149 952" and `cpu.process_time_ns` as
+        // "10 808 890 000 000". The series has carried a unit all along.
+        snapshot_.latest_counters.emplace_back(c.name, c.points.back().second,
+                                               c.unit);
       }
     }
     snapshot_.counter_points = points;

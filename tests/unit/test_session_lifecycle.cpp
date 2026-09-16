@@ -99,6 +99,25 @@ class FakeCollector final : public session::Collector {
     f.deadline_ns = 8'000'000;
     f.source = model::FrameSource::kFrameDeadlineReports;
     out.frames.push_back(f);
+    // One counter per tick, in a stated unit, so the snapshot's per-counter
+    // readout can be checked for carrying that unit through. Flat rather
+    // than growing: a rising series would give the memory detectors
+    // something to find, and these tests are about the session loop.
+    if (counter_unit != nullptr) {
+      model::CounterSeries* target = nullptr;
+      for (auto& c : out.counters) {
+        if (c.name == "memory.rss_total_bytes") target = &c;
+      }
+      if (target == nullptr) {
+        model::CounterSeries c;
+        c.name = "memory.rss_total_bytes";
+        c.unit = counter_unit;
+        c.family = "rss";
+        out.counters.push_back(std::move(c));
+        target = &out.counters.back();
+      }
+      target->points.emplace_back(f.start_ns, 64.0 * 1024 * 1024);
+    }
     out.window_start_ns = 1'000'000;
     out.window_end_ns = f.presented_ns.value_or(f.start_ns);
     u.new_frames = 1;
@@ -131,6 +150,7 @@ class FakeCollector final : public session::Collector {
   // After this many ticks, every source reports failure and nothing is
   // collected -- what a capture sees when the device goes away.
   std::atomic<int> die_after{-1};
+  const char* counter_unit = "bytes";
 };
 
 session::CaptureConfig fast_config() {
@@ -738,4 +758,84 @@ MPI_TEST(a_healthy_capture_is_never_called_partial, {"D20", "H09"}) {
   const auto trace = live.take_trace();
   MPI_CHECK(!trace.partial);
   MPI_CHECK(trace.partial_reasons.empty());
+}
+
+MPI_TEST(a_live_counter_readout_carries_the_unit_it_was_measured_in,
+         {"D01", "H18"}) {
+  // The Live tab renders each counter's newest value, and it picks the
+  // formatter from the unit. The unit used to be dropped on the way into the
+  // snapshot -- `latest_counters` was assembled from a name and a number
+  // only -- so every counter arrived unitless and fell back to a bare
+  // grouped figure: `memory.rss_total_bytes` read as "1 105 149 952" and
+  // `cpu.process_time_ns` as "10 808 890 000 000". The series carried a unit
+  // the whole time.
+  //
+  // A view cannot be fixed for this on its own: with no unit on the wire,
+  // the only choices are a bare number or a guess, and the guess is what
+  // once turned nanoseconds of CPU time into gigabytes.
+  auto collector = std::make_shared<FakeCollector>();
+  session::LiveSession live;
+  MPI_CHECK(live.start(collector, fake_device(), one_process(), fast_config(),
+                       model::NormalizedTrace{}));
+  MPI_CHECK(wait_for([&] { return collector->ticks.load() >= 2; }));
+  const auto snap = live.snapshot();
+  live.stop();
+
+  MPI_CHECK_MSG(!snap.latest_counters.empty(),
+                "the snapshot reports the counters that were collected");
+  bool found = false;
+  for (const auto& c : snap.latest_counters) {
+    if (c.name != "memory.rss_total_bytes") continue;
+    found = true;
+    MPI_CHECK_MSG(c.unit == "bytes",
+                  "the unit travels with the value, got '" + c.unit + "'");
+  }
+  MPI_CHECK(found);
+
+  // And it survives serialisation, which is the form the UI reads.
+  const auto doc = snap.to_json();
+  const auto* list = doc.find("latest_counters");
+  MPI_CHECK(list != nullptr);
+  bool in_json = false;
+  for (const auto& e : list->items()) {
+    const auto* name = e.find("name");
+    if (name == nullptr || name->as_string() != "memory.rss_total_bytes") {
+      continue;
+    }
+    in_json = true;
+    const auto* unit = e.find("unit");
+    MPI_CHECK(unit != nullptr);
+    MPI_CHECK_EQ(unit->as_string(), std::string("bytes"));
+  }
+  MPI_CHECK(in_json);
+}
+
+MPI_TEST(a_counter_with_no_unit_gets_none_invented_for_it, {"D01", "H18"}) {
+  // The other half of the rule: absent is emitted as absent. A reader that
+  // defaults a missing unit to bytes is how nanoseconds became gigabytes, so
+  // a provider that states no unit must produce no `unit` key at all rather
+  // than an empty one a reader might treat as a default.
+  auto collector = std::make_shared<FakeCollector>();
+  collector->counter_unit = "";
+  session::LiveSession live;
+  MPI_CHECK(live.start(collector, fake_device(), one_process(), fast_config(),
+                       model::NormalizedTrace{}));
+  MPI_CHECK(wait_for([&] { return collector->ticks.load() >= 2; }));
+  const auto snap = live.snapshot();
+  live.stop();
+
+  const auto doc = snap.to_json();
+  const auto* list = doc.find("latest_counters");
+  MPI_CHECK(list != nullptr);
+  bool checked = false;
+  for (const auto& e : list->items()) {
+    const auto* name = e.find("name");
+    if (name == nullptr || name->as_string() != "memory.rss_total_bytes") {
+      continue;
+    }
+    checked = true;
+    MPI_CHECK_MSG(!e.has("unit"),
+                  "no unit stated means no unit key, not an empty one");
+  }
+  MPI_CHECK(checked);
 }

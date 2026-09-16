@@ -2231,12 +2231,65 @@ do {
     check(CounterFormat.count(0) == "0", "zero needs no grouping")
     check(CounterFormat.count(-1500) == "-1 500", "a negative keeps its sign")
 
-    // Labels: the memory prefix and the redundant _bytes suffix go, the cpu
-    // prefix stays or `process_time_ns` would look like a memory family.
+    // iOS publishes cpu.utilisation_percent already scaled. Multiplying a
+    // percentage by 100 again is the same class of mistake as guessing bytes.
+    check(CounterFormat.value(44.2, unit: "percent") == "44.2%",
+          "a percent is already a percent, got "
+          + CounterFormat.value(44.2, unit: "percent"))
+
+    // Labels: the family prefix goes, because the panel the row sits in
+    // states it, and so does the suffix that restates the unit.
     check(CounterFormat.label("memory.rss_total_bytes") == "rss_total",
           "the memory prefix and _bytes suffix are dropped")
-    check(CounterFormat.label("cpu.process_time_ns") == "cpu.process_time_ns",
-          "got \(CounterFormat.label("cpu.process_time_ns"))")
+    check(CounterFormat.label("cpu.process_user_time_ns")
+          == "process_user_time",
+          "got \(CounterFormat.label("cpu.process_user_time_ns"))")
+    check(CounterFormat.label("rss_total") == "rss_total",
+          "a name with no family is left alone")
+}
+
+do {
+    // Every counter used to render in one panel titled Memory, so CPU
+    // process time appeared as a memory family -- under a subtitle promising
+    // that families are never summed. The collector keeps them apart on
+    // purpose; the view has to show that.
+    let names = ["memory.rss_total_bytes", "cpu.process_time_ns",
+                 "memory.pss_total_bytes", "cpu.process_user_time_ns",
+                 "gfx.janky_frames", "loose_counter"]
+    let families = CounterFormat.families(names)
+    check(families.count == 4,
+          "one panel per family, got \(families.map { $0.key })")
+    check(families[0].key == "memory" && families[1].key == "cpu",
+          "known families lead in a fixed order so panels do not reshuffle "
+          + "tick by tick, got \(families.map { $0.key })")
+    check(families[0].title == "Memory" && families[1].title == "CPU time",
+          "and each is titled as what it measures")
+    check(families[0].indices == [0, 2],
+          "a family keeps every one of its counters, got "
+          + "\(families[0].indices)")
+    check(families[1].indices == [1, 3], "got \(families[1].indices)")
+
+    // The CPU caveat is the part that made 10 808 s on a 67-second window
+    // look like a bug rather than a cumulative counter.
+    check(families[1].subtitle?.contains("cumulative") == true,
+          "the CPU panel says its numbers are cumulative")
+    check(families[0].subtitle?.contains("never summed") == true,
+          "and the memory panel keeps the no-summing rule")
+
+    // A family this app was never taught is named by the provider's own
+    // prefix, not folded into one of the headings above.
+    check(families[2].key == "gfx" && families[2].title == "gfx",
+          "got \(families[2].title)")
+    check(families[2].subtitle == nil,
+          "and carries no caveat, because none is known for it")
+
+    // No family stated is its own case, and it goes last.
+    check(families[3].key == "" && families[3].indices == [5],
+          "unstated-family counters are listed last, got "
+          + "\(families[3].key) \(families[3].indices)")
+
+    // Empty in, empty out: no panel titled Memory over nothing.
+    check(CounterFormat.families([]).isEmpty, "no counters, no panels")
 }
 
 do {
@@ -2271,7 +2324,12 @@ do {
     // Fields follow the language picker, like the topics.
     let before = Strings.active
     let live = HelpTopics.screens.first { $0.id == "live" }!
-    let cpu = live.fields.first { $0.name == "cpu.process_time_ns" }!
+    // Keyed by the label the Live tab prints, which is where someone reading
+    // this screen is looking it up from -- the panel names the family, so the
+    // row says `process_time`. The wire name is in the text.
+    let cpu = live.fields.first { $0.name == "process_time" }!
+    check(cpu.english.contains("cpu.process_time_ns"),
+          "and the glossary still names the field as a report carries it")
     Strings.active = .en
     check(cpu.text == cpu.english, "English when English is chosen")
     Strings.active = .vi
@@ -2282,6 +2340,10 @@ do {
     // the screen used to render it as a size.
     check(cpu.english.lowercased().contains("nanosecond"),
           "cpu.process_time_ns is documented as nanoseconds")
+    // The 67-second capture that read 10 808 s: the number was right and the
+    // screen never said it was not the window's CPU time.
+    check(cpu.english.lowercased().contains("cumulative"),
+          "and as cumulative since the process started, not since the capture")
     check(cpu.english.lowercased().contains("not a size"),
           "and explicitly not a size, which is how it rendered before")
 
