@@ -41,8 +41,8 @@ failed at its own job.
 One Metro serves every device you have running, so the same bundle id is
 routinely attached from several at once -- an Android emulator and an iOS
 simulator, say. `--target-device` names which, matched case-insensitively
-against Metro's own device name (the only device identity Metro publishes; it
-reports no adb serial and no simulator UDID):
+as a substring of Metro's own device name, or as a prefix of its device key
+(described below; Metro reports no adb serial and no simulator UDID):
 
 ```bash
 mpi inspect --targets                                  # see the device names
@@ -83,8 +83,13 @@ mpi inspect --app <id> --seconds 15 --redux
 mpi inspect --app <id> --device emulator-5554 --screenshot
 ```
 
-Or the **Inspect** tab in DevX, which shows the same thing and lets the
-observation window run while you use the app.
+Or the **Inspect** tab in DevX, which shows the same observation, lets the
+window run while you use the app, and opens one request's headers and body in
+a pane beside the list (see "Request detail" below).
+
+Each of the three lists in DevX -- network, console, Redux activity -- has its own `clear`, and a clear is a watermark, not a delete. The rows stay in the observation and in an export; the list says how many it is holding back and offers them back. A delete would also not survive the next poll: the assembler is cumulative and hands back the whole observation each time, so removed rows would return on the next tick. Network and console are marked by count because those lists are append-only; Redux records are marked by sequence number, because the in-app buffer drops its oldest under load and a count would then hide the wrong rows.
+
+Each list scrolls inside a section capped at 280 points, so the page fits one screen. Nothing is hidden by the cap, and the section title carries the count, so the height makes no claim about how many rows there are.
 
 ## Request detail
 
@@ -119,9 +124,23 @@ are different facts. Where the exchange settles it (a HEAD, a 204 or 304, or
 the raw error reads as a failure for a response that was never going to carry
 content.
 
+In DevX the list and the detail sit side by side. The tab is a split pane: the observation on the left, one request on the right, each column in its own scroller. Clicking a row opens it, and the detail is stacked sections -- the request, its headers, its bodies -- rather than a DevTools tab strip. A tab is visible whether or not anything is behind it, so an empty Timing tab would answer "this request had no timing" when the truth is that nothing here measured it. What the pane cannot show is stated on every selection instead, unconditionally: no timing breakdown, no cookies (the inspector reports an empty cookie list for every request, so nothing distinguishes that from a request that sent none), no initiator.
+
+Selection is keyed by `request_id`, never by a row index. The rendered list is what a clear left and then what the filter left, and both shift every offset, so an index-keyed selection would land on a different request -- in a pane whose whole job is one request's headers and body, the worst available failure. A request that is selected but not in the list gets its own sentence for each reason -- hidden by the filter, held back by clear, or gone because the app reloaded and the observation started over -- because clear and the filter are separate ideas with separate controls, and "pick a request" said about a request the reader had already picked would be blaming them for the filter.
+
+A body has more states than present and absent, and the first version of the pane collapsed them. `response_body` is optional in the core and the key is emitted only when it holds a value, so one emptiness test read three facts as one: detail was never captured, the runtime had nothing to give, and a real captured zero-byte body. All three rendered as nothing. They are six states now -- not captured, unavailable with the runtime's own reason, empty, base64, JSON, text -- and each is something the data positively said. A request still in flight, or one that failed, was never asked for a body at all, so on those rows the cause is in the document and is not blamed on a setting.
+
+JSON is re-indented, and the re-indent changes whitespace only. The obvious implementation -- parse the body and print it back -- quietly changes the data. Measured with Foundation on this machine: `{"v":1.0}` comes back as `{"v": 1}`, so a server that sent 1.0 reads as having sent 1, and `{"a":1,"a":2}` comes back as `{"a": 1}`, so a duplicate key disappears. Neither is a disaster alone, and both make the document on screen something other than the response body, which is the one thing the pane is for. So Foundation's parser decides only whether the text is JSON, and every token is then re-emitted byte for byte with only the whitespace between tokens changed. Key order is kept for the same reason: sorting would make two captures of one endpoint easier to compare, and it would also mean the document on screen is not the document that arrived. The invariant is tested directly: stripping whitespace outside strings from the output gives the input's own normal form, across eighteen shapes including an integer past 2^53, an escaped slash and braces inside a string. A base64 body is shown as it arrived rather than decoded, because decoding it here would destroy the distinction the runtime drew.
+
+A body over 20,000 characters is shown in steps, with the cut stated: a body silently shortened reads as a body that was that short. The raw bytes are kept beside the formatted view, because a pretty-printer that loses the original is a pretty-printer you cannot check.
+
+Nothing is masked in the pane, for the reason above, and because half the people opening it are debugging an auth problem and need the token that was actually sent. What is added is one line above a header list naming which of the headers present are the kind that usually carry a credential -- `authorization`, `cookie`, `x-api-key` and the like -- so the reader knows before they screen-share, not after. Names only, never a value; hedged as "usually carry" because "key" and "token" are also ordinary parameters; and matched on the whole name, so `x-monkey-id` is not flagged for containing "key", since a warning that fires on the wrong thing gets ignored on the right one.
+
+Whether detail was captured is recorded when an observation starts, not read from the live toggle. The toggle governs the next capture, and reading it to describe the document already on screen meant that switching it off made the pane claim the bodies it was displaying had never been captured. The report itself carries no such flag, so when there is no record the answer is unknown, and the pane says so rather than making a negative claim about someone else's data.
+
 ## What it does not reach
 
-Four limits. Each one is the difference between "we saw nothing" and the false
+Four limits, three of them here; the fourth -- what Redux does and does not expose -- has its own section below. Each one is the difference between "we saw nothing" and the false
 claim "nothing happened", so they are carried in the report's `caveats` array
 and printed under **WHAT THIS DOES NOT SHOW** — not left in this document.
 
@@ -144,8 +163,9 @@ inspector.
 
 So an empty Network list on a login screen is normal and says nothing about
 the app. The app's own API calls appear once it is past SSO and calling its
-endpoints from JavaScript. The source status and the empty-list message both
-name WebView for this reason.
+endpoints from JavaScript. The source status, the caveat and DevX's empty-list message all
+name WebView for this reason; the CLI's empty-list line names only a native
+module.
 
 There is no no-install route to native traffic on a stock emulator: `adb root`
 is refused on a production build (`adbd cannot run as root in production
@@ -173,7 +193,8 @@ Reference comparison is Redux's own contract, not a shortcut: a reducer that
 did not touch a slice returns the same object, which is exactly the signal
 react-redux relies on. An app whose reducers mutate state in place breaks that
 contract and its changes are invisible here; that is a limit of the app's
-reducers, and it is stated rather than papered over.
+reducers, and it is stated here because the report cannot state it: a
+mutated slice is indistinguishable from an untouched one.
 
 What a subscriber does **not** receive is the action. Redux passes subscribers
 no arguments at all, so a read-only record names a change and never an action.
@@ -200,6 +221,10 @@ Two honest limits on it:
   kicked off its debugger slot left a wrapper behind, and the next run
   reported "a watcher from an earlier run was still installed and was removed
   first".
+
+The in-app buffer holds 200 records between drains by default. `--redux-buffer` sets it, and the number is clamped to at most 2000 inside the app, because it becomes an allocation bound in someone else's runtime. The buffer is emptied every 400ms while the capture runs -- fast enough that a tap's actions appear while the finger is still on the screen, slow enough that a quiet app is not paying for an evaluate four times a second -- and the final records come back with the uninstall, so a capture that stops right after a dispatch does not lose it. A burst larger than the buffer drops the oldest records and the count is reported: a tail that says it is a tail, rather than a short list that looks complete.
+
+Removal has one deliberate exception. If something else replaced `dispatch` after this wrapper was installed, the saved original is not written back: overwriting a later wrapper would remove someone else's instrumentation, which is a worse outcome than leaving ours in place. The report carries that as the reason the removal did not happen, rather than reporting it as confirmed.
 
 ### Verifying this against a real app
 
@@ -298,6 +323,58 @@ catch it if that ever regressed.
 
 ## Implementation notes
 
+One live session with Redux watching, in the order the code sends it:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant DevX as DevX SwiftUI AppState
+    participant Capi as mpi_capi
+    participant Stream as InspectStream
+    participant Metro as Metro inspector proxy
+    participant Hermes as Hermes JS runtime in the app
+
+    DevX->>Capi: mpi_inspect_stream_start, flags 16 watch plus 32 wrap dispatch
+    Note over Capi: One stream at a time. A second start is refused, never displaces the first.
+    Capi->>Stream: start opts
+    Stream->>Metro: GET /json/list, list_targets
+    Metro-->>Stream: targets array, appId, deviceName, webSocketDebuggerUrl
+    Stream->>Stream: choose_target, prefers the runtime connection over auxiliary UI pages
+    Stream->>Metro: WebSocket connect to websocket_path, loopback only
+    Note over Metro: Metro allows ONE debugger per device. A second client, even on the sibling UI page, takes the slot and this session is disconnected.
+    Note over Metro,Hermes: Every CDP message below travels over the WebSocket that Metro proxies to the app
+    Stream->>Hermes: Runtime.enable, Log.enable, Network.enable
+    Stream->>Hermes: Runtime.evaluate redux_watch_install_expression, timeout 5000
+    Hermes->>Hermes: __mpiTeardown prior watcher, __mpiFindStore, store.subscribe, wrap store.dispatch
+    Note over Hermes: Self-healing. Install first undoes a watcher a previous run left behind, and the reply says replaced_prior.
+    Hermes-->>Stream: install reply read on the next pump, installed, slices, dispatch_wrapped, replaced_prior
+    Capi-->>DevX: attached true plus first snapshot report
+
+    loop Timer every 0.5s, beginInspectPolling
+        DevX->>Capi: mpi_inspect_stream_poll 250
+        Capi->>Stream: pump 250
+        Hermes-->>Stream: Network.requestWillBeSent, responseReceived, loadingFinished
+        Hermes-->>Stream: Runtime.consoleAPICalled
+        Stream->>Stream: InspectAssembler.feed
+        Stream->>Hermes: Network.getResponseBody per finished request, capture_detail only
+        Hermes-->>Stream: body, base64Encoded
+        Stream->>Hermes: Runtime.evaluate redux_watch_drain_expression, at most every kReduxDrainIntervalMs 400, one in flight
+        Hermes-->>Stream: watching, records, dropped
+        Stream->>Stream: ingest_redux_drain
+        Note over Hermes: A thunk gets an injected dispatch that never passes the wrapper. The change arrives with how bypassed and is recorded as dispatch_bypassed. No action is guessed.
+        Capi-->>DevX: running plus cumulative snapshot report
+    end
+
+    DevX->>Capi: mpi_inspect_stream_stop
+    Capi->>Stream: stop
+    Stream->>Hermes: Runtime.evaluate redux_watch_uninstall_expression
+    Hermes-->>Stream: removed, leftover records, restore_error, waited at most 1.5s
+    Stream->>Metro: ws.close
+    Capi-->>DevX: final report, running false
+```
+
+One live Inspect session with Redux watching, in the order the code sends it: Metro's /json/list, one WebSocket, three CDP domains enabled, and a watcher installed and removed with Runtime.evaluate. DevX polls twice a second for 250 ms, the in-app buffer is drained at most every 400 ms with one drain in flight, and every poll returns the whole observation so far rather than a delta. What this shows is the JavaScript side of a debug build, seen through a debugger slot Metro lets exactly one client hold; a thunk's dispatch never crosses the wrapper and is marked dispatch_bypassed rather than guessed, an empty list is not evidence the app was idle, and nothing here is a performance measurement.
+
 No dependencies, per ADR-0002. That meant writing:
 
 - `core/net/websocket_client.{hpp,cpp}` — enough of RFC 6455 to speak to a
@@ -310,10 +387,14 @@ No dependencies, per ADR-0002. That meant writing:
   Metro's target list. Chunked encoding is refused rather than half-parsed.
 - `core/observe/inspect.{hpp,cpp}` — the model and the assembler, kept free of
   transport so it can be replayed from a recording.
-- `adapters/rn/inspector.{hpp,cpp}` — discovery, the session, the Redux probe.
+- `adapters/rn/inspector.{hpp,cpp}` — discovery, the session (one-shot and
+  streaming), the Redux probe and the in-app watcher it installs and removes.
 
 `fixtures/cdp/recorded-hutbot-startup.jsonl` is a **real** recorded session,
-not a constructed one. That matters more than usual here: the whole feature
+not a constructed one, with one value redacted: the app logs its auth
+configuration at startup, which included a real Cognito app client id, and it
+is replaced by a placeholder of the same length so the bytes the parser walks
+are unchanged. The fixture's own header says so. That matters more than usual here: the whole feature
 rests on reading a protocol as a real runtime emits it, and a test written
 against the shapes the parser expects would pass while the parser silently
 dropped everything real. Two things it caught: `Log.entryAdded` timestamps are

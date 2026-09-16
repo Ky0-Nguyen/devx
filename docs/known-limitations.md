@@ -9,7 +9,7 @@ where one exists, a concrete remediation.
 
 ---
 
-## 1. iOS live capture is not implemented; Android is
+## 1. iOS live capture works on a simulator and not on a device; Android is complete
 
 **Android works, batch and live.** `mpi record`, `mpi record --live` and
 DevX's Live tab all capture for real, using the platform's text interfaces
@@ -24,7 +24,7 @@ to the session controller yet" -- which was false, and contradicted the CLI,
 which has constructed that collector for iOS for some time. So the app could
 not attempt something the CLI could, and blamed the wrong thing for it. It now
 picks the collector the same way the CLI does and reports whatever the
-collector reports. **Live** capture is still unavailable on iOS, and the
+collector reports. **Live** capture is unavailable on a *physical* iOS device, and the reason is the true one: the xctrace collector reports `supports_streaming() == false`, because `xctrace record` yields a trace bundle when it finishes rather than events readable while it runs. A booted **simulator** is a different case, and DevX's Live tab uses a different collector for it (`simctl-host`, below). `mpi record --live` does not: on iOS the CLI still constructs the xctrace collector and runs a batch record.
 reason is now the true one: the collector reports `supports_streaming()
 == false`, because `xctrace record` yields a trace bundle when it finishes
 rather than events readable while it runs.
@@ -36,15 +36,15 @@ exercised against the booted simulator with a real app
 (`io.pizzahut.hutbot.debug`): `xctrace record` attaches -- it prints
 `Attaching to: ... Time limit: 3.0 s` -- and then runs indefinitely, ignoring
 its own `--time-limit` even with `--no-prompt`. The collector bounds the
-recording itself and reports that as a **provider failure**, explicitly not as
+recording itself, and then asks whether a usable trace exists by trying to read one -- `xctrace export --toc` rejects a stub in under a second -- rather than by how the process ended. A readable bundle is kept as a **partial capture** that says xctrace did not exit on its own; an unreadable one is a **provider failure**, explicitly not as
 a capture that found nothing, and writes no session.
 
 So the honest state is: discovery, app enumeration, process identity,
 preflight, the recording command and the export-and-read path are all
 implemented for iOS; a **completed** iOS recording has never been produced in
-this environment, on a simulator or a device. The successful branch of
+this environment, on a simulator or a device -- and on this host it cannot be, since `xctrace` accepts a simulator target and never starts recording (the comparison that isolated this is in `docs/ios-live-capture-findings.md`, section 5). A *live* simulator capture takes a different path and has been produced; see below. The successful branch of
 `XctraceCollector::capture` is therefore code that has not run end to end, and
-`ios.capture.live_recording` reports `tested: not_tested` unless discovery
+`ios.capture.live_recording` reports `verified_on_simulator_or_emulator` with status `limited` when a booted simulator is present, states in every case that the physical-device path is UNVERIFIED, and with no simulator booted claims no verification at all -- its evidence then says live capture has not been exercised against a physical device in this environment.
 established the device form.
 
 What *is* verified is the ingestion: the importer is tested against real
@@ -60,10 +60,20 @@ package with no collector output would be a capture-shaped file containing
 nothing measured.
 
 **Consequence.** The M2 gate is **met on Android** (against an emulator, not a
-physical device -- see section 2) and **open on iOS**. Checklist item J15 is
-open; J14 is partially met.
+physical device -- see section 2) and **open on a physical iOS device**, met on a simulator through the host-process collector. Checklist item J15 is
+partially met in the same way J14 is: verified on a simulator or emulator, never on hardware.
 
 **Phase.** M2 for the iOS collector.
+
+**A simulator streams, through a collector that is not xctrace.** An app in an iOS simulator is an ordinary macOS process owned by the developer, so the public `libproc` interfaces answer for it with no root and no entitlement: `proc_pid_rusage` for the memory footprint (the number Xcode's gauge shows), the task counters for CPU time, `PROC_PIDTHREADINFO` for per-thread CPU with the runtime's own thread names -- `com.facebook.react.runtime.JavaScript`, `hades`, and an unnamed main thread -- which is the iOS half of the JS-versus-native question from a platform signal rather than a pattern match. DevX's Live tab uses that collector (`simctl-host`) for a booted simulator. `mpi record --live` does not; on iOS the CLI still runs xctrace, as a batch. The collector existed late because of a unit trap: the task-level counters are in mach absolute time and the per-thread ones in nanoseconds, and read as nanoseconds a process that had burned 3.0 s reported 0.072 s. The conversion goes through the host's own timebase and is tested against it, not against a hard-coded 41.6667.
+
+What it does not provide. **No frames.** There is no command-line source for a simulator's frame timing, so frames are a missing provider, never zero, and no frame-deadline finding can come from a simulator capture. **Stacks are an aggregate, not a series.** `task_for_pid` is refused here (kr=5), and an earlier version of this collector -- and of this file -- concluded from that that stack attribution on a simulator was impossible. That was wrong: `/usr/bin/sample` is entitled to do what this process cannot, and returns a symbolised call graph with per-thread attribution in under four seconds. With the Live tab's "profile stacks at the end" checkbox the collector runs it for the chosen seconds when the capture stops -- so the stop waits -- and ingests the graph as weighted samples, self time split from time in callees, every thread's self times summing back to what it declared (verified at 37,444 samples across 22 threads, and on `fixtures/sample/recorded-simulator-callgraph.txt`). `sample` reports no timestamps, so it answers *where* and never *when*, and the capability says so. **Translated is recorded.** The app under test carried a `com.apple.rosetta.exceptionserver` thread, so it was running under Rosetta; translated CPU time is not comparable to a native build, and the capture says which it was. And a simulator is still not a device: every reading keeps the simulator form, and the collector refuses a physical device outright rather than degrading.
+
+**xctrace cannot record a simulator target on this host.** Pointed at a macOS process the same command honours `--time-limit` and exits by itself; pointed at a simulator app by pid or by executable it attaches, never prints `Ctrl-C to stop`, ignores SIGINT and leaves a 52 KB stub that fails `--toc` with `Document Missing Template Error`. So a *batch* iOS record on a simulator still fails, and the simulator collector refuses a batch request rather than degrading to a single tick.
+
+**Two reasons an iOS capture can come back empty on a good device, and both are named now.** Instruments samples through the unified log store, and a process without Full Disk Access cannot open it (`log show --last 5s` says `Could not open local log store: Operation not permitted`; `/var/db/diagnostics` is `root:admin`, mode 750). xctrace reports that as `Fatal logging system error: The log archive is corrupt or incomplete and cannot be read`, which describes a damaged machine and is usually this permission. The capture reports it as `permission_denied` with the fix, and `mpi preflight` reports it as `ios.capture.log_store` before a capture is attempted -- a clean preflight followed by a permission failure on the capture is the one thing preflight exists to prevent. Every recording taken on this host came back with a `time-profile` table that had a schema and no rows, and that is why. So ingesting a populated `time-profile` export from a recording made *here* is unexercised; the importer's fixture is real export output from elsewhere, trimmed to 12 of 954 rows.
+
+**`time-profile` is not the only table with samples.** On a real recording here `time-profile` held 0 rows while `time-sample` held 2 -- a real thread, process and kperf backtrace -- and `kdebug` 40. The collector reads `time-profile` only. When it is empty it now counts rows in the tables that plausibly carry samples and reports that the samples exist, how many, in which schema and where the bundle is, because a gap in this tool is not an empty capture.
 
 ### Observing the app costs the app CPU, and the figure is now measured
 
@@ -181,7 +191,7 @@ claimed hardware verification. Spec J18 and C20 forbid exactly that, and
 **iOS.** Two iPhones/iPads are paired with this host, and both reported
 `connectionProperties.tunnelState: "unavailable"` throughout. The tool
 correctly reports them as `offline` rather than absent or usable. Physical-device
-app and process enumeration were therefore never exercised; both devices also
+app and process enumeration have therefore never run against hardware. They have run against a recorded `devicectl` (`tests/helpers/devicectl-stub`, labelled synthetic in every file) with the connection fields set to what a connected, prepared device reports, and the first run found that process attribution had never worked: the rule wanted the bundle id as a whole path segment, and no real container path has that. Both devices also
 reported `ddiServicesAvailable: false`, which is itself the gate for those
 operations.
 
@@ -200,6 +210,10 @@ and `compare` refuses a simulator-vs-physical pair outright.
 measured result.
 
 ---
+
+**The physical-device code has run once, against a recording.** `tests/helpers/devicectl-stub` replays recorded `devicectl --json-output` shapes for the four subcommands the adapter uses, with the connection fields set to what a connected, prepared device reports (`tunnelState connected`, `pairingState paired`, `ddiServicesAvailable true`, `developerModeStatus enabled`). Every file is labelled synthetic and the device is named `SYNTHETIC connected iPhone`, so nothing downstream can pass for hardware. Its first run found three defects in code that had never executed, and one of them mattered: process attribution required the bundle id as a whole path segment (`"/" + bundle_id + "/"`), and no real container path has that -- a simulator's is `<UUID>/<bundle-id>-<n>.app/<Product>` and a device's is `<UUID>/<Product>.app/<Product>`, which does not contain the bundle id at all. So every app on a physical device would have reported `not_running` with no processes, and a capture would have told someone to start an app that was already running. This is a stand-in, not verification: the stub cannot say whether a real device answers the way its recording did.
+
+**`devicectl` answers one question from a cache.** Against a device absent for four days, `device info details` returned `outcome: success` in about 0.1 s with `developerModeStatus: enabled`, while `lockState`, `processes` and `apps` all failed with CoreDeviceError 1011. So `details` is an observation with a date, and `connectionProperties.lastConnectionDate` travels with anything read from it as `last_seen_at`. `lockState` is the liveness probe, because it has to reach the hardware. A device that was present at discovery and gone at enumeration is named as that -- "the device is no longer there ... which is what unplugging a phone mid-session looks like" -- rather than as Apple's raw error, and 1011 (gone) is kept apart from 1000 (not a CoreDevice identifier at all: a simulator UDID, or a typo). Simulators used to be trusted on their `state` field where physical devices got a probe; a `Booted` simulator that does not answer `simctl` is now reported as its own failure rather than as a device that is not there.
 
 ## 3. The 1 GiB stress fixture costs 5 GB of memory (down from 10 GB)
 
@@ -385,7 +399,7 @@ Export/settings. Two of the eleven are panels rather than tabs, which is worth
 stating rather than leaving to be inferred -- the issue detail and the
 stack/source view live inside Issues, next to the finding they describe.
 
-Two views beyond that list. **Threads** shows the JS-versus-native split,
+Three views beyond that list. **Threads** shows the JS-versus-native split,
 which matters because "the main thread" means a different thread depending on
 which one you mean: a React Native app has a UI thread that draws, a JS thread
 running the app's own code, and native-module threads between them, and a
@@ -485,6 +499,8 @@ the safer form to script.
 
 ---
 
+**Inspect** is the third view beyond the list: the same observation `mpi inspect` makes -- network exchanges, console lines, Redux slices and state changes -- with the window left running while the app is used, and a split detail pane for one request with its headers and body. The body is re-indented and never re-serialised: Foundation's parser decides whether the text is JSON, and then every token is re-emitted byte for byte with only the whitespace between them changed. Measured before choosing: parse-and-print turns `{"v":1.0}` into `{"v": 1}` and drops a duplicate key, and the one thing this pane is for is the response body as it arrived. There is no Timing, Cookies or Initiator tab, because a tab is visible whether or not anything is behind it, and an empty Timing tab answers "this request had no timing" when the truth is that nothing measured it; what the pane cannot show is stated on every selection instead. Its limits are section 7's.
+
 ## 6. The app SDK exists; React render and network data depend on the app calling it
 
 `sdk/react-native/mpi-sdk.js` is the in-app SDK: plain ES module JavaScript,
@@ -511,7 +527,7 @@ What still depends on the app doing the work:
   query strings; the app has to call it from its own fetch layer.
 - **G09, cross-runtime async.** Async span markers work; correlating spans
   across two JS runtimes needs a live app that actually has two.
-- **No native iOS/Android SDK.** `sdk/ios` and `sdk/android` are empty: a
+- **No native iOS/Android SDK.** `sdk/ios` and `sdk/android` hold a README each and no code: a
   native app with no JS layer has no way in yet.
 - **Markers are the app's own account of itself**, on the app's clock, and the
   capability says so. Nothing in the platform corroborates them, and the host
@@ -574,7 +590,7 @@ is not a cryptographic integrity guarantee and must not be relied on as one.
 ## 9. Coverage of specification section 18
 
 **177 of 198** checklist items have at least one automated test
-(509 test cases in 22 binaries, plus 360 Swift checks and 78 smoke checks,
+(543 test cases in 23 binaries, plus 502 Swift checks and 78 smoke checks,
 both harnesses declaring the checklist ids they cover). The remaining 21 are
 enumerated with a stated reason in `docs/requirement-test-map.md`; they
 cluster into: needs hardware, needs an iOS recording that completes, needs a
@@ -706,6 +722,10 @@ emulators started at once within the same poll would be indistinguishable.
 
 ---
 
+**The budget was a lower bound on the wait, not an upper one.** Both wait loops checked the budget *before* each poll and then handed that poll its own fixed timeout, so a 180 s budget with a 60 s per-call cap let a poll starting at 179 s run until 239 s -- a third longer than the number the caller set, and the overshoot grew with how badly the tooling was behaving. The case that produced it was a wedged `CoreSimulatorService`, where every `simctl list` hangs for its full timeout: the budget bought three polls instead of ninety and took four minutes to do it. The `adb devices` snapshot taken before an emulator is started had the same shape, a fixed 15 s outside the budget entirely, so with a hung adb it alone spent 15 s of a 3 s budget and the loop had nothing left to poll with.
+
+Each call is now given whatever is left of the budget, capped, and split between the two calls a poll makes so one cannot spend the remainder and leave nothing for the check that decides readiness. Too little remaining to be worth a process spawn ends the loop rather than starting a 40 ms poll that can learn nothing. Tooling that stops answering is reported as that -- `simctl stopped answering while waiting` -- and not as a device that never came up. And when adb does not answer before the emulator is started, nothing is started: without the serials already present a new one cannot be told from one that was already there, and this would have reported someone else's emulator as the one it started. Tested against a stand-in tool that answers once and then wedges, so the loop is driven through the case where something *was* started and the tooling then went away; `ready_timeout` is asserted to be the bound across the whole loop.
+
 ## 12. Sessions recorded before 2026-09-15 have two coverage defects
 
 Building the timeline meant reading coverage per source for the first time,
@@ -753,3 +773,20 @@ Not limitations to be fixed -- design positions taken from spec sections 2.3,
   is invoked through `--app`, which works only on a debuggable or profileable
   package; anything else reports `permission_denied` with the manifest change
   that would fix it.
+
+
+## 14. `mpi inspect` reads a debug build's inspector; four things it cannot see, and one it changes
+
+`mpi inspect` and DevX's Inspect tab read a connection the app already has: a React Native debug build connects its inspector to Metro, and Metro proxies a Chrome DevTools Protocol session. Network exchanges, console output, exceptions and the Redux store come out of that with nothing installed in the app. Every limit below travels in the report's `caveats` array and is printed under **WHAT THIS DOES NOT SHOW**, so it is not left to this document.
+
+**It needs the inspector.** A release build runs none. An empty capture there means there was nothing to attach to, not that the app was idle; `mpi inspect --targets` says which of the two you are looking at.
+
+**Network coverage is the JavaScript side only.** The events come from React Native's own fetch/XHR instrumentation. A WebView -- which is most SSO and payment flows -- a native networking module and the platform's image loader never appear. Measured on a React Native SSO login: typing a user id and submitting the form produced no network entry at all over five polls, and the only entry that ever appeared was the app's own periodic `generate_204` probe. An empty list does not mean the app made no requests, and the source status names WebView for this reason. There is no no-install route to native traffic on a stock emulator: `adb root` is refused on a production build, and a proxy means installing a certificate on the device.
+
+**Attaching is not free.** A debugger session changes what the runtime does -- Hermes may deoptimise -- so nothing in an inspect report is a performance measurement, which is why this is a separate command from `record` rather than another source inside it. Metro's proxy also allows one debugger per device: a second CDP connection, even to the sibling page of the same runtime, takes the slot and disconnects the first, and the report says so with how long it ran of what was asked for.
+
+**Redux comes in two tiers that claim different things.** `--redux-watch` installs one `store.subscribe` listener -- a public, read-only API -- and reports which top-level slices changed by reference, with path-level differences computed here rather than in the app. What a subscriber never receives is the action: Redux passes it none, so a read-only record names a change and never an action, and no action is inferred from a state change. `--redux-actions` is the one thing this feature does that modifies the running app: it replaces `store.dispatch` with a wrapper that records the action and calls through, and puts the original back when the capture stops. It is opt-in, the report says whether the removal was confirmed, and it has two stated limits. The wrapper sits on the `dispatch` *property* of the store object, so a reference captured before it was installed reaches the reducers without passing it -- Redux Toolkit hands thunks exactly such a reference, from the middleware chain built when the store was created -- and such a change is recorded as `dispatch_bypassed`, a real change whose action is not named, rather than as a record that looks like the read-only case. And if the socket dies before the capture stops the wrapper stays installed: its buffer is bounded for that reason, and the next capture removes what it finds before installing its own. Reducers that mutate state in place defeat the reference comparison, and that is stated as a limit of the app's reducers rather than hidden. The console route still exists and is still labelled inference: a `redux-logger` line is reported as `inferred_redux_action_type`, never as an action the store reported. The store is found by walking React's devtools hook, read-only and bounded to 4000 fibers.
+
+**Request detail is off by default.** `--detail` captures headers and response bodies. An `Authorization` header is a bearer token and a login response is whatever the login returned; the values are kept verbatim, because a redacted header is a claim about what was sent that is not true, so the decision is whether to capture at all. "There is no body" and "the body could not be fetched" are one error from the runtime and two facts; where the exchange settles it (HEAD, 204, 304, `Content-Length: 0`) it is reported as having no body by construction.
+
+**A screenshot shows the screen at the moment it was taken, and nothing else.** `--screenshot` needs `--device`, because Metro knows the app and not which device it is on, and a device id is translated to the name Metro publishes through the same device record rather than guessed. Two are taken, before and after the window, each labelled with what it is evidence of; it is not the frame that missed its deadline. A physical iOS device has no command-line screenshot and is reported unavailable rather than attempted. Output that is not a valid PNG is refused rather than written: `adb shell` turns `\n` into `\r\n` and corrupts every PNG it carries, so `exec-out` is used and the header check is what would catch a regression.
