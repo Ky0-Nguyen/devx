@@ -127,6 +127,9 @@ json::Value CounterSeries::to_json() const {
   v.set("provider", json::Value::string(provider));
   v.set("process_instance_id", json::Value::string(process_instance_id));
   v.set("family", json::Value::string(family));
+  v.set("cumulative", json::Value::boolean(cumulative));
+  v.set("cpu_normalization",
+        json::Value::string(to_string(cpu_normalization)));
   json::Value pts = json::Value::array();
   for (const auto& p : points) {
     json::Value pair = json::Value::array();

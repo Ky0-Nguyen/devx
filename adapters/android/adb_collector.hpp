@@ -256,6 +256,16 @@ class AdbCollector final : public session::Collector {
     // CPU-time figure wrong by a constant factor and look plausible.
     std::int64_t clk_tck = 0;
     bool clk_tck_refused = false;
+    // How many CPUs the device reports, for the ceiling a per-core
+    // utilisation is read against: 0 = not read yet, -1 = unreadable. Never
+    // defaulted, for the same reason as CLK_TCK.
+    std::int64_t core_count = 0;
+    // The previous CPU-time reading, so a utilisation can be a difference of
+    // two measurements. Absent until the second reading of a capture, and a
+    // rate is published only once it exists -- 0% on the first tick would
+    // read as an idle app at the one moment it certainly is not.
+    std::optional<double> last_cpu_ns;
+    std::optional<model::TimeNs> last_cpu_at_ns;
     bool frames_reset = false;
     bool frames_ok = true;
     bool cpu_ok = true;
@@ -339,6 +349,9 @@ class AdbCollector final : public session::Collector {
       pid = 0;
       clk_tck = 0;
       clk_tck_refused = false;
+      core_count = 0;
+      last_cpu_ns.reset();
+      last_cpu_at_ns.reset();
       frames_reset = false;
       frames_ok = true;
       cpu_ok = true;

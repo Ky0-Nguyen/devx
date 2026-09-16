@@ -72,6 +72,17 @@ struct ProcCpuTime {
 };
 std::optional<ProcCpuTime> parse_proc_stat_cpu_time(const std::string& stat_line);
 
+// How many CPUs the kernel says are present, from /sys/devices/system/cpu/present.
+//
+// The file holds a cpulist: "0-7", "0", or a comma-separated mix of ranges
+// and singles like "0-3,4-7". It is the ceiling a utilisation percentage is
+// read against -- a per-core figure saturates the device at cores x 100%.
+//
+// Absent rather than 1 when the file cannot be parsed. Assuming a count would
+// put a specific, wrong ceiling on every reading and look plausible, which is
+// the same trap as assuming CLK_TCK.
+std::optional<int> parse_cpu_present_count(const std::string& text);
+
 // Reads "profileable" / "debuggable" from `dumpsys package` output.
 struct PackageFlags {
   std::optional<bool> debuggable;

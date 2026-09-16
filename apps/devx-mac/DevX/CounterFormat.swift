@@ -97,7 +97,7 @@ enum CounterFormat {
         if let dot = out.firstIndex(of: ".") {
             out = String(out[out.index(after: dot)...])
         }
-        for suffix in ["_bytes", "_ns"] where out.hasSuffix(suffix) {
+        for suffix in ["_bytes", "_ns", "_percent"] where out.hasSuffix(suffix) {
             out.removeLast(suffix.count)
         }
         return out
@@ -112,6 +112,48 @@ enum CounterFormat {
         return String(name[name.startIndex..<dot])
     }
 
+    /// One counter as a row: what it reads now, and what this capture cost.
+    struct Row {
+        let name: String
+        let value: Double
+        let unit: String
+        /// True when `value` is a running total rather than a reading.
+        let cumulative: Bool
+        /// What a percentage is a percentage of, as the series declared it.
+        let normalization: String
+        /// The change across the points this capture collected. Absent when
+        /// there was no pair to difference -- never zero, which would claim
+        /// the app used none of it.
+        let delta: Double?
+        let deltaSpanNs: Int64?
+
+        /// The number this row leads with.
+        ///
+        /// For a cumulative counter that is the delta: `cpu.process_time_ns`
+        /// reads 3.18 h on a 67-second capture because it counts from when
+        /// the process started, and that figure is true and not about this
+        /// capture. Where no delta exists yet the absolute is shown rather
+        /// than a blank, since it is still a measurement.
+        var headline: String {
+            guard cumulative, let delta else {
+                return CounterFormat.value(value, unit: unit)
+            }
+            return "+" + CounterFormat.value(delta, unit: unit)
+        }
+
+        /// The line under it: the running total the delta was taken from.
+        /// Nil when the headline already is the absolute.
+        ///
+        /// The word follows the number rather than being interpolated into a
+        /// sentence, because a sentence template puts the value where one
+        /// language's word order wants it and not the other's.
+        var footnote: String? {
+            guard cumulative, delta != nil else { return nil }
+            return CounterFormat.value(value, unit: unit) + " "
+                 + tr("cumulative")
+        }
+    }
+
     /// One panel's worth of counters.
     struct Family {
         /// The wire prefix: `memory`, `cpu`, or empty when unstated.
@@ -120,6 +162,18 @@ enum CounterFormat {
         let subtitle: String?
         /// Positions in the array that was passed in, in their original order.
         let indices: [Int]
+    }
+
+    /// The rows of a family, a reading before a running total.
+    ///
+    /// Within a family the rate is what someone reads first -- it is the
+    /// number that says what is happening now -- while a cumulative counter
+    /// is context for it. On the wire the order is creation order, which puts
+    /// `cpu.utilisation_percent` last because it cannot exist until the
+    /// second tick. Relative order inside each group is kept, so nothing
+    /// jumps around as ticks arrive.
+    static func ordered(_ rows: [Row]) -> [Row] {
+        return rows.filter { !$0.cumulative } + rows.filter { $0.cumulative }
     }
 
     /// Counters split into the families they were measured in.
@@ -147,6 +201,16 @@ enum CounterFormat {
         return sorted.map { describe($0, indices: members[$0] ?? []) }
     }
 
+    /// The panels the Live tab draws: each family, with its rows in order.
+    ///
+    /// The whole arrangement rule lives here rather than in the view, so it
+    /// can be tested without SwiftUI.
+    static func panels(_ rows: [Row]) -> [(family: Family, rows: [Row])] {
+        return families(rows.map { $0.name }).map { family in
+            (family, ordered(family.indices.map { rows[$0] }))
+        }
+    }
+
     /// A family's heading and the caveat a reader needs to read its numbers.
     ///
     /// An unrecognised family is titled with the prefix the provider used
@@ -167,10 +231,13 @@ enum CounterFormat {
             return Family(key: key,
                           title: "CPU time",
                           subtitle: "Process CPU time is cumulative since "
-                                  + "the process started, not since this "
-                                  + "capture began, so a capture of an app "
-                                  + "that has been running for hours opens "
-                                  + "at hours.",
+                                  + "the process started, so the figure in "
+                                  + "front is what this capture cost and the "
+                                  + "running total is under it. Utilisation "
+                                  + "is a percentage of one core with all "
+                                  + "the app's threads counted together, so "
+                                  + "it passes 100% when more than one core "
+                                  + "is working.",
                           indices: indices)
         case "":
             return Family(key: key,

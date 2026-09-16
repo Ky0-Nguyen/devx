@@ -2244,6 +2244,8 @@ do {
     check(CounterFormat.label("cpu.process_user_time_ns")
           == "process_user_time",
           "got \(CounterFormat.label("cpu.process_user_time_ns"))")
+    check(CounterFormat.label("cpu.utilisation_percent") == "utilisation",
+          "got \(CounterFormat.label("cpu.utilisation_percent"))")
     check(CounterFormat.label("rss_total") == "rss_total",
           "a name with no family is left alone")
 }
@@ -2290,6 +2292,81 @@ do {
 
     // Empty in, empty out: no panel titled Memory over nothing.
     check(CounterFormat.families([]).isEmpty, "no counters, no panels")
+}
+
+do {
+    // "tại sao cpu lại lấy time mà ko phải là hiệu năng nhỉ?" -- because the
+    // kernel publishes a counter and a counter is what gets stored. What the
+    // screen leads with is another matter: 3.18 h of process time on a
+    // 67-second window is true and is not the window's cost.
+    let before = Strings.active
+    Strings.active = .en
+
+    let cpu = CounterFormat.Row(
+        name: "cpu.process_time_ns", value: 11_448_000_000_000,
+        unit: "ns", cumulative: true, normalization: "not_applicable",
+        delta: 4_200_000_000, deltaSpanNs: 67_400_000_000)
+    check(cpu.headline == "+4.20 s",
+          "the capture's own cost leads, got \(cpu.headline)")
+    check(cpu.footnote?.contains("3.18 h") == true,
+          "the running total stays visible, got \(cpu.footnote ?? "nil")")
+    check(cpu.footnote?.contains("cumulative") == true,
+          "and is labelled as a total rather than left to be read as the "
+          + "window's, got \(cpu.footnote ?? "nil")")
+
+    // Before the second reading there is no difference to show. The absolute
+    // is a real measurement, so it is shown rather than blanked -- but
+    // nothing claims it is the window's.
+    let firstTick = CounterFormat.Row(
+        name: "cpu.process_time_ns", value: 11_448_000_000_000,
+        unit: "ns", cumulative: true, normalization: "not_applicable",
+        delta: nil, deltaSpanNs: nil)
+    check(firstTick.headline == "3.18 h",
+          "got \(firstTick.headline)")
+    check(!firstTick.headline.hasPrefix("+"),
+          "an absolute is not dressed up as a delta")
+    check(firstTick.footnote == nil,
+          "and nothing is repeated under it")
+
+    // An instantaneous reading is unchanged by any of this.
+    let rss = CounterFormat.Row(
+        name: "memory.rss_total_bytes", value: 1_105_149_952,
+        unit: "bytes", cumulative: false, normalization: "not_applicable",
+        delta: nil, deltaSpanNs: nil)
+    check(rss.headline == "1.03 GB", "got \(rss.headline)")
+    check(rss.footnote == nil, "a reading has no total to state")
+
+    // A percentage renders as one, and above 100% is legitimate: all the
+    // process's threads are counted against one core.
+    let util = CounterFormat.Row(
+        name: "cpu.utilisation_percent", value: 143.2, unit: "percent",
+        cumulative: false, normalization: "single_core",
+        delta: nil, deltaSpanNs: nil)
+    check(util.headline == "143.2%", "got \(util.headline)")
+    check(util.normalization == "single_core",
+          "and it carries what it is a percentage of, which is what makes it "
+          + "mean anything")
+
+    // Ordering: the rate reads first, the running totals are context. On the
+    // wire utilisation comes last, because it cannot exist until the second
+    // tick.
+    let rows = [cpu, util, firstTick]
+    let ordered = CounterFormat.ordered(rows)
+    check(ordered.first?.name == "cpu.utilisation_percent",
+          "the reading leads, got \(ordered.map { $0.name })")
+    check(ordered.count == rows.count, "and nothing is dropped")
+
+    // End to end: rows in, panels out.
+    let panels = CounterFormat.panels([rss, cpu, util])
+    check(panels.count == 2, "got \(panels.map { $0.family.key })")
+    check(panels[0].family.key == "memory" && panels[0].rows.count == 1,
+          "memory keeps its own panel")
+    check(panels[1].rows.map { $0.name }
+          == ["cpu.utilisation_percent", "cpu.process_time_ns"],
+          "and the CPU panel leads with the rate, got "
+          + "\(panels[1].rows.map { $0.name })")
+
+    Strings.active = before
 }
 
 do {

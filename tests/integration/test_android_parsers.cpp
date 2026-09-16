@@ -704,3 +704,21 @@ MPI_TEST(an_emulator_console_reply_yields_the_avd_name, {"A01"}) {
                 "one");
   MPI_CHECK_MSG(first_meaningful("").empty(), "nor must an empty reply");
 }
+
+MPI_TEST(the_device_cpu_count_is_read_or_left_unknown, {"E12"}) {
+  // The ceiling a per-core utilisation is read against: a percentage of one
+  // core saturates an 8-CPU device at 800%, not at 100%. /sys holds a
+  // cpulist, which is a range, a single, or a mix of both.
+  MPI_CHECK_EQ(*parse_cpu_present_count("0-7\n"), 8);
+  MPI_CHECK_EQ(*parse_cpu_present_count("0"), 1);
+  MPI_CHECK_EQ(*parse_cpu_present_count("0-3,4-7"), 8);
+  MPI_CHECK_EQ(*parse_cpu_present_count("0-1,3"), 3);
+
+  // Unparseable is unknown, never 1. A specific wrong ceiling would make
+  // every reading look plausible and be wrong by a constant factor -- the
+  // same trap as assuming CLK_TCK.
+  MPI_CHECK(!parse_cpu_present_count("").has_value());
+  MPI_CHECK(!parse_cpu_present_count("cat: not found").has_value());
+  MPI_CHECK(!parse_cpu_present_count("7-0").has_value());
+  MPI_CHECK(!parse_cpu_present_count("0-,2").has_value());
+}

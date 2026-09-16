@@ -116,6 +116,28 @@ struct CounterSeries {
   std::string process_instance_id;
   // Distinct metric families are never merged or summed (spec section 8).
   std::string family;  // "rss" | "pss" | "private_dirty" | "footprint" | "js_heap"
+
+  // Whether each point is a running total or a reading taken at that instant.
+  //
+  // The distinction decides which number means anything. For a cumulative
+  // series the quantity of interest is the difference between two points --
+  // `cpu.process_time_ns` is counted from when the process started, so a
+  // 67-second capture of an app that had been running for hours opened at
+  // 3.18 h, a true figure that says nothing about the capture. For an
+  // instantaneous series it is the point itself; differencing rss across a
+  // window answers a different question than reading it.
+  //
+  // A reader cannot infer this from the name, which is why it is declared
+  // rather than guessed at by suffix.
+  bool cumulative = false;
+
+  // What a percentage is a percentage OF. A CPU percentage without its
+  // normalization declared means nothing (spec section 8 / E12): on an
+  // eight-core device, 100% is either one core saturated or the whole SoC.
+  // `Metric` has carried this since the beginning; a counter series
+  // published one without it.
+  CpuNormalization cpu_normalization = CpuNormalization::kNotApplicable;
+
   std::vector<std::pair<TimeNs, double>> points;
   json::Value to_json() const;
 };

@@ -170,35 +170,61 @@ struct LiveView: View {
     /// summing memory families. The collector keeps them apart deliberately
     /// -- "CPU time is not memory and must never be totalled with one" -- and
     /// the view now shows that separation instead of collapsing it.
+    /// The counters, read off the wire as rows.
+    private var counterRows: [CounterFormat.Row] {
+        snap["latest_counters"].array.map { c in
+            CounterFormat.Row(
+                name: c["name"].text,
+                value: c["value"].double ?? 0,
+                unit: c["unit"].text,
+                cumulative: c["cumulative"].bool ?? false,
+                normalization: c["cpu_normalization"].text,
+                delta: c["delta"].double,
+                deltaSpanNs: c["delta_span_ns"].double.map { Int64($0) })
+        }
+    }
+
+    /// One panel per measured family, never one list under a single heading.
+    ///
+    /// This was a single panel titled Memory holding every counter, so CPU
+    /// process time appeared as a memory family under a subtitle about not
+    /// summing memory families. The collector keeps them apart deliberately
+    /// -- "CPU time is not memory and must never be totalled with one" -- and
+    /// the view now shows that separation instead of collapsing it.
     @ViewBuilder private var sparklines: some View {
-        let counters = snap["latest_counters"].array
-        let families = CounterFormat.families(counters.map { $0["name"].text })
-        ForEach(Array(families.enumerated()), id: \.offset) { _, family in
-            Panel(title: family.title, subtitle: family.subtitle) {
+        let panels = CounterFormat.panels(counterRows)
+        ForEach(Array(panels.enumerated()), id: \.offset) { _, panel in
+            Panel(title: panel.family.title, subtitle: panel.family.subtitle) {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(family.indices, id: \.self) { i in
-                        let c = counters[i]
-                        let name = c["name"].text
-                        let series = state.liveSeries[name] ?? []
+                    ForEach(panel.rows, id: \.name) { row in
                         HStack(spacing: 10) {
                             // Truncated rather than wrapped: a label that
                             // wrapped mid-word read as "cpu.process_user_ti"
                             // over "me_ns", which looks like two counters.
-                            Text(CounterFormat.label(name))
+                            Text(CounterFormat.label(row.name))
                                 .font(Term.font(11))
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .frame(width: 148, alignment: .leading)
-                            Sparkline(values: series)
+                            Sparkline(values: state.liveSeries[row.name] ?? [])
                                 .frame(height: 26)
-                            // Formatted by the unit the provider stated, not
-                            // by assuming bytes: `cpu.process_time_ns` is
-                            // nanoseconds and used to render as gigabytes.
-                            Text(CounterFormat.value(c["value"].double ?? 0,
-                                                     unit: c["unit"].text))
-                                .font(Term.font(12, .medium))
-                                .lineLimit(1)
-                                .frame(width: 92, alignment: .trailing)
+                            // Leading with what this capture cost, because
+                            // the absolute of a cumulative counter is the
+                            // process's whole life: a 67 s window opened at
+                            // 3.18 h of CPU time, true and not about the
+                            // window. The total stays underneath.
+                            VStack(alignment: .trailing, spacing: 1) {
+                                Text(row.headline)
+                                    .font(Term.font(12, .medium))
+                                    .lineLimit(1)
+                                if let footnote = row.footnote {
+                                    Text(footnote)
+                                        .font(Term.small)
+                                        .foregroundStyle(Term.dim)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .frame(width: 116, alignment: .trailing)
                         }
                     }
                 }

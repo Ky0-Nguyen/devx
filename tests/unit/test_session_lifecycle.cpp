@@ -117,6 +117,27 @@ class FakeCollector final : public session::Collector {
         target = &out.counters.back();
       }
       target->points.emplace_back(f.start_ns, 64.0 * 1024 * 1024);
+
+      // And a running total beside it, which is the shape CPU time has.
+      // Ten milliseconds of CPU per tick, so a delta across ticks is a known
+      // quantity rather than whatever the host happened to be doing.
+      model::CounterSeries* cpu = nullptr;
+      for (auto& c : out.counters) {
+        if (c.name == "cpu.process_time_ns") cpu = &c;
+      }
+      if (cpu == nullptr) {
+        model::CounterSeries c;
+        c.name = "cpu.process_time_ns";
+        c.unit = "ns";
+        c.family = "cpu_time";
+        c.cumulative = true;
+        out.counters.push_back(std::move(c));
+        cpu = &out.counters.back();
+      }
+      // Opening at an hour of process time: the counter starts when the
+      // process does, not when the capture does.
+      cpu->points.emplace_back(
+          f.start_ns, 3'600'000'000'000.0 + static_cast<double>(n) * 10'000'000.0);
     }
     out.window_start_ns = 1'000'000;
     out.window_end_ns = f.presented_ns.value_or(f.start_ns);
@@ -838,4 +859,86 @@ MPI_TEST(a_counter_with_no_unit_gets_none_invented_for_it, {"D01", "H18"}) {
                   "no unit stated means no unit key, not an empty one");
   }
   MPI_CHECK(checked);
+}
+
+MPI_TEST(a_cumulative_counter_reports_what_this_capture_cost, {"D01", "E11"}) {
+  // The complaint that produced this: `cpu.process_time_ns` read 3.18 h on a
+  // 67-second window. Both numbers are true -- the counter is cumulative
+  // since the process started -- but the one a reader of a live capture
+  // wants is the difference across the window, and only the absolute was on
+  // the wire.
+  auto collector = std::make_shared<FakeCollector>();
+  session::LiveSession live;
+  MPI_CHECK(live.start(collector, fake_device(), one_process(), fast_config(),
+                       model::NormalizedTrace{}));
+  MPI_CHECK(wait_for([&] { return collector->ticks.load() >= 4; }));
+  const auto snap = live.snapshot();
+  live.stop();
+
+  const session::LiveSnapshot::LatestCounter* cpu = nullptr;
+  const session::LiveSnapshot::LatestCounter* rss = nullptr;
+  for (const auto& c : snap.latest_counters) {
+    if (c.name == "cpu.process_time_ns") cpu = &c;
+    if (c.name == "memory.rss_total_bytes") rss = &c;
+  }
+  MPI_CHECK(cpu != nullptr && rss != nullptr);
+
+  MPI_CHECK_MSG(cpu->cumulative, "the counter says it is a running total");
+  MPI_CHECK_MSG(cpu->value > 3'600'000'000'000.0,
+                "the absolute is still there: it is the process's whole life");
+  MPI_CHECK_MSG(cpu->delta.has_value(),
+                "and the capture's own cost is beside it");
+  // Ten milliseconds per tick, so at least three intervals across four ticks
+  // and nowhere near the absolute.
+  MPI_CHECK_MSG(*cpu->delta >= 30'000'000.0 && *cpu->delta < 1'000'000'000.0,
+                "expected tens of milliseconds of CPU across the window, got " +
+                    std::to_string(*cpu->delta));
+  MPI_CHECK(cpu->delta_span_ns.has_value());
+  MPI_CHECK_MSG(*cpu->delta_span_ns > 0,
+                "and the span it was taken over, so it can be read as a rate");
+
+  // An instantaneous reading gets no delta. Differencing rss across a window
+  // answers a different question, and offering one here would invite it.
+  MPI_CHECK_MSG(!rss->cumulative, "a memory reading is not a running total");
+  MPI_CHECK_MSG(!rss->delta.has_value(),
+                "so no difference is offered for it");
+
+  // And it survives serialisation, which is the form the UI reads.
+  const auto doc = snap.to_json();
+  const auto* list = doc.find("latest_counters");
+  MPI_CHECK(list != nullptr);
+  bool checked = false;
+  for (const auto& e : list->items()) {
+    const auto* name = e.find("name");
+    if (name == nullptr || name->as_string() != "cpu.process_time_ns") continue;
+    checked = true;
+    MPI_CHECK_EQ(e.find("cumulative")->as_bool(), true);
+    MPI_CHECK(e.find("delta") != nullptr);
+    MPI_CHECK(e.find("delta_span_ns") != nullptr);
+  }
+  MPI_CHECK(checked);
+}
+
+MPI_TEST(one_point_yields_no_difference_rather_than_zero, {"D01", "E11"}) {
+  // A difference needs two points. Zero here would be a claim -- that the
+  // app used no CPU over the window -- where the truth is that nothing can
+  // be said yet. `die_after` leaves exactly one tick's data behind.
+  auto collector = std::make_shared<FakeCollector>();
+  collector->die_after.store(1);
+  session::LiveSession live;
+  MPI_CHECK(live.start(collector, fake_device(), one_process(), fast_config(),
+                       model::NormalizedTrace{}));
+  MPI_CHECK(wait_for([&] { return collector->ticks.load() >= 4; }));
+  const auto snap = live.snapshot();
+  live.stop();
+
+  bool checked = false;
+  for (const auto& c : snap.latest_counters) {
+    if (c.name != "cpu.process_time_ns") continue;
+    checked = true;
+    MPI_CHECK_MSG(c.value > 0, "the one reading is real and is reported");
+    MPI_CHECK_MSG(!c.delta.has_value(),
+                  "with no second point there is no difference to state");
+  }
+  MPI_CHECK_MSG(checked, "the single tick's counter is in the snapshot");
 }
