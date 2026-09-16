@@ -356,7 +356,7 @@ struct IssuesView: View {
     }
 }
 
-private struct IssueListRow: View {
+struct IssueListRow: View {
     let issue: JSON
     let selected: Bool
 
@@ -392,9 +392,16 @@ private struct IssueListRow: View {
     }
 }
 
-private struct IssueDetail: View {
+struct IssueDetail: View {
     @EnvironmentObject var state: AppState
     let issue: JSON
+    /// Whether "Focus on timeline" is offered.
+    ///
+    /// False while a capture is still running: focusing loads the timeline
+    /// from a session package, and during a live capture there is not one
+    /// yet -- the button would leave the running capture for an empty
+    /// timeline. The Live tab says so in its place instead.
+    var canFocusTimeline: Bool = true
 
     var body: some View {
         ScrollView {
@@ -408,8 +415,14 @@ private struct IssueDetail: View {
                 // and the timeline says so when the evidence is an instant
                 // that had to be widened to be clickable.
                 HStack(spacing: 8) {
-                    Button(tr("Focus on timeline")) { state.focusIssue(issue) }
-                        .buttonStyle(TermButtonStyle())
+                    if canFocusTimeline {
+                        Button(tr("Focus on timeline")) { state.focusIssue(issue) }
+                            .buttonStyle(TermButtonStyle())
+                    } else {
+                        Text(tr("the timeline opens once this capture is "
+                              + "saved"))
+                            .font(Term.micro).foregroundStyle(Term.dim)
+                    }
                     if issue["start_ns"].int == issue["end_ns"].int {
                         Chip(text: "evidence is an instant", tone: .caution)
                     }

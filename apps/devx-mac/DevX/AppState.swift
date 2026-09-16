@@ -229,6 +229,12 @@ final class AppState: ObservableObject {
     /// filtered, and both shift every offset, so an index-keyed selection
     /// silently lands on a different request.
     @Published var selectedRequestId: String = ""
+    /// Which preliminary finding the Live tab is showing, by issue_id.
+    ///
+    /// A fingerprint and not an index: live findings are recomputed every
+    /// tick, so an index would slide onto a different finding as the list
+    /// changes underneath the reader.
+    @Published var selectedLiveIssueId: String = ""
     /// Whether detail was asked for when the observation on screen was
     /// started. nil means nobody recorded it.
     ///
