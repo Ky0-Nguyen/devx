@@ -83,7 +83,7 @@ MPI_TEST(initialize_answers_with_the_version_it_will_speak, {}) {
                     == mpi::mcp::kProtocolVersion,
                 "the server states the revision it implements");
   MPI_CHECK_MSG(res->find("serverInfo")->find("name")->as_string()
-                    == "mobile-perf-inspector",
+                    == "DevX",
                 "and names itself");
   MPI_CHECK_MSG(res->find("capabilities")->find("tools") != nullptr,
                 "tools are advertised");

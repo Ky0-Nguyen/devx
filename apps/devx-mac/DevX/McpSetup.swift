@@ -54,7 +54,7 @@ enum McpSetup {
                 id: "claude-code",
                 host: "Claude Code",
                 location: tr("one command in a terminal"),
-                snippet: "claude mcp add -s user mobile-perf-inspector \(q) mcp",
+                snippet: "claude mcp add -s user devx \(q) mcp",
                 afterwards: tr("`-s user` makes it available in every folder. "
                              + "Without it the server is registered only for "
                              + "the folder you run it in.")),
@@ -66,7 +66,7 @@ enum McpSetup {
                 snippet: """
                 {
                   "mcpServers": {
-                    "mobile-perf-inspector": {
+                    "devx": {
                       "command": "\(q)",
                       "args": ["mcp"]
                     }
@@ -84,7 +84,7 @@ enum McpSetup {
                 snippet: """
                 {
                   "mcpServers": {
-                    "mobile-perf-inspector": {
+                    "devx": {
                       "command": "\(q)",
                       "args": ["mcp"]
                     }
@@ -99,7 +99,7 @@ enum McpSetup {
                 host: "Codex CLI",
                 location: "~/.codex/config.toml",
                 snippet: """
-                [mcp_servers.mobile-perf-inspector]
+                [mcp_servers.devx]
                 command = "\(q)"
                 args = ["mcp"]
                 """,

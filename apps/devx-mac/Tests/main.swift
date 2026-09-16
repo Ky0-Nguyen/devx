@@ -2125,6 +2125,13 @@ do {
     // Claude Code's is a shell command; the others are config files.
     let cc = recipes.first { $0.id == "claude-code" }!
     check(cc.snippet.hasPrefix("claude mcp add"), "Claude Code gets a command")
+    // The server is registered under the product's name, not the repo's.
+    for r in recipes {
+        check(!r.snippet.contains("mobile-perf-inspector"),
+              "\(r.host) registers it as devx, not as the repo name")
+        check(r.snippet.contains("devx"),
+              "\(r.host)'s snippet names the server devx: \(r.snippet.prefix(60))")
+    }
     check(cc.snippet.contains("-s user"),
           "with user scope, so it is available in every folder")
     for id in ["claude-desktop", "cursor"] {
