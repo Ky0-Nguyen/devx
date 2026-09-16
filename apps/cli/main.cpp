@@ -54,6 +54,10 @@ COMMANDS
                                 measurement: a debugger is attached.
   sdk-bridge                    Run the loopback host the optional in-app SDK
                                 reports to.
+  mcp                           Serve captures to an AI tool over stdio, as a
+                                Model Context Protocol server (Cursor, Claude,
+                                Codex). Reads only, unless started with
+                                --allow-actions. See docs/mcp-server.md.
 
 GLOBAL OPTIONS
   --device <id>                 Device id (adb serial, or CoreDevice/sim UDID).
@@ -65,6 +69,15 @@ GLOBAL OPTIONS
   --timeout-ms <n>              Per-command device tooling timeout.
   --sessions-dir <path>         Where session packages live.
   --max-input-mib <n>           Cap on a single input file (default 2048).
+
+MCP OPTIONS
+  --allow-actions               Also offer the tools that change something:
+                                record a capture, boot a device, attach a
+                                debugger. Without it those tools are listed
+                                and refused, saying nothing was done.
+  --sessions-dir <path>         Which captures to serve (a host launches this
+                                without a shell, so relative paths and PATH
+                                are not what you expect).
 
 INSPECT OPTIONS
   --targets                     List what is attachable and exit. Does not
@@ -215,6 +228,7 @@ bool is_boolean_flag(const std::string& flag) {
       "--sdk",          "--source-dirty",
       "--targets",      "--redux",          "--redux-values",
       "--redux-watch",  "--redux-actions",
+      "--allow-actions",
       "--screenshot",   "--detail",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
@@ -501,6 +515,8 @@ int main(int argc, char** argv) {
     code = cmd_rules(parsed.inv);
   } else if (cmd == "inspect") {
     return to_int(cmd_inspect(parsed.inv));
+  } else if (cmd == "mcp") {
+    return to_int(cmd_mcp(parsed.inv));
   } else if (cmd == "sdk-bridge") {
     code = cmd_sdk_bridge(parsed.inv);
   } else if (cmd == "version") {

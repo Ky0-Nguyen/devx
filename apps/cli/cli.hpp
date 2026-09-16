@@ -72,6 +72,7 @@ ExitCode cmd_compare(const Invocation& inv);
 ExitCode cmd_export(const Invocation& inv);
 ExitCode cmd_rules(const Invocation& inv);
 ExitCode cmd_inspect(const Invocation& inv);
+ExitCode cmd_mcp(const Invocation& inv);
 ExitCode cmd_sdk_bridge(const Invocation& inv);
 
 // Shared helpers.

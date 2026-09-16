@@ -5,6 +5,7 @@ add_library(mpi_core STATIC
   net/websocket_client.cpp
   net/loopback_http.cpp
   observe/inspect.cpp
+  mcp/protocol.cpp
   observe/screenshot.cpp
   sdk/marker_ingest.cpp
   sdk/sdk_bridge.cpp

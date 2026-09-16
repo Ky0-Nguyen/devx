@@ -403,6 +403,7 @@ docs/capabilities/   tested capability matrix, iOS toolchain probe record
   [Android text sources](docs/adr/0006-android-text-sources-not-perfetto.md) ·
   [DevX in SwiftUI](docs/adr/0007-devx-is-a-native-swiftui-app.md)
 
+- [Reading a capture from an AI tool](docs/mcp-server.md) — `mpi mcp`, an MCP server over stdio for Cursor, Claude and Codex; read-only unless started with `--allow-actions`
 - [Inspecting without installing](docs/inspect-without-installing.md) — how `mpi inspect` reads a debug build's inspector, and what it cannot reach
 - [iOS: what works, what does not, and what was measured](docs/ios-live-capture-findings.md) — the simulator collector, the mach-unit trap, why the "corrupt log archive" was a permission
 - [Release notes v0.1.0](docs/RELEASE-v0.1.0.md) — install, the Gatekeeper step, known limits
