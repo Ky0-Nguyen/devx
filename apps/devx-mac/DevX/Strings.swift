@@ -625,9 +625,30 @@ enum Strings {
         "What this pane cannot show": "Những gì khung này không thể cho biết",
         "not measured, rather than measured as nothing":
             "không đo được, chứ không phải đo ra là không có",
-        "what was asked for": "những gì đã được gửi đi",
         "no request selected": "chưa chọn request nào",
         "no finding selected": "chưa chọn phát hiện nào",
+        "copy as curl": "copy thành curl",
+        "tree": "dạng cây",
+        "row(s)": "dòng",
+        "not expanded": "chưa mở",
+        "a parsed rendering, so it folds -- switch to text for the bytes that arrived":
+            "đây là bản dựng lại sau khi parse, nên thu gọn được -- chuyển sang text để xem đúng byte đã nhận",
+        "this body could not be parsed into a tree; the text below is what arrived":
+            "body này không parse được thành cây; phần text bên dưới là những gì đã nhận",
+        "the tree stops at {n} nodes; the text below is complete":
+            "cây dừng ở {n} nút; phần text bên dưới là đầy đủ",
+        "reproduces the request as it was sent, for someone else to run":
+            "tái tạo lại request đúng như lúc gửi, để người khác chạy lại",
+        "this command carries the headers as they were sent, credentials included -- treat it like a password":
+            "câu lệnh này mang theo header đúng như lúc gửi, gồm cả thông tin đăng nhập -- hãy coi nó như mật khẩu",
+        "search this body…": "tìm trong body này…",
+        "{hits} of {n} lines match": "{hits} trên {n} dòng khớp",
+        "no match in the {n} lines shown": "không khớp dòng nào trong {n} dòng đang hiện",
+        "showing the first {n} matching lines": "đang hiện {n} dòng khớp đầu tiên",
+        "not captured": "không thu",
+        "none to give": "không có gì để trả",
+        "0 bytes": "0 byte",
+        "text": "văn bản",
         "Pick one on the left to read its evidence, thresholds and what is still missing.":
             "Chọn một cái ở bên trái để xem bằng chứng, ngưỡng và những gì còn thiếu.",
         "that finding is no longer in the list":

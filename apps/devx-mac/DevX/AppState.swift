@@ -188,10 +188,18 @@ final class AppState: ObservableObject {
     @Published var inspectDoc: JSON = .null
     @Published var inspectSeconds: Int = 15
     @Published var inspectRedux: Bool = true
-    /// Off by default, and deliberately not remembered: a store holds tokens
-    /// and personal data, so including its values is a decision made per
-    /// capture rather than a setting that quietly stays on.
-    @Published var inspectReduxValues: Bool = false
+    /// On by default, at the request of the person whose tool this is: "default
+    /// là có tick luôn log redux, giá trị của API sẵn luôn".
+    ///
+    /// This was off, and deliberately not remembered, on the argument that a
+    /// store holds tokens and personal data so including its values should be
+    /// a per-capture decision. That argument is still true and is why the
+    /// warning beside the checkbox stays -- but who pays for it is the person
+    /// reading their own app's store, and they have asked to start from
+    /// everything on and untick what they do not want. A default that makes
+    /// the feature useless until three boxes are found is its own kind of
+    /// wrong.
+    @Published var inspectReduxValues: Bool = true
     /// Watch the store while attached, rather than reading it once.
     ///
     /// On by default when observing live: a list of slice names answers "is
@@ -203,7 +211,11 @@ final class AppState: ObservableObject {
     /// Off by default and deliberately not remembered: this is the one
     /// setting in the whole feature that modifies the running app, so it is
     /// chosen per observation rather than left on.
-    @Published var inspectReduxActions: Bool = false
+    /// On by default, so the Redux list names the actions it saw rather than
+    /// reporting anonymous state changes. This is the one setting that
+    /// modifies the running app -- it wraps `store.dispatch` for the duration
+    /// and puts it back -- which the checkbox says where it is switched on.
+    @Published var inspectReduxActions: Bool = true
     /// Whether the activity list is expanded, and which rows differ from it.
     ///
     /// Two pieces rather than one set of open rows: "expand all" has to keep
@@ -247,10 +259,15 @@ final class AppState: ObservableObject {
     /// negative claim about someone else's data.
     @Published var inspectDocCapturedDetail: Bool? = nil
     @Published var inspectScreenshots: Bool = false
-    /// Capture request/response headers and bodies. Off by default and
-    /// deliberately not remembered: this is the data in flight, including
-    /// bearer tokens, so it is a decision made per observation.
-    @Published var inspectDetail: Bool = false
+    /// Capture request/response headers and bodies. On by default, for the
+    /// same reason as `inspectReduxValues`: a request list with no headers or
+    /// bodies is a list of URLs, and that is not what anyone opens this for.
+    ///
+    /// This is the data in flight, bearer tokens included, and the pane still
+    /// names the headers that usually carry a credential -- see
+    /// InspectSecrets. Nothing is masked, so the honest warning is that this
+    /// captures what was actually sent, and a report can be exported.
+    @Published var inspectDetail: Bool = true
     /// Live observation state.
     @Published var inspectStreaming: Bool = false
     @Published var inspectDisconnect: String = ""
