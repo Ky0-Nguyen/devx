@@ -56,7 +56,7 @@ json::Value Server::initialize_result() const {
   caps.set("tools", std::move(tools_cap));
 
   json::Value info = json::Value::object();
-  info.set("name", json::Value::string("mobile-perf-inspector"));
+  info.set("name", json::Value::string("DevX"));
   info.set("version", json::Value::string("0.1.0"));
 
   json::Value out = json::Value::object();

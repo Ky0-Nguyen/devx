@@ -10,17 +10,29 @@ finding has the title and nothing else; a model holding the report has the
 evidence refs, the threshold that fired, the coverage gaps and the provenance
 of every source.
 
+The server calls itself **DevX** when a host asks, and `devx` is the key to register it under. The binary is still `mpi`: one CLI, and `mcp` is one of its commands.
+
 ## Setting it up
 
 The server speaks JSON-RPC 2.0 over stdio. There is no port and nothing
 listening.
+
+**Claude Code** — one command, no file to edit:
+
+```bash
+claude mcp add -s user devx /absolute/path/to/mpi mcp
+```
+
+`-s user` registers it for every folder. Without it the server is scoped to
+the directory you happened to run the command in, which is easy to miss --
+`claude mcp list` shows which you got.
 
 **Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "mobile-perf-inspector": {
+    "devx": {
       "command": "/absolute/path/to/mpi",
       "args": ["mcp"]
     }
@@ -33,7 +45,7 @@ listening.
 ```json
 {
   "mcpServers": {
-    "mobile-perf-inspector": {
+    "devx": {
       "command": "/absolute/path/to/mpi",
       "args": ["mcp"]
     }
@@ -44,10 +56,12 @@ listening.
 **Codex CLI** — `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.mobile-perf-inspector]
+[mcp_servers.devx]
 command = "/absolute/path/to/mpi"
 args = ["mcp"]
 ```
+
+The path to prefer is the copy inside the app bundle -- `DevX.app/Contents/MacOS/mpi` -- because it does not move when the build tree does. DevX's own Help tab prints it and offers each of these snippets with a copy button, already filled in.
 
 An absolute path, in every case. A host launches this without a shell, so
 `mpi` on your `PATH` is not `mpi` on its `PATH` — the same trap that made the
