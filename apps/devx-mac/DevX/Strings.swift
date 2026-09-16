@@ -628,6 +628,36 @@ enum Strings {
         "no request selected": "chưa chọn request nào",
         "no finding selected": "chưa chọn phát hiện nào",
         "copy as curl": "copy thành curl",
+        "Help": "Trợ giúp",
+        "Connect an AI tool": "Kết nối một công cụ AI",
+        "Model Context Protocol, over stdio": "Model Context Protocol, qua stdio",
+        "Every screen": "Từng màn hình",
+        "in sidebar order": "theo thứ tự trên sidebar",
+        "Why the numbers look the way they do": "Vì sao các con số hiện ra như vậy",
+        "three rules that shape every screen": "ba quy tắc chi phối mọi màn hình",
+        "\"Not measured\" is not zero": "\"Không đo được\" không phải là 0",
+        "A simulator is not a device": "Máy ảo không phải là thiết bị thật",
+        "Attaching a debugger changes the app": "Việc attach debugger làm thay đổi app",
+        "the command": "câu lệnh",
+        "one command in a terminal": "một câu lệnh trong terminal",
+        "copied": "đã copy",
+        "Once it is connected, try asking:": "Kết nối xong rồi, thử hỏi:",
+        "This tool can serve its captures to Claude, Cursor, Codex or anything else that speaks MCP, so a model can read a whole report instead of a screenshot of one.":
+            "Công cụ này có thể đưa các phiên thu cho Claude, Cursor, Codex hay bất cứ thứ gì nói được MCP, để model đọc nguyên cả report thay vì đọc một ảnh chụp của nó.",
+        "What each screen shows, and how to let an AI tool read these reports. Screen names stay in English, because that is what the sidebar says.":
+            "Từng màn hình cho biết điều gì, và cách để một công cụ AI đọc được các report này. Tên màn hình giữ nguyên tiếng Anh, vì đó là chữ hiện trên sidebar.",
+        "Shipped inside this app, so the path above is correct on this machine. A host launches it without a shell, which is why a path and not a command name.":
+            "Được đóng gói sẵn trong app này, nên đường dẫn ở trên là đúng trên máy này. Host chạy nó không qua shell, nên phải là đường dẫn chứ không phải tên lệnh.",
+        "Connected like this the server reads and changes nothing. Recording a capture, booting a device and attaching a debugger are refused, and say so. Add `--allow-actions` after `mcp` to enable them -- a model deciding on its own to try recording is a different thing from you asking for it, and a recording cannot be un-started.":
+            "Kết nối theo cách này thì server chỉ đọc và không thay đổi gì. Việc thu một phiên, khởi động thiết bị và attach debugger đều bị từ chối, và có nói rõ. Thêm `--allow-actions` sau `mcp` để bật chúng lên -- một model tự quyết định thử record khác với việc bạn chủ động yêu cầu, và đã record thì không undo được.",
+        "`-s user` makes it available in every folder. Without it the server is registered only for the folder you run it in.":
+            "`-s user` giúp nó dùng được ở mọi thư mục. Không có nó thì server chỉ được đăng ký cho đúng thư mục bạn chạy lệnh.",
+        "Merge this into the file rather than replacing it, then quit Claude Desktop completely and open it again -- it reads the configuration only at startup.":
+            "Hãy chèn phần này vào file chứ đừng ghi đè, rồi thoát hẳn Claude Desktop và mở lại -- nó chỉ đọc cấu hình lúc khởi động.",
+        "Cursor picks it up without a restart in most versions; reload the window if it does not appear.":
+            "Phần lớn phiên bản Cursor nhận ngay không cần khởi động lại; nếu không thấy thì reload cửa sổ.",
+        "The `mpi` command is not inside this app bundle, so there is no path here that is certainly right. A build run before this was added, or a bundle assembled by hand, will look like this. Rebuild, or run `mpi mcp` from wherever you built it.":
+            "Lệnh `mpi` không có trong bundle của app này, nên ở đây không có đường dẫn nào chắc chắn đúng. Một bản build từ trước khi thêm phần này, hoặc bundle ghép bằng tay, sẽ ra như vậy. Hãy build lại, hoặc chạy `mpi mcp` từ chỗ bạn đã build.",
         "tree": "dạng cây",
         "row(s)": "dòng",
         "not expanded": "chưa mở",

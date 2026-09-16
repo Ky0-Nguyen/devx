@@ -56,8 +56,11 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CurlCommand.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BodySearch.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTree.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/McpSetup.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpTopics.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DisclosureSection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTreeView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsView.swift
@@ -90,6 +93,8 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CurlCommand.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BodySearch.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTree.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/McpSetup.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpTopics.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
 )
@@ -166,11 +171,25 @@ add_custom_command(
           ${DEVX_SWIFT_SOURCES}
           -o ${DEVX_BINARY}
   ${DEVX_ICON_STEP}
+  # The CLI ships inside the bundle, beside the app's own binary.
+  #
+  # It is what the MCP server is: a host launches `mpi mcp` as a subprocess,
+  # and the one thing people get wrong is the path -- a host runs it without a
+  # shell, so `mpi` on a PATH is not `mpi` on its PATH. An app that explains
+  # how to connect it has to state a path that is true, and the only path it
+  # can be certain of is one inside itself. It also keeps the instructions
+  # working when the build tree moves.
+  #
+  # Before the signature, like the icon: codesign hashes what is in the
+  # bundle, so a binary added afterwards leaves a signature that no longer
+  # matches it.
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_FILE:mpi> ${DEVX_BUNDLE}/Contents/MacOS/mpi
   # An ad-hoc signature is enough for local use and keeps macOS from refusing
   # to launch it. A distributed build needs a real identity; see
   # THIRD-PARTY-LICENSES.md.
   COMMAND codesign --force --sign - ${DEVX_BUNDLE}
-  DEPENDS ${DEVX_SWIFT_SOURCES} mpi_capi mpi_core mpi_adapters
+  DEPENDS ${DEVX_SWIFT_SOURCES} mpi_capi mpi_core mpi_adapters mpi
           ${DEVX_ICON_DEP}
           ${CMAKE_CURRENT_SOURCE_DIR}/Support/Info.plist
           ${CMAKE_CURRENT_BINARY_DIR}/modules/mpi_capi.h
@@ -201,6 +220,7 @@ add_custom_target(devx_install
   # version, and an app whose binary is not executable fails to launch with a
   # message that says nothing useful.
   COMMAND chmod +x ${DEVX_INSTALL_DIR}/DevX.app/Contents/MacOS/DevX
+  COMMAND chmod +x ${DEVX_INSTALL_DIR}/DevX.app/Contents/MacOS/mpi
   # Re-sign in place: the copy has new inode metadata, and a bundle whose
   # signature no longer verifies is quarantined by Gatekeeper on first launch.
   COMMAND codesign --force --sign - ${DEVX_INSTALL_DIR}/DevX.app
@@ -242,6 +262,7 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${DEVX_BUNDLE} ${DEVX_DMG_STAGE}/DevX.app
   COMMAND chmod +x ${DEVX_DMG_STAGE}/DevX.app/Contents/MacOS/DevX
+  COMMAND chmod +x ${DEVX_DMG_STAGE}/DevX.app/Contents/MacOS/mpi
   # Re-signed after the copy, for the same reason devx_install does it: the
   # copy has new inode metadata and an unverifiable signature is quarantined.
   COMMAND codesign --force --sign - ${DEVX_DMG_STAGE}/DevX.app

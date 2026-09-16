@@ -201,6 +201,7 @@ struct RootView: View {
                 case .timeline: TimelineView()
                 case .compare: CompareView()
                 case .settings: SettingsView()
+                case .help: HelpView()
                 case .detectors: DetectorsView()
                 }
 
