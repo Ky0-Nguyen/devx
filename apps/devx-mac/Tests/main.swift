@@ -1789,6 +1789,66 @@ do {
     check(pad.hasSuffix(".005"), "sub-10 milliseconds are padded, got \(pad)")
 }
 
+do {
+    // Selecting a preliminary finding. Live findings are recomputed on every
+    // tick, so the list reorders and grows underneath the reader: an
+    // index-keyed selection would slide onto a different finding mid-read,
+    // and a finding that stops firing must be reported as that rather than
+    // as a selection the reader never made.
+    func finding(_ id: String, rule: String = "DET-01") -> JSON {
+        parse("{\"issue_id\":\"\(id)\",\"rule_id\":\"\(rule)\"}")
+    }
+    let a = finding("DET-01-aaa"), b = finding("DET-04-bbb"), c = finding("DET-12-ccc")
+
+    check(FindingSelection.resolve(selectedId: "", findings: []) == .noFindings,
+          "no findings yet is not the same answer as nothing selected")
+    check(FindingSelection.resolve(selectedId: "", findings: [a, b])
+            == .nothingSelected,
+          "findings with none chosen asks the reader to choose")
+
+    if case .finding(let hit) = FindingSelection.resolve(selectedId: "DET-04-bbb",
+                                                         findings: [a, b, c]) {
+        check(FindingSelection.id(of: hit) == "DET-04-bbb",
+              "the chosen finding comes back")
+    } else {
+        check(false, "a chosen finding resolves")
+    }
+
+    // The case an index would get wrong: the list is recomputed in a
+    // different order, and the fingerprint still finds the same finding.
+    if case .finding(let hit) = FindingSelection.resolve(selectedId: "DET-04-bbb",
+                                                         findings: [c, b, a]) {
+        check(FindingSelection.id(of: hit) == "DET-04-bbb",
+              "reordering the list does not move the selection")
+    } else {
+        check(false, "resolves after a reorder")
+    }
+
+    check(FindingSelection.resolve(selectedId: "DET-09-zzz", findings: [a, b])
+            == .gone,
+          "a finding that stopped firing is 'gone', not 'nothing selected' -- "
+          + "the reader did choose one")
+
+    // Older reports carry the same value under `fingerprint`, which is what
+    // AppState.focusIssue has always read as a fallback.
+    let old = parse("{\"fingerprint\":\"DET-03-old\"}")
+    check(FindingSelection.id(of: old) == "DET-03-old",
+          "fingerprint is accepted when issue_id is absent")
+    let both = parse("{\"issue_id\":\"new\",\"fingerprint\":\"old\"}")
+    check(FindingSelection.id(of: both) == "new",
+          "and issue_id wins when both are present")
+
+    // Not selectable rather than index-addressed.
+    check(!FindingSelection.isSelectable(parse("{}")),
+          "a finding with no fingerprint cannot be selected")
+    check(!FindingSelection.isSelectable(parse("{\"issue_id\":\"\"}")),
+          "nor one whose id is empty")
+    check(FindingSelection.isSelectable(a), "a fingerprinted finding can be")
+    check(FindingSelection.resolve(selectedId: "", findings: [parse("{}")])
+            == .nothingSelected,
+          "an unselectable list still reports findings exist")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

@@ -627,6 +627,15 @@ enum Strings {
             "không đo được, chứ không phải đo ra là không có",
         "what was asked for": "những gì đã được gửi đi",
         "no request selected": "chưa chọn request nào",
+        "no finding selected": "chưa chọn phát hiện nào",
+        "Pick one on the left to read its evidence, thresholds and what is still missing.":
+            "Chọn một cái ở bên trái để xem bằng chứng, ngưỡng và những gì còn thiếu.",
+        "that finding is no longer in the list":
+            "phát hiện đó không còn trong danh sách",
+        "Findings are recomputed as evidence arrives, and this one stopped firing. That is a result, not a lost selection.":
+            "Các phát hiện được tính lại khi bằng chứng mới về, và cái này đã ngừng xuất hiện. Đó là một kết quả, không phải mất lựa chọn.",
+        "the timeline opens once this capture is saved":
+            "timeline mở được sau khi phiên thu này được lưu",
         "Pick a request on the left.": "Chọn một request ở bên trái.",
         "Pick a request on the left to read its headers and body.":
             "Chọn một request ở bên trái để xem header và body của nó.",

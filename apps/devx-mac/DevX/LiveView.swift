@@ -245,28 +245,69 @@ struct LiveView: View {
                         .font(Term.body).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                ForEach(Array(issues.enumerated()), id: \.offset) { _, i in
-                    HStack(alignment: .top, spacing: 8) {
-                        Chip(text: i["severity"].text,
-                             tone: StatusTone.severity(i["severity"].text))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(i["title"].text).font(Term.body)
-                                .fixedSize(horizontal: false, vertical: true)
-                            HStack(spacing: 5) {
-                                Text(i["rule_id"].text)
-                                    .font(Term.font(10))
-                                    .foregroundStyle(.secondary)
-                                Chip(text: i["detection_status"].text,
-                                     tone: StatusTone.detection(i["detection_status"].text))
-                                Chip(text: "cause: \(i["cause_status"].text)",
-                                     tone: i["cause_status"].text == "unknown"
-                                           ? .neutral : .caution)
+                // List on the left, the selected finding on the right.
+                // Both columns are capped and scroll inside themselves, so a
+                // capture that finds twenty things does not push the rest of
+                // the tab off the screen -- the same treatment the Inspect
+                // tab's request list has.
+                //
+                // Not an HSplitView: this sits inside the page's own
+                // ScrollView, and a draggable split there has no height of
+                // its own to divide. A fixed pair of columns does.
+                let pane = FindingSelection.resolve(
+                    selectedId: state.selectedLiveIssueId, findings: issues)
+                HStack(alignment: .top, spacing: 10) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(issues.enumerated()),
+                                    id: \.offset) { _, i in
+                                IssueListRow(
+                                    issue: i,
+                                    selected: FindingSelection.id(of: i)
+                                        == state.selectedLiveIssueId)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        // A finding with no fingerprint is
+                                        // not selectable: an index fallback
+                                        // would point at a different one
+                                        // after the next recomputation.
+                                        guard FindingSelection.isSelectable(i)
+                                        else { return }
+                                        state.selectedLiveIssueId =
+                                            FindingSelection.id(of: i)
+                                    }
                             }
                         }
-                        Spacer(minLength: 0)
                     }
-                    .padding(7)
-                    .termCard()
+                    .frame(maxWidth: .infinity, maxHeight: 320)
+
+                    Group {
+                        switch pane {
+                        case .noFindings:
+                            EmptyView()
+                        case .nothingSelected:
+                            TermEmpty(
+                                title: "no finding selected",
+                                detail: tr("Pick one on the left to read its "
+                                         + "evidence, thresholds and what is "
+                                         + "still missing."),
+                                hint: "")
+                        case .gone:
+                            TermEmpty(
+                                title: "that finding is no longer in the list",
+                                detail: tr("Findings are recomputed as "
+                                         + "evidence arrives, and this one "
+                                         + "stopped firing. That is a result, "
+                                         + "not a lost selection."),
+                                hint: "")
+                        case .finding(let f):
+                            // The same detail the Issues tab shows, minus the
+                            // timeline jump: there is no saved session to
+                            // open while the capture is still running.
+                            IssueDetail(issue: f, canFocusTimeline: false)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 320)
                 }
             }
         }
