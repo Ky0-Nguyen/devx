@@ -2105,25 +2105,60 @@ do {
 do {
     // The connect recipes. The path is the thing people get wrong, so the
     // tests are about the path appearing everywhere it must.
-    let binary = "/Users/x/Applications/DevX.app/Contents/MacOS/mpi"
-    let recipes = McpSetup.recipes(binary: binary)
+    let home = "/Users/x"
+    let binary = home + "/Applications/DevX.app/Contents/MacOS/mpi"
+    let recipes = McpSetup.recipes(binary: binary, home: home)
     check(recipes.count == 4, "four hosts covered, got \(recipes.count)")
     check(Set(recipes.map { $0.id }).count == 4, "with unique ids")
 
     for r in recipes {
         check(!r.host.isEmpty, "each recipe names its host")
         check(!r.location.isEmpty, "and where the text goes")
-        check(r.snippet.contains(binary),
-              "\(r.host)'s snippet names the real binary path, not a "
-              + "placeholder")
         check(!r.snippet.contains("/path/to/"),
               "\(r.host)'s snippet has no placeholder path to fill in")
         check(r.snippet.contains("mcp"),
               "\(r.host)'s snippet actually starts the mcp server")
+        check(r.snippet.contains("/Applications/DevX.app/Contents/MacOS/mpi"),
+              "\(r.host)'s snippet names the real binary, not a placeholder")
+        // The request this exists for: no snippet names the account of the
+        // machine the guide was written on.
+        check(!r.snippet.contains(home),
+              "\(r.host)'s snippet must not carry a home directory: "
+              + r.snippet)
+        check(!r.snippet.contains("/Users/"),
+              "\(r.host)'s snippet names no user at all: " + r.snippet)
     }
+
+    // Two forms, because two different things expand them, and putting
+    // either in the other's place yields a path nothing resolves. Both
+    // halves are measured: `~` in a config file is stored as a tilde and the
+    // server reports "Failed to connect"; `${HOME}` there is stored
+    // literally and the host expands it at launch.
+    for r in recipes where r.shellExpands {
+        check(r.snippet.contains("~/"),
+              "\(r.host) is typed into a shell, so the shell expands `~` "
+              + "before the host exists: \(r.snippet)")
+        check(!r.snippet.contains("${HOME}"),
+              "\(r.host) needs no host-side expansion: \(r.snippet)")
+    }
+    for r in recipes where !r.shellExpands {
+        check(!r.snippet.contains("~/"),
+              "\(r.host) is read by the host with no shell in between, so a "
+              + "tilde would be stored as a tilde and never resolved: "
+              + r.snippet)
+        check(r.snippet.contains("${HOME}/"),
+              "\(r.host) uses the form the host itself expands: "
+              + r.snippet)
+    }
+    check(McpSetup.absolutePathNote.lowercased().contains("shell"),
+          "and the panel explains the difference rather than leaving it to "
+          + "be discovered")
+    check(McpSetup.absolutePathNote.contains("${HOME}"),
+          "naming the form it is talking about")
 
     // Claude Code's is a shell command; the others are config files.
     let cc = recipes.first { $0.id == "claude-code" }!
+    check(cc.shellExpands, "Claude Code's recipe is typed into a shell")
     check(cc.snippet.hasPrefix("claude mcp add"), "Claude Code gets a command")
     // The server is registered under the product's name, not the repo's.
     for r in recipes {
@@ -2159,6 +2194,132 @@ do {
           "and says the acting tools are refused without it")
     check(!McpSetup.firstQuestions.isEmpty,
           "and there is something to try once connected")
+}
+
+do {
+    // Writing a home directory as `~`.
+    let home = "/Users/x"
+    check(McpSetup.homeRelative(home + "/Applications/DevX.app", home: home)
+          == "~/Applications/DevX.app",
+          "got \(McpSetup.homeRelative(home + "/Applications/DevX.app", home: home))")
+
+    // A path outside the home directory keeps its own shape.
+    check(McpSetup.homeRelative("/Applications/DevX.app", home: home)
+          == "/Applications/DevX.app",
+          "a system path is already free of the account name")
+
+    // The prefix has to end at a separator. This is the bug the guard is
+    // for: "/Users/x" is a string prefix of "/Users/xavier/..." and is not a
+    // parent directory of it, and rewriting it would name a path that does
+    // not exist.
+    check(McpSetup.homeRelative("/Users/xavier/Applications/a", home: home)
+          == "/Users/xavier/Applications/a",
+          "got \(McpSetup.homeRelative("/Users/xavier/Applications/a", home: home))")
+
+    // The home directory itself, and a trailing slash on the home it was
+    // given, neither of which should produce a doubled separator.
+    check(McpSetup.homeRelative(home, home: home) == home,
+          "the home directory alone is left as it is")
+    check(McpSetup.homeRelative(home + "/a", home: home + "/") == "~/a",
+          "got \(McpSetup.homeRelative(home + "/a", home: home + "/"))")
+
+    // An empty home must never turn every absolute path into "~...".
+    check(McpSetup.homeRelative("/Applications/a", home: "")
+          == "/Applications/a",
+          "no home means no rewriting")
+
+    // The config-file form, which the host expands rather than a shell.
+    check(McpSetup.envRelative(home + "/Applications/DevX.app", home: home)
+          == "${HOME}/Applications/DevX.app",
+          "got \(McpSetup.envRelative(home + "/Applications/DevX.app", home: home))")
+    check(McpSetup.envRelative("/Applications/DevX.app", home: home)
+          == "/Applications/DevX.app",
+          "a system path needs no variable")
+    check(McpSetup.envRelative("/Users/xavier/a", home: home)
+          == "/Users/xavier/a",
+          "and the same prefix rule holds: got "
+          + McpSetup.envRelative("/Users/xavier/a", home: home))
+    check(McpSetup.envRelative("/Applications/a", home: "") == "/Applications/a",
+          "no home means no rewriting here either")
+}
+
+do {
+    // Connecting Claude Code with a button instead of a copied command.
+    //
+    // The state has to be read before anything is offered, because "not
+    // checked" and "not registered" are different, and offering to add
+    // something that is already there produces the CLI's own refusal --
+    // "MCP server devx already exists in user config".
+    let home = "/Users/x"
+    let bundled = home + "/Applications/DevX.app/Contents/MacOS/mpi"
+
+    // The real reply from `claude mcp get devx`.
+    let reply = """
+    devx:
+      Scope: User config (available in all your projects)
+      Status: ✓ Connected
+      Type: stdio
+      Command: /Users/x/Applications/DevX.app/Contents/MacOS/mpi
+      Args: mcp
+      Environment:
+    """
+    check(McpSetup.registeredCommand(fromGet: reply) == bundled,
+          "got \(McpSetup.registeredCommand(fromGet: reply) ?? "nil")")
+    check(McpSetup.registration(found: true, output: reply, bundled: bundled)
+          == .current, "a registration naming this bundle is current")
+
+    // The failure this app has actually had: registered against a build
+    // tree, working until that directory moved.
+    let stale = reply.replacingOccurrences(
+        of: bundled, with: "/Users/x/src/mpi/build/bin/mpi")
+    check(McpSetup.registration(found: true, output: stale, bundled: bundled)
+          == .stale("/Users/x/src/mpi/build/bin/mpi"),
+          "a registration naming another binary is stale, not current")
+
+    // Exit 1 with an explanation on stderr is an answer, not a failure.
+    let missing = "No MCP server found with name: \"devx\". Configured "
+                + "servers: MCP_DOCKER"
+    check(McpSetup.registration(found: false, output: missing,
+                                bundled: bundled) == .absent,
+          "an unknown name means nothing is registered yet")
+    check(McpSetup.registeredCommand(fromGet: missing) == nil,
+          "and there is no command to read out of that reply")
+    // Found, but a reply this does not recognise: absent rather than a
+    // claim that something is registered correctly.
+    check(McpSetup.registration(found: true, output: "", bundled: bundled)
+          == .absent, "an unreadable reply is not treated as a match")
+
+    // The arguments. Absolute, because these go to execve and no shell will
+    // expand a tilde in them -- the snippet can say `~` only because the
+    // reader's own shell gets there first.
+    let args = McpSetup.addArguments(binary: bundled)
+    check(args.contains(bundled), "the registered path is the absolute one")
+    check(!args.contains { $0.hasPrefix("~") },
+          "and never a tilde: \(args)")
+    check(args.prefix(5) == ["mcp", "add", "-s", "user", "devx"],
+          "user scope and the devx name, got \(args)")
+    check(args.last == "mcp", "and the server subcommand, got \(args)")
+    check(McpSetup.removeArguments == ["mcp", "remove", "-s", "user", "devx"],
+          "replacing a stale entry removes the same scope it would add to, "
+          + "got \(McpSetup.removeArguments)")
+
+    // The CLI is looked for by path, never on PATH: an app launched from the
+    // Dock gets /usr/bin:/bin:/usr/sbin:/sbin and nothing else, which is the
+    // same trap that made the Devices tab report zero Android devices.
+    check(McpSetup.claudeBinary(home: home, exists: { _ in false }) == nil,
+          "no claude anywhere means no claude, not a bare command name")
+    check(McpSetup.claudeBinary(home: home,
+                               exists: { $0 == home + "/.local/bin/claude" })
+          == home + "/.local/bin/claude",
+          "the npm-style install location is found")
+    check(McpSetup.claudeBinary(home: home,
+                               exists: { $0 == "/opt/homebrew/bin/claude" })
+          == "/opt/homebrew/bin/claude",
+          "and the Homebrew one")
+    check(McpSetup.claudeBinary(home: home, exists: { _ in true })
+          == home + "/.local/bin/claude",
+          "a per-user install wins over a system one, because it is the one "
+          + "that gets updated")
 }
 
 do {
