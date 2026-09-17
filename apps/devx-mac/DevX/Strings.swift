@@ -1011,6 +1011,48 @@ enum Strings {
             "Mỗi họ chỉ số là một phép đo riêng và không bao giờ được cộng "
             + "dồn với họ khác.",
         "CPU time": "Thời gian CPU",
+        "check Claude Code": "kiểm tra Claude Code",
+        "`claude` not found on this machine":
+            "không tìm thấy `claude` trên máy này",
+        "already connected to this app": "đã kết nối với app này",
+        "connect it now": "kết nối ngay",
+        "connecting…": "đang kết nối…",
+        "point it here": "trỏ về app này",
+        "updating…": "đang cập nhật…",
+        "registered, but pointing at another binary:":
+            "đã đăng ký, nhưng đang trỏ tới một binary khác:",
+        "done": "xong",
+        "it failed and said nothing": "thất bại mà không báo gì",
+        "it did not finish within": "không hoàn tất trong",
+        "the existing registration could not be removed:":
+            "không xoá được đăng ký đang có:",
+        "Claude Code's `claude` command is not installed in any of the "
+        + "places this looks for it.":
+            "Lệnh `claude` của Claude Code không có ở bất kỳ vị trí nào mà "
+            + "chỗ này tìm.",
+        "Nothing to do. Start a new session to use it: a host reads its "
+        + "server list when it starts, so one that was already open will "
+        + "not see this.":
+            "Không cần làm gì thêm. Mở một session mới để dùng: host chỉ "
+            + "đọc danh sách server lúc khởi động, nên session đang mở sẵn "
+            + "sẽ không thấy nó.",
+        "Neither form names your account. The terminal command says `~` "
+        + "because your own shell expands it before Claude is started; the "
+        + "config files say `${HOME}` because there is no shell there and "
+        + "the host expands it itself when it launches the server. They are "
+        + "not interchangeable -- a `~` inside a config file is stored as a "
+        + "tilde, nothing expands it, and the server fails to connect. "
+        + "Measured with Claude Code. If a host of yours passes `${HOME}` "
+        + "through unexpanded, replace it with the full path shown above.":
+            "Cả hai dạng đều không ghi tên tài khoản của bạn. Câu lệnh "
+            + "terminal ghi `~` vì shell của bạn bung nó ra trước khi Claude "
+            + "được chạy; còn các file config ghi `${HOME}` vì ở đó không có "
+            + "shell, chính host sẽ bung ra khi nó khởi chạy server. Hai "
+            + "dạng này không thay thế cho nhau được -- `~` nằm trong file "
+            + "config sẽ được lưu nguyên dấu ngã, không ai bung nó ra, và "
+            + "server sẽ không kết nối được. Đã đo với Claude Code. Nếu host "
+            + "nào của bạn không bung `${HOME}` thì thay bằng đường dẫn đầy "
+            + "đủ ở trên.",
         "cumulative": "tích luỹ",
         "Other counters": "Chỉ số khác",
         "Process CPU time is cumulative since the process started, so the "

@@ -62,6 +62,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/DisclosureSection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/JSONTreeView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/HelpView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/McpInstall.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/ThreadsView.swift

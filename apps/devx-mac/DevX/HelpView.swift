@@ -9,6 +9,15 @@ import SwiftUI
 
 struct HelpView: View {
     @State private var copied: String? = nil
+    /// What Claude Code already has registered, once looked up. Nil until
+    /// then: "not checked" and "not registered" are different states and the
+    /// button must not offer to add something that is already there.
+    @State private var registration: McpSetup.Registration? = nil
+    @State private var installing = false
+    /// Everything the CLI said, verbatim. A connect step that failed
+    /// silently would be worse than the copy it replaced.
+    @State private var installOutput: String = ""
+    @State private var installOk = false
 
     var body: some View {
         ScrollView {
@@ -47,7 +56,10 @@ struct HelpView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Field(label: "the command") {
-                        Text(binary).font(Term.micro)
+                        // Written with `~` rather than the account name of
+                        // this machine: this panel is read over someone's
+                        // shoulder and pasted into a team chat.
+                        Text(McpSetup.homeRelative(binary)).font(Term.micro)
                             .textSelection(.enabled)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -59,8 +71,12 @@ struct HelpView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     ForEach(McpSetup.recipes(binary: binary)) { r in
-                        recipeRow(r)
+                        recipeRow(r, binary: binary)
                     }
+
+                    Text(McpSetup.absolutePathNote)
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Rectangle().fill(Term.line).frame(height: 1)
                     Text(tr("Once it is connected, try asking:"))
@@ -85,12 +101,113 @@ struct HelpView: View {
         }
     }
 
-    @ViewBuilder private func recipeRow(_ r: McpSetup.Recipe) -> some View {
+    /// Registering with Claude Code in one click, inside its own recipe row.
+    ///
+    /// The copied command stays beside it: this only removes the step for the
+    /// host whose own CLI can be asked to do it. Every other host is a config
+    /// file, and a GUI rewriting another tool's JSON behind its back is how
+    /// someone loses the rest of their servers.
+    @ViewBuilder private func claudeCodeButton(binary: String) -> some View {
+        Group {
+            switch registration {
+                case .none:
+                    Button(tr("check Claude Code")) { checkRegistration(binary) }
+                        .buttonStyle(TermButtonStyle())
+                case .noClaude:
+                    Text(tr("`claude` not found on this machine"))
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                case .current:
+                    Text(tr("already connected to this app"))
+                        .font(Term.micro).foregroundStyle(Term.green)
+                case .absent:
+                    Button(installing ? tr("connecting…") : tr("connect it now")) {
+                        performInstall(binary: binary, replacing: false)
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    .disabled(installing)
+                case .stale:
+                    Button(installing ? tr("updating…") : tr("point it here")) {
+                        performInstall(binary: binary, replacing: true)
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    .disabled(installing)
+            }
+        }
+    }
+
+    /// What the button's state needs saying underneath it.
+    @ViewBuilder private func claudeCodeStatus() -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // A registration that names another binary is the failure this
+            // app has already had: it pointed at a build tree and kept
+            // working until that directory moved.
+            if case .stale(let other) = registration {
+                Text(tr("registered, but pointing at another binary:") + " "
+                     + McpSetup.homeRelative(other))
+                    .font(Term.micro).foregroundStyle(Term.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if case .current = registration {
+                Text(tr("Nothing to do. Start a new session to use it: a host "
+                      + "reads its server list when it starts, so one that "
+                      + "was already open will not see this."))
+                    .font(Term.micro).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if !installOutput.isEmpty {
+                Text(installOutput)
+                    .font(Term.micro)
+                    .foregroundStyle(installOk ? Term.green : Term.amber)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(8)
+                    .background(Term.bg, in: RoundedRectangle(cornerRadius: 2))
+            }
+        }
+    }
+
+    private func checkRegistration(_ binary: String) {
+        installing = true
+        // Off the main thread: it starts a process and waits for it, and a
+        // window that blocks on that is a window that beachballs.
+        DispatchQueue.global(qos: .userInitiated).async {
+            let state = McpInstall.registration(bundled: binary)
+            DispatchQueue.main.async {
+                registration = state
+                installing = false
+            }
+        }
+    }
+
+    private func performInstall(binary: String, replacing: Bool) {
+        installing = true
+        installOutput = ""
+        DispatchQueue.global(qos: .userInitiated).async {
+            let outcome = McpInstall.install(bundled: binary,
+                                             replacing: replacing)
+            let state = McpInstall.registration(bundled: binary)
+            DispatchQueue.main.async {
+                installOk = outcome.ok
+                installOutput = outcome.output.isEmpty
+                    ? (outcome.ok ? tr("done") : tr("it failed and said nothing"))
+                    : outcome.output
+                registration = state
+                installing = false
+            }
+        }
+    }
+
+    @ViewBuilder private func recipeRow(_ r: McpSetup.Recipe,
+                                       binary: String) -> some View {
+        // Claude Code is the one host that can be configured for you, because
+        // it ships a CLI whose job is exactly this.
+        let isClaudeCode = r.id == "claude-code"
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Text(r.host).font(Term.font(12, .medium))
                 Text(r.location).font(Term.micro).foregroundStyle(Term.dim)
                 Spacer(minLength: 0)
+                if isClaudeCode { claudeCodeButton(binary: binary) }
                 Button(copied == r.id ? tr("copied") : tr("copy")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(r.snippet, forType: .string)
@@ -109,8 +226,12 @@ struct HelpView: View {
                     .foregroundStyle(Term.dim)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if isClaudeCode { claudeCodeStatus() }
         }
         .padding(.vertical, 4)
+        .onAppear {
+            if isClaudeCode, registration == nil { checkRegistration(binary) }
+        }
     }
 
     // MARK: - The ideas behind several screens
