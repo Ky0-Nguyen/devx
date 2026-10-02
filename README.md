@@ -12,6 +12,10 @@ Three pieces:
 - **`devx-serve`** — the same views over loopback HTTP, for a host without
   SwiftUI.
 
+![DevX: devices, a live capture from an iOS simulator, issues, timeline and compare](docs/media/devx-demo.gif)
+
+[Full-quality MP4](docs/media/devx-demo.mp4). The live capture is real: Expo Go on an iOS 26 simulator, streamed for about 20 s. The Issues, Timeline and Compare scenes are sessions imported from [`fixtures/`](fixtures/README.md), and the app labels the synthetic ones as synthetic on screen.
+
 > **Read this first.** Android live capture works and is verified against a
 > real emulator. **iOS capture is partial**: a simulator streams in DevX's Live tab through its own collector (CPU time, memory footprint, per-thread times, optional stacks; no frames, because no command-line frame source exists), a physical device records through `xctrace`, which attaches on this host and has never finished, and no physical
 > device of either platform was reachable during development, so the
@@ -346,7 +350,7 @@ flowchart LR
   class SDKJS,CSDK optional;
 ```
 
-Device tooling on the left is run through proc::run with an argv and never a shell; the adapters turn its text output into one NormalizedTrace, and everything downstream of the model reads that trace and never asks the device again. The core is exposed three ways: the mpi CLI, devx-serve over loopback HTTP, and DevX.app, which reaches it only through the mpi_capi C ABI as JSON strings. The rn path attaches a debugger to observe network, console and Redux and is not a performance measurement; the in-app SDK is optional, and without it the screen and interaction fields stay empty. The diagram is Mermaid source, not an image: ADR-0002 keeps binary assets out of the tree, and GitHub renders the fence.
+Device tooling on the left is run through proc::run with an argv and never a shell; the adapters turn its text output into one NormalizedTrace, and everything downstream of the model reads that trace and never asks the device again. The core is exposed three ways: the mpi CLI, devx-serve over loopback HTTP, and DevX.app, which reaches it only through the mpi_capi C ABI as JSON strings. The rn path attaches a debugger to observe network, console and Redux and is not a performance measurement; the in-app SDK is optional, and without it the screen and interaction fields stay empty. The diagram is Mermaid source, not an image, so it changes in the same diff as the code it describes, and GitHub renders the fence.
 
 ```
 apps/cli/            the `mpi` command-line interface
