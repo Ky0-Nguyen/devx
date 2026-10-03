@@ -1989,7 +1989,7 @@ session::CaptureResult AdbCollector::finish(
     // part: `dumpsys` is serviced by the target process itself, so polling it
     // makes the app do work it would not otherwise do. Measured by paired
     // control runs on an emulator (spec E18, I20): an idle
-    // io.pizzahut.hutbot.debug used 440-650 ms of CPU over a 10-12 s window
+    // com.acme.shopper.debug used 440-650 ms of CPU over a 10-12 s window
     // with no capture, and 2.0-2.4 s over the same window with one -- about
     // 1.6-1.9 s of induced work. It did not scale with the tick rate: four
     // ticks cost as much as fourteen, so most of it is per-capture rather

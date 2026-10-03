@@ -1,10 +1,10 @@
-# REAL output: `adb shell dumpsys package io.pizzahut.hutbot.debug` on
+# REAL output: `adb shell dumpsys package com.acme.shopper.debug` on
 # emulator-5554 (API 37), reduced to the lines the parser reads plus the
 # permission lines that broke it. A permission's `flags=[ ... ]` is not the
 # package's, and treating it as one reported a DEBUGGABLE app as not
 # debuggable.
     flags=0x0
-    codePath=/data/app/~~z8OivMT9DzkrwDtGylZqFA==/io.pizzahut.hutbot.debug-sPU7L5iqpKZ4j9VNvjuSxQ==
+    codePath=/data/app/~~z8OivMT9DzkrwDtGylZqFA==/com.acme.shopper.debug-sPU7L5iqpKZ4j9VNvjuSxQ==
     versionCode=1 minSdk=28 targetSdk=36
     versionName=5.3.26
     flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA LARGE_HEAP ]

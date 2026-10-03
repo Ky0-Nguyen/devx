@@ -44,8 +44,7 @@ Every row is a **measured probe result**, not a plan.
 ## Capture sources, verified on the Android emulator
 
 These are reported per capture rather than at preflight, because whether a
-source works depends on the selected target. Verified against the superapp
-HutBot debug build (`io.pizzahut.hutbot.debug`) and, for the refusal case,
+source works depends on the selected target. Verified against the Shopper debug build (`com.acme.shopper.debug`) and, for the refusal case,
 against `com.android.settings`:
 
 | Source | Status on a debuggable target | Status on a non-debuggable target |
@@ -67,7 +66,7 @@ Both verified on `emulator-5554` (Pixel 9 Pro image, API 37):
 
 | Target | Ticks | Frames | Memory points | CPU samples | CPU coverage |
 |---|---|---|---|---|---|
-| `io.pizzahut.hutbot.debug` (debuggable) | 10 | 0 -- the app sat on a static screen and the platform's own counter also reported 0 | 60 | 1458 | 60.2%, 3 gaps between sampling windows |
+| `com.acme.shopper.debug` (debuggable) | 10 | 0 -- the app sat on a static screen and the platform's own counter also reported 0 | 60 | 1458 | 60.2%, 3 gaps between sampling windows |
 | `com.android.settings` (not debuggable) | 62 | 53 while scrolling | 310 | 0 | 0%, gap reason `source_permission_denied` |
 
 Neither row is a claim about phone hardware: an emulator's GPU is emulated and
@@ -75,7 +74,7 @@ its scheduler is the host's. Physical-device live capture is unverified.
 
 ### Capture behaviour under interference, measured on the same emulator
 
-Four experiments, each against `io.pizzahut.hutbot.debug` on `emulator-5554`,
+Four experiments, each against `com.acme.shopper.debug` on `emulator-5554`,
 because a capture's honesty under interference cannot be argued from code:
 
 | What was done | What happened |
@@ -106,7 +105,7 @@ D15 stays open.
 ### The collector changes the workload, measured with paired controls
 
 Spec E18 and I20 ask for this and it is the least comfortable number here.
-`io.pizzahut.hutbot.debug`, idle on `emulator-5554`, CPU read from its own
+`com.acme.shopper.debug`, idle on `emulator-5554`, CPU read from its own
 `/proc/<pid>/stat` over matched windows:
 
 | Window | App CPU with no capture | With a live capture | Induced |
@@ -142,7 +141,7 @@ that figure used to report alone.
 
 The distinction spec E11 asks for, and the one every CPU finding is read as
 though it already answered. A five-second live capture of
-`io.pizzahut.hutbot.debug`: **790 ms of process CPU time over 5,107 ms of wall
+`com.acme.shopper.debug`: **790 ms of process CPU time over 5,107 ms of wall
 time -- 15.5% of one core**, with user and system time reported separately
 (272 s and 79 s cumulative since the process started).
 
@@ -159,7 +158,7 @@ read as zero.
 
 ### Heap evidence, measured on the same emulator
 
-`mpi record --heap` against `io.pizzahut.hutbot.debug`: 580,140 objects,
+`mpi record --heap` against `com.acme.shopper.debug`: 580,140 objects,
 292,343 roots (23,161 anchored in the app's own code), 31,349 classes, zero
 unrecognised records. Android's 1.0.3 format is read directly -- `hprof-conv`
 is not used, because it collapses root kinds and drops the heap attribution.
@@ -178,7 +177,7 @@ Two caveats, both stated to the operator before the dump is taken:
 
 ### Scheduling evidence, measured on the same emulator
 
-`mpi record --scheduling` against `io.pizzahut.hutbot.debug`: 4082 ftrace
+`mpi record --scheduling` against `com.acme.shopper.debug`: 4082 ftrace
 events attributed across 64 of the app's threads, with
 `sched_blocked_reason iowait=1 caller=folio_wait_bit_common` observed on the
 React Native JS thread (`mqt_v_js`). The kernel reported no dropped events in
@@ -217,7 +216,7 @@ Not covered: whether a *listed* AVD will boot (`emulator -list-avds` reports nam
 
 ## Inspect sources, verified against a live app
 
-`mpi inspect` reads a React Native debug build through the inspector it already connects to Metro; nothing is installed in the app. Its report carries a `SourceState` per source (`unavailable` / `attached` / `ran_saw_nothing` / `refused`) rather than this matrix's `tested` column, so what follows is what was exercised and against what. Everything was exercised against the superapp HutBot debug build; nothing here was run against a physical device.
+`mpi inspect` reads a React Native debug build through the inspector it already connects to Metro; nothing is installed in the app. Its report carries a `SourceState` per source (`unavailable` / `attached` / `ran_saw_nothing` / `refused`) rather than this matrix's `tested` column, so what follows is what was exercised and against what. Everything was exercised against the Shopper debug build; nothing here was run against a physical device.
 
 | What | Claims | Measured |
 |---|---|---|
@@ -227,7 +226,7 @@ Not covered: whether a *listed* AVD will boot (`emulator -list-avds` reports nam
 | `--redux-values` | values off by default: a store holds tokens and personal data | -- |
 | `--detail` (headers and bodies) | headers from the events, bodies via `Network.getResponseBody`; off by default because this is the data in flight | `getResponseBody` returned `cGFja2FnZXItc3RhdHVzOnJ1bm5pbmc=` (`base64Encoded: true`) -- `packager-status:running` |
 
-The diff between two states is computed in C++ from the two JSON strings the app sends, bounded to 200 differences and 6 path segments, and hitting either bound is reported. A slice replaced by an equal value is reported as `equal_replacement` -- the classic wasted render -- and only when values were captured. 40 cases in `test_inspect` cover this, 19 of them the diff and attribution rules; all pass. The recorded fixture `fixtures/cdp/recorded-hutbot-startup.jsonl` is a real session but carries no Redux drain (37 lines: `Runtime.consoleAPICalled`, `Network.*`, `Log.entryAdded`), so the live verification of the three Redux tiers rests on the record in `docs/inspect-without-installing.md` and commit 6f32c5e, not on a replayable fixture. The written procedure for driving the app during a watch uses `xcrun simctl openurl`, because Metro allows one debugger per device and a second socket takes the slot.
+The diff between two states is computed in C++ from the two JSON strings the app sends, bounded to 200 differences and 6 path segments, and hitting either bound is reported. A slice replaced by an equal value is reported as `equal_replacement` -- the classic wasted render -- and only when values were captured. 40 cases in `test_inspect` cover this, 19 of them the diff and attribution rules; all pass. The recorded fixture `fixtures/cdp/recorded-shopper-startup.jsonl` is a real session but carries no Redux drain (37 lines: `Runtime.consoleAPICalled`, `Network.*`, `Log.entryAdded`), so the live verification of the three Redux tiers rests on the record in `docs/inspect-without-installing.md` and commit 6f32c5e, not on a replayable fixture. The written procedure for driving the app during a watch uses `xcrun simctl openurl`, because Metro allows one debugger per device and a second socket takes the slot.
 
 **Screenshots.** `--screenshot` requires `--device`. The id is translated to the display name discovery holds for it, because Metro publishes a device *name* and never a serial or UDID; passing the id through as the Metro hint made every screenshot run fail with "no attached device matches '456FA0D8-...'. What is attached: [iPhone 17 Pro]". `--target-device` still names a Metro target directly and wins when given. Android uses `adb exec-out screencap -p`; a simulator uses `xcrun simctl io <udid> screenshot`, and that path is selected only with `--platform ios` -- without it the UDID is handed to adb. A physical iOS device has no command-line screenshot and is reported unavailable rather than attempted. Output that is not a valid PNG is refused. What is not recorded anywhere in this repository is a successful post-fix simulator screenshot (dimensions, bytes): the fix's evidence is the failure it removed, and this row must not read as more than that.
 

@@ -1,2 +1,2 @@
 priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
-io.pizzahut.hutbot.debug/io.yum.MainActivity
+com.acme.shopper.debug/com.acme.MainActivity

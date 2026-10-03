@@ -45,7 +45,7 @@ wants.
 
 ## Consequences
 
-- Verified against a real Android emulator (API 37) on the superapp HutBot
+- Verified against a real Android emulator (API 37) on the Shopper
   debug build: 42 symbolised samples including React Native's `mqt_v_js`
   thread, 78 frames at a platform-reported 60 Hz, five memory families.
 - `simpleperf --app` routes through `run-as`, so it works only on a debuggable

@@ -1,8 +1,8 @@
-Starting: Intent { cmp=io.pizzahut.hutbot.debug/io.yum.MainActivity }
+Starting: Intent { cmp=com.acme.shopper.debug/com.acme.MainActivity }
 Warning: Activity not started, intent has been delivered to currently running top-most instance.
 Status: ok
 LaunchState: UNKNOWN (0)
-Activity: io.pizzahut.hutbot.debug/io.yum.MainActivity
+Activity: com.acme.shopper.debug/com.acme.MainActivity
 TotalTime: 0
 WaitTime: 12
 Complete

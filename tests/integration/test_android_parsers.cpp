@@ -530,7 +530,7 @@ MPI_TEST(proc_stat_cpu_time_is_read_from_the_right_fields, {"E11"}) {
   // the start of the line rather than from the last ')' would read the
   // fault counters instead and produce a plausible wrong number.
   const std::string line =
-      "5119 (ut.hutbot.debug) S 432 432 0 0 -1 4194624 125717 246 165 0 "
+      "5119 (e.shopper.debug) S 432 432 0 0 -1 4194624 125717 246 165 0 "
       "26763 7791 0 0 10 -10 76 0 1856103 52053442560 56168 18446744073709551615 "
       "1 1 0 0 0 0 4612 1 0 0 17 4 0 0 0 0 0 0 0 0 0 0 0 0 0";
   const auto cpu = android::parse_proc_stat_cpu_time(line);
@@ -595,7 +595,7 @@ MPI_TEST(a_permissions_flags_line_is_not_the_packages_flags_line,
   // reinstall are distinguishable (spec B11).
   MPI_CHECK_EQ(flags.version_name, std::string("5.3.26"));
   MPI_CHECK_EQ(flags.version_code.value_or(-1), std::int64_t{1});
-  MPI_CHECK(flags.code_path.find("io.pizzahut.hutbot.debug-") !=
+  MPI_CHECK(flags.code_path.find("com.acme.shopper.debug-") !=
             std::string::npos);
   MPI_CHECK_EQ(flags.last_update_time, std::string("2026-09-15 04:26:20"));
   MPI_CHECK_EQ(flags.first_install_time, std::string("2026-08-26 16:19:26"));
@@ -616,14 +616,14 @@ MPI_TEST(a_reinstall_changes_the_facts_that_identify_the_build, {"B11"}) {
       "    versionCode=1 minSdk=28 targetSdk=36\n"
       "    versionName=5.3.26\n"
       "    codePath=/data/app/~~wWybFpP9kRfAKS-aEzqL5A==/"
-      "io.pizzahut.hutbot.debug-kN8n58LMWmrbU2sS_xQ87Q==\n"
+      "com.acme.shopper.debug-kN8n58LMWmrbU2sS_xQ87Q==\n"
       "    lastUpdateTime=2026-09-14 16:11:02\n"
       "    flags=[ DEBUGGABLE HAS_CODE ]\n";
   const std::string after =
       "    versionCode=1 minSdk=28 targetSdk=36\n"
       "    versionName=5.3.26\n"
       "    codePath=/data/app/~~z8OivMT9DzkrwDtGylZqFA==/"
-      "io.pizzahut.hutbot.debug-sPU7L5iqpKZ4j9VNvjuSxQ==\n"
+      "com.acme.shopper.debug-sPU7L5iqpKZ4j9VNvjuSxQ==\n"
       "    lastUpdateTime=2026-09-15 04:26:20\n"
       "    flags=[ DEBUGGABLE HAS_CODE ]\n";
 

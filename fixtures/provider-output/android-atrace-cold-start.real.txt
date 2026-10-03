@@ -34,59 +34,59 @@ TRACE:
           <idle>-0       (-------) [002] dNh2. 17921.308258: sched_wakeup: comm=Firebase-Messag pid=3434 prio=120 target_cpu=002
           <idle>-0       (-------) [002] d..2. 17921.308287: sched_switch: prev_comm=swapper/2 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=Firebase-Messag next_pid=3434 next_prio=120
  Firebase-Messag-3434    (   3378) [002] d..2. 17921.308889: sched_switch: prev_comm=Firebase-Messag prev_pid=3434 prev_prio=120 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.309206: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- Jit thread pool-3395    (   3378) [000] d..2. 17921.309343: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
-          <idle>-0       (-------) [001] dNh2. 17921.309708: sched_wakeup: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
-          <idle>-0       (-------) [001] d..2. 17921.309744: sched_switch: prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=ut.hutbot.debug next_pid=3378 next_prio=110
- Jit thread pool-3395    (   3378) [000] d..2. 17921.310210: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.310218: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
-          <idle>-0       (-------) [001] dNh2. 17921.310291: sched_wakeup: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
-          <idle>-0       (-------) [001] d..2. 17921.310316: sched_switch: prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=ut.hutbot.debug next_pid=3378 next_prio=110
- ut.hutbot.debug-3378    (   3378) [001] ..... 17921.311096: task_newtask: pid=3452 comm=ut.hutbot.debug clone_flags=3d0f00 oom_score_adj=0
-          <idle>-0       (-------) [003] d..2. 17921.311485: sched_switch: prev_comm=swapper/3 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=ut.hutbot.debug next_pid=3452 next_prio=110
- ScionFrontendAp-3452    (   3378) [003] ...1. 17921.311693: task_rename: pid=3452 oldcomm=ut.hutbot.debug newcomm=ScionFrontendAp oom_score_adj=0
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.309206: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ Jit thread pool-3395    (   3378) [000] d..2. 17921.309343: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+          <idle>-0       (-------) [001] dNh2. 17921.309708: sched_wakeup: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+          <idle>-0       (-------) [001] d..2. 17921.309744: sched_switch: prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=e.shopper.debug next_pid=3378 next_prio=110
+ Jit thread pool-3395    (   3378) [000] d..2. 17921.310210: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.310218: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+          <idle>-0       (-------) [001] dNh2. 17921.310291: sched_wakeup: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+          <idle>-0       (-------) [001] d..2. 17921.310316: sched_switch: prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=e.shopper.debug next_pid=3378 next_prio=110
+ e.shopper.debug-3378    (   3378) [001] ..... 17921.311096: task_newtask: pid=3452 comm=e.shopper.debug clone_flags=3d0f00 oom_score_adj=0
+          <idle>-0       (-------) [003] d..2. 17921.311485: sched_switch: prev_comm=swapper/3 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=e.shopper.debug next_pid=3452 next_prio=110
+ ScionFrontendAp-3452    (   3378) [003] ...1. 17921.311693: task_rename: pid=3452 oldcomm=e.shopper.debug newcomm=ScionFrontendAp oom_score_adj=0
           <idle>-0       (-------) [002] d.H4. 17921.312387: sched_waking: comm=sugov:2 pid=281 prio=-1 target_cpu=002
           <idle>-0       (-------) [002] dNH5. 17921.312394: sched_wakeup: comm=sugov:2 pid=281 prio=-1 target_cpu=002
           <idle>-0       (-------) [002] d..2. 17921.312544: sched_switch: prev_comm=swapper/2 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=sugov:2 next_pid=281 next_prio=-1
          sugov:2-281     (    281) [002] d..2. 17921.312556: sched_switch: prev_comm=sugov:2 prev_pid=281 prev_prio=-1 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.313617: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.313617: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.313686: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
           <idle>-0       (-------) [003] dNh2. 17921.313849: sched_wakeup: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
  Jit thread pool-3395    (   3378) [000] d..2. 17921.314601: sched_waking: comm=Profile Saver pid=3432 prio=129 target_cpu=002
    Profile Saver-3432    (   3378) [002] d..2. 17921.314750: sched_switch: prev_comm=Profile Saver prev_pid=3432 prev_prio=129 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] ..... 17921.315331: task_newtask: pid=3454 comm=ut.hutbot.debug clone_flags=3d0f00 oom_score_adj=0
- Firebase Backgr-3454    (   3378) [002] ...1. 17921.315612: task_rename: pid=3454 oldcomm=ut.hutbot.debug newcomm=Firebase Backgr oom_score_adj=0
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.315656: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] dN.4. 17921.315664: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.315669: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
+ e.shopper.debug-3378    (   3378) [001] ..... 17921.315331: task_newtask: pid=3454 comm=e.shopper.debug clone_flags=3d0f00 oom_score_adj=0
+ Firebase Backgr-3454    (   3378) [002] ...1. 17921.315612: task_rename: pid=3454 oldcomm=e.shopper.debug newcomm=Firebase Backgr oom_score_adj=0
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.315656: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] dN.4. 17921.315664: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.315669: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.316016: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.316215: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.316215: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.316479: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.316517: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.316688: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.316692: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.316692: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.316694: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.316728: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.316728: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.317006: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d.h3. 17921.317010: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.317131: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] dN.4. 17921.317137: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.317142: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.317958: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.317962: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.317131: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] dN.4. 17921.317137: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.317142: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.317958: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.317962: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.318437: sched_waking: comm=binder:637_12 pid=1337 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..6. 17921.318692: sched_wakeup: comm=binder:637_12 pid=1337 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.318783: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=_thread next_pid=582 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..5. 17921.319538: sched_waking: comm=binder:637_C pid=972 prio=110 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] dN.6. 17921.319627: sched_wakeup: comm=binder:637_C pid=972 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.319722: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=110
+ e.shopper.debug-3378    (   3378) [001] d..5. 17921.319538: sched_waking: comm=binder:637_C pid=972 prio=110 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] dN.6. 17921.319627: sched_wakeup: comm=binder:637_C pid=972 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.319722: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=110
  Firebase Backgr-3454    (   3378) [002] d.s2. 17921.320206: sched_waking: comm=vivid-000-tch-c pid=747 prio=120 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] dNs3. 17921.320212: sched_wakeup: comm=vivid-000-tch-c pid=747 prio=120 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.320220: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=vivid-000-tch-c next_pid=747 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.322916: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.323902: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.327996: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.328172: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.323902: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.327996: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.328172: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  Jit thread pool-3395    (   3378) [000] d..2. 17921.329693: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.329726: sched_waking: comm=Jit thread pool pid=3395 prio=129 target_cpu=000
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.329778: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=001
@@ -106,18 +106,18 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.352249: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh3. 17921.352263: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.352361: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=_thread next_pid=582 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d.h2. 17921.352861: sched_waking: comm=android.hardwar pid=483 prio=120 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] dNh3. 17921.352867: sched_wakeup: comm=android.hardwar pid=483 prio=120 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.352900: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R ==> next_comm=android.hardwar next_pid=483 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d.h2. 17921.352861: sched_waking: comm=android.hardwar pid=483 prio=120 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] dNh3. 17921.352867: sched_wakeup: comm=android.hardwar pid=483 prio=120 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.352900: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R ==> next_comm=android.hardwar next_pid=483 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.353166: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=SensorService next_pid=725 next_prio=89
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.355549: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=system_server next_pid=637 next_prio=118
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.355566: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- Firebase Backgr-3454    (   3378) [002] d..3. 17921.355575: sched_wakeup: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.356610: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.355549: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=system_server next_pid=637 next_prio=118
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.355566: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ Firebase Backgr-3454    (   3378) [002] d..3. 17921.355575: sched_wakeup: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.356610: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  Jit thread pool-3395    (   3378) [000] d.h4. 17921.356747: sched_waking: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] dNh5. 17921.356754: sched_wakeup: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..2. 17921.356975: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R ==> next_comm=kworker/0:0 next_pid=30023 next_prio=120
- Jit thread pool-3395    (   3378) [000] d..2. 17921.357052: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ Jit thread pool-3395    (   3378) [000] d..2. 17921.357052: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.357076: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.357081: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.357084: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=120
@@ -126,15 +126,15 @@ TRACE:
  Jit thread pool-3395    (   3378) [000] d..2. 17921.360620: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R+ ==> next_comm=kworker/0:0 next_pid=30023 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.367305: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh3. 17921.367316: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.368434: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.368441: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.368434: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.368441: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.368537: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R ==> next_comm=_thread next_pid=582 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.378209: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.378216: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.378223: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.380352: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.380352: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.380666: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=eduling.default next_pid=721 next_prio=120
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.380827: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.380827: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.381331: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.381335: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.381905: cgroup_rstat_cpu_locked_fastpath: root=0 id=9754 level=3 cpu=3 lock contended:0
@@ -148,36 +148,36 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.386029: sched_waking: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.386033: sched_wakeup: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.386036: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:1259_7 next_pid=1600 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.386127: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.386127: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.386483: sched_waking: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.386485: sched_wakeup: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.386562: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:1259_7 next_pid=1600 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] ..... 17921.388095: task_newtask: pid=3456 comm=ScionFrontendAp clone_flags=3d0f00 oom_score_adj=0
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.390354: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.390354: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.390356: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=ScionFrontendAp next_pid=3456 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.390448: sched_wakeup: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.390448: sched_wakeup: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
      GmsDynamite-3456    (   3378) [002] ...1. 17921.390634: task_rename: pid=3456 oldcomm=ScionFrontendAp newcomm=GmsDynamite oom_score_adj=0
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.390978: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.390978: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
      GmsDynamite-3456    (   3378) [002] d..2. 17921.390983: sched_switch: prev_comm=GmsDynamite prev_pid=3456 prev_prio=139 prev_state=S ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
- ut.hutbot.debug-3378    (   3378) [001] dN.4. 17921.390984: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.390989: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.391552: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.391758: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] dN.4. 17921.390984: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.390989: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.391552: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.391758: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.392214: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.392217: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.392220: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.392491: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.392639: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
- ut.hutbot.debug-3378    (   3378) [001] d..5. 17921.393128: sched_waking: comm=binder:637_C pid=972 prio=110 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] dN.6. 17921.393133: sched_wakeup: comm=binder:637_C pid=972 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.393136: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=110
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.392639: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..5. 17921.393128: sched_waking: comm=binder:637_C pid=972 prio=110 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] dN.6. 17921.393133: sched_wakeup: comm=binder:637_C pid=972 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.393136: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=110
  Jit thread pool-3395    (   3378) [000] d..2. 17921.393526: sched_waking: comm=Profile Saver pid=3432 prio=129 target_cpu=002
  Jit thread pool-3395    (   3378) [000] d..3. 17921.393530: sched_wakeup: comm=Profile Saver pid=3432 prio=129 target_cpu=002
    Profile Saver-3432    (   3378) [002] d..2. 17921.393565: sched_switch: prev_comm=Profile Saver prev_pid=3432 prev_prio=129 prev_state=S ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
  Jit thread pool-3395    (   3378) [000] d..2. 17921.394196: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.394202: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.394467: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.394467: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.394467: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.394467: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..3. 17921.394921: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] dN.4. 17921.394926: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.394929: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
@@ -188,33 +188,33 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] dN.4. 17921.395142: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.395143: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=logd.writer next_pid=301 next_prio=130
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.397681: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.397789: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.397789: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.398053: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.398385: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.398385: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.398801: sched_waking: comm=Jit thread pool pid=3395 prio=129 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..2. 17921.400233: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.400385: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh3. 17921.400533: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.400753: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R ==> next_comm=_thread next_pid=582 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.401053: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.401053: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=003
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.401095: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..4. 17921.401258: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.401279: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..4. 17921.401258: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.401279: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.401289: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R ==> next_comm=logd.writer next_pid=301 next_prio=130
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.401334: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.401334: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.406012: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.401334: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.406012: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.406019: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.406061: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.406061: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.406121: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.406523: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.406524: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.406524: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.407195: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.407263: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.407263: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.411386: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.411549: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.411549: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.411627: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.411629: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.411629: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.412926: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.412932: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.412936: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=120
@@ -222,35 +222,35 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.414240: sched_wakeup: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.414243: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:1259_7 next_pid=1600 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.415323: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.415534: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.415534: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.416579: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.416924: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.416924: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.417763: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.417809: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.417809: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] d.h4. 17921.417837: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh5. 17921.417841: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.418239: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=_thread next_pid=582 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d.h2. 17921.418799: sched_waking: comm=android.hardwar pid=483 prio=120 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d.h3. 17921.418803: sched_wakeup: comm=android.hardwar pid=483 prio=120 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.419319: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=android.hardwar next_pid=483 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.419337: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d.h2. 17921.418799: sched_waking: comm=android.hardwar pid=483 prio=120 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d.h3. 17921.418803: sched_wakeup: comm=android.hardwar pid=483 prio=120 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.419319: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=android.hardwar next_pid=483 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.419337: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.419345: cgroup_rstat_cpu_locked_fastpath: root=0 id=2221 level=3 cpu=3 lock contended:0
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.419346: cgroup_rstat_cpu_unlock_fastpath: root=0 id=237 level=2 cpu=3 lock contended:0
- ScionFrontendAp-3452    (   3378) [003] d..3. 17921.419348: sched_wakeup: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..3. 17921.419348: sched_wakeup: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.419360: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.420440: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.420440: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.420947: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.420950: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.420950: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.422004: sched_waking: comm=binder:842_2 pid=851 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d.h3. 17921.422007: sched_wakeup: comm=binder:842_2 pid=851 prio=120 target_cpu=003
  Jit thread pool-3395    (   3378) [000] d.h5. 17921.423353: sched_waking: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] dNh6. 17921.423358: sched_wakeup: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..2. 17921.423397: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R+ ==> next_comm=kworker/0:0 next_pid=30023 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.423446: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=D ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.423447: sched_blocked_reason: pid=3378 iowait=0 caller=membarrier_private_expedited+0x7c/0x29c
- Jit thread pool-3395    (   3378) [000] d..3. 17921.423632: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- Jit thread pool-3395    (   3378) [000] d..4. 17921.423697: sched_wakeup: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- Firebase Backgr-3454    (   3378) [001] d..2. 17921.423751: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=ut.hutbot.debug next_pid=3378 next_prio=110
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.423446: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=D ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.423447: sched_blocked_reason: pid=3378 iowait=0 caller=membarrier_private_expedited+0x7c/0x29c
+ Jit thread pool-3395    (   3378) [000] d..3. 17921.423632: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ Jit thread pool-3395    (   3378) [000] d..4. 17921.423697: sched_wakeup: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ Firebase Backgr-3454    (   3378) [001] d..2. 17921.423751: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=e.shopper.debug next_pid=3378 next_prio=110
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.424283: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R ==> next_comm=binder:842_2 next_pid=851 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.424947: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.424950: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=003
@@ -277,13 +277,13 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.433965: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh3. 17921.433971: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.434131: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R ==> next_comm=_thread next_pid=582 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.439484: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.439672: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.439484: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.439672: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Jit thread pool-3395    (   3378) [000] d..2. 17921.440677: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.440723: sched_waking: comm=Jit thread pool pid=3395 prio=129 target_cpu=000
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.443254: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.443254: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.443458: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.444248: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.444248: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.444251: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.449872: cgroup_rstat_cpu_locked_fastpath: root=0 id=3182 level=3 cpu=3 lock contended:0
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.449876: cgroup_rstat_cpu_unlock_fastpath: root=0 id=82 level=2 cpu=3 lock contended:0
@@ -299,11 +299,11 @@ TRACE:
  Jit thread pool-3395    (   3378) [000] d.h5. 17921.461052: sched_waking: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] dNh6. 17921.461058: sched_wakeup: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..2. 17921.461187: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R+ ==> next_comm=kworker/0:0 next_pid=30023 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.461199: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=D ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.461201: sched_blocked_reason: pid=3378 iowait=0 caller=membarrier_private_expedited+0x7c/0x29c
- Jit thread pool-3395    (   3378) [000] d..3. 17921.461421: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- Jit thread pool-3395    (   3378) [000] d..3. 17921.463302: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- Jit thread pool-3395    (   3378) [000] d..4. 17921.463304: sched_wakeup: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.461199: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=D ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.461201: sched_blocked_reason: pid=3378 iowait=0 caller=membarrier_private_expedited+0x7c/0x29c
+ Jit thread pool-3395    (   3378) [000] d..3. 17921.461421: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ Jit thread pool-3395    (   3378) [000] d..3. 17921.463302: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ Jit thread pool-3395    (   3378) [000] d..4. 17921.463304: sched_wakeup: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Jit thread pool-3395    (   3378) [000] d..2. 17921.463332: sched_waking: comm=Profile Saver pid=3432 prio=129 target_cpu=002
  Jit thread pool-3395    (   3378) [000] d..3. 17921.463479: sched_wakeup: comm=Profile Saver pid=3432 prio=129 target_cpu=002
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.463704: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=Profile Saver next_pid=3432 next_prio=129
@@ -324,38 +324,38 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] d.h3. 17921.481067: sched_waking: comm=DefaultExecutor pid=3431 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh4. 17921.481076: sched_wakeup: comm=DefaultExecutor pid=3431 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.481149: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=DefaultExecutor next_pid=3431 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.482312: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.482337: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.483676: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.482312: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.482337: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.483676: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d.h2. 17921.483747: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dNh3. 17921.483754: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.485195: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=_thread next_pid=582 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.485399: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.485399: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.486247: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=SensorService next_pid=725 next_prio=89
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.487336: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=system_server next_pid=637 next_prio=118
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.487613: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.487766: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..5. 17921.489430: sched_waking: comm=binder:637_C pid=972 prio=110 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] dN.6. 17921.489437: sched_wakeup: comm=binder:637_C pid=972 prio=110 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.489442: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=110
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.487336: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=system_server next_pid=637 next_prio=118
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.487613: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.487766: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..5. 17921.489430: sched_waking: comm=binder:637_C pid=972 prio=110 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] dN.6. 17921.489437: sched_wakeup: comm=binder:637_C pid=972 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.489442: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=110
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.489931: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.489931: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  Jit thread pool-3395    (   3378) [000] d.h5. 17921.490902: sched_waking: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] dNh6. 17921.490908: sched_wakeup: comm=kworker/0:0 pid=30023 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..2. 17921.491067: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R+ ==> next_comm=kworker/0:0 next_pid=30023 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.491300: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..4. 17921.491466: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.491770: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=binder:637_C next_pid=972 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.491300: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..4. 17921.491466: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.491770: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=binder:637_C next_pid=972 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.491839: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- Jit thread pool-3395    (   3378) [000] d..2. 17921.491858: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ Jit thread pool-3395    (   3378) [000] d..2. 17921.491858: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.491922: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R ==> next_comm=logd.writer next_pid=301 next_prio=130
  Jit thread pool-3395    (   3378) [000] d..2. 17921.492507: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] d..5. 17921.498304: sched_waking: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] dN.6. 17921.498315: sched_wakeup: comm=binder:1259_7 pid=1600 prio=120 target_cpu=003
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.498325: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=binder:1259_7 next_pid=1600 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] ..... 17921.498406: task_newtask: pid=3457 comm=ut.hutbot.debug clone_flags=3d0f00 oom_score_adj=0
- Firebase Backgr-3454    (   3378) [002] d..2. 17921.498869: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=ut.hutbot.debug next_pid=3457 next_prio=110
-       WM.task-1-3457    (   3378) [002] ...1. 17921.499012: task_rename: pid=3457 oldcomm=ut.hutbot.debug newcomm=WM.task-1 oom_score_adj=0
+ e.shopper.debug-3378    (   3378) [001] ..... 17921.498406: task_newtask: pid=3457 comm=e.shopper.debug clone_flags=3d0f00 oom_score_adj=0
+ Firebase Backgr-3454    (   3378) [002] d..2. 17921.498869: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=e.shopper.debug next_pid=3457 next_prio=110
+       WM.task-1-3457    (   3378) [002] ...1. 17921.499012: task_rename: pid=3457 oldcomm=e.shopper.debug newcomm=WM.task-1 oom_score_adj=0
        WM.task-1-3457    (   3378) [002] d..5. 17921.499734: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=001
        WM.task-1-3457    (   3378) [002] dN.6. 17921.499742: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=002
        WM.task-1-3457    (   3378) [002] d..2. 17921.499747: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=120
@@ -371,10 +371,10 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.505740: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] d..2. 17921.507293: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] d..3. 17921.507302: sched_wakeup: comm=Firebase Backgr pid=3454 prio=130 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.507892: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.507892: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
        WM.task-1-3457    (   3378) [002] d..2. 17921.508347: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
  Jit thread pool-3395    (   3378) [000] d..2. 17921.508826: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [003] d..2. 17921.509218: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [003] d..2. 17921.509218: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  ScionFrontendAp-3452    (   3378) [003] dn.2. 17921.509453: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] dn.3. 17921.509458: sched_wakeup: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  ScionFrontendAp-3452    (   3378) [003] dn.2. 17921.509459: sched_waking: comm=Jit thread pool pid=3395 prio=129 target_cpu=000
@@ -383,11 +383,11 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [000] ..... 17921.514671: task_newtask: pid=3458 comm=ScionFrontendAp clone_flags=3d0f00 oom_score_adj=0
  ScionFrontendAp-3452    (   3378) [000] d..2. 17921.515091: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=Jit thread pool next_pid=3395 next_prio=129
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.515740: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=WM.task-1 next_pid=3457 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.517219: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.517219: sched_waking: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
        WM.task-1-3457    (   3378) [002] d..5. 17921.517404: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=002
  GoogleApiHandle-3458    (   3378) [003] d.h3. 17921.518056: sched_waking: comm=_thread pid=582 prio=120 target_cpu=003
  GoogleApiHandle-3458    (   3378) [003] dNh4. 17921.518064: sched_wakeup: comm=_thread pid=582 prio=120 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.518066: sched_wakeup: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.518066: sched_wakeup: comm=Firebase Backgr pid=3454 prio=130 target_cpu=002
        WM.task-1-3457    (   3378) [002] dN.6. 17921.518075: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=002
  GoogleApiHandle-3458    (   3378) [003] d..2. 17921.518210: sched_switch: prev_comm=ScionFrontendAp prev_pid=3458 prev_prio=120 prev_state=R+ ==> next_comm=_thread next_pid=582 next_prio=120
        WM.task-1-3457    (   3378) [002] d..2. 17921.518330: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=R+ ==> next_comm=binder:637_C next_pid=972 next_prio=120
@@ -403,32 +403,32 @@ TRACE:
  GoogleApiHandle-3458    (   3378) [003] d..3. 17921.522388: sched_wakeup: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
  GoogleApiHandle-3458    (   3378) [003] d..2. 17921.522490: sched_switch: prev_comm=GoogleApiHandle prev_pid=3458 prev_prio=129 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
  Jit thread pool-3395    (   3378) [000] d..2. 17921.522729: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R ==> next_comm=ScionFrontendAp next_pid=3452 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.522804: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ScionFrontendAp-3452    (   3378) [000] d..2. 17921.522832: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.522804: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ ScionFrontendAp-3452    (   3378) [000] d..2. 17921.522832: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
        WM.task-1-3457    (   3378) [002] d..2. 17921.522986: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=S ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.523088: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.523088: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [000] d..2. 17921.523132: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  ScionFrontendAp-3452    (   3378) [000] d..3. 17921.523245: sched_wakeup: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
- ScionFrontendAp-3452    (   3378) [000] d..2. 17921.523246: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ ScionFrontendAp-3452    (   3378) [000] d..2. 17921.523246: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.523307: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=WM.task-1 next_pid=3457 next_prio=120
        WM.task-1-3457    (   3378) [002] d..2. 17921.523678: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=S ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
  Firebase Backgr-3454    (   3378) [002] ..... 17921.523729: task_newtask: pid=3460 comm=Firebase Backgr clone_flags=3d0f00 oom_score_adj=0
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.523781: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.524046: sched_wakeup: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.523781: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.524046: sched_wakeup: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  DefaultDispatch-3460    (   3378) [003] d..2. 17921.524340: sched_switch: prev_comm=Firebase Backgr prev_pid=3460 prev_prio=130 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.524405: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=WM.task-1 next_pid=3457 next_prio=120
  ScionFrontendAp-3452    (   3378) [000] d..2. 17921.524672: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=Jit thread pool next_pid=3395 next_prio=129
  Jit thread pool-3395    (   3378) [000] d..2. 17921.524675: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..3. 17921.524677: sched_wakeup: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
  Jit thread pool-3395    (   3378) [000] d..2. 17921.525653: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=R+ ==> next_comm=ScionFrontendAp next_pid=3452 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..7. 17921.525827: sched_waking: comm=servicemanager pid=290 prio=120 target_cpu=002
- ut.hutbot.debug-3378    (   3378) [001] dN.8. 17921.525834: sched_wakeup: comm=servicemanager pid=290 prio=120 target_cpu=001
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.525838: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=servicemanager next_pid=290 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..7. 17921.525827: sched_waking: comm=servicemanager pid=290 prio=120 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] dN.8. 17921.525834: sched_wakeup: comm=servicemanager pid=290 prio=120 target_cpu=001
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.525838: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=R+ ==> next_comm=servicemanager next_pid=290 next_prio=120
        WM.task-1-3457    (   3378) [002] d..2. 17921.526089: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=D ==> next_comm=Firebase Backgr next_pid=3454 next_prio=130
        WM.task-1-3457    (   3378) [002] d..2. 17921.526091: sched_blocked_reason: pid=3457 iowait=1 caller=folio_wait_bit_common+0x2b0/0x408
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.526098: sched_waking: comm=Firebase Backgr pid=3460 prio=130 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..5. 17921.526287: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.526294: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..5. 17921.526287: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.526294: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  Firebase Backgr-3454    (   3378) [002] ..... 17921.526579: task_newtask: pid=3462 comm=Firebase Backgr clone_flags=3d0f00 oom_score_adj=0
  DefaultDispatch-3462    (   3378) [001] ...1. 17921.527062: task_rename: pid=3462 oldcomm=Firebase Backgr newcomm=DefaultDispatch oom_score_adj=0
  DefaultDispatch-3460    (   3378) [003] ...1. 17921.527755: task_rename: pid=3460 oldcomm=Firebase Backgr newcomm=DefaultDispatch oom_score_adj=0
@@ -436,26 +436,26 @@ TRACE:
  ScionFrontendAp-3452    (   3378) [000] dNs5. 17921.527992: sched_wakeup: comm=kworker/u17:3 pid=19958 prio=100 target_cpu=000
  ScionFrontendAp-3452    (   3378) [000] d..2. 17921.528027: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=R+ ==> next_comm=kworker/u17:3 next_pid=19958 next_prio=100
  DefaultDispatch-3460    (   3378) [003] d..2. 17921.528382: sched_switch: prev_comm=DefaultDispatch prev_pid=3460 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- DefaultDispatch-3462    (   3378) [001] d..2. 17921.528434: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=R+ ==> next_comm=ut.hutbot.debug next_pid=3378 next_prio=110
- ut.hutbot.debug-3378    (   3378) [001] d..5. 17921.528513: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
+ DefaultDispatch-3462    (   3378) [001] d..2. 17921.528434: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=R+ ==> next_comm=e.shopper.debug next_pid=3378 next_prio=110
+ e.shopper.debug-3378    (   3378) [001] d..5. 17921.528513: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.528791: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=R ==> next_comm=app next_pid=593 next_prio=97
  ScionFrontendAp-3452    (   3378) [000] d..5. 17921.528941: sched_waking: comm=GoogleApiHandle pid=3458 prio=129 target_cpu=003
  ScionFrontendAp-3452    (   3378) [000] dN.6. 17921.528948: sched_wakeup: comm=GoogleApiHandle pid=3458 prio=129 target_cpu=000
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.529171: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=DefaultDispatch next_pid=3462 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.529171: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=DefaultDispatch next_pid=3462 next_prio=120
  DefaultDispatch-3462    (   3378) [001] ..... 17921.529199: task_newtask: pid=3473 comm=DefaultDispatch clone_flags=3d0f00 oom_score_adj=0
  DefaultDispatch-3473    (   3378) [003] ...1. 17921.530307: task_rename: pid=3473 oldcomm=DefaultDispatch newcomm=DefaultDispatch oom_score_adj=0
        WM.task-1-3457    (   3378) [002] d..4. 17921.530377: sched_waking: comm=kworker/u16:2 pid=1797 prio=120 target_cpu=003
        WM.task-1-3457    (   3378) [002] d..5. 17921.530383: sched_wakeup: comm=kworker/u16:2 pid=1797 prio=120 target_cpu=002
        WM.task-1-3457    (   3378) [002] d..2. 17921.530390: sched_switch: prev_comm=WM.task-1 prev_pid=3457 prev_prio=120 prev_state=D ==> next_comm=kworker/u16:2 next_pid=1797 next_prio=120
        WM.task-1-3457    (   3378) [002] d..2. 17921.530391: sched_blocked_reason: pid=3457 iowait=1 caller=folio_wait_bit_common+0x2b0/0x408
- DefaultDispatch-3462    (   3378) [001] d..2. 17921.530399: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=R ==> next_comm=ut.hutbot.debug next_pid=3378 next_prio=110
+ DefaultDispatch-3462    (   3378) [001] d..2. 17921.530399: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=R ==> next_comm=e.shopper.debug next_pid=3378 next_prio=110
  DefaultDispatch-3473    (   3378) [003] d..2. 17921.530562: sched_switch: prev_comm=DefaultDispatch prev_pid=3473 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
  ScionFrontendAp-3452    (   3378) [000] d..2. 17921.530920: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=GoogleApiHandle next_pid=3458 next_prio=129
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.530934: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.530938: sched_wakeup: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
- ut.hutbot.debug-3378    (   3378) [001] ..... 17921.531164: tracing_mark_write: B|3378|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-3378    (   3378) [001] d..5. 17921.531198: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] ..... 17921.531324: tracing_mark_write: E|3378
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.530934: sched_waking: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.530938: sched_wakeup: comm=ScionFrontendAp pid=3452 prio=120 target_cpu=000
+ e.shopper.debug-3378    (   3378) [001] ..... 17921.531164: tracing_mark_write: B|3378|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-3378    (   3378) [001] d..5. 17921.531198: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] ..... 17921.531324: tracing_mark_write: E|3378
  GoogleApiHandle-3458    (   3378) [000] d..5. 17921.531385: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=002
  GoogleApiHandle-3458    (   3378) [000] d..6. 17921.531485: sched_wakeup: comm=binder:637_C pid=972 prio=120 target_cpu=002
  GoogleApiHandle-3458    (   3378) [000] d..2. 17921.531497: sched_switch: prev_comm=GoogleApiHandle prev_pid=3458 prev_prio=129 prev_state=S ==> next_comm=ScionFrontendAp next_pid=3452 next_prio=120
@@ -471,13 +471,13 @@ TRACE:
  Firebase Backgr-3454    (   3378) [002] d.h7. 17921.534786: sched_wakeup: comm=TimerDispatch pid=592 prio=97 target_cpu=003
  Firebase Backgr-3454    (   3378) [002] d..2. 17921.534831: sched_switch: prev_comm=Firebase Backgr prev_pid=3454 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
  DefaultDispatch-3462    (   3378) [003] d..2. 17921.535005: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=R ==> next_comm=TimerDispatch next_pid=592 next_prio=97
- ut.hutbot.debug-3378    (   3378) [001] d..3. 17921.535058: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..4. 17921.535063: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..3. 17921.535058: sched_waking: comm=logd.writer pid=301 prio=130 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..4. 17921.535063: sched_wakeup: comm=logd.writer pid=301 prio=130 target_cpu=003
  ScionFrontendAp-3452    (   3378) [000] ..... 17921.535399: task_newtask: pid=3474 comm=ScionFrontendAp clone_flags=3d0f00 oom_score_adj=0
  ScionFrontendAp-3452    (   3378) [000] d..2. 17921.535713: sched_switch: prev_comm=ScionFrontendAp prev_pid=3452 prev_prio=120 prev_state=S ==> next_comm=GoogleApiHandle next_pid=3458 next_prio=129
  Measurement Wor-3474    (   3378) [002] ...1. 17921.536302: task_rename: pid=3474 oldcomm=ScionFrontendAp newcomm=Measurement Wor oom_score_adj=0
  DefaultDispatch-3462    (   3378) [003] d..2. 17921.536494: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.536510: sched_waking: comm=DefaultDispatch pid=3462 prio=120 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.536510: sched_waking: comm=DefaultDispatch pid=3462 prio=120 target_cpu=003
  GoogleApiHandle-3458    (   3378) [000] d.s3. 17921.536861: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  GoogleApiHandle-3458    (   3378) [000] d.s4. 17921.536928: sched_wakeup: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
  Measurement Wor-3474    (   3378) [002] d..2. 17921.537326: sched_switch: prev_comm=Measurement Wor prev_pid=3474 prev_prio=130 prev_state=R ==> next_comm=WM.task-1 next_pid=3457 next_prio=120
@@ -488,10 +488,10 @@ TRACE:
  DefaultDispatch-3462    (   3378) [003] d..2. 17921.537933: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=R ==> next_comm=kworker/u16:2 next_pid=1797 next_prio=120
  Measurement Wor-3474    (   3378) [002] d..2. 17921.538284: sched_switch: prev_comm=Measurement Wor prev_pid=3474 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
  DefaultDispatch-3462    (   3378) [003] d..2. 17921.538291: sched_switch: prev_comm=DefaultDispatch prev_pid=3462 prev_prio=120 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.538298: sched_switch: prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.538298: sched_switch: prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
  GoogleApiHandle-3458    (   3378) [000] d..2. 17921.538404: sched_waking: comm=Measurement Wor pid=3474 prio=130 target_cpu=002
  GoogleApiHandle-3458    (   3378) [000] d..2. 17921.538490: sched_waking: comm=DefaultDispatch pid=3462 prio=120 target_cpu=003
- GoogleApiHandle-3458    (   3378) [000] d..2. 17921.538673: sched_waking: comm=ut.hutbot.debug pid=3378 prio=110 target_cpu=001
+ GoogleApiHandle-3458    (   3378) [000] d..2. 17921.538673: sched_waking: comm=e.shopper.debug pid=3378 prio=110 target_cpu=001
  GoogleApiHandle-3458    (   3378) [000] d..5. 17921.539479: sched_waking: comm=binder:637_C pid=972 prio=120 target_cpu=002
  GoogleApiHandle-3458    (   3378) [000] d..2. 17921.539490: sched_switch: prev_comm=GoogleApiHandle prev_pid=3458 prev_prio=129 prev_state=S ==> next_comm=Jit thread pool next_pid=3395 next_prio=129
  Jit thread pool-3395    (   3378) [000] d.s3. 17921.539912: sched_waking: comm=WM.task-1 pid=3457 prio=120 target_cpu=002
@@ -514,5 +514,5 @@ TRACE:
  Jit thread pool-3395    (   3378) [002] d..2. 17921.543077: sched_switch: prev_comm=Jit thread pool prev_pid=3395 prev_prio=129 prev_state=S ==> next_comm=GoogleApiHandle next_pid=3458 next_prio=129
  GoogleApiHandle-3458    (   3378) [002] d..2. 17921.543174: sched_switch: prev_comm=GoogleApiHandle prev_pid=3458 prev_prio=129 prev_state=S ==> next_comm=Measurement Wor next_pid=3474 next_prio=130
  Measurement Wor-3474    (   3378) [002] d..2. 17921.543185: sched_switch: prev_comm=Measurement Wor prev_pid=3474 prev_prio=130 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.543325: sched_waking: comm=DefaultDispatch pid=3462 prio=120 target_cpu=003
- ut.hutbot.debug-3378    (   3378) [001] d..2. 17921.543428: sched_waking: comm=Jit thread pool pid=3395 prio=129 target_cpu=002
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.543325: sched_waking: comm=DefaultDispatch pid=3462 prio=120 target_cpu=003
+ e.shopper.debug-3378    (   3378) [001] d..2. 17921.543428: sched_waking: comm=Jit thread pool pid=3395 prio=129 target_cpu=002

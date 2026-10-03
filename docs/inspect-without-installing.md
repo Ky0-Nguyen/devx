@@ -55,7 +55,7 @@ It is how "press `j` to open React Native DevTools" works. Metro proxies a
 Chrome DevTools Protocol session over a WebSocket, and CDP already carries
 what a tool like Reactotron asks the app to send it.
 
-Measured against a real app (HutBot debug build, Android emulator) rather than
+Measured against a real app (Shopper debug build, Android emulator) rather than
 assumed:
 
 | What | Where it comes from | Result |
@@ -195,7 +195,7 @@ through OkHttp, or an image fetched by the platform's loader, never appears.
 An empty list does not mean the app made no requests.
 
 The case that catches people is a **WebView**, because most SSO and payment
-flows are one. Measured on a React Native app's Yum! Single Sign On screen:
+flows are one. Measured on a React Native app's single sign-on screen:
 tapping into the form, typing a user id and submitting it produced **no
 network entry at all** over five polls, while the only entry that ever
 appeared was the app's own periodic `generate_204` connectivity probe. The
@@ -431,7 +431,7 @@ No dependencies, per ADR-0002. That meant writing:
 - `adapters/rn/inspector.{hpp,cpp}` — discovery, the session (one-shot and
   streaming), the Redux probe and the in-app watcher it installs and removes.
 
-`fixtures/cdp/recorded-hutbot-startup.jsonl` is a **real** recorded session,
+`fixtures/cdp/recorded-shopper-startup.jsonl` is a **real** recorded session,
 not a constructed one, with one value redacted: the app logs its auth
 configuration at startup, which included a real Cognito app client id, and it
 is replaced by a placeholder of the same length so the bytes the parser walks

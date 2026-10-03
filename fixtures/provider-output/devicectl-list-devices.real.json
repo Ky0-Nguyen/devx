@@ -116,7 +116,7 @@
           "lastConnectionDate" : "2025-06-25T06:23:11.534Z",
           "pairingState" : "paired",
           "potentialHostnames" : [
-            "iPad-Air-Pizza-Hut.coredevice.local",
+            "iPad-Air-Demo.coredevice.local",
             "6769FAD1-FC2F-5EDD-878B-AEC7BB056048.coredevice.local",
             "00008103-000244683EFA201E.coredevice.local"
           ],
@@ -128,7 +128,7 @@
           "ddiServicesAvailable" : false,
           "developerModeStatus" : "enabled",
           "hasInternalOSBuild" : false,
-          "name" : "iPad Air (Pizza Hut)",
+          "name" : "iPad Air (Demo)",
           "osBuildUpdate" : "22F76",
           "osVersionNumber" : "18.5",
           "rootFileSystemIsWritable" : false

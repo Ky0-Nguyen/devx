@@ -39,7 +39,7 @@ PATH=tests/helpers/devicectl-stub:$PATH ./build/bin/mpi apps \
 
 Process attribution never worked. The rule required the bundle id as a whole
 path segment (`"/" + bundle_id + "/"`), and no real container path has that:
-the real shape is `…/Application/<UUID>/io.pizzahut.hutbot.debug-1789449967523.app/HutBot`,
+the real shape is `…/Application/<UUID>/com.acme.shopper.debug-1789449967523.app/Shopper`,
 where the bundle id is a segment *prefix*, and a physical device's path is
 `…/<UUID>/<Product>.app/<Product>`, which does not contain the bundle id at
 all. So every app on a physical device reported `not_running` with no

@@ -2,7 +2,7 @@
   "schema_version": "2.0",
   "session_id": "fixture-memory-growth",
   "synthetic": true,
-  "synthetic_note": "Derived from a real five-cycle capture of io.pizzahut.hutbot.debug on an Android emulator (fixtures/traces/android-screen-cycles.real.mpi.json), whose memory was flat. The memory series have been rewritten so DET-05's positive path has a case, and so the families disagree: rss, pss and native_heap accumulate across every visit, dalvik_heap stays flat, and private_dirty rises only on the first two visits and then settles. The markers, the clock mapping and the sampling cadence are the real ones; the memory values are not.",
+  "synthetic_note": "Derived from a real five-cycle capture of com.acme.shopper.debug on an Android emulator (fixtures/traces/android-screen-cycles.real.mpi.json), whose memory was flat. The memory series have been rewritten so DET-05's positive path has a case, and so the families disagree: rss, pss and native_heap accumulate across every visit, dalvik_heap stays flat, and private_dirty rises only on the first two visits and then settles. The markers, the clock mapping and the sampling cadence are the real ones; the memory values are not.",
   "device": {
     "platform": "android",
     "device_id": "emulator-5554",
@@ -20,30 +20,30 @@
     "application_key": {
       "platform": "android",
       "device_id": "emulator-5554",
-      "app_identifier": "io.pizzahut.hutbot.debug",
+      "app_identifier": "com.acme.shopper.debug",
       "identifier_kind": "package_name",
       "android_user_id": null,
-      "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+      "canonical": "android|emulator-5554|com.acme.shopper.debug"
     },
     "process_instances": [
       {
         "application_key": {
           "platform": "android",
           "device_id": "emulator-5554",
-          "app_identifier": "io.pizzahut.hutbot.debug",
+          "app_identifier": "com.acme.shopper.debug",
           "identifier_kind": "package_name",
           "android_user_id": null,
-          "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+          "canonical": "android|emulator-5554|com.acme.shopper.debug"
         },
         "pid": 25747,
         "process_start_time": "1371104",
-        "process_name": "io.pizzahut.hutbot.debug",
+        "process_name": "com.acme.shopper.debug",
         "uid": 10229,
         "is_primary": true,
         "ownership_evidence": "uid_and_process_name",
         "ownership_note": "uid 10229 matches the installed package uid and the process name is package-owned",
         "counts_toward_app_totals": true,
-        "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+        "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
       }
     ],
     "runtime_state": "running",
@@ -608,7 +608,7 @@
       "name": "memory.rss_total_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "rss",
       "points": [
         [
@@ -829,7 +829,7 @@
       "name": "memory.pss_total_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "pss",
       "points": [
         [
@@ -1050,7 +1050,7 @@
       "name": "memory.private_dirty_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "private_dirty",
       "points": [
         [
@@ -1271,7 +1271,7 @@
       "name": "memory.native_heap_rss_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "native_heap",
       "points": [
         [
@@ -1492,7 +1492,7 @@
       "name": "memory.dalvik_heap_rss_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=25747|start=1371104|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "dalvik_heap",
       "points": [
         [

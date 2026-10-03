@@ -5,8 +5,8 @@
  "result": {
   "apps": [
    {
-    "bundleIdentifier": "io.pizzahut.hutbot.debug",
-    "name": "HutBot",
+    "bundleIdentifier": "com.acme.shopper.debug",
+    "name": "Shopper",
     "version": "1.0",
     "appClip": false,
     "removable": true,
