@@ -23,7 +23,7 @@ case "$1" in
     if [ "$1" = "record" ]; then
       outdir=""; prev=""
       for a in "$@"; do [ "$prev" = "--output" ] && outdir="$a"; prev="$a"; done
-      echo "Starting recording with the Time Profiler template. Attaching to: HutBot (4242)."
+      echo "Starting recording with the Time Profiler template. Attaching to: Shopper (4242)."
       echo "Ctrl-C to stop the recording"
       echo "Reached specified time limit, ending recording..."
       [ -n "$outdir" ] && { rm -rf "$outdir"; cp -R "$REAL_TRACE" "$outdir"; }

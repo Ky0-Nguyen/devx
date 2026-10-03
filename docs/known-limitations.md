@@ -15,7 +15,7 @@ where one exists, a concrete remediation.
 DevX's Live tab all capture for real, using the platform's text interfaces
 (ADR-0006): `dumpsys gfxinfo framestats` for frames with a platform-supplied
 deadline, `simpleperf` for symbolised stacks, `dumpsys meminfo` for memory.
-Verified against a booted emulator (API 37) on the superapp HutBot debug
+Verified against a booted emulator (API 37) on the Shopper debug
 build, and live against `com.android.settings` for the frame path.
 
 **The desktop app can now attempt an iOS record.** It used to refuse before
@@ -33,7 +33,7 @@ rather than events readable while it runs.
 collector wired to the session controller now, and an importer
 (`ios.xctrace.export`) for what Instruments exports. The recording step was
 exercised against the booted simulator with a real app
-(`io.pizzahut.hutbot.debug`): `xctrace record` attaches -- it prints
+(`com.acme.shopper.debug`): `xctrace record` attaches -- it prints
 `Attaching to: ... Time limit: 3.0 s` -- and then runs indefinitely, ignoring
 its own `--time-limit` even with `--no-prompt`. The collector bounds the
 recording itself, and then asks whether a usable trace exists by trying to read one -- `xctrace export --toc` rejects a stub in under a second -- rather than by how the process ended. A readable bundle is kept as a **partial capture** that says xctrace did not exit on its own; an unreadable one is a **provider failure**, explicitly not as
@@ -651,7 +651,7 @@ things a retention question needs: it collapses nearly every root to
 `HEAP_DUMP_INFO` records that separate the app's heap from the zygote and boot
 image.
 
-**What was measured.** One dump, 49 MB, from `io.pizzahut.hutbot.debug` on
+**What was measured.** One dump, 49 MB, from `com.acme.shopper.debug` on
 `emulator-5554`: 580,140 objects, 292,343 roots of which 23,161 are anchored
 in the app's own code, 31,349 classes, zero unrecognised records, three
 dangling references, and 246,284 objects on the app heap against 158,976 on

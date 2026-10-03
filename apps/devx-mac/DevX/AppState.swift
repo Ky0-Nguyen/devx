@@ -483,7 +483,7 @@ final class AppState: ObservableObject {
     /// "Starting live capture..." indefinitely. A dedicated queue has no such
     /// limit.
     private static let coreQueue = DispatchQueue(
-        label: "com.yum.superapp.devx.core", qos: .userInitiated,
+        label: "com.devx.core", qos: .userInitiated,
         attributes: .concurrent)
 
     /// Runs a blocking core call off the main thread, then publishes the result.

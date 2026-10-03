@@ -20,30 +20,30 @@
     "application_key": {
       "platform": "android",
       "device_id": "emulator-5554",
-      "app_identifier": "io.pizzahut.hutbot.debug",
+      "app_identifier": "com.acme.shopper.debug",
       "identifier_kind": "package_name",
       "android_user_id": null,
-      "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+      "canonical": "android|emulator-5554|com.acme.shopper.debug"
     },
     "process_instances": [
       {
         "application_key": {
           "platform": "android",
           "device_id": "emulator-5554",
-          "app_identifier": "io.pizzahut.hutbot.debug",
+          "app_identifier": "com.acme.shopper.debug",
           "identifier_kind": "package_name",
           "android_user_id": null,
-          "canonical": "android|emulator-5554|io.pizzahut.hutbot.debug"
+          "canonical": "android|emulator-5554|com.acme.shopper.debug"
         },
         "pid": 22869,
         "process_start_time": "1322547",
-        "process_name": "io.pizzahut.hutbot.debug",
+        "process_name": "com.acme.shopper.debug",
         "uid": 10229,
         "is_primary": true,
         "ownership_evidence": "uid_and_process_name",
         "ownership_note": "uid 10229 matches the installed package uid and the process name is package-owned",
         "counts_toward_app_totals": true,
-        "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
+        "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e"
       }
     ],
     "runtime_state": "running",
@@ -277,7 +277,7 @@
         "provider_version": null,
         "prerequisites": [],
         "observed_at": "2026-09-14T17:07:00Z",
-        "evidence": "launched io.pizzahut.hutbot.debug/io.yum.MainActivity, platform reported COLD, TotalTime 5239 ms, Displayed 5239 ms",
+        "evidence": "launched com.acme.shopper.debug/com.acme.MainActivity, platform reported COLD, TotalTime 5239 ms, Displayed 5239 ms",
         "scope": "",
         "limitations": [
           "TotalTime ends when the activity reported being drawn, which is not when the app became interactive",
@@ -294,7 +294,7 @@
         "provider_version": null,
         "prerequisites": [],
         "observed_at": "2026-09-14T17:07:10Z",
-        "evidence": "`dumpsys meminfo io.pizzahut.hutbot.debug` yielded 5 counter series",
+        "evidence": "`dumpsys meminfo com.acme.shopper.debug` yielded 5 counter series",
         "scope": "",
         "limitations": [
           "a single instantaneous reading, not a time series: growth cannot be assessed from one point",
@@ -361,7 +361,7 @@
       "interaction": null,
       "process_instance_id": "",
       "payload": {
-        "component": "io.pizzahut.hutbot.debug/io.yum.MainActivity",
+        "component": "com.acme.shopper.debug/com.acme.MainActivity",
         "launch_class_requested": "cold",
         "launch_class_reported": "COLD",
         "endpoint": "the activity reported being drawn",
@@ -377,7 +377,7 @@
       "interaction": null,
       "process_instance_id": "",
       "payload": {
-        "component": "io.pizzahut.hutbot.debug/io.yum.MainActivity",
+        "component": "com.acme.shopper.debug/com.acme.MainActivity",
         "launch_class_requested": "cold",
         "launch_class_reported": "COLD",
         "endpoint": "the platform logged the first frame as displayed",
@@ -391,7 +391,7 @@
       "name": "memory.rss_total_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "rss",
       "points": [
         [
@@ -404,7 +404,7 @@
       "name": "memory.pss_total_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "pss",
       "points": [
         [
@@ -417,7 +417,7 @@
       "name": "memory.private_dirty_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "private_dirty",
       "points": [
         [
@@ -430,7 +430,7 @@
       "name": "memory.native_heap_rss_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "native_heap",
       "points": [
         [
@@ -443,7 +443,7 @@
       "name": "memory.dalvik_heap_rss_bytes",
       "unit": "bytes",
       "provider": "dumpsys meminfo",
-      "process_instance_id": "android|emulator-5554|io.pizzahut.hutbot.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
+      "process_instance_id": "android|emulator-5554|com.acme.shopper.debug|pid=22869|start=1322547|boot=9c9e8cbb-9971-41fb-b5d1-874abf4ebd1e",
       "family": "dalvik_heap",
       "points": [
         [

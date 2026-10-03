@@ -154,7 +154,7 @@ MPI_TEST(simpleperf_meta_info_yields_real_build_facts, {"C11", "C18"}) {
       read_fixture("provider-output/android-simpleperf-report-sample.real.txt"));
   // These are build facts read off the device, which is stronger than anything
   // inferred host-side.
-  MPI_CHECK_EQ(parsed.app_package_name, std::string("io.pizzahut.hutbot.debug"));
+  MPI_CHECK_EQ(parsed.app_package_name, std::string("com.acme.shopper.debug"));
   MPI_CHECK_MSG(parsed.app_type == "debuggable",
                 "the captured app really is a debug build, got '" +
                     parsed.app_type + "'");
@@ -443,7 +443,7 @@ MPI_TEST(am_start_w_parses_a_real_cold_launch, {"DET-07", "J14"}) {
   // from how long the launch took.
   MPI_CHECK_EQ(r.launch_state, std::string("COLD"));
   MPI_CHECK_EQ(r.component,
-               std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
+               std::string("com.acme.shopper.debug/com.acme.MainActivity"));
   MPI_CHECK(r.total_time_ns.has_value());
   MPI_CHECK_EQ(*r.total_time_ns, model::TimeNs{4889} * 1000000);
   MPI_CHECK(r.wait_time_ns.has_value());
@@ -474,7 +474,7 @@ MPI_TEST(displayed_log_parses_the_platform_first_frame_figure, {"DET-07", "J14"}
   MPI_CHECK_EQ(recs.size(), std::size_t{1});
   if (recs.empty()) return;
   MPI_CHECK_EQ(recs.front().component,
-               std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
+               std::string("com.acme.shopper.debug/com.acme.MainActivity"));
   // "+4s889ms"
   MPI_CHECK_EQ(recs.front().elapsed_ns, model::TimeNs{4889} * 1000000);
 }
@@ -496,7 +496,7 @@ MPI_TEST(displayed_log_reads_each_unit_rather_than_assuming_a_shape, {"D18"}) {
 MPI_TEST(resolve_activity_reads_the_component_not_the_details, {"A21"}) {
   MPI_CHECK_EQ(android::parse_resolved_activity(
                    read_fixture("provider-output/android-resolve-activity.real.txt")),
-               std::string("io.pizzahut.hutbot.debug/io.yum.MainActivity"));
+               std::string("com.acme.shopper.debug/com.acme.MainActivity"));
   // A package with no launchable activity is a real answer, not an error.
   MPI_CHECK(android::parse_resolved_activity("No activity found\n").empty());
 }
@@ -514,7 +514,7 @@ namespace {
 // fixture came from.
 std::vector<android::AppThread> fixture_threads() {
   return {
-      {3378, "ut.hutbot.debug"},   // tid == pid: the UI main thread
+      {3378, "e.shopper.debug"},   // tid == pid: the UI main thread
       {3440, "SharedPreferenc"},   // the thread that blocked on a page read
       {3452, "ScionFrontendAp"},
       {3454, "Firebase Backgr"},
@@ -529,7 +529,7 @@ model::NormalizedTrace mapped_fixture() {
   out.session_id = "atrace-fixture";
   out.primary_clock_domain = "android.boottime.ns";
   android::map_atrace_to_trace(parsed, fixture_threads(), 3378,
-                               "android|emulator|io.pizzahut.hutbot.debug|pid=3378",
+                               "android|emulator|com.acme.shopper.debug|pid=3378",
                                out);
   return out;
 }
@@ -576,7 +576,7 @@ MPI_TEST(atrace_mapping_attributes_only_the_apps_threads, {"B01", "E17", "F11"})
   MPI_CHECK(main != nullptr);
   if (main != nullptr) {
     MPI_CHECK_EQ(main->tid, 3378);
-    MPI_CHECK_EQ(main->name, std::string("ut.hutbot.debug"));
+    MPI_CHECK_EQ(main->name, std::string("e.shopper.debug"));
   }
 }
 
@@ -644,24 +644,24 @@ MPI_TEST(det03_reports_a_main_thread_block_with_its_slice,
   const auto parsed = android::parse_atrace(
       "# tracer: nop\n"
       "# entries-in-buffer/entries-written: 12/12   #P:4\n"
-      " ut.hutbot.debug-3378 (   3378) [001] ..... 100.000000: "
+      " e.shopper.debug-3378 (   3378) [001] ..... 100.000000: "
       "tracing_mark_write: B|3378|SharedPreferencesImpl#loadFromDisk\n"
-      " ut.hutbot.debug-3378 (   3378) [001] d..2. 100.001000: "
+      " e.shopper.debug-3378 (   3378) [001] d..2. 100.001000: "
       "sched_blocked_reason: pid=3378 iowait=1 "
       "caller=folio_wait_bit_common+0x2b0/0x408\n"
-      " ut.hutbot.debug-3378 (   3378) [001] d..2. 100.001000: sched_switch: "
-      "prev_comm=ut.hutbot.debug prev_pid=3378 prev_prio=110 prev_state=D ==> "
+      " e.shopper.debug-3378 (   3378) [001] d..2. 100.001000: sched_switch: "
+      "prev_comm=e.shopper.debug prev_pid=3378 prev_prio=110 prev_state=D ==> "
       "next_comm=swapper/1 next_pid=0 next_prio=120\n"
       " <idle>-0 (-------) [001] d..2. 100.041000: sched_switch: "
       "prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> "
-      "next_comm=ut.hutbot.debug next_pid=3378 next_prio=110\n"
-      " ut.hutbot.debug-3378 (   3378) [001] ..... 100.045000: "
+      "next_comm=e.shopper.debug next_pid=3378 next_prio=110\n"
+      " e.shopper.debug-3378 (   3378) [001] ..... 100.045000: "
       "tracing_mark_write: E|3378\n");
 
   model::NormalizedTrace trace;
   trace.session_id = "det03-main-thread";
   trace.primary_clock_domain = "android.boottime.ns";
-  android::map_atrace_to_trace(parsed, {{3378, "ut.hutbot.debug"}}, 3378,
+  android::map_atrace_to_trace(parsed, {{3378, "e.shopper.debug"}}, 3378,
                                "proc", trace);
 
   symbols::SymbolService symbols;

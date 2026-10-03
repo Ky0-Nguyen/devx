@@ -39,10 +39,10 @@ TRACE:
          sugov:3-282     (    282) [003] ..... 17845.268739: cpu_frequency: state=2 cpu_id=3
          sugov:3-282     (    282) [003] d..2. 17845.268743: sched_switch: prev_comm=sugov:3 prev_pid=282 prev_prio=-1 prev_state=S ==> next_comm=app next_pid=593 next_prio=97
              app-593     (    489) [003] d..5. 17845.268774: sched_waking: comm=s.nexuslauncher pid=1029 prio=120 target_cpu=001
-             app-593     (    489) [003] d..5. 17845.268832: sched_waking: comm=ut.hutbot.debug pid=25747 prio=110 target_cpu=000
+             app-593     (    489) [003] d..5. 17845.268832: sched_waking: comm=e.shopper.debug pid=25747 prio=110 target_cpu=000
              app-593     (    489) [003] d..2. 17845.268897: sched_switch: prev_comm=app prev_pid=593 prev_prio=97 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
           <idle>-0       (-------) [001] dNh2. 17845.269018: sched_wakeup: comm=s.nexuslauncher pid=1029 prio=120 target_cpu=001
-          <idle>-0       (-------) [000] dNh2. 17845.269028: sched_wakeup: comm=ut.hutbot.debug pid=25747 prio=110 target_cpu=000
+          <idle>-0       (-------) [000] dNh2. 17845.269028: sched_wakeup: comm=e.shopper.debug pid=25747 prio=110 target_cpu=000
           <idle>-0       (-------) [001] d..2. 17845.269086: sched_switch: prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=s.nexuslauncher next_pid=1029 next_prio=120
  s.nexuslauncher-1029    (   1029) [001] ..... 17845.269133: tracing_mark_write: B|1029|Choreographer#onVsync 4600362
           <idle>-0       (-------) [000] dNh4. 17845.269134: sched_waking: comm=sugov:0 pid=279 prio=-1 target_cpu=000
@@ -52,20 +52,20 @@ TRACE:
  s.nexuslauncher-1029    (   1029) [001] ..... 17845.269176: tracing_mark_write: B|1029|input
           <idle>-0       (-------) [000] d..2. 17845.269186: sched_switch: prev_comm=swapper/0 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=sugov:0 next_pid=279 next_prio=-1
          sugov:0-279     (    279) [000] ..... 17845.269189: cpu_frequency: state=1 cpu_id=0
-         sugov:0-279     (    279) [000] d..2. 17845.269193: sched_switch: prev_comm=sugov:0 prev_pid=279 prev_prio=-1 prev_state=S ==> next_comm=ut.hutbot.debug next_pid=25747 next_prio=110
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269276: tracing_mark_write: B|25747|Choreographer#onVsync 4600369
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269294: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269312: tracing_mark_write: B|25747|Choreographer#doFrame 4600369
+         sugov:0-279     (    279) [000] d..2. 17845.269193: sched_switch: prev_comm=sugov:0 prev_pid=279 prev_prio=-1 prev_state=S ==> next_comm=e.shopper.debug next_pid=25747 next_prio=110
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269276: tracing_mark_write: B|25747|Choreographer#onVsync 4600369
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269294: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269312: tracing_mark_write: B|25747|Choreographer#doFrame 4600369
  s.nexuslauncher-1029    (   1029) [001] d..5. 17845.269312: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269321: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269327: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269375: tracing_mark_write: S|25747|deliverInputEvent|-500310796
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269321: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269327: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269375: tracing_mark_write: S|25747|deliverInputEvent|-500310796
  s.nexuslauncher-1029    (   1029) [001] ..... 17845.269388: tracing_mark_write: B|1029|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269393: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845255000000 id=0xe22ddcf4
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269404: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xe22ddcf4
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269393: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845255000000 id=0xe22ddcf4
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269404: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xe22ddcf4
  s.nexuslauncher-1029    (   1029) [001] d..5. 17845.269411: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269412: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] .n... 17845.269419: tracing_mark_write: B|25747|NativePostImeInputStage id=0xe22ddcf4
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269412: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] .n... 17845.269419: tracing_mark_write: B|25747|NativePostImeInputStage id=0xe22ddcf4
           <idle>-0       (-------) [003] dNh2. 17845.269441: sched_wakeup: comm=InputDispatcher pid=741 prio=97 target_cpu=003
  s.nexuslauncher-1029    (   1029) [001] d..6. 17845.269491: sched_wakeup: comm=binder:489_3 pid=691 prio=98 target_cpu=000
  s.nexuslauncher-1029    (   1029) [001] ..... 17845.269502: tracing_mark_write: E|1029
@@ -73,78 +73,78 @@ TRACE:
  s.nexuslauncher-1029    (   1029) [001] ..... 17845.269511: tracing_mark_write: E|1029
  s.nexuslauncher-1029    (   1029) [001] d..2. 17845.269528: sched_switch: prev_comm=s.nexuslauncher prev_pid=1029 prev_prio=120 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
           <idle>-0       (-------) [003] d..2. 17845.269561: sched_switch: prev_comm=swapper/3 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.269590: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=R ==> next_comm=binder:489_3 next_pid=691 next_prio=98
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.269590: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=R ==> next_comm=binder:489_3 next_pid=691 next_prio=98
  InputDispatcher-741     (    637) [003] d..2. 17845.269590: sched_switch: prev_comm=InputDispatcher prev_pid=741 prev_prio=97 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
-    binder:489_3-691     (    489) [000] d..2. 17845.269700: sched_switch: prev_comm=binder:489_3 prev_pid=691 prev_prio=120 prev_state=R+ ==> next_comm=ut.hutbot.debug next_pid=25747 next_prio=110
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269710: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.269740: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xe22ddcf4
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.270923: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.270928: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.270966: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.270972: tracing_mark_write: F|25747|deliverInputEvent|-500310796
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.270985: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271060: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271076: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.271094: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=001
+    binder:489_3-691     (    489) [000] d..2. 17845.269700: sched_switch: prev_comm=binder:489_3 prev_pid=691 prev_prio=120 prev_state=R+ ==> next_comm=e.shopper.debug next_pid=25747 next_prio=110
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269710: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.269740: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xe22ddcf4
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.270923: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.270928: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.270966: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.270972: tracing_mark_write: F|25747|deliverInputEvent|-500310796
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.270985: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271060: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271076: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.271094: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=001
           <idle>-0       (-------) [003] dNh2. 17845.271123: sched_wakeup: comm=InputDispatcher pid=741 prio=97 target_cpu=003
           <idle>-0       (-------) [003] d..2. 17845.271278: sched_switch: prev_comm=swapper/3 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
  InputDispatcher-741     (    637) [003] d..2. 17845.271300: sched_waking: comm=binder:637_1E pid=1735 prio=120 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271384: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.271405: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [000] d..6. 17845.271413: sched_wakeup: comm=RenderThread pid=25780 prio=110 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271416: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271420: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271431: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271384: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.271405: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
+ e.shopper.debug-25747   (  25747) [000] d..6. 17845.271413: sched_wakeup: comm=RenderThread pid=25780 prio=110 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271416: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271420: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271431: tracing_mark_write: B|25747|animation
  InputDispatcher-741     (    637) [003] d..2. 17845.271464: sched_switch: prev_comm=InputDispatcher prev_pid=741 prev_prio=97 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
           <idle>-0       (-------) [002] dNh2. 17845.271538: sched_wakeup: comm=binder:637_1E pid=1735 prio=120 target_cpu=002
           <idle>-0       (-------) [001] dNh2. 17845.271601: sched_wakeup: comm=binder:489_2 pid=529 prio=98 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.271638: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.271638: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
           <idle>-0       (-------) [001] dNh4. 17845.271656: sched_waking: comm=sugov:1 pid=280 prio=-1 target_cpu=001
           <idle>-0       (-------) [001] dNh5. 17845.271659: sched_wakeup: comm=sugov:1 pid=280 prio=-1 target_cpu=001
           <idle>-0       (-------) [001] d..2. 17845.271713: sched_switch: prev_comm=swapper/1 prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=sugov:1 next_pid=280 next_prio=-1
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271885: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.271894: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.271925: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=binder:489_3 next_pid=691 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271885: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.271894: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.271925: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=binder:489_3 next_pid=691 next_prio=120
     RenderThread-25780   (  25747) [000] ..... 17845.271941: tracing_mark_write: B|25747|sendCpuLoadResetHint
     RenderThread-25780   (  25747) [000] ..... 17845.271943: tracing_mark_write: E|25747
     RenderThread-25780   (  25747) [000] d..2. 17845.271956: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.272691: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.272691: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.273433: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
         mqt_v_js-25966   (  25747) [003] d.h5. 17845.284690: sched_waking: comm=TimerDispatch pid=592 prio=97 target_cpu=000
         mqt_v_js-25966   (  25747) [003] d..2. 17845.285592: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=app next_pid=593 next_prio=97
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286252: tracing_mark_write: B|25747|Choreographer#onVsync 4600383
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286284: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286310: tracing_mark_write: B|25747|Choreographer#doFrame 4600383
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286321: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286329: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286399: tracing_mark_write: S|25747|deliverInputEvent|-638035993
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286422: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845279000000 id=0xd9f857e7
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286433: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xd9f857e7
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286443: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286451: tracing_mark_write: B|25747|NativePostImeInputStage id=0xd9f857e7
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286453: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.286460: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xd9f857e7
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286252: tracing_mark_write: B|25747|Choreographer#onVsync 4600383
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286284: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286310: tracing_mark_write: B|25747|Choreographer#doFrame 4600383
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286321: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286329: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286399: tracing_mark_write: S|25747|deliverInputEvent|-638035993
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286422: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845279000000 id=0xd9f857e7
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286433: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xd9f857e7
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286443: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286451: tracing_mark_write: B|25747|NativePostImeInputStage id=0xd9f857e7
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286453: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.286460: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xd9f857e7
         mqt_v_js-25966   (  25747) [003] d..2. 17845.286914: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
- ut.hutbot.debug-25747   (  25747) [000] d.h5. 17845.287241: sched_waking: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] d.h6. 17845.287247: sched_wakeup: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288547: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288554: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288596: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288604: tracing_mark_write: F|25747|deliverInputEvent|-638035993
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.288639: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] d..6. 17845.288703: sched_wakeup: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288713: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288738: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.288775: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288834: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.288845: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] d.h5. 17845.287241: sched_waking: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] d.h6. 17845.287247: sched_wakeup: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288547: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288554: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288596: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288604: tracing_mark_write: F|25747|deliverInputEvent|-638035993
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.288639: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] d..6. 17845.288703: sched_wakeup: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288713: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288738: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.288775: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288834: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.288845: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=000
         mqt_v_js-25966   (  25747) [003] d..2. 17845.288858: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288904: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288908: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288916: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288978: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.288984: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.289094: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=kworker/0:4 next_pid=1835 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288904: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288908: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288916: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288978: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.288984: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.289094: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=kworker/0:4 next_pid=1835 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.289147: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
      kworker/0:4-1835    (   1835) [000] d..2. 17845.289415: sched_blocked_reason: pid=1835 iowait=0 caller=virtio_transport_tx_work+0x34/0xe0 [vmw_vsock_virtio_transport]
      kworker/0:4-1835    (   1835) [000] d..2. 17845.289426: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
@@ -152,262 +152,262 @@ TRACE:
     RenderThread-25780   (  25747) [002] ..... 17845.289560: tracing_mark_write: E|25747
     RenderThread-25780   (  25747) [002] d..2. 17845.289566: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.290208: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.290740: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.290740: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.290998: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
         mqt_v_js-25966   (  25747) [003] d..2. 17845.293463: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303548: tracing_mark_write: B|25747|Choreographer#onVsync 4600397
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303570: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303593: tracing_mark_write: B|25747|Choreographer#doFrame 4600397
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303603: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303609: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303659: tracing_mark_write: S|25747|deliverInputEvent|-239556829
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303676: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845296320336 id=0xf1b8a723
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303686: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xf1b8a723
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303694: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303701: tracing_mark_write: B|25747|NativePostImeInputStage id=0xf1b8a723
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303704: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.303710: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xf1b8a723
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305321: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305327: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305369: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305376: tracing_mark_write: F|25747|deliverInputEvent|-239556829
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.305392: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305476: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305493: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.305512: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305575: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.305583: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305697: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305701: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305710: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.305831: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305909: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.305916: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.305944: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303548: tracing_mark_write: B|25747|Choreographer#onVsync 4600397
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303570: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303593: tracing_mark_write: B|25747|Choreographer#doFrame 4600397
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303603: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303609: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303659: tracing_mark_write: S|25747|deliverInputEvent|-239556829
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303676: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845296320336 id=0xf1b8a723
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303686: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xf1b8a723
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303694: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303701: tracing_mark_write: B|25747|NativePostImeInputStage id=0xf1b8a723
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303704: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.303710: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xf1b8a723
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305321: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305327: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305369: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305376: tracing_mark_write: F|25747|deliverInputEvent|-239556829
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.305392: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305476: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305493: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.305512: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305575: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.305583: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305697: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305701: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305710: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.305831: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305909: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.305916: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.305944: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
     RenderThread-25780   (  25747) [002] ..... 17845.305960: tracing_mark_write: B|25747|sendCpuLoadResetHint
     RenderThread-25780   (  25747) [002] ..... 17845.305963: tracing_mark_write: E|25747
     RenderThread-25780   (  25747) [002] d..2. 17845.305978: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.306918: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.306918: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.307165: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
         mqt_v_js-25966   (  25747) [003] d..2. 17845.307615: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.311505: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321349: tracing_mark_write: B|25747|Choreographer#onVsync 4600411
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321359: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321369: tracing_mark_write: B|25747|Choreographer#doFrame 4600411
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321373: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321376: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321400: tracing_mark_write: S|25747|deliverInputEvent|-60609090
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321408: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845312987002 id=0xfc632dbe
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321414: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xfc632dbe
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321436: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321440: tracing_mark_write: B|25747|NativePostImeInputStage id=0xfc632dbe
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321441: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.321444: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xfc632dbe
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322133: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322136: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322162: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322166: tracing_mark_write: F|25747|deliverInputEvent|-60609090
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.322176: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322253: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322270: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.322292: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322453: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.322465: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322555: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322559: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322570: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.322841: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322945: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.322949: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.323032: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321349: tracing_mark_write: B|25747|Choreographer#onVsync 4600411
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321359: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321369: tracing_mark_write: B|25747|Choreographer#doFrame 4600411
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321373: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321376: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321400: tracing_mark_write: S|25747|deliverInputEvent|-60609090
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321408: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845312987002 id=0xfc632dbe
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321414: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xfc632dbe
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321436: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321440: tracing_mark_write: B|25747|NativePostImeInputStage id=0xfc632dbe
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321441: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.321444: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xfc632dbe
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322133: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322136: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322162: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322166: tracing_mark_write: F|25747|deliverInputEvent|-60609090
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.322176: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322253: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322270: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.322292: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322453: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.322465: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322555: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322559: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322570: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.322841: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322945: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.322949: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.323032: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
     RenderThread-25780   (  25747) [002] ..... 17845.323103: tracing_mark_write: B|25747|sendCpuLoadResetHint
     RenderThread-25780   (  25747) [002] ..... 17845.323105: tracing_mark_write: E|25747
     RenderThread-25780   (  25747) [002] d..2. 17845.323109: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.323998: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.323998: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.326076: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336730: tracing_mark_write: B|25747|Choreographer#onVsync 4600425
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336742: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336757: tracing_mark_write: B|25747|Choreographer#doFrame 4600425
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336763: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336767: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336800: tracing_mark_write: S|25747|deliverInputEvent|-757713763
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336815: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845329653668 id=0xd2d6349d
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336821: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xd2d6349d
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336827: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336986: tracing_mark_write: B|25747|NativePostImeInputStage id=0xd2d6349d
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336988: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.336998: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xd2d6349d
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.337795: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.337799: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.337827: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.337831: tracing_mark_write: F|25747|deliverInputEvent|-757713763
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.337841: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.337934: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.337946: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.337961: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.338184: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.338192: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [000] d..6. 17845.338242: sched_wakeup: comm=RenderThread pid=25780 prio=110 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] d.h4. 17845.338988: sched_waking: comm=sugov:0 pid=279 prio=-1 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] dNh5. 17845.338990: sched_wakeup: comm=sugov:0 pid=279 prio=-1 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.339141: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=R+ ==> next_comm=sugov:0 next_pid=279 next_prio=-1
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336730: tracing_mark_write: B|25747|Choreographer#onVsync 4600425
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336742: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336757: tracing_mark_write: B|25747|Choreographer#doFrame 4600425
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336763: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336767: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336800: tracing_mark_write: S|25747|deliverInputEvent|-757713763
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336815: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845329653668 id=0xd2d6349d
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336821: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xd2d6349d
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336827: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336986: tracing_mark_write: B|25747|NativePostImeInputStage id=0xd2d6349d
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336988: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.336998: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xd2d6349d
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.337795: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.337799: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.337827: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.337831: tracing_mark_write: F|25747|deliverInputEvent|-757713763
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.337841: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.337934: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.337946: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.337961: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.338184: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.338192: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
+ e.shopper.debug-25747   (  25747) [000] d..6. 17845.338242: sched_wakeup: comm=RenderThread pid=25780 prio=110 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] d.h4. 17845.338988: sched_waking: comm=sugov:0 pid=279 prio=-1 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] dNh5. 17845.338990: sched_wakeup: comm=sugov:0 pid=279 prio=-1 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.339141: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=R+ ==> next_comm=sugov:0 next_pid=279 next_prio=-1
     RenderThread-25780   (  25747) [000] ..... 17845.339156: tracing_mark_write: B|25747|sendCpuLoadResetHint
     RenderThread-25780   (  25747) [000] ..... 17845.339158: tracing_mark_write: E|25747
-    RenderThread-25780   (  25747) [000] d..2. 17845.339167: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=ut.hutbot.debug next_pid=25747 next_prio=110
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.339171: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.339174: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.339181: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.339350: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.339458: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.339472: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.339487: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.340264: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+    RenderThread-25780   (  25747) [000] d..2. 17845.339167: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=e.shopper.debug next_pid=25747 next_prio=110
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.339171: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.339174: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.339181: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.339350: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.339458: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.339472: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.339487: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.340264: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
         mqt_v_js-25966   (  25747) [001] d..2. 17845.340600: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.354251: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354374: tracing_mark_write: B|25747|Choreographer#onVsync 4600439
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354390: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354405: tracing_mark_write: B|25747|Choreographer#doFrame 4600439
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354410: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354414: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [000] d.h4. 17845.354617: sched_waking: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] dNh5. 17845.354619: sched_wakeup: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.354670: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=R ==> next_comm=kworker/0:4 next_pid=1835 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354374: tracing_mark_write: B|25747|Choreographer#onVsync 4600439
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354390: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354405: tracing_mark_write: B|25747|Choreographer#doFrame 4600439
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354410: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354414: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [000] d.h4. 17845.354617: sched_waking: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] dNh5. 17845.354619: sched_wakeup: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.354670: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=R ==> next_comm=kworker/0:4 next_pid=1835 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.354678: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354702: tracing_mark_write: S|25747|deliverInputEvent|-201219076
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354733: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845346320334 id=0xf401a3fc
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354741: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xf401a3fc
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354747: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354752: tracing_mark_write: B|25747|NativePostImeInputStage id=0xf401a3fc
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354753: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.354757: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xf401a3fc
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.355896: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.355902: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.355946: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.355953: tracing_mark_write: F|25747|deliverInputEvent|-201219076
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.355970: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356176: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356193: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.356212: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356288: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.356296: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356433: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356435: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356441: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.356691: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=001
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356842: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.356848: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.356868: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354702: tracing_mark_write: S|25747|deliverInputEvent|-201219076
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354733: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845346320334 id=0xf401a3fc
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354741: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xf401a3fc
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354747: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354752: tracing_mark_write: B|25747|NativePostImeInputStage id=0xf401a3fc
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354753: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.354757: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xf401a3fc
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.355896: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.355902: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.355946: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.355953: tracing_mark_write: F|25747|deliverInputEvent|-201219076
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.355970: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356176: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356193: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.356212: sched_waking: comm=binder:489_3 pid=691 prio=98 target_cpu=001
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356288: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.356296: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356433: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356435: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356441: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.356691: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=001
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356842: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.356848: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.356868: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
     RenderThread-25780   (  25747) [002] ..... 17845.357221: tracing_mark_write: B|25747|sendCpuLoadResetHint
     RenderThread-25780   (  25747) [002] ..... 17845.357222: tracing_mark_write: E|25747
     RenderThread-25780   (  25747) [002] d..2. 17845.357227: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.357799: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.357799: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=ndroid.systemui next_pid=904 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.358034: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
         mqt_v_js-25966   (  25747) [003] d..2. 17845.358378: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370245: tracing_mark_write: B|25747|Choreographer#onVsync 4600453
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370262: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370276: tracing_mark_write: B|25747|Choreographer#doFrame 4600453
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370283: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370287: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370324: tracing_mark_write: S|25747|deliverInputEvent|-757360260
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370337: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845362987000 id=0xd2db997c
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370345: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xd2db997c
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370351: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370356: tracing_mark_write: B|25747|NativePostImeInputStage id=0xd2db997c
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370358: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.370362: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xd2db997c
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.371567: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.371573: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.371613: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.371620: tracing_mark_write: F|25747|deliverInputEvent|-757360260
- ut.hutbot.debug-25747   (  25747) [001] d..5. 17845.371637: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.371821: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.371837: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [001] d..5. 17845.371879: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.372331: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] d..5. 17845.372341: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.372345: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.372347: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.372355: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [001] d..5. 17845.372462: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.372474: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] ..... 17845.372479: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [001] d..2. 17845.372513: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=binder:489_3 next_pid=691 next_prio=120
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370245: tracing_mark_write: B|25747|Choreographer#onVsync 4600453
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370262: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370276: tracing_mark_write: B|25747|Choreographer#doFrame 4600453
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370283: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370287: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370324: tracing_mark_write: S|25747|deliverInputEvent|-757360260
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370337: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845362987000 id=0xd2db997c
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370345: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xd2db997c
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370351: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370356: tracing_mark_write: B|25747|NativePostImeInputStage id=0xd2db997c
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370358: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.370362: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xd2db997c
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.371567: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.371573: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.371613: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.371620: tracing_mark_write: F|25747|deliverInputEvent|-757360260
+ e.shopper.debug-25747   (  25747) [001] d..5. 17845.371637: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.371821: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.371837: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [001] d..5. 17845.371879: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=002
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.372331: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] d..5. 17845.372341: sched_waking: comm=RenderThread pid=25780 prio=110 target_cpu=002
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.372345: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.372347: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.372355: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [001] d..5. 17845.372462: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.372474: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] ..... 17845.372479: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [001] d..2. 17845.372513: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=binder:489_3 next_pid=691 next_prio=120
     RenderThread-25780   (  25747) [000] ..... 17845.373143: tracing_mark_write: B|25747|sendCpuLoadResetHint
     RenderThread-25780   (  25747) [000] ..... 17845.373145: tracing_mark_write: E|25747
     RenderThread-25780   (  25747) [000] d..2. 17845.373529: sched_switch: prev_comm=RenderThread prev_pid=25780 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
         mqt_v_js-25966   (  25747) [003] d..2. 17845.374007: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=R ==> next_comm=InputDispatcher next_pid=741 next_prio=97
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374691: tracing_mark_write: S|25747|deliverInputEvent|-271271438
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374715: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845373000000 id=0xefd4b9f2
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374723: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xefd4b9f2
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374731: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374736: tracing_mark_write: B|25747|NativePostImeInputStage id=0xefd4b9f2
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374738: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.374743: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xefd4b9f2
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374691: tracing_mark_write: S|25747|deliverInputEvent|-271271438
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374715: tracing_mark_write: B|25747|deliverInputEvent src=0x1002 eventTimeNano=17845373000000 id=0xefd4b9f2
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374723: tracing_mark_write: B|25747|EarlyPostImeInputStage id=0xefd4b9f2
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374731: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374736: tracing_mark_write: B|25747|NativePostImeInputStage id=0xefd4b9f2
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374738: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.374743: tracing_mark_write: B|25747|ViewPostImeInputStage id=0xefd4b9f2
         mqt_v_js-25966   (  25747) [003] d..2. 17845.374888: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.377373: tracing_mark_write: B|25747|View#onTouchEvent
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.377379: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.377455: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.377464: tracing_mark_write: F|25747|deliverInputEvent|-271271438
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.377481: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.377600: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.377634: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.377373: tracing_mark_write: B|25747|View#onTouchEvent
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.377379: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.377455: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.377464: tracing_mark_write: F|25747|deliverInputEvent|-271271438
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.377481: sched_waking: comm=InputDispatcher pid=741 prio=97 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.377600: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.377634: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.380629: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
      kworker/0:4-1835    (   1835) [000] d..2. 17845.380693: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
      kworker/0:4-1835    (   1835) [000] d..2. 17845.385718: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
      kworker/0:4-1835    (   1835) [000] d..2. 17845.386411: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387865: tracing_mark_write: B|25747|Choreographer#onVsync 4600467
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387891: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387917: tracing_mark_write: B|25747|Choreographer#doFrame 4600467
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387926: tracing_mark_write: B|25747|input
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387931: tracing_mark_write: B|25747|VRI[MainActivity]
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387946: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387948: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.387951: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [003] d.s3. 17845.388376: sched_waking: comm=rcuog/2 pid=40 prio=98 target_cpu=002
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387865: tracing_mark_write: B|25747|Choreographer#onVsync 4600467
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387891: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387917: tracing_mark_write: B|25747|Choreographer#doFrame 4600467
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387926: tracing_mark_write: B|25747|input
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387931: tracing_mark_write: B|25747|VRI[MainActivity]
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387946: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387948: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.387951: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [003] d.s3. 17845.388376: sched_waking: comm=rcuog/2 pid=40 prio=98 target_cpu=002
      kworker/0:4-1835    (   1835) [000] d..2. 17845.388463: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.388471: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [003] d..5. 17845.388518: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.388879: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [003] d..5. 17845.389052: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.388471: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [003] d..5. 17845.388518: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=002
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.388879: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [003] d..5. 17845.389052: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=003
         mqt_v_js-25966   (  25747) [000] d..2. 17845.390562: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [003] d..2. 17845.390871: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=R+ ==> next_comm=binder:489_2 next_pid=529 next_prio=98
- ut.hutbot.debug-25747   (  25747) [003] d..2. 17845.390916: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.391195: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [003] ..... 17845.391217: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [003] d..2. 17845.391239: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [003] d..2. 17845.390871: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=R+ ==> next_comm=binder:489_2 next_pid=529 next_prio=98
+ e.shopper.debug-25747   (  25747) [003] d..2. 17845.390916: sched_waking: comm=mqt_v_js pid=25966 prio=116 target_cpu=000
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.391195: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [003] ..... 17845.391217: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [003] d..2. 17845.391239: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/3 next_pid=0 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.391336: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
         mqt_v_js-25966   (  25747) [001] d..2. 17845.398048: sched_switch: prev_comm=mqt_v_js prev_pid=25966 prev_prio=116 prev_state=S ==> next_comm=swapper/1 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402073: tracing_mark_write: B|25747|Choreographer#onVsync 4600474
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402099: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402172: tracing_mark_write: B|25747|Choreographer#doFrame 4600474
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402182: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402355: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.402491: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402604: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402676: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.402684: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.402715: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.409104: sched_waking: comm=Jit thread pool pid=25752 prio=129 target_cpu=002
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.409302: tracing_mark_write: B|25747|MSG_INITIAL_TOUCH_BOOST_TIMEOUT
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.409355: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.409388: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402073: tracing_mark_write: B|25747|Choreographer#onVsync 4600474
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402099: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402172: tracing_mark_write: B|25747|Choreographer#doFrame 4600474
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402182: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402355: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.402491: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402604: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402676: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.402684: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.402715: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.409104: sched_waking: comm=Jit thread pool pid=25752 prio=129 target_cpu=002
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.409302: tracing_mark_write: B|25747|MSG_INITIAL_TOUCH_BOOST_TIMEOUT
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.409355: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.409388: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=swapper/0 next_pid=0 next_prio=120
  Jit thread pool-25752   (  25747) [002] d..2. 17845.410584: sched_switch: prev_comm=Jit thread pool prev_pid=25752 prev_prio=129 prev_state=S ==> next_comm=swapper/2 next_pid=0 next_prio=120
    kworker/u16:1-26853   (  26853) [000] d..2. 17845.412441: sched_blocked_reason: pid=26853 iowait=0 caller=worker_thread+0xac/0x3e8
             adbd-577     (    517) [000] d..2. 17845.416434: sched_blocked_reason: pid=577 iowait=0 caller=lock_sock_nested+0x70/0xcc
      kworker/0:4-1835    (   1835) [000] d..2. 17845.416650: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.419624: tracing_mark_write: B|25747|Choreographer#onVsync 4600481
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.419650: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.419673: tracing_mark_write: B|25747|Choreographer#doFrame 4600481
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.419685: tracing_mark_write: B|25747|animation
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.419802: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
- ut.hutbot.debug-25747   (  25747) [000] d..5. 17845.419836: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] d..6. 17845.419967: sched_wakeup: comm=binder:489_2 pid=529 prio=98 target_cpu=003
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.419990: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d.h4. 17845.420811: sched_waking: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] d.h5. 17845.420815: sched_wakeup: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.420937: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] ..... 17845.420947: tracing_mark_write: E|25747
- ut.hutbot.debug-25747   (  25747) [000] d..2. 17845.421043: sched_switch: prev_comm=ut.hutbot.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=kworker/0:4 next_pid=1835 next_prio=120
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.419624: tracing_mark_write: B|25747|Choreographer#onVsync 4600481
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.419650: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.419673: tracing_mark_write: B|25747|Choreographer#doFrame 4600481
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.419685: tracing_mark_write: B|25747|animation
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.419802: tracing_mark_write: B|25747|Choreographer#scheduleVsyncLocked
+ e.shopper.debug-25747   (  25747) [000] d..5. 17845.419836: sched_waking: comm=binder:489_2 pid=529 prio=98 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] d..6. 17845.419967: sched_wakeup: comm=binder:489_2 pid=529 prio=98 target_cpu=003
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.419990: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d.h4. 17845.420811: sched_waking: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] d.h5. 17845.420815: sched_wakeup: comm=kworker/0:4 pid=1835 prio=120 target_cpu=000
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.420937: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] ..... 17845.420947: tracing_mark_write: E|25747
+ e.shopper.debug-25747   (  25747) [000] d..2. 17845.421043: sched_switch: prev_comm=e.shopper.debug prev_pid=25747 prev_prio=110 prev_state=S ==> next_comm=kworker/0:4 next_pid=1835 next_prio=120
      kworker/0:4-1835    (   1835) [000] d..2. 17845.421077: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
      kworker/0:4-1835    (   1835) [000] d..2. 17845.421302: sched_blocked_reason: pid=1835 iowait=0 caller=worker_thread+0xac/0x3e8
             adbd-577     (    517) [000] d..2. 17845.422118: sched_blocked_reason: pid=577 iowait=0 caller=lock_sock_nested+0x70/0xcc

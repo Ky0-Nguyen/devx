@@ -83,7 +83,7 @@ std::string ddi_refusal_text(const DeviceReadiness& readiness);
 /// id as a whole path segment -- and that matches nothing real. Checked
 /// against an actual container path:
 ///
-///     .../Bundle/Application/A303B644-.../io.pizzahut.hutbot.debug-1789449967523.app/HutBot
+///     .../Bundle/Application/A303B644-.../com.acme.shopper.debug-1789449967523.app/Shopper
 ///
 /// The bundle id is a segment *prefix* there, not a segment. On a physical
 /// device it is absent entirely: the segment is `<Product>.app`. So the rule

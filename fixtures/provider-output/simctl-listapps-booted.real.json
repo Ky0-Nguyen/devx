@@ -458,20 +458,20 @@
 
     ]
   },
-  "io.pizzahut.hutbot.debug" : {
+  "com.acme.shopper.debug" : {
     "ApplicationType" : "User",
-    "Bundle" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/HutBot.app\/",
+    "Bundle" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/Shopper.app\/",
     "BundleContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/",
-    "CFBundleDisplayName" : "HutBot Debug",
-    "CFBundleExecutable" : "HutBot",
-    "CFBundleIdentifier" : "io.pizzahut.hutbot.debug",
-    "CFBundleName" : "HutBot Debug",
+    "CFBundleDisplayName" : "Shopper Debug",
+    "CFBundleExecutable" : "Shopper",
+    "CFBundleIdentifier" : "com.acme.shopper.debug",
+    "CFBundleName" : "Shopper Debug",
     "CFBundleVersion" : "1",
     "DataContainer" : "file:\/\/\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Data\/Application\/599773E2-35DB-4D66-A9C4-EF1B4905DBB7\/",
     "GroupContainers" : {
 
     },
-    "Path" : "\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/HutBot.app",
+    "Path" : "\/Users\/tan4194\/Library\/Developer\/CoreSimulator\/Devices\/456FA0D8-48C1-4BEC-B087-50E8A046EA5D\/data\/Containers\/Bundle\/Application\/F6542ECA-0FFE-4B66-B521-09317A00D10C\/Shopper.app",
     "SBAppTags" : [
 
     ]

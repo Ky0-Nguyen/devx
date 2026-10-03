@@ -314,7 +314,7 @@ MPI_TEST(a_device_that_vanishes_mid_session_is_named_as_that, {}) {
 
 MPI_TEST(process_attribution_matches_real_container_paths, {}) {
   using mpi::ios::executable_path_names_bundle;
-  const std::string bid = "io.pizzahut.hutbot.debug";
+  const std::string bid = "com.acme.shopper.debug";
 
   // The real shape, from `simctl get_app_container` on this machine. The
   // bundle id is a segment *prefix* here, not a segment -- the old rule
@@ -323,7 +323,7 @@ MPI_TEST(process_attribution_matches_real_container_paths, {}) {
   const std::string real =
       "/private/var/containers/Bundle/Application/"
       "A303B644-4AD8-49C3-A0F6-872F48BA45EE/"
-      "io.pizzahut.hutbot.debug-1789449967523.app/HutBot";
+      "com.acme.shopper.debug-1789449967523.app/Shopper";
   MPI_CHECK_MSG(executable_path_names_bundle(real, bid),
                 "a real container path is matched");
 
@@ -340,7 +340,7 @@ MPI_TEST(process_attribution_matches_real_container_paths, {}) {
   // not_running for it.
   MPI_CHECK_MSG(!executable_path_names_bundle(
                     "/private/var/containers/Bundle/Application/"
-                    "A303B644-4AD8-49C3-A0F6-872F48BA45EE/HutBot.app/HutBot",
+                    "A303B644-4AD8-49C3-A0F6-872F48BA45EE/Shopper.app/Shopper",
                     bid),
                 "a device-shaped path does not name the bundle id, and "
                 "pretending otherwise would attribute a process on no "

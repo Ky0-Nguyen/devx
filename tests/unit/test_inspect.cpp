@@ -24,7 +24,7 @@ std::string fixture_dir() {
 
 /// Feeds the recorded session, skipping the `//` provenance header.
 mpi::observe::InspectReport replay_fixture(std::int64_t* fed) {
-  std::ifstream in(fixture_dir() + "/cdp/recorded-hutbot-startup.jsonl");
+  std::ifstream in(fixture_dir() + "/cdp/recorded-shopper-startup.jsonl");
   mpi::observe::InspectAssembler assembler;
   std::string line;
   std::int64_t count = 0;

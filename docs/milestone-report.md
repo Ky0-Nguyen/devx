@@ -168,7 +168,7 @@ Host: macOS 26.6.2, Apple M4 Pro, 48 GB RAM. Date: 2026-09-14.
 ```
 PLATFORM  FORM       STATE        DEVICE ID                              OS             NAME
 ios       physical   offline      3FF46431-775C-59BB-AD26-D316DFAFA5A6   26.0 (23A340)  QuocBao's iPhone
-ios       physical   offline      6769FAD1-FC2F-5EDD-878B-AEC7BB056048   18.5 (22F76)   iPad Air (Pizza Hut)
+ios       physical   offline      6769FAD1-FC2F-5EDD-878B-AEC7BB056048   18.5 (22F76)   iPad Air (Demo)
 ios       simulator  authorized   456FA0D8-48C1-4BEC-B087-50E8A046EA5D   26.5           iPhone 17 Pro
 ... 24 further simulators ...
 ```

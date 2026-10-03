@@ -606,7 +606,7 @@ do {
 // the claim this view makes, so how it is established is what gets tested.
 do {
     // The UI thread is the only role with a platform signal behind it.
-    var r = classifyThread(name: "io.pizzahut.hutbot.debug", isMainUi: true, isJs: false)
+    var r = classifyThread(name: "com.acme.shopper.debug", isMainUi: true, isJs: false)
     check(r.role == .uiMain && r.basis == .platformSignal,
           "the UI main thread comes from a platform signal", req: ["E20"])
 
@@ -651,7 +651,7 @@ do {
     // the real ones measured on emulator-5554.
     let session = parse(#"""
     {"trace":{"threads":[
-      {"thread_instance_id":"t1","name":"io.pizzahut.hutbot.debug","tid":21854,
+      {"thread_instance_id":"t1","name":"com.acme.shopper.debug","tid":21854,
        "is_main_ui_thread":true,"is_js_thread":false,"sample_count":96},
       {"thread_instance_id":"t2","name":"mqt_v_js","tid":22105,
        "is_main_ui_thread":false,"is_js_thread":true,"sample_count":48},
@@ -1645,7 +1645,7 @@ do {
     // presigned URLs a couple of thousand characters long. One raw line of
     // this is what "có cách nào format response của API ko?" was about.
     let sig = String(repeating: "A", count: 700)
-    let url = "https://yum-hutbot-backend-feeds-staging.s3.eu-west-1."
+    let url = "https://acme-shopper-feeds-staging.s3.eu-west-1."
             + "amazonaws.com/feeds/awards/perfect_product.png"
             + "?X-Amz-Security-Token=\(sig)&X-Amz-Algorithm=AWS4-HMAC-SHA256"
             + "&X-Amz-Signature=\(sig)"
@@ -1668,7 +1668,7 @@ do {
         "request_id": "req-1",
         "method": "GET",
         "status": 200,
-        "url": "https://staging.api.superapp.yum.com/v1/activity-feeds/award-badges",
+        "url": "https://staging.api.shopper.example.com/v1/activity-feeds/award-badges",
         "response_body": body,
         "response_headers": ["authorization": "Bearer \(sig)",
                              "content-type": "application/json"],
@@ -1690,7 +1690,7 @@ do {
     // Slashes stay readable -- a presigned URL escaped into https:\/\/ is
     // unusable for the copy-paste this pane exists to support.
     if case .json(let shown) = b.state {
-        check(shown.contains("https://yum-hutbot"),
+        check(shown.contains("https://acme-shopper"),
               "a URL inside the body stays copy-pasteable")
     }
 
