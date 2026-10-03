@@ -20,8 +20,9 @@ cask "devx" do
   ]
 
   caveats <<~EOS
-    This release is signed ad-hoc and is not notarized. On first launch macOS
-    says the developer cannot be verified: right-click DevX in Applications
-    and choose Open, once.
+    This release is signed ad-hoc and is not notarized, so macOS blocks both
+    DevX and `mpi` at first launch. Right-click DevX in Applications and
+    choose Open; if `mpi` is still stopped, use System Settings > Privacy &
+    Security > Open Anyway.
   EOS
 end
