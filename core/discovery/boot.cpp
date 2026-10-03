@@ -421,6 +421,11 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
     // answering" need different things done about them, and the second one
     // used to be reported as the first.
     int unanswered = 0;
+    // Whether simctl answered even once since the boot was asked for. When
+    // the budget runs out before three polls fit, consecutive misses alone
+    // would let a tool that never answered be reported as a simulator that
+    // did not boot.
+    bool answered = false;
     std::string last_tool_error;
     bool tool_timed_out = false;
     for (;;) {
@@ -450,6 +455,7 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
                               : list.spawn_error;
       } else {
         unanswered = 0;
+        answered = true;
         json::ParseError perr;
         auto parsed = json::parse(list.out, json::Limits{}, &perr);
         bool booted = false;
@@ -484,7 +490,7 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
     }
     res.waited = elapsed();
     if (!res.ready) {
-      if (unanswered >= 3) {
+      if (unanswered >= 3 || (unanswered > 0 && !answered)) {
         // A provider failure, which is a different claim from a device that
         // did not come up -- and the one the operator can act on.
         res.error = "simctl stopped answering while waiting for the "
@@ -612,6 +618,9 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
   std::string last_seen_serial;
   std::string last_seen_state;
   int unanswered = 0;
+  // Whether adb answered even once after the emulator was started; see the
+  // simulator path for why consecutive misses alone are not enough.
+  bool answered = false;
   std::string last_tool_error;
   for (;;) {
     if (opts.cancel.cancelled()) {
@@ -656,6 +665,7 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
       continue;
     }
     unanswered = 0;
+    answered = true;
     if (!appeared.empty()) {
       last_seen_serial = appeared;
       last_seen_state = appeared_state;
@@ -671,7 +681,7 @@ BootResult boot(const BootTarget& target, const BootOptions& opts) {
   }
   res.waited = elapsed();
   if (!res.ready) {
-    if (unanswered >= 3) {
+    if (unanswered >= 3 || (unanswered > 0 && !answered)) {
       res.error = "adb stopped answering while waiting for the emulator: " +
                   last_tool_error;
       res.notes.push_back(

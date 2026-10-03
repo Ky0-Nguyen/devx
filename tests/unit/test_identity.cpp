@@ -784,3 +784,43 @@ MPI_TEST(tooling_that_wedges_after_the_boot_starts_blames_the_tool, {}) {
                 "and the note says so, because a slow emulator and a broken "
                 "adb need different things done about them");
 }
+
+MPI_TEST(a_budget_too_short_for_three_polls_still_blames_the_tool, {}) {
+  // The same wedge with a budget that fits one poll after the boot, not
+  // three. The loop then stops on the budget rather than on three misses,
+  // and used to fall through to "no new serial appeared in `adb devices`" --
+  // a statement about an answer adb never gave. CI found it: a slower runner
+  // fitted two polls into the 3 s budget above instead of three.
+  const char* bin = std::getenv("MPI_TEST_BIN_DIR");
+  if (bin == nullptr) return;
+  const std::string hanging = std::string(bin) + "/hanging_tool";
+  const std::string marker =
+      std::string(std::getenv("TMPDIR") != nullptr ? std::getenv("TMPDIR")
+                                                   : "/tmp") +
+      "/mpi-hanging-tool-short-" + std::to_string(::getpid());
+  ::unlink(marker.c_str());
+  ::setenv("MPI_HANGING_TOOL_MARKER", marker.c_str(), 1);
+
+  mpi::discovery::BootTarget target;
+  target.platform = mpi::model::Platform::kAndroid;
+  target.identifier = "test-avd";
+  mpi::discovery::BootOptions opts;
+  opts.adb_path = hanging;
+  opts.emulator_path = hanging;
+  opts.ready_timeout = std::chrono::milliseconds(700);
+  opts.poll_interval = std::chrono::milliseconds(200);
+
+  const auto res = mpi::discovery::boot(target, opts);
+  ::unsetenv("MPI_HANGING_TOOL_MARKER");
+  ::unlink(marker.c_str());
+
+  MPI_CHECK_MSG(res.started, "the emulator was spawned");
+  MPI_CHECK_MSG(!res.ready, "and nothing reported it ready");
+  MPI_CHECK_MSG(res.error.find("adb stopped answering") != std::string::npos,
+                "adb never answered after the boot, so that is the answer: " +
+                    res.error);
+  for (const auto& n : res.notes) {
+    MPI_CHECK_MSG(n.find("no new serial appeared") == std::string::npos,
+                  "and nothing claims adb listed the devices: " + n);
+  }
+}
