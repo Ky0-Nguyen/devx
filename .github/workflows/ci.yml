@@ -17,7 +17,7 @@ jobs:
   build-and-test:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Use the newest Xcode on the runner
         run: |
@@ -29,6 +29,13 @@ jobs:
 
       - name: Build
         run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      # The first simctl call on a fresh runner starts CoreSimulatorService,
+      # which takes longer than the probe budget test_ios_identity holds
+      # discovery to. Start it here so the test measures a warm probe, as it
+      # would be on a developer's Mac.
+      - name: Start CoreSimulatorService
+        run: xcrun simctl list devices > /dev/null
 
       - name: C++ tests
         run: cd build && ctest --output-on-failure

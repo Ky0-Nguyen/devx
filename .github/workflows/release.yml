@@ -33,7 +33,7 @@ jobs:
       P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
       NOTARY_P8: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.tag }}
 
@@ -49,6 +49,7 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
           cmake --build build -j"$(sysctl -n hw.ncpu)"
+          xcrun simctl list devices > /dev/null  # start CoreSimulatorService before the probe-timing tests
           (cd build && ctest --output-on-failure)
           ./build/bin/devx_swift_tests
 
