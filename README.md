@@ -62,14 +62,21 @@ Apple Silicon, macOS 14 or newer. With Homebrew, which also puts `mpi` on your
 
 ```bash
 brew tap ky0-nguyen/devx https://github.com/Ky0-Nguyen/devx
+brew trust --cask ky0-nguyen/devx/devx   # Homebrew asks you to trust a third-party tap once
 brew install --cask devx
 ```
 
 Or download `DevX-<version>.dmg` from
 [Releases](https://github.com/Ky0-Nguyen/devx/releases) and drag DevX to
-Applications. Releases are signed ad-hoc and not yet notarized, so on first
-launch right-click DevX and choose **Open**, once
-([why](docs/packaging-and-signing.md)).
+Applications.
+
+**First launch.** Releases are signed ad-hoc and not yet notarized
+([why](docs/packaging-and-signing.md)), so macOS blocks both the app and the
+`mpi` command until you allow them. Right-click DevX in Applications and choose
+**Open**, then confirm. If `mpi` still stops with a security prompt, open
+**System Settings > Privacy & Security** and click **Open Anyway**. If you
+trust this build, `xattr -dr com.apple.quarantine /Applications/DevX.app`
+clears the block for both in one step.
 
 ### Before you connect a device
 
