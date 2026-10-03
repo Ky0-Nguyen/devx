@@ -14,8 +14,8 @@ repository.
 
 Two consequences worth stating rather than discovering:
 
-- **There is no license file to ship** beside the binary, and no attribution
-  screen to build. If that changes, the inventory is the thing to update
+- **There is no third-party license to ship** beside the binary, and no
+  attribution screen to build. DevX's own license is `LICENSE` (MIT). If that changes, the inventory is the thing to update
   first, not last.
 - **Nothing needs network access to build.** `cmake && cmake --build` is the
   whole of it.
@@ -154,32 +154,42 @@ project rather than merely anticipated:
   path with a deadline and names the wall instead of hanging (section 5 of
   `known-limitations.md`). Files chosen through the open panel are unaffected:
   picking a file is what grants access to it.
-- **It is not notarized.** It is distributed anyway, as `DevX.dmg` since
-  v0.1.0, and every machine it lands on pays the right-click > Open step
-  above. Notarization is what would remove that step, and it needs the
+- **It is not notarized.** It is distributed anyway, as a disk image on each
+  GitHub release, and every machine it lands on pays the right-click > Open
+  step above. Notarization is what would remove that step, and it needs the
   Developer ID this environment does not have.
-  that built it.
 
-**What a distributable build would need**, in order:
+**Releasing: `tools/release.sh`.** It takes `build/bin/DevX.app` and writes
+`build/release/DevX-<version>.dmg` and its `.sha256`. With no identity it
+signs ad-hoc, as `devx_dmg` does. With `DEVX_SIGN_IDENTITY` set to a
+"Developer ID Application" identity, it signs the nested `mpi` and then the
+bundle with a hardened runtime (`--options runtime`) and a secure timestamp,
+signs the image, submits it with `xcrun notarytool --wait`, staples it and
+runs `spctl --assess`. Notary credentials are either a keychain profile
+(`DEVX_NOTARY_PROFILE`, made once with `xcrun notarytool store-credentials`)
+or an App Store Connect API key (`DEVX_NOTARY_KEY`, `_KEY_ID`, `_ISSUER`). An
+identity without credentials is refused, because an image that is signed but
+not notarized is still blocked by Gatekeeper and only looks finished.
 
-1. An Apple Developer ID Application certificate in the keychain, and
-   `codesign --sign "Developer ID Application: ..."` in place of `--sign -`.
-2. A hardened runtime (`--options runtime`), which is required for
-   notarization and which changes what the app may do -- `posix_spawnp` of
-   `adb` and `xcrun` still works, but it must be tested rather than assumed.
-3. Entitlements for the directories the app reads, or the open-panel-only
-   approach kept deliberately. The second is the safer default for a tool
-   that reads whatever path it is handed.
-4. Notarization (`xcrun notarytool submit`) and stapling.
-5. A decision about updates. The `.dmg` half of this step is done --
-   `devx_dmg`, above -- and it is the one step that needs no identity.
+The hardened runtime was tested rather than assumed: a bundle signed with
+`--options runtime` (an Apple Development identity, on 2026-10-03) launched,
+and its Devices tab listed every simulator and the AVD, so `posix_spawnp` of
+`xcrun` and the emulator tooling is unaffected. No entitlements are added.
+Files reach the app through the open panel, which is the safer default for a
+tool that reads whatever path it is handed. `/usr/bin/sample` under the
+hardened runtime has not been exercised.
 
-**Steps 1-4 have not been done**, because none can be done in this
-environment: there is no Developer ID here. The disk image in step 5 has,
-because it needs no identity. So the honest state is: the bundle ships as
-v0.1.0 without notarization, every recipient clears Gatekeeper by hand once,
-and the four steps that would remove that are work with a known shape rather
-than an unknown one.
+`.github/workflows/release.yml` runs the same script on demand (Actions >
+Release, with a tag). It signs and notarizes when the `DEVELOPER_ID_*` and
+`NOTARY_*` secrets exist and signs ad-hoc otherwise, attaches the image to the
+release, and points `Casks/devx.rb` at it with `tools/bump-cask.sh`, which
+also drops the cask's first-launch caveat once a release is notarized.
+
+**What is still missing is the identity.** This machine has an Apple
+Development certificate, which can sign but cannot notarize. A Developer ID
+Application certificate needs a paid Apple Developer Program membership. Until
+then every release is ad-hoc and every recipient clears Gatekeeper by hand
+once.
 
 ---
 

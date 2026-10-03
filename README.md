@@ -53,6 +53,24 @@ iOS bundle identifier, as spec section 1 requires.
 
 ---
 
+## Install
+
+Apple Silicon, macOS 14 or newer. With Homebrew, which also puts `mpi` on your
+`PATH`:
+
+```bash
+brew tap ky0-nguyen/devx https://github.com/Ky0-Nguyen/devx
+brew install --cask devx
+```
+
+Or download `DevX-<version>.dmg` from
+[Releases](https://github.com/Ky0-Nguyen/devx/releases) and drag DevX to
+Applications. Releases are signed ad-hoc and not yet notarized, so on first
+launch right-click DevX and choose **Open**, once
+([why](docs/packaging-and-signing.md)).
+
+---
+
 ## Build
 
 Requirements: a C++20 compiler, CMake ≥ 3.24. No third-party libraries
@@ -393,7 +411,7 @@ docs/capabilities/   tested capability matrix, iOS toolchain probe record
 ## Documentation
 
 - [Known limitations](docs/known-limitations.md) — what is not true of this build
-- [Packaging, signing and licenses](docs/packaging-and-signing.md) — ad-hoc signed; what shipping would take
+- [Packaging, signing and licenses](docs/packaging-and-signing.md) — how a release is built, signed and notarized
 - [Tested capability matrix](docs/capabilities/tested-capability-matrix.md) — measured probe results
 - [iOS toolchain probe record](docs/capabilities/ios-toolchain-probe.md) — the M0 schema validation
 - [Requirement → test map](docs/requirement-test-map.md) — 177/198 checklist items, with reasons for the rest
@@ -424,3 +442,7 @@ docs/capabilities/   tested capability matrix, iOS toolchain probe record
 - Missing data is a **gap**. It is never reported as zero.
 - A `skipped` detector found nothing *because it did not run*. That is not the
   same statement as "no issue exists".
+
+## License
+
+[MIT](LICENSE).

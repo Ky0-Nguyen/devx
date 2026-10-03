@@ -1,0 +1,95 @@
+name: Release
+
+# Builds DevX-<version>.dmg, attaches it to the GitHub release for <tag> and
+# points Casks/devx.rb at it.
+#
+# Signing is decided by which secrets exist. With none, the image is ad-hoc,
+# exactly what tools/release.sh produces on a machine with no Apple Developer
+# account. With all of these it is Developer ID signed, notarized and stapled:
+#
+#   DEVELOPER_ID_P12_BASE64   the "Developer ID Application" cert + key, as a
+#                             base64 .p12
+#   DEVELOPER_ID_P12_PASSWORD its export password
+#   DEVELOPER_ID_NAME         "Developer ID Application: Name (TEAMID)"
+#   NOTARY_KEY_P8_BASE64      an App Store Connect API key (.p8), base64
+#   NOTARY_KEY_ID, NOTARY_ISSUER
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, equal to CFBundleShortVersionString (e.g. 0.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      P12: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+      P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+      NOTARY_P8: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Use the newest Xcode on the runner
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+
+      - name: Tag matches the bundle version
+        run: |
+          v=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' apps/devx-mac/Support/Info.plist)
+          [ "$v" = "$TAG" ] || { echo "tag $TAG but Info.plist says $v"; exit 1; }
+
+      - name: Build and test
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build build -j"$(sysctl -n hw.ncpu)"
+          (cd build && ctest --output-on-failure)
+          ./build/bin/devx_swift_tests
+
+      - name: Import the Developer ID certificate
+        if: env.P12 != ''
+        run: |
+          kc=$RUNNER_TEMP/release.keychain-db
+          security create-keychain -p "" "$kc"
+          security set-keychain-settings -lut 3600 "$kc"
+          security unlock-keychain -p "" "$kc"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/id.p12"
+          security import "$RUNNER_TEMP/id.p12" -k "$kc" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$kc"
+          security list-keychains -d user -s "$kc" $(security list-keychains -d user | tr -d '"')
+          echo "DEVX_SIGN_IDENTITY=${{ secrets.DEVELOPER_ID_NAME }}" >> "$GITHUB_ENV"
+
+      - name: Notary credentials
+        if: env.NOTARY_P8 != ''
+        run: |
+          echo "$NOTARY_P8" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          {
+            echo "DEVX_NOTARY_KEY=$RUNNER_TEMP/notary.p8"
+            echo "DEVX_NOTARY_KEY_ID=${{ secrets.NOTARY_KEY_ID }}"
+            echo "DEVX_NOTARY_ISSUER=${{ secrets.NOTARY_ISSUER }}"
+          } >> "$GITHUB_ENV"
+
+      - name: Disk image
+        id: dmg
+        run: bash tools/release.sh | tee "$RUNNER_TEMP/release.out" && grep -E '^(dmg|sha256)=' "$RUNNER_TEMP/release.out" >> "$GITHUB_OUTPUT"
+
+      - name: Attach to the release
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "DevX $TAG" --generate-notes --verify-tag
+          gh release upload "$TAG" "${{ steps.dmg.outputs.dmg }}" "${{ steps.dmg.outputs.dmg }}.sha256" --clobber
+
+      - name: Point the cask at it
+        run: |
+          git fetch origin main && git checkout main
+          bash tools/bump-cask.sh "$TAG" "${{ steps.dmg.outputs.sha256 }}" ${P12:+notarized}
+          git diff --quiet Casks/devx.rb && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Point the cask at $TAG"
+          git push origin main
