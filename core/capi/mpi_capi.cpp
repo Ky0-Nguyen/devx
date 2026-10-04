@@ -23,6 +23,8 @@
 #include "adapters/android/hprof_parser.hpp"
 #include "adapters/ios/ios_adapter.hpp"
 #include "adapters/ios/xctrace_collector.hpp"
+#include "adapters/layout/layout_capture.hpp"
+#include "core/observe/observation_store.hpp"
 #include "core/discovery/boot.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -422,6 +424,90 @@ char* mpi_device_advice_json(const char* device_id, int probe) {
     }
     out.set("advice", std::move(advice));
     return out;
+  });
+}
+
+char* mpi_layout_json(const char* device_id, const char* app_identifier,
+                      int relaunch, int settle_ms, int include_tree,
+                      int include_simulators, int timeout_ms,
+                      const char* save_to_sessions_dir) {
+  return guard([&] {
+    const std::string id = safe(device_id);
+    const std::string app = safe(app_identifier);
+    auto svc = make_discovery(include_simulators != 0);
+    const auto snap = svc.snapshot(provider_options(timeout_ms), /*include_apps=*/false);
+    bool ambiguous = false;
+    const model::DeviceRef* dev = find_device(snap, id, ambiguous);
+    if (dev == nullptr) {
+      layout::Capture missing;
+      missing.failure = layout::Failure::kUnsupported;
+      missing.error = ambiguous ? "device id '" + id + "' matches more than one device"
+                                : "no device with id '" + id + "'";
+      return missing.to_json(false);
+    }
+    layout::CaptureOptions opts;
+    opts.relaunch = relaunch != 0;
+    opts.settle = std::chrono::milliseconds(settle_ms > 0 ? settle_ms : 0);
+    opts.timeout = std::chrono::milliseconds(timeout_ms > 0 ? timeout_ms : 15000);
+    opts.cancel = cancel_registry().token();
+    opts.save_to = safe(save_to_sessions_dir);
+    return layout::capture_layout(*dev, app, opts).to_json(include_tree != 0);
+  });
+}
+
+char* mpi_save_observation_json(const char* sessions_dir, const char* kind,
+                                const char* app_identifier,
+                                const char* device_id,
+                                const char* summary_json,
+                                const char* document_json) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    json::ParseError perr;
+    json::Limits limits;
+    limits.max_depth = 512;
+    auto document = json::parse(safe(document_json), limits, &perr);
+    if (!document) {
+      out.set("ok", json::Value::boolean(false));
+      out.set("error", json::Value::string("the document is not JSON: " + perr.message));
+      return out;
+    }
+    auto summary = json::parse(safe(summary_json), &perr);
+    json::Value sum = summary && summary->is_object() ? *summary : json::Value::object();
+    // A caller that has no summary of its own gets the one the core knows.
+    if (sum.members().empty() && safe(kind) == "inspect") {
+      sum = observe::summarize_inspect(*document);
+    }
+    const auto saved = observe::save_observation(
+        safe(sessions_dir), safe(kind), safe(app_identifier), safe(device_id),
+        sum, *document);
+    out.set("ok", json::Value::boolean(saved.ok));
+    if (saved.ok) {
+      out.set("id", json::Value::string(saved.id));
+      out.set("path", json::Value::string(saved.path));
+    } else {
+      out.set("error", json::Value::string(saved.error));
+    }
+    return out;
+  });
+}
+
+char* mpi_observations_json(const char* sessions_dir, const char* kind, int limit) {
+  return guard([&] {
+    return observe::list_observations(safe(sessions_dir), safe(kind),
+                                      limit > 0 ? static_cast<std::size_t>(limit) : 0);
+  });
+}
+
+char* mpi_observation_json(const char* sessions_dir, const char* id) {
+  return guard([&] {
+    std::string err;
+    auto doc = observe::read_observation(safe(sessions_dir), safe(id), &err);
+    if (!doc) {
+      json::Value out = json::Value::object();
+      out.set("error", json::Value::string(err));
+      return out;
+    }
+    return *doc;
   });
 }
 

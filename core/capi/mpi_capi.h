@@ -112,6 +112,45 @@ char* mpi_inspect_stream_poll(int budget_ms);
 /* Stops and returns the final observation. */
 char* mpi_inspect_stream_stop(void);
 
+/* ---- layout ---------------------------------------------------------------
+ *
+ * How the screen an app is showing is built: views per screen, nesting depth,
+ * hidden and off-screen views, navigation stacks. Nothing is added to the app:
+ * Android is read through `dumpsys activity top`; an iOS simulator through
+ * the layout probe, injected only when `relaunch` is non-zero -- which
+ * restarts the app and loses its state, so a caller must have said so first.
+ * Without it, an app not launched with the probe answers
+ * `failure: "probe_not_loaded"` rather than being restarted.
+ *
+ * With `save_to_sessions_dir` set, the report (every view) is also saved as
+ * an observation, and `saved: {id, path}` says where.
+ *
+ * The result is {ok, failure, error?, notes[], launched_pid?, saved?, report}. A
+ * report is a snapshot of structure, never a performance measurement. */
+char* mpi_layout_json(const char* device_id, const char* app_identifier,
+                      int relaunch, int settle_ms, int include_tree,
+                      int include_simulators, int timeout_ms,
+                      const char* save_to_sessions_dir);
+
+/* ---- observations on disk ------------------------------------------------
+ *
+ * Results that are not session packages -- a layout snapshot, an inspect
+ * observation -- kept under `<sessions dir>/observations/` so an AI tool
+ * reading through `mpi mcp` can analyse the whole document. Owner-only files:
+ * an inspect observation with detail holds bearer tokens verbatim.
+ *
+ * `kind` is a short lowercase word; `summary_json` and `document_json` are
+ * JSON texts. Returns {ok, id, path} or {ok:false, error}. */
+char* mpi_save_observation_json(const char* sessions_dir, const char* kind,
+                                const char* app_identifier,
+                                const char* device_id,
+                                const char* summary_json,
+                                const char* document_json);
+/* The newest first, at most `limit` (0 for all); `kind` may be empty. */
+char* mpi_observations_json(const char* sessions_dir, const char* kind, int limit);
+/* One observation in full. */
+char* mpi_observation_json(const char* sessions_dir, const char* id);
+
 /* Session packages under `sessions_dir`, newest first. */
 char* mpi_sessions_json(const char* sessions_dir);
 

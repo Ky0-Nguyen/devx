@@ -195,6 +195,7 @@ struct RootView: View {
                 case .live: LiveView()
                 case .record: RecordView()
                 case .inspect: InspectView()
+                case .layout: LayoutView()
                 case .sessions: SessionsView()
                 case .issues: IssuesView()
                 case .threads: ThreadsView()

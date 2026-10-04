@@ -164,6 +164,8 @@ final class AppState: ObservableObject {
     @Published var bootTargetsDoc: JSON = .null
     @Published var lastBoot: JSON = .null
     @Published var preflightDoc: JSON = .null
+    /// The last layout snapshot, as {ok, failure, error?, notes, report}.
+    @Published var layoutDoc: JSON = .null
     @Published var sessionsDoc: JSON = .null
     @Published var sessionDoc: JSON = .null
     @Published var timelineDoc: JSON = .null
@@ -728,9 +730,23 @@ final class AppState: ObservableObject {
                          detail: detail)
         }) { doc in
             self.inspectDoc = doc
+            self.keepInspectObservation(doc, app: app, device: device)
             // A capture changes what is attachable -- the app may have
             // reloaded and taken a new target id with it.
             self.loadInspectTargets()
+        }
+    }
+
+    /// Keeps a finished observation on disk, where `mpi mcp` lets an AI tool
+    /// read the whole of it. Only one that attached: an observation of
+    /// nothing is not worth a file. Owner-only, because with headers and
+    /// bodies captured it holds the app's credentials verbatim.
+    private func keepInspectObservation(_ report: JSON, app: String, device: String) {
+        guard report["debugger_attached"].bool == true else { return }
+        let dir = sessionsDir, text = report.serialized()
+        Self.coreQueue.async {
+            _ = Core.saveObservation(sessionsDir: dir, kind: "inspect", app: app,
+                                     device: device, summary: "", document: text)
         }
     }
 
@@ -849,6 +865,8 @@ final class AppState: ObservableObject {
             DispatchQueue.main.async {
                 if keepReport, !doc["report"].isNull {
                     self.inspectDoc = doc["report"]
+                    self.keepInspectObservation(doc["report"], app: self.selectedApp,
+                                                device: self.selectedDevice)
                 }
             }
         }
@@ -859,6 +877,19 @@ final class AppState: ObservableObject {
         let dev = selectedDevice, sims = includeSimulators
         run("Enumerating apps…",
             { Core.apps(device: dev, includeSimulators: sims) }) { self.appsDoc = $0 }
+    }
+
+    /// Takes a layout snapshot of the selected app. `relaunch` restarts it
+    /// with the iOS layout probe, which the view confirms before calling.
+    func takeLayout(relaunch: Bool) {
+        guard !selectedDevice.isEmpty, !selectedApp.isEmpty else { return }
+        let dev = selectedDevice, app = selectedApp, sims = includeSimulators
+        let dir = sessionsDir
+        run(relaunch ? "Relaunching \(app) with the layout probe…" : "Reading the layout…",
+            { Core.layout(device: dev, app: app, relaunch: relaunch, settleMs: 3000,
+                          includeTree: false, includeSimulators: sims, saveTo: dir) }) {
+            self.layoutDoc = $0
+        }
     }
 
     func loadPreflight() {

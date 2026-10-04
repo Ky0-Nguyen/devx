@@ -1,0 +1,1070 @@
+{
+ "taken_at_ms": 1791031336550,
+ "screen": {
+  "width": 402,
+  "scale": 3,
+  "height": 874
+ },
+ "bundle_id": "host.exp.Exponent",
+ "truncated": false,
+ "windows": [
+  {
+   "root_controller": {
+    "id": "0x10f82f600",
+    "kind": "content",
+    "view_loaded": true,
+    "class": "EXRootViewController",
+    "children": [
+     {
+      "id": "0x10d82b800",
+      "kind": "content",
+      "view_loaded": true,
+      "class": "Expo_Go.HomeViewController",
+      "children": [
+       {
+        "id": "0x10f82d800",
+        "kind": "content",
+        "view_loaded": true,
+        "class": "_TtGC7SwiftUI19UIHostingControllerV7Expo_Go12HomeRootView_",
+        "children": [
+         {
+          "id": "0x10f87ee00",
+          "view_loaded": true,
+          "children": [
+           {
+            "id": "0x10e87fa00",
+            "kind": "content",
+            "view_loaded": true,
+            "class": "SwiftUI.TabHostingController",
+            "children": [
+             {
+              "id": "0x10d851400",
+              "view_loaded": true,
+              "children": [
+               {
+                "id": "0x10d827200",
+                "kind": "content",
+                "view_loaded": true,
+                "class": "_TtGC7SwiftUI19UIHostingControllerVVS_P10$1d9772a2021BridgedNavigationView8RootView_",
+                "visible": true
+               }
+              ],
+              "class": "SwiftUI.UIKitNavigationController",
+              "stack": [
+               "_TtGC7SwiftUI19UIHostingControllerVVS_P10$1d9772a2021BridgedNavigationView8RootView_"
+              ],
+              "visible": true,
+              "kind": "navigation"
+             }
+            ],
+            "visible": true
+           },
+           {
+            "id": "0x10f056e00",
+            "kind": "content",
+            "view_loaded": false,
+            "class": "SwiftUI.TabHostingController",
+            "visible": false
+           },
+           {
+            "id": "0x10f05ee00",
+            "kind": "content",
+            "view_loaded": false,
+            "class": "SwiftUI.TabHostingController",
+            "visible": false
+           },
+           {
+            "id": "0x10f060400",
+            "kind": "content",
+            "view_loaded": false,
+            "class": "SwiftUI.TabHostingController",
+            "visible": false
+           }
+          ],
+          "class": "SwiftUI.UIKitTabBarController",
+          "visible": true,
+          "kind": "tab",
+          "selected_index": 0
+         }
+        ],
+        "visible": true
+       }
+      ],
+      "visible": true
+     }
+    ],
+    "visible": true
+   },
+   "hidden": false,
+   "root": {
+    "class": "UIWindow",
+    "frame": [
+     0,
+     0,
+     402,
+     874
+    ],
+    "children": [
+     {
+      "class": "UITransitionView",
+      "frame": [
+       0,
+       0,
+       402,
+       874
+      ],
+      "children": [
+       {
+        "class": "UIDropShadowView",
+        "frame": [
+         0,
+         0,
+         402,
+         874
+        ],
+        "children": [
+         {
+          "frame": [
+           0,
+           0,
+           402,
+           874
+          ],
+          "controller_id": "0x10f82f600",
+          "class": "UIView",
+          "children": [
+           {
+            "frame": [
+             0,
+             0,
+             402,
+             874
+            ],
+            "controller_id": "0x10d82b800",
+            "class": "UIView",
+            "children": [
+             {
+              "frame": [
+               0,
+               0,
+               402,
+               874
+              ],
+              "controller_id": "0x10f82d800",
+              "class": "_TtGC7SwiftUI14_UIHostingViewV7Expo_Go12HomeRootView_",
+              "children": [
+               {
+                "class": "_TtGC7SwiftUI21UIKitPlatformViewHostGVS_42PlatformViewControllerRepresentableAdaptorVS_P10$1d974b11421UIKitAdaptableTabView__",
+                "frame": [
+                 0,
+                 0,
+                 402,
+                 874
+                ],
+                "children": [
+                 {
+                  "frame": [
+                   0,
+                   0,
+                   402,
+                   874
+                  ],
+                  "controller_id": "0x10f87ee00",
+                  "class": "UILayoutContainerView",
+                  "children": [
+                   {
+                    "class": "UITransitionView",
+                    "frame": [
+                     0,
+                     0,
+                     402,
+                     874
+                    ],
+                    "children": [
+                     {
+                      "class": "UIViewControllerWrapperView",
+                      "frame": [
+                       0,
+                       0,
+                       402,
+                       874
+                      ],
+                      "children": [
+                       {
+                        "frame": [
+                         0,
+                         0,
+                         402,
+                         874
+                        ],
+                        "controller_id": "0x10e87fa00",
+                        "class": "_TtCC7SwiftUI20TabHostingControllerP33_E387C3C47C0D2A0931533D8490A5A8B711HostingView",
+                        "children": [
+                         {
+                          "class": "_TtGC7SwiftUI21UIKitPlatformViewHostGVS_42PlatformViewControllerRepresentableAdaptorVS_P10$1d9772a2021BridgedNavigationView__",
+                          "frame": [
+                           0,
+                           0,
+                           402,
+                           874
+                          ],
+                          "children": [
+                           {
+                            "frame": [
+                             0,
+                             0,
+                             402,
+                             874
+                            ],
+                            "controller_id": "0x10d851400",
+                            "class": "UILayoutContainerView",
+                            "children": [
+                             {
+                              "class": "UINavigationTransitionView",
+                              "frame": [
+                               0,
+                               0,
+                               402,
+                               874
+                              ],
+                              "children": [
+                               {
+                                "class": "UIViewControllerWrapperView",
+                                "frame": [
+                                 0,
+                                 0,
+                                 402,
+                                 874
+                                ],
+                                "children": [
+                                 {
+                                  "frame": [
+                                   0,
+                                   0,
+                                   402,
+                                   874
+                                  ],
+                                  "controller_id": "0x10d827200",
+                                  "class": "_TtGC7SwiftUI14_UIHostingViewVVS_P10$1d9772a2021BridgedNavigationView8RootView_",
+                                  "children": [
+                                   {
+                                    "class": "_TtCC7SwiftUI17HostingScrollView17PlatformContainer",
+                                    "frame": [
+                                     0,
+                                     114,
+                                     402,
+                                     760
+                                    ],
+                                    "children": [
+                                     {
+                                      "class": "SwiftUI.HostingScrollView",
+                                      "frame": [
+                                       0,
+                                       114,
+                                       402,
+                                       760
+                                      ],
+                                      "children": [
+                                       {
+                                        "class": "_TtCE5UIKitCSo15_UIScrollPocket12BackdropView",
+                                        "frame": [
+                                         0,
+                                         726.2,
+                                         402,
+                                         147.79999999999995
+                                        ]
+                                       },
+                                       {
+                                        "frame": [
+                                         0,
+                                         114,
+                                         402,
+                                         60
+                                        ],
+                                        "class": "SwiftUI.UIKitRefreshControl",
+                                        "children": [
+                                         {
+                                          "class": "_UIRefreshControlModernContentView",
+                                          "frame": [
+                                           0,
+                                           114,
+                                           402,
+                                           60
+                                          ],
+                                          "children": [
+                                           {
+                                            "class": "UIView",
+                                            "frame": [
+                                             151,
+                                             94,
+                                             100,
+                                             100
+                                            ],
+                                            "children": [
+                                             {
+                                              "class": "_UIRefreshControlModernReplicatorView",
+                                              "frame": [
+                                               151,
+                                               94,
+                                               100,
+                                               100
+                                              ],
+                                              "children": [
+                                               {
+                                                "class": "_UIRefreshControlSeedView",
+                                                "frame": [
+                                                 199.33333333333334,
+                                                 129,
+                                                 3.666666666666657,
+                                                 10
+                                                ]
+                                               }
+                                              ]
+                                             }
+                                            ]
+                                           },
+                                           {
+                                            "class": "UILabel",
+                                            "frame": [
+                                             10,
+                                             162.66666666666666,
+                                             382,
+                                             0
+                                            ],
+                                            "alpha": 0
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "hidden": true
+                                       },
+                                       {
+                                        "class": "_TtCC7SwiftUI17HostingScrollView22PlatformGroupContainer",
+                                        "frame": [
+                                         0,
+                                         114,
+                                         402,
+                                         499.33333333333326
+                                        ]
+                                       },
+                                       {
+                                        "frame": [
+                                         0,
+                                         726.2,
+                                         402,
+                                         147.79999999999995
+                                        ],
+                                        "alpha": 0,
+                                        "class": "_UIScrollPocket",
+                                        "children": [
+                                         {
+                                          "class": "_TtCE5UIKitCSo15_UIScrollPocketP33_54F5B0BEB96954C1867D8C3082E9F3FD12TouchBlocker",
+                                          "frame": [
+                                           0,
+                                           874,
+                                           402,
+                                           0
+                                          ]
+                                         },
+                                         {
+                                          "class": "_TtCE5UIKitCSo15_UIScrollPocket10PocketMask",
+                                          "frame": [
+                                           0,
+                                           726.2,
+                                           402,
+                                           147.79999999999995
+                                          ],
+                                          "children": [
+                                           {
+                                            "class": "UIView",
+                                            "frame": [
+                                             0,
+                                             726.2,
+                                             402,
+                                             147.79999999999995
+                                            ]
+                                           }
+                                          ]
+                                         },
+                                         {
+                                          "frame": [
+                                           0,
+                                           726.2,
+                                           402,
+                                           147.79999999999995
+                                          ],
+                                          "class": "_TtCE5UIKitCSo15_UIScrollPocket10PocketBlur",
+                                          "children": [
+                                           {
+                                            "class": "_UIPortalView",
+                                            "frame": [
+                                             0,
+                                             726.2,
+                                             402,
+                                             147.79999999999995
+                                            ],
+                                            "hidden": true
+                                           }
+                                          ],
+                                          "hidden": true
+                                         },
+                                         {
+                                          "class": "_TtCE5UIKitCSo15_UIScrollPocket19LuminanceAdjustment",
+                                          "frame": [
+                                           0,
+                                           726.2,
+                                           402,
+                                           147.79999999999995
+                                          ],
+                                          "children": [
+                                           {
+                                            "class": "_TtCE5UIKitCSo15_UIScrollPocket12BackdropView",
+                                            "frame": [
+                                             0,
+                                             726.2,
+                                             402,
+                                             147.79999999999995
+                                            ],
+                                            "alpha": 0.8500000238418579
+                                           },
+                                           {
+                                            "class": "UIView",
+                                            "frame": [
+                                             0,
+                                             726.2,
+                                             402,
+                                             147.79999999999995
+                                            ],
+                                            "alpha": 0
+                                           },
+                                           {
+                                            "class": "_UIPortalView",
+                                            "frame": [
+                                             0,
+                                             726.2,
+                                             402,
+                                             147.79999999999995
+                                            ]
+                                           }
+                                          ]
+                                         },
+                                         {
+                                          "class": "UIImageView",
+                                          "frame": [
+                                           -120,
+                                           731,
+                                           642,
+                                           286
+                                          ],
+                                          "alpha": 0.009999999776482582
+                                         }
+                                        ]
+                                       },
+                                       {
+                                        "frame": [
+                                         396,
+                                         268.66666666666663,
+                                         3,
+                                         465.33333333333337
+                                        ],
+                                        "alpha": 0,
+                                        "class": "_UIScrollViewScrollIndicator",
+                                        "children": [
+                                         {
+                                          "class": "UIView",
+                                          "frame": [
+                                           396,
+                                           268.66666666666663,
+                                           3,
+                                           465.33333333333337
+                                          ]
+                                         }
+                                        ]
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ],
+                                  "controller": "_TtGC7SwiftUI19UIHostingControllerVVS_P10$1d9772a2021BridgedNavigationView8RootView_"
+                                 }
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_TtC5UIKitP33_2E11A995A04AA6F19429971D06CC321E24FloatingBarContainerView",
+                              "frame": [
+                               0,
+                               0,
+                               402,
+                               874
+                              ],
+                              "children": [
+                               {
+                                "class": "_TtGC5UIKitP10$186c5cd9c22FloatingBarHostingViewVS_20FloatingBarContainer_",
+                                "frame": [
+                                 0,
+                                 0,
+                                 402,
+                                 874
+                                ]
+                               },
+                               {
+                                "class": "_UIPointerInteractionAssistantEffectContainerView",
+                                "frame": [
+                                 0,
+                                 0,
+                                 0,
+                                 0
+                                ]
+                               }
+                              ]
+                             }
+                            ],
+                            "controller": "SwiftUI.UIKitNavigationController"
+                           }
+                          ]
+                         }
+                        ],
+                        "controller": "SwiftUI.TabHostingController"
+                       }
+                      ]
+                     }
+                    ]
+                   },
+                   {
+                    "class": "UIKit._UITabBarContainerWrapperView",
+                    "frame": [
+                     0,
+                     791,
+                     402,
+                     83
+                    ],
+                    "children": [
+                     {
+                      "class": "UIKit._UITabBarContainerView",
+                      "frame": [
+                       0,
+                       0,
+                       402,
+                       874
+                      ],
+                      "children": [
+                       {
+                        "class": "UITabBar",
+                        "frame": [
+                         0,
+                         791,
+                         402,
+                         83
+                        ],
+                        "children": [
+                         {
+                          "class": "UIKit._UITabBarPlatterView",
+                          "frame": [
+                           21,
+                           791,
+                           360,
+                           62
+                          ],
+                          "children": [
+                           {
+                            "class": "_TtCC5UIKit32_UITabBarVisualProvider_FloatingP33_3C6E5A7AE2316B749C88F887559DAAB619SelectedContentView",
+                            "frame": [
+                             21,
+                             791,
+                             360,
+                             62
+                            ],
+                            "children": [
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               25,
+                               795,
+                               98.33333333333334,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 58,
+                                 801,
+                                 33.33333333333334,
+                                 28
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 60,
+                                 830,
+                                 29.33333333333333,
+                                 12
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               109.55555555555556,
+                               795,
+                               98.33333333333336,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 142.55555555555554,
+                                 802.3333333333334,
+                                 32.33333333333334,
+                                 25
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 144.55555555555554,
+                                 830,
+                                 28.333333333333343,
+                                 12
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               194.1111111111111,
+                               795,
+                               98.33333333333337,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 226.1111111111111,
+                                 800.6666666666666,
+                                 35.333333333333314,
+                                 28.66666666666663
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 214.1111111111111,
+                                 830,
+                                 59.333333333333314,
+                                 12
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               278.6666666666667,
+                               795,
+                               98.33333333333331,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 313.6666666666667,
+                                 801,
+                                 28,
+                                 28
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 306.6666666666667,
+                                 830,
+                                 42.333333333333314,
+                                 12
+                                ]
+                               }
+                              ]
+                             }
+                            ]
+                           },
+                           {
+                            "class": "_UILiquidLensView",
+                            "frame": [
+                             25,
+                             795,
+                             98.33333333333334,
+                             54
+                            ],
+                            "children": [
+                             {
+                              "class": "UIView",
+                              "frame": [
+                               25,
+                               795,
+                               98.33333333333333,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "_UITabSelectionView",
+                                "frame": [
+                                 25,
+                                 795,
+                                 98.33333333333333,
+                                 54
+                                ]
+                               },
+                               {
+                                "class": "_TtCE5UIKitCSo17_UILiquidLensViewP33_4C400BD973F5E4E0B779D1A21A7AEB2714ClearGlassView",
+                                "frame": [
+                                 25,
+                                 795,
+                                 98.33333333333333,
+                                 54
+                                ],
+                                "children": [
+                                 {
+                                  "class": "UIView",
+                                  "frame": [
+                                   25,
+                                   795,
+                                   98.33333333333333,
+                                   54
+                                  ],
+                                  "children": [
+                                   {
+                                    "class": "_TtCE5UIKitCSo17_UILiquidLensViewP33_4C400BD973F5E4E0B779D1A21A7AEB277SDFView",
+                                    "frame": [
+                                     25,
+                                     795,
+                                     98.33333333333333,
+                                     54
+                                    ],
+                                    "children": [
+                                     {
+                                      "class": "_TtCE5UIKitCSo17_UILiquidLensViewP33_4C400BD973F5E4E0B779D1A21A7AEB2714SDFElementView",
+                                      "frame": [
+                                       25,
+                                       795,
+                                       98.33333333333333,
+                                       54
+                                      ]
+                                     }
+                                    ]
+                                   },
+                                   {
+                                    "class": "_UIPortalView",
+                                    "frame": [
+                                     25,
+                                     795,
+                                     98.33333333333333,
+                                     54
+                                    ]
+                                   }
+                                  ]
+                                 },
+                                 {
+                                  "class": "UIView",
+                                  "frame": [
+                                   25,
+                                   795,
+                                   98.33333333333333,
+                                   54
+                                  ]
+                                 }
+                                ]
+                               }
+                              ]
+                             }
+                            ]
+                           },
+                           {
+                            "class": "_TtCC5UIKit20_UITabBarPlatterViewP33_022AA364308030F4627162921FD6D31A11ContentView",
+                            "frame": [
+                             21,
+                             791,
+                             360,
+                             62
+                            ],
+                            "children": [
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               25,
+                               795,
+                               98.33333333333334,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 58,
+                                 801,
+                                 33.33333333333334,
+                                 28
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 60,
+                                 830,
+                                 29,
+                                 12
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               109.55555555555556,
+                               795,
+                               98.33333333333336,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 142.55555555555554,
+                                 802.3333333333334,
+                                 32.33333333333334,
+                                 25
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 144.55555555555554,
+                                 830,
+                                 28,
+                                 12
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               194.1111111111111,
+                               795,
+                               98.33333333333337,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 226.1111111111111,
+                                 800.6666666666666,
+                                 35.333333333333314,
+                                 28.66666666666663
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 214.1111111111111,
+                                 830,
+                                 58.333333333333314,
+                                 12
+                                ]
+                               }
+                              ]
+                             },
+                             {
+                              "class": "_UITabButton",
+                              "frame": [
+                               278.6666666666667,
+                               795,
+                               98.33333333333331,
+                               54
+                              ],
+                              "children": [
+                               {
+                                "class": "UIImageView",
+                                "frame": [
+                                 313.6666666666667,
+                                 801,
+                                 28,
+                                 28
+                                ]
+                               },
+                               {
+                                "class": "_TtCC5UIKit12_UITabButtonP33_4EA307C86E0356016F55ED2F1518661D5Label",
+                                "frame": [
+                                 307.6666666666667,
+                                 830,
+                                 41.333333333333314,
+                                 12
+                                ]
+                               }
+                              ]
+                             }
+                            ]
+                           },
+                           {
+                            "class": "_TtCE5UIKitCSo17_UILiquidLensViewP33_4C400BD973F5E4E0B779D1A21A7AEB2711DestOutView",
+                            "frame": [
+                             21,
+                             791,
+                             98.33333333333334,
+                             54
+                            ]
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ]
+                   }
+                  ],
+                  "controller": "SwiftUI.UIKitTabBarController"
+                 }
+                ]
+               }
+              ],
+              "controller": "_TtGC7SwiftUI19UIHostingControllerV7Expo_Go12HomeRootView_"
+             }
+            ],
+            "controller": "Expo_Go.HomeViewController"
+           }
+          ],
+          "controller": "EXRootViewController"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "frame": [
+    0,
+    0,
+    402,
+    874
+   ],
+   "level": 0,
+   "class": "UIWindow",
+   "key": true
+  },
+  {
+   "root_controller": {
+    "id": "0x10e70bd40",
+    "kind": "content",
+    "view_loaded": false,
+    "class": "UIViewController",
+    "visible": false
+   },
+   "hidden": true,
+   "root": {
+    "class": "Expo_Go.DevMenuWindow",
+    "frame": [
+     0,
+     0,
+     402,
+     874
+    ],
+    "hidden": true
+   },
+   "frame": [
+    0,
+    0,
+    402,
+    874
+   ],
+   "level": 1000,
+   "class": "Expo_Go.DevMenuWindow",
+   "key": false
+  },
+  {
+   "root_controller": {
+    "id": "0x10e845400",
+    "kind": "content",
+    "view_loaded": true,
+    "class": "UITrackingElementWindowController",
+    "children": [
+     {
+      "id": "0x10d82fe00",
+      "kind": "content",
+      "view_loaded": true,
+      "class": "UIEditingOverlayViewController",
+      "visible": true
+     }
+    ],
+    "visible": true
+   },
+   "hidden": false,
+   "root": {
+    "class": "UITextEffectsWindow",
+    "frame": [
+     0,
+     0,
+     402,
+     874
+    ],
+    "children": [
+     {
+      "frame": [
+       0,
+       0,
+       402,
+       874
+      ],
+      "controller_id": "0x10e845400",
+      "class": "UITrackingWindowView",
+      "children": [
+       {
+        "class": "UIKeyboardItemContainerView",
+        "frame": [
+         0,
+         874,
+         402,
+         0
+        ]
+       },
+       {
+        "frame": [
+         0,
+         0,
+         402,
+         874
+        ],
+        "controller_id": "0x10d82fe00",
+        "class": "UIEditingOverlayGestureView",
+        "controller": "UIEditingOverlayViewController"
+       }
+      ],
+      "controller": "UITrackingElementWindowController"
+     }
+    ]
+   },
+   "frame": [
+    0,
+    0,
+    402,
+    874
+   ],
+   "level": 10,
+   "class": "UITextEffectsWindow",
+   "key": false
+  }
+ ],
+ "probe_version": 1,
+ "max_views": 60000,
+ "views": 87,
+ "pid": 69288
+}

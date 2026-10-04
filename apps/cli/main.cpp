@@ -52,6 +52,12 @@ COMMANDS
                                 React Native debug build already runs --
                                 nothing is added to the app. Not a performance
                                 measurement: a debugger is attached.
+  layout                        How the screen an app is showing is built:
+                                views per screen, nesting depth, hidden and
+                                off-screen views, navigation stacks. Android
+                                reads dumpsys; an iOS simulator needs the
+                                layout probe, loaded with --relaunch. Nothing
+                                is added to the app. Not a measurement.
   sdk-bridge                    Run the loopback host the optional in-app SDK
                                 reports to.
   mcp                           Serve captures to an AI tool over stdio, as a
@@ -78,6 +84,17 @@ MCP OPTIONS
   --sessions-dir <path>         Which captures to serve (a host launches this
                                 without a shell, so relative paths and PATH
                                 are not what you expect).
+
+LAYOUT OPTIONS
+  --relaunch                    (iOS simulator) Restart the app with the layout
+                                probe injected. Its current state is lost.
+                                Later runs without it reuse the loaded probe.
+  --wait-s <n>                  After --relaunch, seconds to wait for the first
+                                screen before reading it (default 3).
+  --tree                        Include every view, not only the statistics.
+  --no-save                     (layout, inspect) Do not keep the result under
+                                <sessions dir>/observations, where `mpi mcp`
+                                reads it. Kept by default.
 
 INSPECT OPTIONS
   --targets                     List what is attachable and exit. Does not
@@ -201,7 +218,8 @@ bool needs_value(const std::string& flag) {
       "--suppress-expiry",
       "--suppress-reason",
       "--threshold",
-      "--timeout-ms"};
+      "--timeout-ms",
+      "--wait-s"};
   for (const char* f : kWithValue) {
     if (flag == f) return true;
   }
@@ -230,6 +248,7 @@ bool is_boolean_flag(const std::string& flag) {
       "--redux-watch",  "--redux-actions",
       "--allow-actions",
       "--screenshot",   "--detail",
+      "--relaunch",     "--tree",         "--no-save",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
@@ -515,6 +534,8 @@ int main(int argc, char** argv) {
     code = cmd_rules(parsed.inv);
   } else if (cmd == "inspect") {
     return to_int(cmd_inspect(parsed.inv));
+  } else if (cmd == "layout") {
+    code = cmd_layout(parsed.inv);
   } else if (cmd == "mcp") {
     return to_int(cmd_mcp(parsed.inv));
   } else if (cmd == "sdk-bridge") {
