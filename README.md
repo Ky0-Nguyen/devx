@@ -47,6 +47,7 @@ Three pieces:
 | Timeline view (states, not bare numbers) | ✅ | ✅ |
 | Compare view (gate status before verdict) | ✅ | ✅ |
 | **Inspect** (network, console, Redux through the app's own inspector) | ✅ verified against a real app on the emulator: 52 slices, headers and bodies, action diffs | ✅ simulator, over the same Metro socket; screenshot via `simctl`; no physical-device screenshot route exists |
+| **Layout** (views per screen, depth, hidden views, navigation stacks) | ✅ verified on the emulator through `dumpsys activity top`, nothing runs in the app | ✅ simulator, through the layout probe injected at relaunch · ❌ physical device: code signing refuses an injected library |
 
 ✅ exercised against real tooling · ⚙️ implemented and unit-tested, awaiting hardware · ❌ not implemented
 
@@ -116,7 +117,7 @@ but AppKit pairs arguments differently than DevX does and can be left holding
 a bare one, which it treats as a file to open -- see
 [known limitations §5](docs/known-limitations.md).
 
-Native sidebar over Devices · Apps · Preflight · **Live** · Record · **Inspect** · Sessions ·
+Native sidebar over Devices · Apps · Preflight · **Live** · Record · **Inspect** · **Layout** · Sessions ·
 Issues · Threads · Timeline · Compare · Detectors · Export. The Live tab streams a capture alongside the running app --
 frame and sample counts, memory sparklines per family, per-source status, and a
 preliminary banner over all of it until the window closes. It renders the engine's output and nothing more: the provenance
@@ -209,6 +210,16 @@ mpi inspect --app <identifier> --redux --redux-watch   # the store's slices, and
 mpi inspect --app <identifier> --device <id> --screenshot
 ```
 
+```bash
+mpi layout --device <udid> --app <bundle-id> --relaunch   # iOS simulator: restart once with the layout probe
+mpi layout --device <id> --app <identifier>               # views per screen, depth, hidden, navigation stacks
+mpi layout --device <id> --app <identifier> --json --tree # every view, for a script or an AI tool
+```
+
+`layout` says how the screen an app is showing is built. Android is read through `dumpsys activity top`; an iOS simulator through a small library injected when the app is relaunched with `--relaunch`, which restarts it, so it is never done implicitly. Nothing is added to the app, and a snapshot is structure, not a measurement. How it works and what it refuses: [docs/layout.md](docs/layout.md).
+
+Layout snapshots and inspect observations are kept under `~/.mpi/sessions/observations/` (owner-only; `--no-save` skips it), next to the capture sessions, so an AI tool connected through `mpi mcp` can read and analyse the whole result rather than a screenshot of it: [docs/mcp-server.md](docs/mcp-server.md#what-is-kept-for-later).
+
 `inspect` reads the inspector a React Native debug build already runs and connects to Metro -- nothing is added to the app. It is not a performance measurement: a debugger is attached, and the report says so. `--detail` is off by default because that is where the bearer tokens are; values are kept verbatim rather than redacted, so the decision is whether to capture them at all. `--redux-watch` is read-only, through `store.subscribe`, and names no action because Redux passes subscribers none; `--redux-actions` also wraps `store.dispatch`, which modifies the running app for the window and is put back afterwards -- a dispatch reference captured beforehand, as a thunk's is, still bypasses it, and such a change is reported as unnamed rather than misattributed. `--screenshot` requires `--device`; the id is translated to the name Metro publishes. One Metro serves every attached device, so `--target-device` picks which.
 
 ### Exit codes
@@ -277,6 +288,7 @@ fields quietly empty.
 
 - [Known limitations](docs/known-limitations.md) — what is not true of this build
 - [Reading a capture from an AI tool](docs/mcp-server.md) — `mpi mcp`, an MCP server over stdio for Cursor, Claude and Codex; read-only unless started with `--allow-actions`
+- [Layout](docs/layout.md) — views per screen, depth and navigation stacks, and how the iOS layout probe gets in without touching the app
 - [Inspecting without installing](docs/inspect-without-installing.md) — how `mpi inspect` reads a debug build's inspector, and what it cannot reach
 - [iOS: what works, what does not, and what was measured](docs/ios-live-capture-findings.md)
 - [Tested capability matrix](docs/capabilities/tested-capability-matrix.md) — measured probe results

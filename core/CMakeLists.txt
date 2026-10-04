@@ -7,6 +7,8 @@ add_library(mpi_core STATIC
   observe/inspect.cpp
   mcp/protocol.cpp
   observe/screenshot.cpp
+  observe/layout.cpp
+  observe/observation_store.cpp
   sdk/marker_ingest.cpp
   sdk/sdk_bridge.cpp
   util/process.cpp

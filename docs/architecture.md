@@ -80,12 +80,14 @@ core/
   session/           session package on disk, collector contract, comparison
   timeline/          binned tracks whose bins carry a state, not a bare number
   heap/              object graph from a heap dump + reference-path search
-  observe/           reading a running app: network, console, Redux, screenshots
+  observe/           reading a running app: network, console, Redux, screenshots, layout
   net/               a WebSocket client, one loopback HTTP GET, and the HTTP server devx-serve uses
   sdk/               the optional in-app SDK's side of the wire, and its loopback endpoint
   util/              JSON, process execution, cancellation, time
 adapters/android/    adb adapter, live capture collector, atrace and HPROF parsers
 adapters/ios/        devicectl / simctl / xctrace adapter, simulator host collector, `sample` call-graph parser
+adapters/ios/view_probe/  the layout probe: a dylib injected into a simulator app at launch
+adapters/layout/     one layout snapshot on either platform, shared by the CLI and DevX
 adapters/rn/         a React Native app's own inspector, reached through Metro
 sdk/react-native/    the in-app SDK: markers, build handshake, transport (optional)
 sdk/ios, sdk/android READMEs only -- each says why no native SDK is shipped
@@ -97,6 +99,7 @@ fixtures/
   runsets/           baseline and candidate run sets for `mpi compare`
   cdp/               a real recorded inspector session (one value redacted, noted in its header)
   sample/            a real `/usr/bin/sample` call graph from a simulator
+  layout/            a real layout probe answer (iOS simulator) and a real `dumpsys activity top` (emulator)
 tests/unit, tests/integration, tests/helpers (a devicectl stand-in and two deliberately misbehaving tools)
 tools/               check-i18n, gen-requirement-map, gen-icon, gen-stress-fixture, smoke-test
 docs/adr/            architecture decision records

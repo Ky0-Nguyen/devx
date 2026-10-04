@@ -567,6 +567,7 @@ enum Strings {
         "Compare": "So sánh",
         "Detectors": "Bộ phát hiện",
         "Export": "Xuất",
+        "Layout": "Bố cục",
 
         // ---- Common controls ----
         "Refresh": "Làm mới",
@@ -1466,6 +1467,43 @@ enum Strings {
             + "bằng chứng chứ không phải giao diện: dịch chúng sẽ làm hai lần "
             + "ghi của cùng một ứng dụng không so sánh được với nhau chỉ vì "
             + "hai máy được cấu hình khác nhau.",
+
+        // ---- Layout ----
+        "How the screen an app is showing is built. Nothing is "
+        + "added to the app: Android is read through dumpsys; an iOS "
+        + "simulator needs the layout probe, loaded by relaunching "
+        + "the app once. A snapshot of structure, not a performance "
+        + "measurement.":
+            "Màn hình ứng dụng đang hiển thị được dựng như thế nào. Không có "
+            + "gì được cài vào app: Android đọc qua dumpsys; iOS simulator cần "
+            + "layout probe, được nạp bằng cách khởi động lại app một lần. Đây "
+            + "là ảnh chụp cấu trúc, không phải phép đo hiệu năng.",
+        "snapshot": "chụp",
+        "relaunch with probe": "khởi động lại kèm probe",
+        "Relaunch the app with the layout probe?":
+            "Khởi động lại app kèm layout probe?",
+        "Relaunch": "Khởi động lại",
+        "The app restarts and its current state is lost. iOS "
+        + "simulator only; Android needs no relaunch.":
+            "App sẽ khởi động lại và mất trạng thái hiện tại. Chỉ dành cho iOS "
+            + "simulator; Android không cần khởi động lại.",
+        "views": "view",
+        "visible": "hiển thị",
+        "hidden": "ẩn",
+        "off screen": "ngoài màn hình",
+        "deepest": "sâu nhất",
+        "windows": "cửa sổ",
+        "Screens": "Màn hình",
+        "No screen could be identified.": "Không xác định được màn hình nào.",
+        "Navigation": "Điều hướng",
+        "screens mounted": "screen đang mount",
+        "showing": "đang hiển thị",
+        "host views": "host view",
+        "Not detected: no React Native host views in the tree.":
+            "Không phát hiện: không có host view nào của React Native trong cây.",
+        "Observations": "Nhận xét",
+        "None past the thresholds.": "Không có gì vượt ngưỡng.",
+        "Saved for AI tools:": "Đã lưu cho công cụ AI:",
     ]
 }
 

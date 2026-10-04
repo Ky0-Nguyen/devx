@@ -40,6 +40,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LiveView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LayoutView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineView.swift
@@ -152,6 +153,18 @@ else()
   set(DEVX_ICON_DEP  "")
 endif()
 
+# The iOS simulator layout probe rides in Resources, where `mpi layout` looks
+# for it beside itself -- including through the Homebrew link, which resolves
+# into this bundle. Before the signature, for the same reason as the icon.
+if(MPI_VIEW_PROBE)
+  set(DEVX_PROBE_STEP COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                      ${MPI_VIEW_PROBE} ${DEVX_BUNDLE}/Contents/Resources/libdevx_view_probe.dylib)
+  set(DEVX_PROBE_DEP devx_view_probe ${MPI_VIEW_PROBE})
+else()
+  set(DEVX_PROBE_STEP "")
+  set(DEVX_PROBE_DEP "")
+endif()
+
 add_custom_command(
   OUTPUT ${DEVX_BINARY}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${DEVX_BUNDLE}/Contents/MacOS
@@ -188,12 +201,13 @@ add_custom_command(
   # matches it.
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           $<TARGET_FILE:mpi> ${DEVX_BUNDLE}/Contents/MacOS/mpi
+  ${DEVX_PROBE_STEP}
   # An ad-hoc signature is enough for local use and keeps macOS from refusing
   # to launch it. A distributed build needs a real identity; see
   # THIRD-PARTY-LICENSES.md.
   COMMAND codesign --force --sign - ${DEVX_BUNDLE}
   DEPENDS ${DEVX_SWIFT_SOURCES} mpi_capi mpi_core mpi_adapters mpi
-          ${DEVX_ICON_DEP}
+          ${DEVX_ICON_DEP} ${DEVX_PROBE_DEP}
           ${CMAKE_CURRENT_SOURCE_DIR}/Support/Info.plist
           ${CMAKE_CURRENT_BINARY_DIR}/modules/mpi_capi.h
           ${CMAKE_CURRENT_BINARY_DIR}/modules/module.modulemap

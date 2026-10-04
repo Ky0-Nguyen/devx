@@ -54,8 +54,10 @@ inline constexpr const char* kProtocolVersion = "2024-11-05";
 /// Whether a tool only reads, or changes something.
 enum class Effect {
   kReadOnly,
-  /// Starts a process, changes the machine, or writes a file. Refused unless
-  /// the server was started with actions enabled.
+  /// Starts a process, changes the machine, or writes a file outside DevX's
+  /// own observation store. Refused unless the server was started with
+  /// actions enabled. (A read tool may keep what it read as an observation:
+  /// that file is the tool's own record, not a change to anything else.)
   kMutating,
 };
 

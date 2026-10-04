@@ -44,6 +44,26 @@ enum JSON: Sendable {
         }
     }
 
+    /// Back to Foundation types, and to text, so a document the core handed
+    /// over can be handed back -- to be kept as an observation, for one.
+    var foundationValue: Any {
+        switch self {
+        case .null: return NSNull()
+        case .bool(let b): return b
+        case .number(let n): return n
+        case .string(let s): return s
+        case .array(let a): return a.map { $0.foundationValue }
+        case .object(let o): return o.mapValues { $0.foundationValue }
+        }
+    }
+
+    func serialized() -> String {
+        guard let data = try? JSONSerialization.data(
+                withJSONObject: foundationValue, options: [.fragmentsAllowed]),
+              let text = String(data: data, encoding: .utf8) else { return "null" }
+        return text
+    }
+
     static func parse(_ text: String) -> JSON {
         guard let data = text.data(using: .utf8),
               let any = try? JSONSerialization.jsonObject(
@@ -144,6 +164,29 @@ enum Core {
     /// `probe` runs a live reachability check (~0.1s).
     static func deviceAdvice(deviceId: String, probe: Bool) -> JSON {
         call { mpi_device_advice_json(deviceId, probe ? 1 : 0) }
+    }
+
+    /// One layout snapshot of an app's screen. With `relaunch` the app is
+    /// restarted with the iOS layout probe injected, and its state is lost,
+    /// so the caller asks first. Blocks; run it off the main thread.
+    static func layout(device: String, app: String, relaunch: Bool,
+                       settleMs: Int, includeTree: Bool,
+                       includeSimulators: Bool, saveTo: String,
+                       timeoutMs: Int32 = 20000) -> JSON {
+        call {
+            mpi_layout_json(device, app, relaunch ? 1 : 0, Int32(settleMs),
+                            includeTree ? 1 : 0, includeSimulators ? 1 : 0, timeoutMs,
+                            saveTo)
+        }
+    }
+
+    /// Keeps a result on disk as an observation, where `mpi mcp` reads it.
+    static func saveObservation(sessionsDir: String, kind: String, app: String,
+                                device: String, summary: String,
+                                document: String) -> JSON {
+        call {
+            mpi_save_observation_json(sessionsDir, kind, app, device, summary, document)
+        }
     }
 
     /// What is attachable right now. Cheap, and it does not hold the single

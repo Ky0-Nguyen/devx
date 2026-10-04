@@ -71,8 +71,8 @@ your captures are not in the default location.
 
 ## Reading is free; acting is not
 
-Started as above, the server **refuses to change anything**. Twelve tools
-read; three do not, and they are visible in the catalogue with their
+Started as above, the server **refuses to change anything**. Fifteen tools
+read; four do not, and they are visible in the catalogue with their
 descriptions saying they are unavailable and naming the flag that enables
 them.
 
@@ -81,9 +81,11 @@ them.
 ```
 
 That enables `record_capture` (starts processes on a device and writes a
-session package), `boot_device` (changes this machine's state) and
+session package), `boot_device` (changes this machine's state),
 `observe_app` (attaches a debugger to a running app, and with `detail` on
-captures headers including bearer tokens).
+captures headers including bearer tokens) and `relaunch_with_layout_probe`
+(restarts an app on an iOS simulator with the layout probe injected, losing
+its state).
 
 The split is not decoration. A model that decides on its own to "just try
 recording" is a different thing from a person asking for it, and a recording
@@ -114,9 +116,43 @@ renders, including every absent value that is absent rather than zero.
 | `inspect_targets` | which running apps can be observed through Metro |
 | `analyze_trace` | a trace file directly, no session package |
 | `list_boot_targets` | simulators and emulators that could be started |
+| `list_observations` | saved layout snapshots and inspect observations, newest first, each with a summary |
+| `read_observation` | one saved observation in full: every view of a layout, every request of an inspect |
+| `capture_layout` | how the screen an app is showing is built, right now; saved, restarts nothing |
 | `record_capture` | **acts** — records and analyses a new capture |
 | `boot_device` | **acts** — starts a simulator or emulator |
-| `observe_app` | **acts** — attaches a debugger for a window |
+| `observe_app` | **acts** — attaches a debugger for a window; the observation is saved |
+| `relaunch_with_layout_probe` | **acts** — restarts a simulator app with the layout probe, then snapshots it |
+
+## What is kept for later
+
+A capture is a session package and has always been on disk. The other
+results were not: a layout snapshot or an inspect observation existed on
+screen or on stdout and was gone afterwards, so a model could only look at
+what a person pasted.
+
+Now each one is kept as an *observation* under
+`<sessions dir>/observations/<id>.json`, whoever took it: `mpi layout`,
+`mpi inspect`, DevX's Layout and Inspect tabs, and the `capture_layout`,
+`relaunch_with_layout_probe` and `observe_app` tools. `list_observations`
+finds them and `read_observation` returns one whole, so a later conversation
+can work from a snapshot taken yesterday without attaching to anything.
+
+- An observation is an envelope (`schema: devx.observation/1`, `id`, `kind`,
+  `saved_at`, `app_identifier`, `device_id`, a small `summary`) around the
+  same document the command prints with `--json`. A layout observation keeps
+  every view, which the command only prints with `--tree`.
+- The directory is `0700` and every file `0600`. An inspect observation taken
+  with `detail` holds request headers, bearer tokens included, verbatim, and
+  its summary says `contains_headers_or_bodies: true`.
+- `--no-save` on `mpi layout` and `mpi inspect` skips it. Nothing is ever
+  uploaded; these are local files.
+- A read tool that keeps what it read is still a read tool: the observation
+  is the tool's own record, not a change to the device or the app.
+
+Compare and preflight results are not kept: both are recomputed from their
+inputs (two run-set files, a device probe), so `compare_runsets` and
+`preflight` give a model the same answer on demand.
 
 ## What it does not implement
 

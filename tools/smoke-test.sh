@@ -232,6 +232,8 @@ done
 
 echo "== record refuses rather than fabricating =="
 check "record without --app is a usage error" 2 "$MPI" record --sessions-dir "$TMP/s"
+check "layout without --app is a usage error" 2 "$MPI" layout
+check "layout refuses a bad --wait-s" 2 "$MPI" layout --app com.example --wait-s abc
 if [ ! -d "$TMP/s" ]; then
   printf '  ok   a refused record creates no session directory\n'; pass=$((pass+1))
 else
@@ -259,6 +261,26 @@ fi
 
 
 echo "== mcp server over stdio =="
+# The saved-observation and layout tools are in the catalogue, and the one
+# that restarts an app is refused when the server is read-only.
+mcp_catalogue=$(printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"1"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+  '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"relaunch_with_layout_probe","arguments":{"device_id":"x","app_identifier":"y"}}}' \
+  | "$MPI" mcp --sessions-dir "$TMP/mcp" 2>/dev/null)
+for tool in list_observations read_observation capture_layout relaunch_with_layout_probe; do
+  if printf '%s' "$mcp_catalogue" | grep -q "\"$tool\""; then
+    printf '  ok   mcp offers %s\n' "$tool"; pass=$((pass+1))
+  else
+    printf '  FAIL mcp does not offer %s\n' "$tool"; fail=$((fail+1))
+  fi
+done
+if printf '%s' "$mcp_catalogue" | grep -q 'refused: .relaunch_with_layout_probe'; then
+  printf '  ok   a read-only server refuses to relaunch an app\n'; pass=$((pass+1))
+else
+  printf '  FAIL a read-only server relaunched, or did not say it refused\n'; fail=$((fail+1))
+fi
 
 # The dispatcher has unit tests; the transport does not, and the transport is
 # where a host-visible regression lives. Three things are asserted here that

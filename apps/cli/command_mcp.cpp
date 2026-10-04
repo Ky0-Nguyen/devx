@@ -29,6 +29,7 @@
 #include "apps/cli/cli.hpp"
 #include "core/capi/mpi_capi.h"
 #include "core/mcp/protocol.hpp"
+#include "core/observe/observation_store.hpp"
 
 namespace mpi::cli {
 namespace {
@@ -298,14 +299,85 @@ void register_tools(mcp::Server& server, const std::string& sessions_dir,
                          "where bearer tokens are."}},
              {"app_identifier"}),
       mcp::Effect::kMutating,
-      [](const json::Value& a) {
+      [dir](const json::Value& a) {
         // Flags: 1 read redux, 2 values, 16 watch, 32 wrap dispatch, 8 detail.
         int flags = 1 | 16;
         if (arg_bool(a, "detail", false)) flags |= 8;
-        return owned(mpi_inspect_json(arg_str(a, "app_identifier").c_str(),
-                                      arg_int(a, "seconds", 15),
-                                      arg_int(a, "metro_port", 8081), flags,
-                                      "", "", ""));
+        const std::string app = arg_str(a, "app_identifier");
+        const std::string text = owned(mpi_inspect_json(
+            app.c_str(), arg_int(a, "seconds", 15), arg_int(a, "metro_port", 8081),
+            flags, "", "", ""));
+        // Kept, like the CLI keeps it, so a later conversation can read it
+        // with read_observation instead of attaching again.
+        json::ParseError perr;
+        auto doc = json::parse(text, &perr);
+        if (!doc || !doc->is_object()) return text;
+        const json::Value* attached = doc->find("debugger_attached");
+        if (attached != nullptr && attached->is_bool() && attached->as_bool()) {
+          const auto saved = observe::save_observation(
+              dir, "inspect", app, "", observe::summarize_inspect(*doc), *doc);
+          if (saved.ok) doc->set("saved_observation", json::Value::string(saved.id));
+        }
+        return doc->dump(2);
+      });
+
+  add(server, "list_observations",
+      "Saved results that are not captures: layout snapshots (how a screen is "
+      "built) and inspect observations (network, console, Redux). Newest "
+      "first, each with a small summary. Every `mpi layout`, `mpi inspect`, "
+      "DevX snapshot and capture_layout/observe_app call is kept here.",
+      schema({{"kind", "\"layout\" or \"inspect\"; omit for both."},
+              {"limit", "int:At most this many. Default 50."}}),
+      mcp::Effect::kReadOnly,
+      [dir](const json::Value& a) {
+        return owned(mpi_observations_json(dir.c_str(), arg_str(a, "kind").c_str(),
+                                           arg_int(a, "limit", 50)));
+      });
+
+  add(server, "read_observation",
+      "One saved observation in full. A layout snapshot includes every view "
+      "(class, frame, hidden, depth, parent), the per-screen statistics, the "
+      "navigation stacks and the React Native counts; an inspect observation "
+      "includes every network exchange, console line and Redux record.",
+      schema({{"id", "The id from list_observations."}}, {"id"}),
+      mcp::Effect::kReadOnly,
+      [dir](const json::Value& a) {
+        return owned(mpi_observation_json(dir.c_str(), arg_str(a, "id").c_str()));
+      });
+
+  add(server, "capture_layout",
+      "How the screen an app is showing right now is built: views per screen, "
+      "nesting depth, hidden and off-screen views, navigation stacks, React "
+      "Native screens mounted against showing. Android is read through "
+      "dumpsys; an iOS simulator through the layout probe, which must already "
+      "be loaded (relaunch_with_layout_probe loads it). Restarts nothing. The "
+      "snapshot, every view included, is saved; the reply omits the tree, "
+      "and read_observation returns it. Structure, not a measurement.",
+      schema({{"device_id", "A device id from list_devices."},
+              {"app_identifier", "Package name or bundle id."}},
+             {"device_id", "app_identifier"}),
+      mcp::Effect::kReadOnly,
+      [dir, timeout_ms](const json::Value& a) {
+        return owned(mpi_layout_json(arg_str(a, "device_id").c_str(),
+                                     arg_str(a, "app_identifier").c_str(),
+                                     /*relaunch=*/0, 0, /*include_tree=*/0, 1,
+                                     timeout_ms, dir.c_str()));
+      });
+
+  add(server, "relaunch_with_layout_probe",
+      "iOS simulator only: restart the app with the layout probe injected, "
+      "then take a layout snapshot. The app's current state is lost. Later "
+      "capture_layout calls reuse the probe without restarting.",
+      schema({{"device_id", "A simulator UDID from list_devices."},
+              {"app_identifier", "Bundle id."},
+              {"settle_s", "int:Seconds to let the first screen render. Default 3."}},
+             {"device_id", "app_identifier"}),
+      mcp::Effect::kMutating,
+      [dir, timeout_ms](const json::Value& a) {
+        return owned(mpi_layout_json(arg_str(a, "device_id").c_str(),
+                                     arg_str(a, "app_identifier").c_str(),
+                                     /*relaunch=*/1, arg_int(a, "settle_s", 3) * 1000,
+                                     /*include_tree=*/0, 1, timeout_ms, dir.c_str()));
       });
 }
 

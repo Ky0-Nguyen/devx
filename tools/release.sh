@@ -56,6 +56,11 @@ else
   sign=(codesign --force --sign "$IDENTITY" --options runtime --timestamp)
 fi
 "${sign[@]}" "$STAGE/DevX.app/Contents/MacOS/mpi"
+# The layout probe is an iOS-simulator library, loaded into apps on the
+# simulator rather than by DevX, but notarization checks every Mach-O in the
+# bundle, so it is signed the same way.
+probe="$STAGE/DevX.app/Contents/Resources/libdevx_view_probe.dylib"
+if [ -f "$probe" ]; then "${sign[@]}" "$probe"; fi
 "${sign[@]}" "$STAGE/DevX.app"
 codesign --verify --strict --verbose=1 "$STAGE/DevX.app"
 

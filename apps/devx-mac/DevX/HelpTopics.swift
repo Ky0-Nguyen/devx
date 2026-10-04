@@ -214,6 +214,29 @@ enum HelpTopics {
                     vietnamese: "Một slice bị thay bằng giá trị y như cũ. Subscriber bị đánh thức mà không có gì đổi, đây là nguyên nhân kinh điển gây render lại vô ích trong app Redux và không thể thấy được nếu chỉ xem danh sách tên action."),
             ]),
         HelpTopic(
+            id: "layout",
+            title: "Layout",
+            english: "How the screen the selected app is showing is built: how many views each screen holds, how deep they nest, how many are hidden or off screen, which navigation stacks hold how many screens, and for a React Native app how many react-native-screens screens are mounted against how many are showing. Nothing is added to the app. On Android the hierarchy is read through dumpsys and nothing runs inside the app. On an iOS simulator a small library, the layout probe, is injected when the app is relaunched with it; that restarts the app, so it is only done when you press relaunch, and later snapshots reuse it. A physical iOS device has no route and is refused. A snapshot describes structure at one instant and is never a performance measurement.",
+            vietnamese: "Màn hình mà ứng dụng đang hiển thị được dựng như thế nào: mỗi screen có bao nhiêu view, lồng sâu bao nhiêu tầng, bao nhiêu view bị ẩn hoặc nằm ngoài màn hình, navigation stack nào đang giữ bao nhiêu screen, và với app React Native thì có bao nhiêu screen của react-native-screens đang mount so với số đang hiển thị. Không có gì được cài vào app. Trên Android, cây view được đọc qua dumpsys và không có gì chạy bên trong app. Trên iOS simulator, một thư viện nhỏ là layout probe được inject khi app được khởi động lại cùng nó; việc này khởi động lại app nên chỉ làm khi bạn bấm relaunch, và các lần chụp sau dùng lại probe đó. Thiết bị iOS thật không có cách nào đọc được và bị từ chối. Một snapshot mô tả cấu trúc tại một thời điểm, không bao giờ là phép đo hiệu năng.",
+            fields: [
+                HelpField(
+                    name: "on screen / not shown",
+                    english: "Whether the screen's root view is visible: not hidden, not fully transparent, and inside the window. A screen that is mounted but not shown still holds its whole view tree.",
+                    vietnamese: "Root view của screen có đang hiển thị không: không bị ẩn, không trong suốt hoàn toàn, và nằm trong cửa sổ. Screen đã mount mà không hiển thị vẫn giữ nguyên cả cây view của nó."),
+                HelpField(
+                    name: "depth",
+                    english: "The deepest view below the screen's root. Each level is another layout pass; on React Native it is usually wrapper Views.",
+                    vietnamese: "View sâu nhất tính từ root của screen. Mỗi tầng là thêm một lượt layout; trên React Native thường là các View bọc ngoài."),
+                HelpField(
+                    name: "wrappers",
+                    english: "Views with exactly one child that covers them exactly: candidates to flatten away.",
+                    vietnamese: "View chỉ có đúng một con và con đó phủ kín nó: ứng viên để bỏ bớt."),
+                HelpField(
+                    name: "observations",
+                    english: "Heuristics with their thresholds stated: a deep screen, a heavy screen, a deep stack, many mounted screens, a tree mostly hidden. They are prompts to look, not findings.",
+                    vietnamese: "Các heuristic kèm ngưỡng ghi rõ: screen quá sâu, screen quá nặng, stack quá sâu, quá nhiều screen đang mount, cây view phần lớn bị ẩn. Đó là gợi ý để xem lại, không phải kết luận."),
+            ]),
+        HelpTopic(
             id: "sessions",
             title: "Sessions",
             english: "Every capture stored on this machine. Opening one loads its report into Issues, Threads, Timeline and Compare.",

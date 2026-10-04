@@ -16,6 +16,7 @@
 
 #include "adapters/rn/inspector.hpp"
 #include "apps/cli/cli.hpp"
+#include "core/observe/observation_store.hpp"
 
 namespace mpi::cli {
 namespace {
@@ -187,8 +188,27 @@ ExitCode cmd_inspect(const Invocation& inv) {
 
   const observe::InspectReport report = rn::run(opts, &inv.global.cancel);
 
+  // Kept on disk by default, so `mpi mcp` can hand the observation to a model.
+  // Owner-only: with --detail it holds request headers, tokens included.
+  observe::SavedObservation saved;
+  if (!inv.has_flag("no-save") && report.debugger_attached) {
+    const json::Value doc = report.to_json();
+    saved = observe::save_observation(inv.global.sessions_dir, "inspect", report.app_id,
+                                      inv.global.device, observe::summarize_inspect(doc),
+                                      doc);
+    if (!saved.ok) warn("not saved: " + saved.error);
+  }
+  if (saved.ok && !inv.global.quiet) {
+    std::cerr << "saved: " << saved.path << " (owner-only"
+              << (opts.capture_detail ? "; it holds the captured headers and bodies" : "")
+              << ")\n  read it back with `mpi mcp` (read_observation " << saved.id
+              << "); --no-save skips this\n";
+  }
+
   if (inv.global.json) {
-    print_json(report.to_json());
+    json::Value out = report.to_json();
+    if (saved.ok) out.set("saved_observation", json::Value::string(saved.id));
+    print_json(out);
   } else {
     if (!report.debugger_attached) {
       std::cerr << "nothing was attached.\n\n";

@@ -86,3 +86,10 @@ it with `python3 tools/gen-stress-fixture.py <path>`.
 Benchmark comparison inputs for `mpi compare`: an Android baseline, a clear
 regression, a no-change candidate, and an iOS candidate used to prove a
 cross-platform pair cannot drive a regression gate.
+
+## `layout/`
+
+| File | Purpose |
+|---|---|
+| `ios-probe-expo-go-home.real.json` | **Real**: the layout probe's answer from Expo Go on an iPhone 17 simulator (iOS 26.0), relaunched with `mpi layout --relaunch` on 2026-10-03. Three windows, 87 views, the SwiftUI home screen at the top of its navigation stack, and the keyboard's text-effects window that must not count as a screen. |
+| `android-dumpsys-activity-top-settings.real.txt` | **Real**: `adb shell dumpsys activity top` with Settings in the foreground on a Pixel 6a emulator (API 33), 2026-10-03. Holds the launcher's activity too, so selecting by package is exercised. |

@@ -1,0 +1,1231 @@
+TASK null id=200 userId=0
+  ACTIVITY com.google.android.apps.nexuslauncher/.NexusLauncherActivity a2ac8a0 pid=1053
+    Local Activity 54d223d State:
+      mResumed=false mStopped=true mFinished=false
+      mIsInMultiWindowMode=false mIsInPictureInPictureMode=false
+      mChangingConfigurations=false
+      mCurrentConfig={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=home mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.3 fontWeightAdjustment=0}
+      mLoadersStarted=true
+      FragmentManager misc state:
+        mHost=android.app.Activity$HostCallbacks@4ad7459
+        mContainer=android.app.Activity$HostCallbacks@4ad7459
+        mCurState=3 mStateSaved=true mDestroyed=false
+    ViewRoot:
+      mAdded=true
+      mRemoved=false
+      mStopped=true
+      mPausedForTransition=false
+      mConsumeBatchedInputScheduled=false
+      mConsumeBatchedInputImmediatelyScheduled=false
+      mPendingInputEventCount=0
+      mProcessInputEventsScheduled=false
+      mTraversalScheduled=false
+      mReportNextDraw=false
+      mLastPerformTraversalsFailedReason=view_not_visible
+      mLocalSyncState=3
+      mLastReportedMergedConfiguration={mGlobalConfig={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.66 fontWeightAdjustment=0} mOverrideConfig={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=home mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.4 fontWeightAdjustment=0}}
+      mLastConfigurationFromResources={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=home mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.3 fontWeightAdjustment=0}
+      mIsAmbientMode=false
+      mUnbufferedInputSource=0
+      mAttachInfo=       AttachInfo:
+        mHasWindowFocus=false
+        mWindowVisibility=8
+        mInTouchMode=true
+        mUnbufferedDispatchRequested=false
+      android.view.ViewRootImpl$NativePreImeInputStage: mQueueLength=0
+      android.view.ViewRootImpl$ImeInputStage: mQueueLength=0
+      android.view.ViewRootImpl$NativePostImeInputStage: mQueueLength=0
+      android.view.ViewRootImpl$WindowInputEventReceiver
+       mInputChannel: c38e923 com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity (client)
+       mSeqMap: {}
+       mReceiverPtr:
+        mInputConsumer:
+          mResampleTouch = true
+          mChannel = c38e923 com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity (client)
+          mMsgDeferred: false
+          Batches:
+              <empty>
+          mSeqChains:
+              <empty>
+          mConsumeTimes:
+              <empty>
+          
+        mBatchedInputEventPending: false
+        mOutboundQueue:
+          <empty>
+        
+    Choreographer:
+      mFrameScheduled=false
+      mLastFrameTime=53675 (2860 ms ago)
+    InsetsController:
+      InsetsState
+        mDisplayFrame=Rect(0, 0 - 1080, 2400)
+        mDisplayCutout=DisplayCutout{insets=Rect(0, 132 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(480, 0 - 625, 132), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1080 displayHeight=2400 physicalDisplayWidth=1080 physicalDisplayHeight=2400 density={2.625} cutoutSpec={M 507,66 a 33,33 0 1 0 66,0 33,33 0 1 0 -66,0 Z @left} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}}}
+        mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=47, center=Point(47, 47)}, RoundedCorner{position=TopRight, radius=47, center=Point(1033, 47)}, RoundedCorner{position=BottomRight, radius=48, center=Point(1032, 2352)}, RoundedCorner{position=BottomLeft, radius=48, center=Point(48, 2352)}]}
+        mRoundedCornerFrame=Rect(0, 0 - 1080, 2400)
+        mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(827, 0 - 1043, 132) rotation=0}
+          InsetsSource type=ITYPE_STATUS_BAR frame=[0,0][1080,132] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_NAVIGATION_BAR frame=[0,2337][1080,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_LEFT_GESTURES frame=[0,0][78,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_RIGHT_GESTURES frame=[1002,0][1080,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_TOP_MANDATORY_GESTURES frame=[0,0][1080,164] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_BOTTOM_MANDATORY_GESTURES frame=[0,2316][1080,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_TOP_DISPLAY_CUTOUT frame=[0,0][1080,132] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_TOP_TAPPABLE_ELEMENT frame=[0,0][1080,132] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_BOTTOM_TAPPABLE_ELEMENT frame=[0,0][0,0] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_IME frame=[0,0][0,0] visible=false insetsRoundedCornerFrame=false
+    WindowOnBackDispatcher:
+        Top Callback: android.view.ViewRootImpl$$ExternalSyntheticLambda14@2380c66
+        Callbacks: 
+          Callback: android.view.ViewRootImpl$$ExternalSyntheticLambda14@2380c66 Priority=0
+    View Hierarchy:
+      DecorView@d23d81e[NexusLauncherActivity]
+        android.widget.LinearLayout{95058ff V.E...... .......D 0,0-1080,2400 aid=1073741824}
+          android.view.ViewStub{68dc6cc G.E...... ......I. 0,0-0,0 #10201c5 android:id/action_mode_bar_stub}
+          android.widget.FrameLayout{ab7fd15 V.E...... .......D 0,0-1080,2400 #1020002 android:id/content aid=1073741825}
+            com.android.launcher3.LauncherRootView{2b1582a V.E...... .......D 0,0-1080,2400 #7f0a01d8 app:id/launcher aid=1073741826}
+              com.android.launcher3.dragndrop.DragLayer{8db861b V.E...... .......D 0,0-1080,2400 #7f0a0131 app:id/drag_layer aid=1073741827}
+                com.android.launcher3.views.AccessibilityActionsView{c3683b8 V.E...... ........ 0,132-1080,2337}
+                com.android.launcher3.Workspace{7a85591 V.ED..... .......D 0,0-1080,2400 #7f0a03dc app:id/workspace aid=1073741828}
+                  com.android.launcher3.CellLayout{be4ccf6 V.ED..... .......D 29,199-1051,1783 aid=1073741829}
+                    com.android.launcher3.ShortcutAndWidgetContainer{32268f7 V.E...... .......D 28,28-994,1556 aid=1073741830}
+                      com.google.android.apps.nexuslauncher.qsb.SmartspaceViewContainer{8e8b2f9 V.E...... ........ 0,0-966,272 #7f0a02b6 app:id/search_container_workspace aid=1073741831}
+                        com.google.android.systemui.smartspace.BcSmartspaceView{bb1d383 V.E...... ........ 0,0-970,273 #7f0a00a0 app:id/bc_smartspace_view aid=1073741832}
+                          com.google.android.systemui.smartspace.InterceptingViewPager{7ac2364 VFED...L. ........ 0,0-970,273 #7f0a02ee app:id/smartspace_card_pager aid=1073741833}
+                            com.google.android.systemui.smartspace.BcSmartspaceCard{a6bb9cd VFE...C.. ........ 0,0-970,273 aid=1073741834}
+                              android.widget.RelativeLayout{408c282 V.E...... ........ 0,69-970,204 #7f0a035e app:id/text_group aid=1073741835}
+                                com.google.android.systemui.smartspace.IcuDateTextView{58a9d93 VFED..C.. ........ 0,0-970,62 #7f0a0108 app:id/date aid=1073741836}
+                                androidx.constraintlayout.widget.ConstraintLayout{aba11d0 V.E...... ........ 0,86-21,135 #7f0a02f1 app:id/smartspace_subtitle_group aid=1073741837}
+                                  com.google.android.systemui.smartspace.DoubleShadowTextView{98725c9 VFED..C.. ......ID 0,0-0,49 #7f0a031d app:id/subtitle_text aid=1073741838}
+                                  com.google.android.systemui.smartspace.DoubleShadowTextView{e8484ce IFED..C.. ......ID 21,0-21,49 #7f0a009e app:id/base_action_icon_subtitle aid=1073741839}
+                                android.widget.LinearLayout{4377fef G.E...... ......I. 0,0-0,0 #7f0a02ef app:id/smartspace_extras_group aid=1073741840}
+                                  android.widget.ImageView{6767afc G.ED..... ......I. 0,0-0,0 #7f0a006d app:id/alarm_icon}
+                                  com.google.android.systemui.smartspace.DoubleShadowTextView{4d35585 G.ED..... ......I. 0,0-0,0 #7f0a006e app:id/alarm_text}
+                                  com.google.android.systemui.smartspace.DoubleShadowTextView{be81fda G.ED..... ......I. 0,0-0,0 #7f0a0323 app:id/supplemental_line_text}
+                                  android.widget.ImageView{8262c0b G.ED..... ......I. 0,0-0,0 #7f0a0126 app:id/dnd_icon}
+                          com.google.android.systemui.smartspace.PageIndicator{52e4ae8 G.E...... ......I. 0,0-0,0 #7f0a02f0 app:id/smartspace_page_indicator}
+                      com.android.launcher3.views.DoubleShadowBubbleTextView{6f8c501 VFED..CL. ......ID 0,1256-210,1528 #4 aid=1073741841}
+                      com.android.launcher3.views.DoubleShadowBubbleTextView{3b85fa6 VFED..CL. ......ID 252,1256-462,1528 #5 aid=1073741842}
+                      com.android.launcher3.views.DoubleShadowBubbleTextView{3097de7 VFED..CL. ......ID 504,1256-714,1528 #6 aid=1073741843}
+                      com.android.launcher3.views.DoubleShadowBubbleTextView{7112d94 VFED..CL. ......ID 756,1256-966,1528 #7 aid=1073741844}
+                com.android.launcher3.Hotseat{2abb03d V.ED..... .......D 0,1873-1080,2400 #7f0a01ae app:id/hotseat aid=1073741845}
+                  com.android.launcher3.ShortcutAndWidgetContainer{efad032 V.E...... .......D 76,0-1004,195 aid=1073741846}
+                    com.android.launcher3.views.DoubleShadowBubbleTextView{4e61183 VFED..CL. ......ID 0,0-173,195 #1 aid=1073741847}
+                    com.android.launcher3.views.DoubleShadowBubbleTextView{d9d8f00 VFED..CL. ......ID 252,0-425,195 #2 aid=1073741848}
+                    com.android.launcher3.views.DoubleShadowBubbleTextView{7a81339 VFED..CL. ......ID 504,0-677,195 #3 aid=1073741849}
+                    com.android.launcher3.uioverrides.PredictedAppIcon{f81bd7e VFED..CL. ......ID 756,0-929,195 aid=1073741850}
+                  com.google.android.apps.nexuslauncher.qsb.SearchDelegateView{a8e8dec VFE...CL. ......ID 75,252-1004,417 #7f0a02b5 app:id/search_container_hotseat aid=1073741851}
+                    android.widget.ImageView{f6e42df VFED..C.. ......ID 11,19-137,145 #7f0a0179 app:id/g_icon aid=1073741852}
+                    android.widget.LinearLayout{1cc9b2c V.E...... .......D 666,-1-918,166 #7f0a014c app:id/end_part aid=1073741853}
+                      com.google.android.apps.nexuslauncher.qsb.AssistantIconView{dcc9cd8 V.ED..C.. ......ID 0,0-126,167 #7f0a020f app:id/mic_icon aid=1073741854}
+                      android.widget.ImageButton{b6da9f5 VFED..C.. ......ID 126,0-252,167 #7f0a01dd app:id/lens_icon aid=1073741855}
+                com.android.launcher3.pageindicators.WorkspacePageIndicator{ff8338a V.ED..... ........ 0,1810-1080,1873 #7f0a0264 app:id/page_indicator}
+                com.android.launcher3.DropTargetBar{31e2dfb I.E...... ......ID 11,216-1069,363 #7f0a0133 app:id/drop_target_bar aid=1073741856}
+                  com.android.launcher3.DeleteDropTarget{fe3e18 V.ED..... ......ID 177,0-486,147 #7f0a0112 app:id/delete_target_text aid=1073741857}
+                  com.android.launcher3.SecondaryDropTarget{1bbf071 V.ED..... ......ID 560,0-880,147 #7f0a0392 app:id/uninstall_target_text aid=1073741858}
+                com.android.launcher3.views.ScrimView{8adfe56 V.ED..... ......ID 0,0-1080,2400 #7f0a02a7 app:id/scrim_view}
+                com.google.android.apps.nexuslauncher.allapps.SearchContainerView{217aed7 I.ED..... ......ID 0,0-1080,2400 #7f0a0090 app:id/apps_view aid=1073741859}
+                  android.widget.FrameLayout{ca523c4 G.E...... ......I. 0,0-0,0 #7f0a00a9 app:id/bottom_sheet_background}
+                    android.view.View{ce22ad V.ED..... ......I. 0,0-0,0 #7f0a00ab app:id/bottom_sheet_handle_area}
+                    android.view.View{523a9e2 V.ED..... ......I. 0,0-0,0 #7f0a00aa app:id/bottom_sheet_handle}
+                  com.android.launcher3.allapps.SearchRecyclerView{4be6173 GFED..... ......I. 0,0-0,0 #7f0a02be app:id/search_results_list_view}
+                  com.android.launcher3.allapps.AllAppsRecyclerView{8b2b830 VFED..... ......ID 0,237-1080,2400 #7f0a008e app:id/apps_list_view aid=1073741887}
+                    com.android.launcher3.BubbleTextView{d573ca9 VFED..CL. ......ID 57,492-298,807 #7f0a01b9 app:id/icon aid=1073741886}
+                    com.android.launcher3.BubbleTextView{656822e VFED..CL. ......ID 298,492-540,807 #7f0a01b9 app:id/icon aid=1073741888}
+                    com.android.launcher3.BubbleTextView{c13a1cf VFED..CL. ......ID 540,492-781,807 #7f0a01b9 app:id/icon aid=1073741889}
+                    com.android.launcher3.BubbleTextView{4c3275c VFED..CL. ......ID 781,492-1023,807 #7f0a01b9 app:id/icon aid=1073741890}
+                    com.android.launcher3.BubbleTextView{a3dfa65 VFED..CL. ......ID 57,807-298,1122 #7f0a01b9 app:id/icon aid=1073741891}
+                    com.android.launcher3.BubbleTextView{dcc933a VFED..CL. ......ID 298,807-540,1122 #7f0a01b9 app:id/icon aid=1073741892}
+                    com.android.launcher3.BubbleTextView{dd28beb VFED..CL. ......ID 540,807-781,1122 #7f0a01b9 app:id/icon aid=1073741893}
+                    com.android.launcher3.BubbleTextView{c095d48 VFED..CL. ......ID 781,807-1023,1122 #7f0a01b9 app:id/icon aid=1073741894}
+                    com.android.launcher3.BubbleTextView{818d7e1 VFED..CL. ......ID 57,1122-298,1437 #7f0a01b9 app:id/icon aid=1073741895}
+                    com.android.launcher3.BubbleTextView{d60a906 VFED..CL. ......ID 298,1122-540,1437 #7f0a01b9 app:id/icon aid=1073741896}
+                    com.android.launcher3.BubbleTextView{64bfbc7 VFED..CL. ......ID 540,1122-781,1437 #7f0a01b9 app:id/icon aid=1073741897}
+                    com.android.launcher3.BubbleTextView{7fb05f4 VFED..CL. ......ID 781,1122-1023,1437 #7f0a01b9 app:id/icon aid=1073741898}
+                    com.android.launcher3.BubbleTextView{6a111d VFED..CL. ......ID 57,1437-298,1752 #7f0a01b9 app:id/icon aid=1073741899}
+                    com.android.launcher3.BubbleTextView{7ce4f92 VFED..CL. ......ID 298,1437-540,1752 #7f0a01b9 app:id/icon aid=1073741900}
+                    com.android.launcher3.BubbleTextView{c028d63 VFED..CL. ......ID 540,1437-781,1752 #7f0a01b9 app:id/icon aid=1073741901}
+                    com.android.launcher3.BubbleTextView{1bc8d60 VFED..CL. ......ID 781,1437-1023,1752 #7f0a01b9 app:id/icon aid=1073741902}
+                    com.android.launcher3.BubbleTextView{89ba219 VFED..CL. ......ID 57,1752-298,2067 #7f0a01b9 app:id/icon aid=1073741903}
+                    com.android.launcher3.BubbleTextView{dfdd2de VFED..CL. ......ID 298,1752-540,2067 #7f0a01b9 app:id/icon aid=1073741904}
+                    com.android.launcher3.BubbleTextView{1069cbf VFED..CL. ......ID 540,1752-781,2067 #7f0a01b9 app:id/icon aid=1073741905}
+                    com.android.launcher3.BubbleTextView{e4d1f8c VFED..CL. ......ID 781,1752-1023,2067 #7f0a01b9 app:id/icon aid=1073741906}
+                    com.android.launcher3.BubbleTextView{8bb46d5 VFED..CL. ......ID 57,2067-298,2382 #7f0a01b9 app:id/icon aid=1073741907}
+                    com.android.launcher3.BubbleTextView{5103eea VFED..CL. ......ID 298,2067-540,2382 #7f0a01b9 app:id/icon aid=1073741908}
+                    com.android.launcher3.BubbleTextView{e1245db VFED..CL. ......ID 540,2067-781,2382 #7f0a01b9 app:id/icon aid=1073741909}
+                  com.android.launcher3.allapps.FloatingHeaderView{ef8c831 V.E...... ......ID 0,237-1080,766 #7f0a0076 app:id/all_apps_header aid=1073741860}
+                    com.android.launcher3.appprediction.PredictionRowView{172a878 V.E...... ......ID 57,95-1023,378 #7f0a0277 app:id/prediction_row aid=1073741861}
+                      com.android.launcher3.BubbleTextView{1f67b51 VFED..CL. ......ID 0,-16-241,299 #7f0a01b9 app:id/icon aid=1073741862}
+                      com.android.launcher3.BubbleTextView{12b5fb6 VFED..CL. ......ID 241,-16-482,299 #7f0a01b9 app:id/icon aid=1073741863}
+                      com.android.launcher3.BubbleTextView{36564b7 VFED..CL. ......ID 482,-16-724,299 #7f0a01b9 app:id/icon aid=1073741864}
+                      com.android.launcher3.BubbleTextView{365d424 VFED..CL. ......ID 724,-16-966,299 #7f0a01b9 app:id/icon aid=1073741865}
+                    com.android.launcher3.appprediction.AppsDividerView{d67b8d V.ED..... ......ID 57,378-1023,492 #7f0a008d app:id/apps_divider_view}
+                    com.android.launcher3.workprofile.PersonalWorkSlidingTabStrip{105c142 G.E...... ......I. 0,0-0,0 #7f0a032f app:id/tabs aid=1073741866}
+                      android.widget.Button{b619553 VFED..C.. ......I. 0,0-0,0 #7f0a032c app:id/tab_personal}
+                      android.widget.Button{53e0e90 VFED..C.. ......I. 0,0-0,0 #7f0a032d app:id/tab_work}
+                  android.widget.TextView{73c4389 V.ED..... ......ID 833,274-1030,437 #7f0a0158 app:id/fast_scroller_popup aid=1073741879}
+                  com.android.launcher3.views.RecyclerViewFastScroller{632af8e V.ED..... ......ID 996,274-1148,2400 #7f0a0157 app:id/fast_scroller}
+                  com.google.android.apps.nexuslauncher.allapps.UniversalSearchInputView{91112a2 V.E...... ......ID 98,150-982,315 #7f0a02b4 app:id/search_container_all_apps aid=1073741867}
+                    android.widget.RelativeLayout{ae633af V.E...... ......ID 0,10-873,155 aid=1073741868}
+                      android.widget.FrameLayout{1d83bc V.E...... ......ID 736,4-873,141 #7f0a0040 app:id/action_btn_container aid=1073741869}
+                        android.widget.ImageButton{a1c8f45 IFED..C.. ......I. 0,0-137,137 #7f0a00d3 app:id/clear_btn aid=1073741870}
+                        android.widget.ImageButton{62e369a IFED..C.. ......I. 0,0-137,137 #7f0a0207 app:id/menu_btn aid=1073741871}
+                      android.widget.ImageView{b6c5bcb VFED..C.. ......ID 11,9-137,135 #7f0a0179 app:id/g_icon aid=1073741872}
+                      com.google.android.apps.nexuslauncher.search.TypeAheadSearchInputView{b1d1fa8 V.E...... ......ID 148,0-736,145 #7f0a038f app:id/typeahead_input aid=1073741873}
+                        android.widget.TextView{efbdac1 I.ED..... ......ID 0,0-588,145 #7f0a01a7 app:id/hint aid=1073741874}
+                        com.google.android.apps.nexuslauncher.search.SearchEditText{292266 VFED..CL. ......ID 0,0-588,145 #7f0a01cd app:id/input aid=1073741875}
+                      android.widget.LinearLayout{ae2e9a7 V.E...... ......ID 621,9-873,135 #7f0a014a app:id/end_icons aid=1073741876}
+                        com.google.android.apps.nexuslauncher.qsb.AssistantIconView{2df4c69 V.ED..C.. ......ID 0,0-126,126 #7f0a020f app:id/mic_icon aid=1073741877}
+                        android.widget.ImageButton{3f88e54 VFED..C.. ......ID 126,0-252,126 #7f0a01dd app:id/lens_icon aid=1073741878}
+                    android.view.View{52a61fd V.ED..... ......ID 0,-1-884,164 #7f0a0298 app:id/ripple}
+                com.android.quickstep.views.LauncherRecentsView{394fef2 I.ED..... ......I. 0,0-1080,2400 #7f0a0262 app:id/overview_panel}
+                com.google.android.apps.nexuslauncher.overview.NexusOverviewActionsView{d4a7943 V.E...... ........ 0,2008-1080,2400 #7f0a0260 app:id/overview_actions_view aid=1073741880}
+                  android.widget.LinearLayout{67a3bc0 I.E...... ......ID 0,63-1080,189 #7f0a0043 app:id/action_buttons aid=1073741881}
+                    android.widget.Space{6c020f9 I.ED..... ......I. 0,0-212,3}
+                    android.widget.Button{370183e VFED..C.. ......ID 212,0-534,126 #7f0a005e app:id/action_screenshot aid=1073741882}
+                    android.widget.Space{c11669f I.ED..... ......I. 534,0-629,3}
+                    android.widget.Button{ea753ec VFED..C.. ......ID 629,0-867,126 #7f0a005f app:id/action_select aid=1073741883}
+                    android.widget.Space{d58d3b5 G.ED..... ......I. 0,0-0,0 #7f0a0063 app:id/action_split_space}
+                    android.widget.Button{2517a4a GFED..C.. ......I. 0,0-0,0 #7f0a0062 app:id/action_split aid=1073741884}
+                    android.widget.Space{f2fcdbb I.ED..... ......I. 867,0-1080,3}
+                    android.widget.Space{1abc2d8 G.ED..... ......I. 0,0-0,0 #7f0a0257 app:id/oav_three_button_space}
+                  android.widget.FrameLayout{68ff631 G.E...... ......I. 0,0-0,0 #7f0a02cf app:id/select_mode_buttons aid=1073741885}
+                    android.widget.ImageButton{334f116 VFED..C.. ......I. 0,0-0,0 #7f0a00da app:id/close}
+                  com.google.android.apps.nexuslauncher.overview.ShareTargetsView{c038a97 I.E...... ......I. 0,42-1080,42 #7f0a02da app:id/share_targets_view}
+    Looper (main, tid 2) {9863484}
+      Message 0: { when=+7s64ms what=2 arg1=1 obj=android.animation.AnimationHandler$$ExternalSyntheticLambda0@43cc46d target=android.view.Choreographer$FrameHandler }
+      (Total messages: 1, polling=false, quitting=false)
+    ResourcesManager:
+      total apks: 12
+      resources: 12
+      resource impls: 5
+    2 dumpables:
+    #0: AutofillManager
+        AutofillManager:
+          sessionId: 2147483647
+          state: UNKNOWN
+          context: com.google.android.apps.nexuslauncher.NexusLauncherActivity@54d223d
+          service client: null
+          client: android.view.autofill.AutofillClientController@b0708a2 (android.os.BinderProxy@3e14d3d)
+          enabled: false
+          enabledAugmentedOnly: false
+          hasService: true
+          hasCallback: false
+          onInvisibleCalled false
+          last autofilled data: null
+          id of last fill UI shown: null
+          tracked views: null
+          fillable ids: null
+          entered ids: null
+          save trigger id: null
+          save on finish(): false
+          options: logLvl=0, compatMode=false, augmented=false, appDisabledExpiration=0
+          compat mode enabled:   fill dialog enabled: false
+          fill dialog enabled hints: [password, passwordAuto, creditCardNumber, creditCardSecurityCode, creditCardExpirationDate]
+        false
+          debug: false verbose: false
+        Autofill Compat Mode: false
+    #1: ContentCaptureManager
+        ContentCaptureManager
+          isContentCaptureEnabled(): true
+          Debug: false Verbose: false
+          Context: com.google.android.apps.nexuslauncher.NexusLauncherActivity@54d223d
+          User: 0
+          Service: android.view.contentcapture.IContentCaptureManager$Stub$Proxy@5ec3933
+          Flags: 0
+          Options: logLvl=0, bufferSize=500, idle=5000, textIdle=1000, logSize=20, disableFlushForViewTreeAppearing=false
+          Main session:
+            id: 537649140
+            destroyed: false
+            mContext: com.google.android.apps.nexuslauncher.NexusLauncherActivity@54d223d
+            user: 0
+            mDirectServiceInterface: android.view.contentcapture.IContentCaptureDirectManager$Stub$Proxy@f7414f0
+            mDisabled: false
+            isEnabled(): true
+            state: 2 (ACTIVE)
+            app token: android.os.BinderProxy@3e14d3d
+            sharable activity token: android.os.BinderProxy@46e3a69
+            component name: com.google.android.apps.nexuslauncher/.NexusLauncherActivity
+            flush history:
+        2026-10-03T19:33:30.167304 - r=VIEW_TREE_APPEARED s=2 m=500 i=5000
+        2026-10-03T19:33:30.167054 - r=VIEW_TREE_APPEARING s=27 m=500 i=5000
+        2026-10-03T19:33:29.786302 - r=FULL s=1 m=500 i=5000
+        2026-10-03T19:33:14.430975 - r=TEXT_CHANGE s=25 m=500 i=5000
+        2026-10-03T19:33:02.036936 - r=TEXT_CHANGE s=99 m=500 i=5000
+        2026-10-03T19:32:52.406597 - r=VIEW_ROOT s=0 m=500 i=5000
+        2026-10-03T19:32:52.405820 - r=VIEW_ROOT s=0 m=500 i=5000
+        2026-10-03T19:32:51.542593 - r=VIEW_TREE_APPEARED s=24 m=500 i=5000
+        2026-10-03T19:32:51.542572 - r=VIEW_TREE_APPEARING s=2 m=500 i=5000
+        2026-10-03T19:32:51.542410 - r=VIEW_TREE_APPEARED s=64 m=500 i=5000
+        2026-10-03T19:32:51.536289 - r=VIEW_TREE_APPEARING s=2 m=500 i=5000
+        2026-10-03T19:32:51.526435 - r=CONNECTED s=1 m=500 i=5000
+        
+            id: 537649140
+            destroyed: false
+    Misc:
+    	deviceProfile isTransposed=false
+    	orientation=1
+    	mSystemUiController: mStates=[10, 0, 0, 0, 0]
+    	mActivityFlags: 
+    	mForceInvisible: 0
+    	mWorkspaceLoading=false
+    	mPendingRequestArgs=null mPendingActivityResult=null
+    	mRotationHelper: [mStateHandlerRequest=0, mCurrentStateRequest=0, mLastActivityFlags=5, mIgnoreAutoRotateSettings=false, mHomeRotationEnabled=false, mForceAllowRotationForTesting=false]
+    	mAppWidgetHolder.isListening: false
+    DragLayer:
+    	dragLayerAlpha : [1.0]
+    StateManager:
+    	mLastStableState:Normal
+    	mCurrentStableState:Normal
+    	mState:Normal
+    	mRestState:null
+    	isInTransition:false
+    PopupDataProvider:
+    	mPackageUserToDotInfos:{}
+    DeviceProfile:
+    	1 dp = 2.625 px
+    	isTablet:false
+    	isPhone:true
+    	transposeLayoutWithOrientation:true
+    	isGestureMode:true
+    	isLandscape:false
+    	isMultiWindowMode:false
+    	isTwoPanels:false
+    	windowX: 0.0px (0.0dp)
+    	windowY: 0.0px (0.0dp)
+    	widthPx: 1080.0px (411.42856dp)
+    	heightPx: 2400.0px (914.2857dp)
+    	availableWidthPx: 1080.0px (411.42856dp)
+    	availableHeightPx: 2205.0px (840.0dp)
+    	mInsets.left: 0.0px (0.0dp)
+    	mInsets.top: 132.0px (50.285713dp)
+    	mInsets.right: 0.0px (0.0dp)
+    	mInsets.bottom: 63.0px (24.0dp)
+    	aspectRatio:2.2222223
+    	isScalableGrid:true
+    	inv.numRows: 5
+    	inv.numColumns: 4
+    	inv.numSearchContainerColumns: 4
+    	minCellSize: PointF(80.0, 104.0)dp
+    	cellWidthPx: 210.0px (80.0dp)
+    	cellHeightPx: 272.0px (103.61905dp)
+    	getCellSize().x: 210.0px (80.0dp)
+    	getCellSize().y: 272.0px (103.61905dp)
+    	cellLayoutBorderSpacePx Horizontal: 42.0px (16.0dp)
+    	cellLayoutBorderSpacePx Vertical: 42.0px (16.0dp)
+    	cellLayoutPaddingPx.left: 28.0px (10.666667dp)
+    	cellLayoutPaddingPx.top: 28.0px (10.666667dp)
+    	cellLayoutPaddingPx.right: 28.0px (10.666667dp)
+    	cellLayoutPaddingPx.bottom: 28.0px (10.666667dp)
+    	iconSizePx: 173.0px (65.90476dp)
+    	iconTextSizePx: 37.0px (14.095238dp)
+    	iconDrawablePaddingPx: 17.0px (6.4761906dp)
+    	inv.numFolderRows: 3
+    	inv.numFolderColumns: 3
+    	folderCellWidthPx: 210.0px (80.0dp)
+    	folderCellHeightPx: 247.0px (94.09524dp)
+    	folderChildIconSizePx: 173.0px (65.90476dp)
+    	folderChildTextSizePx: 37.0px (14.095238dp)
+    	folderChildDrawablePaddingPx: 8.0px (3.047619dp)
+    	folderCellLayoutBorderSpacePx: 42.0px (16.0dp)
+    	folderContentPaddingLeftRight: 42.0px (16.0dp)
+    	folderTopPadding: 63.0px (24.0dp)
+    	folderFooterHeight: 126.0px (48.0dp)
+    	bottomSheetTopPadding: 160.0px (60.95238dp)
+    	bottomSheetOpenDuration: 267
+    	bottomSheetCloseDuration: 267
+    	bottomSheetWorkspaceScale: 1.0
+    	bottomSheetDepth: 0.0
+    	allAppsShiftRange: 788.0px (300.1905dp)
+    	allAppsTopPadding: 0.0px (0.0dp)
+    	allAppsOpenDuration: 600
+    	allAppsCloseDuration: 300
+    	allAppsIconSizePx: 173.0px (65.90476dp)
+    	allAppsIconTextSizePx: 37.0px (14.095238dp)
+    	allAppsIconDrawablePaddingPx: 18.0px (6.857143dp)
+    	allAppsCellHeightPx: 315.0px (120.0dp)
+    	allAppsCellWidthPx: 210.0px (80.0dp)
+    	allAppsBorderSpacePxX: 42.0px (16.0dp)
+    	allAppsBorderSpacePxY: 42.0px (16.0dp)
+    	numShownAllAppsColumns: 4
+    	allAppsLeftRightPadding: 57.0px (21.714285dp)
+    	allAppsLeftRightMargin: 0.0px (0.0dp)
+    	hotseatBarSizePx: 527.0px (200.7619dp)
+    	inv.hotseatColumnSpan: 4
+    	hotseatCellHeightPx: 195.0px (74.28571dp)
+    	hotseatBarBottomSpacePx: 126.0px (48.0dp)
+    	hotseatBarSidePaddingStartPx: 0.0px (0.0dp)
+    	hotseatBarSidePaddingEndPx: 0.0px (0.0dp)
+    	hotseatBarEndOffset: 0.0px (0.0dp)
+    	hotseatQsbSpace: 95.0px (36.190475dp)
+    	hotseatQsbHeight: 165.0px (62.857143dp)
+    	springLoadedHotseatBarTopMarginPx: 200.0px (76.190475dp)
+    	getHotseatLayoutPadding(context).top: 0.0px (0.0dp)
+    	getHotseatLayoutPadding(context).bottom: 332.0px (126.47619dp)
+    	getHotseatLayoutPadding(context).left: 75.0px (28.571428dp)
+    	getHotseatLayoutPadding(context).right: 75.0px (28.571428dp)
+    	numShownHotseatIcons: 4
+    	hotseatBorderSpace: 79.0px (30.095238dp)
+    	isQsbInline: false
+    	hotseatQsbWidth: 929.0px (353.90475dp)
+    	isTaskbarPresent:false
+    	isTaskbarPresentInApps:false
+    	taskbarHeight: 180.0px (68.57143dp)
+    	stashedTaskbarHeight: 84.0px (32.0dp)
+    	taskbarBottomMargin: 63.0px (24.0dp)
+    	taskbarIconSize: 116.0px (44.190475dp)
+    	desiredWorkspaceHorizontalMarginPx: 57.0px (21.714285dp)
+    	workspacePadding.left: 29.0px (11.047619dp)
+    	workspacePadding.top: 67.0px (25.52381dp)
+    	workspacePadding.right: 29.0px (11.047619dp)
+    	workspacePadding.bottom: 554.0px (211.04762dp)
+    	iconScale: 0.9981516px (0.38024822dp)
+    	cellScaleToFit : 0.9981516px (0.38024822dp)
+    	extraSpace: 182.0px (69.333336dp)
+    	unscaled extraSpace: 182.33704px (69.46173dp)
+    	maxEmptySpace: 299.0px (113.90476dp)
+    	workspaceTopPadding: 95.0px (36.190475dp)
+    	workspaceBottomPadding: 87.0px (33.142857dp)
+    	overviewTaskMarginPx: 42.0px (16.0dp)
+    	overviewTaskIconSizePx: 126.0px (48.0dp)
+    	overviewTaskIconDrawableSizePx: 116.0px (44.190475dp)
+    	overviewTaskIconDrawableSizeGridPx: 0.0px (0.0dp)
+    	overviewTaskThumbnailTopMarginPx: 168.0px (64.0dp)
+    	overviewActionsTopMarginPx: 63.0px (24.0dp)
+    	overviewActionsHeight: 126.0px (48.0dp)
+    	overviewActionsClaimedSpaceBelow: 63.0px (24.0dp)
+    	overviewActionsButtonSpacing: 95.0px (36.190475dp)
+    	overviewPageSpacing: 42.0px (16.0dp)
+    	overviewRowSpacing: 0.0px (0.0dp)
+    	overviewGridSideMargin: 0.0px (0.0dp)
+    	dropTargetBarTopMarginPx: 84.0px (32.0dp)
+    	dropTargetBarSizePx: 147.0px (56.0dp)
+    	dropTargetBarBottomMarginPx: 42.0px (16.0dp)
+    	getCellLayoutSpringLoadShrunkTop(): 405.0px (154.28572dp)
+    	getCellLayoutSpringLoadShrunkBottom(): 1673.0px (637.3333dp)
+    	workspaceSpringLoadedMinNextPageVisiblePx: 63.0px (24.0dp)
+    	getWorkspaceSpringLoadScale(): 0.80050504px (0.3049543dp)
+    	getCellLayoutHeight(): 1584.0px (603.4286dp)
+    	getCellLayoutWidth(): 1022.0px (389.33334dp)
+
+--- logfile: log-0 ---
+10/3/26 7:32 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=2 removedPackages=[com.google.android.trichromelibrary_541412334] removedComponents=[]]
+
+--- logfile: log-1 ---
+8/25/26 8:41 AM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 8:41 AM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 8:41 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 8:41 AM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 8:41 AM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 8:41 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 1:48 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:48 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:48 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 1:50 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:50 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:50 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 1:51 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:51 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:51 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 1:52 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:52 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:52 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 1:54 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:54 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:54 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 1:57 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:57 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:57 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 1:59 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 1:59 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 1:59 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:00 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:00 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:00 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:02 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:02 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:02 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:03 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:03 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:03 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:04 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:04 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:04 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:06 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:06 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:06 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:12 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:12 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:12 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:13 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:13 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:13 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:52 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:52 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:52 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:55 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:55 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:55 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 2:59 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 2:59 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 2:59 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:09 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:09 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:09 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:10 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:10 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:10 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:12 PM Launcher.Model package removed received host.exp.exponent
+8/25/26 3:12 PM PackageUpdatedTask Removing app iconhost.exp.exponent
+8/25/26 3:12 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[host.exp.exponent] removedComponents=[]]
+8/25/26 3:12 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:12 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:12 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:14 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:14 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:14 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:16 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:16 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:16 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:21 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:21 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:21 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:23 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:23 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:23 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:24 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:24 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:24 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:25 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:25 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:25 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:26 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:26 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:26 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:27 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:27 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:27 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:29 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:29 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:29 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:34 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 3:34 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 3:34 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 3:37 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:37 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:37 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:37 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:37 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:37 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:38 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:38 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:38 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:38 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:38 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:38 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:39 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:39 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:39 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:39 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:39 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:39 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:39 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:39 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:39 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:39 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:39 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:39 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:39 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:39 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:39 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:39 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:39 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:39 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:40 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:40 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:40 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:40 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:40 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:40 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:41 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:41 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:41 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:41 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:41 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:41 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:42 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:42 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:42 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:42 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:42 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:42 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:42 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:42 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:42 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:42 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:42 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:42 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:43 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:43 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:43 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:43 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:43 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:43 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 3:44 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 3:44 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 3:44 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 3:44 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 3:44 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 3:44 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:00 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 4:00 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 4:00 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 4:02 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:02 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:02 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:02 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:02 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:02 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:03 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 4:03 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 4:03 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 4:05 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:05 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:05 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:05 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:05 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:05 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:06 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 4:06 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 4:06 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 4:07 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:07 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:07 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:07 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:07 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:07 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:11 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:11 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:11 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:11 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:11 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:11 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:18 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:18 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:18 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:18 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:18 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:18 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:18 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:18 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:18 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:18 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:18 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:18 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:18 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:18 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:18 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:18 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:18 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:18 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:19 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:19 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:19 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:19 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:19 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:19 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:19 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:19 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:19 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:19 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:19 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:19 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:19 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:19 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:19 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:19 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:19 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:19 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:43 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 4:43 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 4:43 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 4:45 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:45 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:45 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:45 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:45 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:45 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:51 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 4:51 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 4:51 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 4:53 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:53 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:53 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:53 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:53 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:53 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:53 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:53 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:53 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:53 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:53 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:53 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:54 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:54 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:54 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:54 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:54 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:54 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 4:57 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 4:57 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 4:57 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 4:59 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 4:59 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 4:59 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 4:59 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 4:59 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 4:59 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 5:01 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 5:01 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 5:01 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 5:01 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 5:01 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 5:01 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 5:01 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 5:01 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 5:01 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 5:01 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 5:01 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 5:01 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 5:02 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 5:02 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 5:02 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 5:04 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 5:04 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 5:04 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 5:04 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 5:04 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 5:04 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 5:05 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 5:05 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 5:05 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 5:05 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 5:05 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 5:05 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 5:05 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 5:05 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 5:05 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 5:05 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 5:05 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 5:05 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+8/25/26 5:07 PM Launcher.Model package removed received com.atg.zenx
+8/25/26 5:07 PM PackageUpdatedTask Removing app iconcom.atg.zenx
+8/25/26 5:07 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.atg.zenx] removedComponents=[]]
+8/25/26 5:09 PM Launcher.Model package removed received dev.mobile.maestro
+8/25/26 5:09 PM PackageUpdatedTask Removing app icondev.mobile.maestro
+8/25/26 5:09 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+8/25/26 5:09 PM Launcher.Model package removed received dev.mobile.maestro.test
+8/25/26 5:09 PM PackageUpdatedTask Removing app icondev.mobile.maestro.test
+8/25/26 5:09 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+
+--- logfile: log-2 ---
+9/15/26 11:39 AM Launcher.Model package removed received io.lumo.photo
+9/15/26 11:39 AM PackageUpdatedTask Removing app iconio.lumo.photo
+9/15/26 11:39 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo] removedComponents=[]]
+9/15/26 11:39 AM Launcher.Model package removed received io.lumo.photo.test
+9/15/26 11:39 AM PackageUpdatedTask Removing app iconio.lumo.photo.test
+9/15/26 11:39 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo.test] removedComponents=[]]
+9/15/26 11:40 AM Launcher.Model package removed received io.lumo.photo
+9/15/26 11:40 AM PackageUpdatedTask Removing app iconio.lumo.photo
+9/15/26 11:40 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo] removedComponents=[]]
+9/15/26 11:40 AM Launcher.Model package removed received io.lumo.photo.test
+9/15/26 11:40 AM PackageUpdatedTask Removing app iconio.lumo.photo.test
+9/15/26 11:40 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo.test] removedComponents=[]]
+9/15/26 11:41 AM Launcher.Model package removed received io.lumo.photo
+9/15/26 11:41 AM PackageUpdatedTask Removing app iconio.lumo.photo
+9/15/26 11:41 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo] removedComponents=[]]
+9/15/26 11:41 AM Launcher.Model package removed received io.lumo.photo.test
+9/15/26 11:41 AM PackageUpdatedTask Removing app iconio.lumo.photo.test
+9/15/26 11:41 AM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo.test] removedComponents=[]]
+9/15/26 1:51 PM Launcher.Model package removed received io.lumo.photo
+9/15/26 1:51 PM PackageUpdatedTask Removing app iconio.lumo.photo
+9/15/26 1:51 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[io.lumo.photo] removedComponents=[]]
+
+--- logfile: log-3 ---
+9/16/26 4:13 PM ModelWriter removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=2 removedPackages=[com.google.android.trichromelibrary_541412334] removedComponents=[]]
+    Recent BC Smartspace Targets (most recent first)
+       Number of targets: 0
+
+       Number of targets: 0
+
+       Number of targets: 0
+
+       Number of targets: 0
+
+       Number of targets: 0
+
+    Data Model:
+     ---- workspace items 
+    	WorkspaceItemInfo(id=1 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1bf6a targetComponent=ComponentInfo{com.google.android.dialer/com.google.android.dialer.extensions.GoogleDialtactsActivity} screen=0 cell(0,0) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Phone)
+    	WorkspaceItemInfo(id=2 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1ca63 targetComponent=ComponentInfo{com.google.android.apps.messaging/com.google.android.apps.messaging.ui.ConversationListActivity} screen=1 cell(1,0) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Messages)
+    	WorkspaceItemInfo(id=3 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1d55c targetComponent=ComponentInfo{com.android.chrome/com.google.android.apps.chrome.Main} screen=2 cell(2,0) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Chrome)
+    	WorkspaceItemInfo(id=4 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1eb4e targetComponent=ComponentInfo{com.android.vending/com.android.vending.AssetBrowserActivity} screen=0 cell(0,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Play Store)
+    	WorkspaceItemInfo(id=5 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a430db targetComponent=ComponentInfo{com.google.android.gm/com.google.android.gm.ConversationListActivityGmail} screen=0 cell(1,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Gmail)
+    	WorkspaceItemInfo(id=6 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a67668 targetComponent=ComponentInfo{com.google.android.apps.photos/com.google.android.apps.photos.home.HomeActivity} screen=0 cell(2,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Photos)
+    	WorkspaceItemInfo(id=7 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a8bbf5 targetComponent=ComponentInfo{com.google.android.youtube/com.google.android.youtube.app.honeycomb.Shell$HomeActivity} screen=0 cell(3,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=YouTube)
+     ---- appwidget items 
+     ---- folder items 
+     ---- items id map 
+    	WorkspaceItemInfo(id=1 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1bf6a targetComponent=ComponentInfo{com.google.android.dialer/com.google.android.dialer.extensions.GoogleDialtactsActivity} screen=0 cell(0,0) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Phone)
+    	WorkspaceItemInfo(id=2 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1ca63 targetComponent=ComponentInfo{com.google.android.apps.messaging/com.google.android.apps.messaging.ui.ConversationListActivity} screen=1 cell(1,0) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Messages)
+    	WorkspaceItemInfo(id=3 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1d55c targetComponent=ComponentInfo{com.android.chrome/com.google.android.apps.chrome.Main} screen=2 cell(2,0) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Chrome)
+    	WorkspaceItemInfo(id=4 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a1eb4e targetComponent=ComponentInfo{com.android.vending/com.android.vending.AssetBrowserActivity} screen=0 cell(0,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Play Store)
+    	WorkspaceItemInfo(id=5 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a430db targetComponent=ComponentInfo{com.google.android.gm/com.google.android.gm.ConversationListActivityGmail} screen=0 cell(1,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Gmail)
+    	WorkspaceItemInfo(id=6 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a67668 targetComponent=ComponentInfo{com.google.android.apps.photos/com.google.android.apps.photos.home.HomeActivity} screen=0 cell(2,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=Photos)
+    	WorkspaceItemInfo(id=7 type=APP container=# com.android.launcher3.logger.LauncherAtom$ContainerInfo@1a8bbf5 targetComponent=ComponentInfo{com.google.android.youtube/com.google.android.youtube.app.honeycomb.Shell$HomeActivity} screen=0 cell(3,4) span(1,1) minSpan(1,1) rank=0 user=UserHandle{0} title=YouTube)
+    DeviceSearchSettings:
+      ShortcutResult:true
+      PixelTipsResult:true
+      WebResult:true
+      PlaySearchResult:true
+      SettingsResult:true
+      PeopleResult:true
+    LauncherClient
+      isConnected: true
+      act.isBound: false
+      app.isBound: true
+      serviceVersion: 11
+      clientVersion: 20
+      isGoogleOverlayDefault: false
+      partnerOverlayProductName: 
+      isPartnerOverlayIconPresent: false
+      mActivityState: 0
+      mServiceStatus: 25
+      mCurrentServiceConnectionOptions: 15
+      Client event history:
+        19:33:30.201+0700  stateChanged : 0
+        19:33:29.766+0700  stateChanged : 1
+        19:32:51.482+0700  attachedToWindow
+        19:32:51.477+0700  stateChanged : 3
+        19:32:51.475+0700  stateChanged : 1
+        19:32:51.474+0700  setPrivateOptions : background_secondary_color_hint,override_bottom_inset,is_background_dark,system_ui_visibility,background_color_hint
+      Service event history:
+        19:32:51.604+0700  onScroll 0, overlay closed
+        19:32:51.570+0700  stateChanged: 0
+    DepthController
+    	mMaxBlurRadius=23
+    	mCrossWindowBlursEnabled=true
+    	mSurface=null
+    	mStateDepth=0.0
+    	mWidgetDepth=0.0
+    	mCurrentBlur=0
+    	mInEarlyWakeUp=false
+    	mIgnoreStateChangesDuringMultiWindowAnimation=false
+
+QuickstepLauncher:
+    	mOrientationState: [this=RecentsOrientedState@76658414 mOrientationHandler=PortraitPagedViewHandler@74161067 mDisplayRotation=0 mTouchRotation=0 mRecentsActivityRotation=0 mRecentsRotation=0 isRecentsActivityRotationAllowed=false mSystemRotation=true mStateId=38272 mFlags=299]
+NexusLauncher
+    OneSearch:
+    		shouldShowSuggest=true
+    		SearchRequestTimeout=200
+    		mEnableOneSearch=true
+    		mUseFallbackAppSearch=false
+    		mShowThreeDotMenuInQsb=false
+    		mLaunchOnDefaultBrowser=false
+    		mUseAppSearchForWeb=true
+    		mEnableQuickSearch=true
+    		mShowSearchEducardQsb=true
+    		mEnableImeLatencyLogger=false
+    		mEnableKeyboardSync=true
+    		mEnablePeekAndMatch=false
+    		mPeekStateCharlen=3
+    		mMatchStateCharlen=6
+    		mPeekBlocklen=4
+    		mEnableRichAnswer=true
+    		mEnableQuickLaunchV2=false
+    		mEnableQuickLaunchV3Qsb=false
+    		mEnableQuickLaunchV3AA=false
+    		mGboardUpdateEnterKey=false
+    		mEnableImpressionLogging=false
+    		mEnableHideGboardHeaderStatic=false
+    		mUninstalledAppsQueryLenLowerBound=4
+    		mUninstalledAppsQueryLenUpperBound=20
+    		mUninstalledAppsCount=2
+    		mIsTrampolineActivityEnabled=true
+    		mIsOpenSrpInBrowserSupported=false
+    LauncherSmartspace:
+    		mUpdatesPaused=false
+    		mIsAodEnabled=false
+    		mLastReceivedTargetIds={date_card_794317_92634}
+    		mAnimateSmartspaceUpdate=false
+    		mScrollState=0
+    		mCardPosition=0
+    		mPendingTargetIds=[]
+
+TASK 1000:com.android.settings.root id=201 userId=0
+  ACTIVITY com.android.settings/.Settings 726883 pid=705
+    Local Activity b55b6ec State:
+      mResumed=true mStopped=false mFinished=false
+      mIsInMultiWindowMode=false mIsInPictureInPictureMode=false
+      mChangingConfigurations=false
+      mCurrentConfig={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.1 fontWeightAdjustment=0}
+      mLoadersStarted=true
+      Active Fragments in b3558e3:
+        #0: ReportFragment{95e32e0 #0 androidx.lifecycle.LifecycleDispatcher.report_fragment_tag}
+          mFragmentId=#0 mContainerId=#0 mTag=androidx.lifecycle.LifecycleDispatcher.report_fragment_tag
+          mState=5 mIndex=0 mWho=android:fragment:0 mBackStackNesting=0
+          mAdded=true mRemoving=false mFromLayout=false mInLayout=false
+          mHidden=false mDetached=false mMenuVisible=true mHasMenu=false
+          mRetainInstance=false mRetaining=false mUserVisibleHint=true
+          mFragmentManager=FragmentManager{b3558e3 in HostCallbacks{9dc1999}}
+          mHost=android.app.Activity$HostCallbacks@9dc1999
+          Child FragmentManager{7d9b45e in ReportFragment{95e32e0}}:
+            FragmentManager misc state:
+              mHost=android.app.Activity$HostCallbacks@9dc1999
+              mContainer=android.app.Fragment$1@b5aa03f
+              mParent=ReportFragment{95e32e0 #0 androidx.lifecycle.LifecycleDispatcher.report_fragment_tag}
+              mCurState=5 mStateSaved=false mDestroyed=false
+      Added Fragments:
+        #0: ReportFragment{95e32e0 #0 androidx.lifecycle.LifecycleDispatcher.report_fragment_tag}
+      FragmentManager misc state:
+        mHost=android.app.Activity$HostCallbacks@9dc1999
+        mContainer=android.app.Activity$HostCallbacks@9dc1999
+        mCurState=5 mStateSaved=false mDestroyed=false
+    ViewRoot:
+      mAdded=true
+      mRemoved=false
+      mStopped=false
+      mPausedForTransition=false
+      mConsumeBatchedInputScheduled=false
+      mConsumeBatchedInputImmediatelyScheduled=false
+      mPendingInputEventCount=0
+      mProcessInputEventsScheduled=false
+      mTraversalScheduled=false
+      mReportNextDraw=false
+      mLocalSyncState=3
+      mLastReportedMergedConfiguration={mGlobalConfig={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.66 fontWeightAdjustment=0} mOverrideConfig={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.1 fontWeightAdjustment=0}}
+      mLastConfigurationFromResources={1.0 310mcc260mnc [en_US] ldltr sw411dp w411dp h840dp 420dpi nrml long port finger qwerty/v/v dpad/v winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 132 - 1080, 2337) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0} as.3 s.1 fontWeightAdjustment=0}
+      mIsAmbientMode=false
+      mUnbufferedInputSource=0
+      mAttachInfo=       AttachInfo:
+        mHasWindowFocus=true
+        mWindowVisibility=0
+        mInTouchMode=true
+        mUnbufferedDispatchRequested=false
+      android.view.ViewRootImpl$NativePreImeInputStage: mQueueLength=0
+      android.view.ViewRootImpl$ImeInputStage: mQueueLength=0
+      android.view.ViewRootImpl$NativePostImeInputStage: mQueueLength=0
+      android.view.ViewRootImpl$WindowInputEventReceiver
+       mInputChannel: ebd08 com.android.settings/com.android.settings.Settings (client)
+       mSeqMap: {}
+       mReceiverPtr:
+        mInputConsumer:
+          mResampleTouch = true
+          mChannel = ebd08 com.android.settings/com.android.settings.Settings (client)
+          mMsgDeferred: false
+          Batches:
+              <empty>
+          mSeqChains:
+              <empty>
+          mConsumeTimes:
+              <empty>
+          
+        mBatchedInputEventPending: false
+        mOutboundQueue:
+          <empty>
+        
+    Choreographer:
+      mFrameScheduled=false
+      mLastFrameTime=55508 (1035 ms ago)
+    InsetsController:
+      InsetsState
+        mDisplayFrame=Rect(0, 0 - 1080, 2400)
+        mDisplayCutout=DisplayCutout{insets=Rect(0, 132 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(480, 0 - 625, 132), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1080 displayHeight=2400 physicalDisplayWidth=1080 physicalDisplayHeight=2400 density={2.625} cutoutSpec={M 507,66 a 33,33 0 1 0 66,0 33,33 0 1 0 -66,0 Z @left} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}}}
+        mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=47, center=Point(47, 47)}, RoundedCorner{position=TopRight, radius=47, center=Point(1033, 47)}, RoundedCorner{position=BottomRight, radius=48, center=Point(1032, 2352)}, RoundedCorner{position=BottomLeft, radius=48, center=Point(48, 2352)}]}
+        mRoundedCornerFrame=Rect(0, 0 - 1080, 2400)
+        mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(827, 0 - 1043, 132) rotation=0}
+          InsetsSource type=ITYPE_STATUS_BAR frame=[0,0][1080,132] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_NAVIGATION_BAR frame=[0,2337][1080,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_LEFT_GESTURES frame=[0,0][78,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_RIGHT_GESTURES frame=[1002,0][1080,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_TOP_MANDATORY_GESTURES frame=[0,0][1080,164] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_BOTTOM_MANDATORY_GESTURES frame=[0,2316][1080,2400] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_TOP_DISPLAY_CUTOUT frame=[0,0][1080,132] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_TOP_TAPPABLE_ELEMENT frame=[0,0][1080,132] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_BOTTOM_TAPPABLE_ELEMENT frame=[0,0][0,0] visible=true insetsRoundedCornerFrame=false
+          InsetsSource type=ITYPE_IME frame=[0,0][0,0] visible=false insetsRoundedCornerFrame=false
+    WindowOnBackDispatcher:
+        Top Callback: android.app.Activity$$ExternalSyntheticLambda0@696d751
+        Callbacks: 
+          Callback: android.app.Activity$$ExternalSyntheticLambda0@696d751 Priority=-1
+    View Hierarchy:
+      DecorView@2239d0c[Settings]
+        android.widget.LinearLayout{64bb655 V.E...... ........ 0,0-1080,2400}
+          android.view.ViewStub{a88b86a G.E...... ......I. 0,0-0,0 #10201c5 android:id/action_mode_bar_stub}
+          android.widget.FrameLayout{63015b V.E...... ........ 0,0-1080,2400 #1020002 android:id/content}
+            androidx.coordinatorlayout.widget.CoordinatorLayout{bf37df8 V.E...... ........ 0,132-1080,2337 #7f0d055f app:id/settings_homepage_container}
+              androidx.core.widget.NestedScrollView{633da90 VFED..... ........ 0,642-1080,2626 #7f0d039d app:id/main_content_scrollable_container}
+                android.widget.LinearLayout{cde62d1 VFE...... ........ 0,0-1080,4657 #7f0d02e7 app:id/homepage_container}
+                  android.widget.FrameLayout{b71f136 G.E...... ......I. 0,0-0,0 #7f0d060c app:id/suggestion_container_two_pane}
+                    android.widget.FrameLayout{a8f7117 G.E...... ......I. 0,0-0,0 #7f0d068e app:id/two_pane_suggestion_content}
+                      com.google.android.material.card.MaterialCardView{cc65837 V.E...... ......I. 0,0-0,0 #7f0d060b app:id/suggestion_card}
+                        android.widget.LinearLayout{de81a4 V.E...... ......I. 0,0-0,0 #7f0d015f app:id/card_container}
+                          android.widget.ImageView{3155b0d V.ED..... ......I. 0,0-0,0 #1020006 android:id/icon}
+                          android.widget.LinearLayout{ae3eac2 V.E...... ......I. 0,0-0,0 #7f0d0656 app:id/text_container}
+                            android.widget.TextView{89e40d3 V.ED..... ......ID 0,0-0,0 #1020016 android:id/title}
+                            android.widget.TextView{9541410 V.ED..... ......ID 0,0-0,0 #1020010 android:id/summary}
+                  android.widget.FrameLayout{b499b09 V.E...... ........ 11,0-1069,0 #7f0d01a8 app:id/contextual_cards_content}
+                  android.widget.FrameLayout{f1e487a V.E...... ........ 0,0-1080,4657 #7f0d039c app:id/main_content}
+                    android.widget.LinearLayout{d89f10e V.E..V... ........ 0,0-1080,4657 #7f0d019d app:id/container_material}
+                      android.widget.FrameLayout{a02172f G.E..V... ......ID 0,0-0,0 #7f0d04a7 app:id/pinned_header}
+                      android.widget.FrameLayout{34e613c V.E..V... ........ 0,0-1080,4657 #102003f android:id/list_container}
+                        android.widget.LinearLayout{a67dec5 G.E..V... ......I. 0,0-0,0 #7f0d038d app:id/loading_container}
+                          android.widget.ProgressBar{578101a V.ED.V... ......ID 0,0-0,0}
+                          android.widget.TextView{722f74b V.ED.V... ......I. 0,0-0,0}
+                        androidx.recyclerview.widget.RecyclerView{3e5528 VFED.V... ........ 0,0-1080,4657 #7f0d04f9 app:id/recycler_view}
+                          android.widget.LinearLayout{d6ca241 VFE..VC.. ........ 0,0-1080,231 #0}
+                            android.widget.LinearLayout{ff713e6 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{e27bd27 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{5b79bd4 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{aa0217d V.ED.V... ........ 42,42-478,113 #1020016 android:id/title}
+                              android.widget.TextView{4108872 V.ED.V... ........ 42,113-393,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{ec904c3 VFE..VC.. ........ 0,231-1080,462 #0}
+                            android.widget.LinearLayout{cdca140 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{a925879 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{ddab9be V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{1ad2a1f V.ED.V... ........ 42,42-489,113 #1020016 android:id/title}
+                              android.widget.TextView{c8a916c V.ED.V... ........ 42,113-329,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{4d70335 VFE..VC.. ........ 0,462-1080,693 #0}
+                            android.widget.LinearLayout{284b3ca V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{984493b V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{a455858 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{c819db1 V.ED.V... ........ 42,42-164,113 #1020016 android:id/title}
+                              android.widget.TextView{9224296 V.ED.V... ........ 42,113-627,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{9e43e17 VFE..VC.. ........ 0,693-1080,924 #0}
+                            android.widget.LinearLayout{de3a204 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{86163ed V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{437f222 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{fe4a4b3 V.ED.V... ........ 42,42-342,113 #1020016 android:id/title}
+                              android.widget.TextView{3fada70 V.ED.V... ........ 42,113-598,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{2fd51e9 VFE..VC.. ........ 0,924-1080,1155 #0}
+                            android.widget.LinearLayout{8070e6e V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{87ad90f V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{b0b2d9c V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{e5023a5 V.ED.V... ........ 42,42-210,113 #1020016 android:id/title}
+                              android.widget.TextView{999a37a V.ED.V... ........ 42,113-132,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{95f72b VFE..VC.. ........ 0,1155-1080,1386 #0}
+                            android.widget.LinearLayout{76b8788 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{7445521 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{28e7d46 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{afadb07 V.ED.V... ........ 42,42-224,113 #1020016 android:id/title}
+                              android.widget.TextView{9f59434 V.ED.V... ........ 42,113-430,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{4f0225d VFE..VC.. ........ 0,1386-1080,1617 #0}
+                            android.widget.LinearLayout{5a527d2 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{7e020a3 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{571bfa0 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{f918759 V.ED.V... ........ 42,42-454,113 #1020016 android:id/title}
+                              android.widget.TextView{9ef1e V.ED.V... ........ 42,113-560,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{a4a23ff VFE..VC.. ........ 0,1617-1080,1848 #0}
+                            android.widget.LinearLayout{ec335cc V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{b4a4015 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{361df2a V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{727011b V.ED.V... ........ 42,42-214,113 #1020016 android:id/title}
+                              android.widget.TextView{3d3e2b8 V.ED.V... ........ 42,113-578,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{29bc891 VFE..VC.. ........ 0,1848-1080,2079 #0}
+                            android.widget.LinearLayout{496c3f6 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{a2a93f7 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{5407264 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{ca35ccd V.ED.V... ........ 42,42-448,113 #1020016 android:id/title}
+                              android.widget.TextView{b632982 V.ED.V... ........ 42,113-538,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{c6a7893 VFE..VC.. ........ 0,2079-1080,2310 #0}
+                            android.widget.LinearLayout{ec450d0 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{b15f8c9 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{e9e5bce V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{8ba0aef V.ED.V... ........ 42,42-339,113 #1020016 android:id/title}
+                              android.widget.TextView{a65a9fc V.ED.V... ........ 42,113-458,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{bfc5885 VFE..VC.. ........ 0,2310-1080,2541 #0}
+                            android.widget.LinearLayout{94866da V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{9c6670b V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{a6169e8 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{b2ef801 V.ED.V... ........ 42,42-231,113 #1020016 android:id/title}
+                              android.widget.TextView{45616a6 V.ED.V... ........ 42,113-714,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{df268e7 VFE..VC.. ........ 0,2541-1080,2772 #0}
+                            android.widget.LinearLayout{5d73c94 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{f92133d V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{13cf732 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{cf2ac83 V.ED.V... ........ 42,42-214,113 #1020016 android:id/title}
+                              android.widget.TextView{4358e00 V.ED.V... ........ 42,113-758,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{11a639 VFE..VC.. ........ 0,2772-1080,3003 #0}
+                            android.widget.LinearLayout{13f547e V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{b298ddf V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{3658a2c V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{c5d6cf5 V.ED.V... ........ 42,42-247,113 #1020016 android:id/title}
+                              android.widget.TextView{5783a8a V.ED.V... ........ 42,113-620,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{6c328fb VFE..VC.. ........ 0,3003-1080,3234 #0}
+                            android.widget.LinearLayout{4b71d18 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{564e371 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{3a77556 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{a9159d7 V.ED.V... ........ 42,42-508,113 #1020016 android:id/title}
+                              android.widget.TextView{c8cf2c4 V.ED.V... ........ 42,113-632,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{19345ad VFE..VC.. ........ 0,3234-1080,3465 #0}
+                            android.widget.LinearLayout{bbd90e2 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{2a7bc73 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{c87730 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{8cb8fa9 V.ED.V... ........ 42,42-579,113 #1020016 android:id/title}
+                              android.widget.TextView{a27d92e V.ED.V... ........ 42,113-752,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{eb7accf VFE..VC.. ........ 0,3465-1080,3733 #0}
+                            android.widget.LinearLayout{1f5d65c V.E..V... ........ 0,91-147,176 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{4247d65 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{2dc5a3a V.E..V... ........ 147,0-1080,268 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{e2c46eb V.ED.V... ........ 42,42-870,175 #1020016 android:id/title}
+                              android.widget.TextView{b37fc48 V.ED.V... ........ 42,175-757,226 #1020010 android:id/summary}
+                          android.widget.LinearLayout{d648ae1 VFE..VC.. ........ 0,3733-1080,3964 #0}
+                            android.widget.LinearLayout{125e006 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{20666c7 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{4f494f4 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{a3df41d V.ED.V... ........ 42,42-209,113 #1020016 android:id/title}
+                              android.widget.TextView{82ff692 V.ED.V... ........ 42,113-421,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{78a863 VFE..VC.. ........ 0,3964-1080,4195 #0}
+                            android.widget.LinearLayout{6400c60 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{f4ab519 V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{52e9de V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{64367bf V.ED.V... ........ 42,42-216,113 #1020016 android:id/title}
+                              android.widget.TextView{1098e8c V.ED.V... ........ 42,113-608,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{6c889d5 VFE..VC.. ........ 0,4195-1080,4426 #0}
+                            android.widget.LinearLayout{d1fc5ea V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{1d0c0db V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{5070778 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{714ee51 V.ED.V... ........ 42,42-582,113 #1020016 android:id/title}
+                              android.widget.TextView{82c56b6 V.ED.V... ........ 42,113-407,164 #1020010 android:id/summary}
+                          android.widget.LinearLayout{4108fb7 VFE..VC.. ........ 0,4426-1080,4657 #0}
+                            android.widget.LinearLayout{5612324 V.E..V... ........ 0,73-147,158 #7f0d02fa app:id/icon_frame}
+                              androidx.preference.internal.PreferenceImageView{4e91e8d V.ED.V... ........ 84,11-147,74 #1020006 android:id/icon}
+                            android.widget.RelativeLayout{c9f2842 V.E..V... ........ 147,12-1080,218 #7f0d0657 app:id/text_frame}
+                              android.widget.TextView{3147053 V.ED.V... ........ 42,42-386,113 #1020016 android:id/title}
+                              android.widget.TextView{d1f4d90 V.ED.V... ........ 42,113-479,164 #1020010 android:id/summary}
+                      android.widget.TextView{d561689 G.ED.V... ......I. 0,0-0,0 #1020004 android:id/empty}
+                      android.widget.LinearLayout{f7b868e G.E..V... ......I. 0,0-0,0 #7f0d063e app:id/tab_container}
+                        com.google.android.material.tabs.TabLayout{a6bbeaf VFED.V... ......I. 0,0-0,0 #7f0d063f app:id/tabs}
+                          com.google.android.material.tabs.TabLayout$SlidingTabIndicator{e53b2bc V.ED.V... ......I. 0,0-0,0}
+                        androidx.viewpager2.widget.ViewPager2{3809245 V.E..V... ......I. 0,0-0,0 #7f0d06c4 app:id/view_pager}
+                          androidx.viewpager2.widget.ViewPager2$RecyclerViewImpl{ad7d9a VFED.V... ......I. 0,0-0,0 #1}
+              com.google.android.material.appbar.AppBarLayout{c0c1f89 V.E...... ........ 0,0-1080,642 #7f0d009a app:id/app_bar}
+                android.widget.LinearLayout{53f96cb V.E...... ........ 0,0-1080,642 #7f0d009b app:id/app_bar_container}
+                  android.widget.LinearLayout{8073ea8 V.E...... ........ 0,0-1080,642 #7f0d02e5 app:id/homepage_app_bar_regular_phone_view}
+                    android.widget.ImageView{e1d0dc1 VFED..C.. ........ 891,147-1017,273 #7f0d0034 app:id/account_avatar}
+                    android.widget.TextView{d5d966 V.ED..... ........ 63,273-408,400 #7f0d02e9 app:id/homepage_title}
+                    android.widget.FrameLayout{76fdc28 G.E...... ......I. 0,0-0,0 #7f0d060d app:id/suggestion_content}
+                      com.google.android.material.card.MaterialCardView{e2ed4a7 V.E...... ......I. 0,0-0,0 #7f0d060b app:id/suggestion_card}
+                        android.widget.LinearLayout{ee59d54 V.E...... ......I. 0,0-0,0 #7f0d015f app:id/card_container}
+                          android.widget.ImageView{abc4fd V.ED..... ......I. 0,0-0,0 #1020006 android:id/icon}
+                          android.widget.LinearLayout{7d625f2 V.E...... ......I. 0,0-0,0 #7f0d0656 app:id/text_container}
+                            android.widget.TextView{ea1443 V.ED..... ......ID 0,0-0,0 #1020016 android:id/title}
+                            android.widget.TextView{4a93ac0 V.ED..... ......ID 0,0-0,0 #1020010 android:id/summary}
+                    android.widget.LinearLayout{c74b3f9 V.E...... ........ 42,463-1038,600}
+                      com.google.android.material.card.MaterialCardView{81caf3e V.E...... ........ 0,0-996,137 #7f0d053c app:id/search_bar}
+                        android.widget.Toolbar{98fb19f VFE...C.. ........ 0,0-996,137 #7f0d0537 app:id/search_action_bar}
+                          android.widget.ImageButton{a4742ec VFED..... ........ 11,0-158,137}
+                          android.widget.TextView{54396b5 V.ED..... ........ 158,33-511,104 #7f0d0538 app:id/search_action_bar_title}
+                  android.widget.LinearLayout{ab0814a G.E...... ......I. 0,0-0,0 #7f0d02e6 app:id/homepage_app_bar_two_pane_view}
+                    com.google.android.material.card.MaterialCardView{dc7c8bb V.E...... ......I. 0,0-0,0}
+                      android.widget.Toolbar{8dba1d8 VFE...C.. ......I. 0,0-0,0 #7f0d0539 app:id/search_action_bar_two_pane}
+                        android.widget.ImageButton{5e3e931 VFED..... ......I. 0,0-0,0}
+                        android.widget.TextView{ffd6816 V.ED..... ......ID 0,0-0,0 #7f0d053d app:id/search_bar_title}
+                    android.widget.ImageView{ba03597 VFED..C.. ......I. 0,0-0,0 #7f0d0035 app:id/account_avatar_two_pane_version}
+        android.view.View{d550384 V.ED..... ........ 0,0-1080,132 #102002f android:id/statusBarBackground}
+    Looper (main, tid 2) {5ce76d}
+      Message 0: { when=+7s90ms callback=android.permission.PermissionControllerManager$1 target=android.os.Handler }
+      (Total messages: 1, polling=false, quitting=false)
+    ResourcesManager:
+      total apks: 17
+      resources: 12
+      resource impls: 6
+    1 dumpables:
+    #0: AutofillManager
+        AutofillManager:
+          sessionId: 2147483647
+          state: UNKNOWN
+          context: com.android.settings.homepage.SettingsHomepageActivity@b55b6ec
+          service client: null
+          client: android.view.autofill.AutofillClientController@15fefa2 (android.os.BinderProxy@5352d2e)
+          enabled: false
+          enabledAugmentedOnly: false
+          hasService: true
+          hasCallback: false
+          onInvisibleCalled false
+          last autofilled data: null
+          id of last fill UI shown: null
+          tracked views: null
+          fillable ids: null
+          entered ids: null
+          save trigger id: null
+          save on finish(): false
+          compat mode enabled:   fill dialog enabled: false
+          fill dialog enabled hints: [password, passwordAuto, creditCardNumber, creditCardSecurityCode, creditCardExpirationDate]
+        false
+          debug: false verbose: false
+        Autofill Compat Mode: false
+    Local FragmentActivity b55b6ec State:
+      mCreated=true mResumed=true mStopped=false    Active Fragments:
+    TopLevelSettings{c1c3ca5} (1f513931-b350-443a-be2b-8d047a10cbfa id=0x7f0d039c)
+        mFragmentId=#7f0d039c mContainerId=#7f0d039c mTag=null
+        mState=7 mWho=1f513931-b350-443a-be2b-8d047a10cbfa mBackStackNesting=0
+        mAdded=true mRemoving=false mFromLayout=false mInLayout=false
+        mHidden=false mDetached=false mMenuVisible=true mHasMenu=true
+        mRetainInstance=false mUserVisibleHint=true
+        mFragmentManager=FragmentManager{a289433 in HostCallbacks{2e0d3f0}}}
+        mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+        mArguments=Bundle[{need_search_icon_in_action_bar=false, :settings:fragment_args_key=top_level_network}]
+        mPopDirection=false
+        mContainer=android.widget.FrameLayout{f1e487a V.E...... ........ 0,0-1080,4657 #7f0d039c app:id/main_content}
+        mView=android.widget.LinearLayout{d89f10e V.E..V... ........ 0,0-1080,4657 #7f0d019d app:id/container_material}
+        Child FragmentManager{5ed8d69 in TopLevelSettings{c1c3ca5}}}:
+          Back Stack Index: 0
+          FragmentManager misc state:
+            mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+            mContainer=androidx.fragment.app.Fragment$5@f7163ee
+            mParent=TopLevelSettings{c1c3ca5} (1f513931-b350-443a-be2b-8d047a10cbfa id=0x7f0d039c)
+            mCurState=7 mStateSaved=false mStopped=false mDestroyed=false
+    ContextualSuggestionFragment{f7e6196} (10fb4315-e511-4509-be1c-9676502c4fd6 id=0x7f0d068e)
+        mFragmentId=#7f0d068e mContainerId=#7f0d068e mTag=null
+        mState=7 mWho=10fb4315-e511-4509-be1c-9676502c4fd6 mBackStackNesting=0
+        mAdded=true mRemoving=false mFromLayout=false mInLayout=false
+        mHidden=false mDetached=false mMenuVisible=true mHasMenu=false
+        mRetainInstance=false mUserVisibleHint=true
+        mFragmentManager=FragmentManager{a289433 in HostCallbacks{2e0d3f0}}}
+        mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+        mPopDirection=false
+        mContainer=android.widget.FrameLayout{a8f7117 G.E...... ......I. 0,0-0,0 #7f0d068e app:id/two_pane_suggestion_content}
+        Child FragmentManager{7ce408f in ContextualSuggestionFragment{f7e6196}}}:
+          Back Stack Index: 0
+          FragmentManager misc state:
+            mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+            mContainer=androidx.fragment.app.Fragment$5@8173f1c
+            mParent=ContextualSuggestionFragment{f7e6196} (10fb4315-e511-4509-be1c-9676502c4fd6 id=0x7f0d068e)
+            mCurState=7 mStateSaved=false mStopped=false mDestroyed=false
+    ContextualSuggestionFragment{39a3a4b} (2354bae3-45bf-40db-b5f3-9e28faf497e1 id=0x7f0d060d)
+        mFragmentId=#7f0d060d mContainerId=#7f0d060d mTag=null
+        mState=7 mWho=2354bae3-45bf-40db-b5f3-9e28faf497e1 mBackStackNesting=0
+        mAdded=true mRemoving=false mFromLayout=false mInLayout=false
+        mHidden=false mDetached=false mMenuVisible=true mHasMenu=false
+        mRetainInstance=false mUserVisibleHint=true
+        mFragmentManager=FragmentManager{a289433 in HostCallbacks{2e0d3f0}}}
+        mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+        mPopDirection=false
+        mContainer=android.widget.FrameLayout{76fdc28 G.E...... ......I. 0,0-0,0 #7f0d060d app:id/suggestion_content}
+        Child FragmentManager{2c89725 in ContextualSuggestionFragment{39a3a4b}}}:
+          Back Stack Index: 0
+          FragmentManager misc state:
+            mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+            mContainer=androidx.fragment.app.Fragment$5@913d0fa
+            mParent=ContextualSuggestionFragment{39a3a4b} (2354bae3-45bf-40db-b5f3-9e28faf497e1 id=0x7f0d060d)
+            mCurState=7 mStateSaved=false mStopped=false mDestroyed=false
+    Added Fragments:
+      #0: ContextualSuggestionFragment{39a3a4b} (2354bae3-45bf-40db-b5f3-9e28faf497e1 id=0x7f0d060d)
+      #1: ContextualSuggestionFragment{f7e6196} (10fb4315-e511-4509-be1c-9676502c4fd6 id=0x7f0d068e)
+      #2: TopLevelSettings{c1c3ca5} (1f513931-b350-443a-be2b-8d047a10cbfa id=0x7f0d039c)
+    Back Stack Index: 0
+    FragmentManager misc state:
+      mHost=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+      mContainer=androidx.fragment.app.FragmentActivity$HostCallbacks@2e0d3f0
+      mCurState=7 mStateSaved=false mStopped=false mDestroyed=false
