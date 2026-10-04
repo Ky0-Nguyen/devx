@@ -37,7 +37,7 @@ discovered.
 ```
 build/bin/mpi                     the CLI: one self-contained executable
 build/bin/DevX.app                the desktop app
-  Contents/Info.plist             from apps/devx-mac/Support/Info.plist
+  Contents/Info.plist             from apps/devx-mac/Support/Info.plist.in, versioned by CMake
   Contents/MacOS/DevX             the Swift binary, statically linked against
                                   mpi_capi + mpi_core + mpi_adapters
 build/bin/devx-serve              the HTTP view of a session, for a browser
@@ -198,8 +198,23 @@ DEVX_SIGN_IDENTITY="Developer ID Application: Tuan Nguyen (9QCJJFC22X)" \
 DEVX_NOTARY_PROFILE=devx-notary bash tools/release.sh
 ```
 
-The CI workflow has no secrets yet, so it still signs ad-hoc; adding the six
-listed at the top of `release.yml` makes it notarize too. 0.1.0 and 0.2.0
+**Releases are automatic.** Every push to `main` is versioned, built, tagged,
+backed up as a `v<version>` branch and published by
+`.github/workflows/release.yml`; see [building](building.md#releasing). It
+notarizes when these repository secrets are set, and otherwise publishes an
+ad-hoc pre-release that the Homebrew cask does not move to:
+
+| secret | value |
+|---|---|
+| `DEVELOPER_ID_P12_BASE64` | the Developer ID Application certificate and key, exported from Keychain Access as `.p12`, base64 |
+| `DEVELOPER_ID_P12_PASSWORD` | the password chosen for that export |
+| `DEVELOPER_ID_NAME` | `Developer ID Application: Tuan Nguyen (9QCJJFC22X)` |
+| `NOTARY_APPLE_ID` | the Apple ID of the developer account |
+| `NOTARY_PASSWORD` | an app-specific password for it |
+| `NOTARY_TEAM_ID` | `9QCJJFC22X` |
+
+An App Store Connect API key works in place of the last three
+(`NOTARY_KEY_P8_BASE64`, `NOTARY_KEY_ID`, `NOTARY_ISSUER`). 0.1.0 and 0.2.0
 remain ad-hoc and keep the right-click > Open step.
 
 ---

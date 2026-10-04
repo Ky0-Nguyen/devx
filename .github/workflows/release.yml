@@ -1,49 +1,101 @@
 name: Release
 
-# Builds DevX-<version>.dmg, attaches it to the GitHub release for <tag> and
-# points Casks/devx.rb at it.
+# Every push to main -- a merged change -- becomes a release:
 #
-# Signing is decided by which secrets exist. With none, the image is ad-hoc,
-# exactly what tools/release.sh produces on a machine with no Apple Developer
-# account. With all of these it is Developer ID signed, notarized and stapled:
+#   1. Decide the version. A version in CMakeLists.txt that has no tag yet is
+#      released as it is (someone set it by hand). Otherwise it is bumped:
+#      patch by default, minor or major when any commit message since the last
+#      release says [minor] or [major] (or BREAKING CHANGE).
+#   2. Build and run every test suite.
+#   3. Build DevX-<version>.dmg with tools/release.sh: Developer ID signed and
+#      notarized when the secrets below exist, ad-hoc otherwise.
+#   4. Commit "Release <version>" to main, tag it <version>, and keep a branch
+#      v<version> at the same commit as a backup of exactly what shipped.
+#   5. Publish the GitHub release with the image attached. The Homebrew cask is
+#      moved to it only when it is notarized; an ad-hoc build is published as a
+#      pre-release instead, so nobody installing through Homebrew is handed an
+#      image Gatekeeper refuses.
 #
-#   DEVELOPER_ID_P12_BASE64   the "Developer ID Application" cert + key, as a
-#                             base64 .p12
-#   DEVELOPER_ID_P12_PASSWORD its export password
+# Not released: a push whose head commit says [skip release], a push that only
+# touches docs, Markdown or the cask, and the release commit itself (a push
+# made with GITHUB_TOKEN starts no workflow).
+#
+# Notarization secrets:
+#   DEVELOPER_ID_P12_BASE64   the "Developer ID Application" certificate and
+#                             its key, exported as .p12, base64
+#   DEVELOPER_ID_P12_PASSWORD the .p12's export password
 #   DEVELOPER_ID_NAME         "Developer ID Application: Name (TEAMID)"
-#   NOTARY_KEY_P8_BASE64      an App Store Connect API key (.p8), base64
-#   NOTARY_KEY_ID, NOTARY_ISSUER
+#   NOTARY_APPLE_ID, NOTARY_PASSWORD (an app-specific password), NOTARY_TEAM_ID
+#     -- or NOTARY_KEY_P8_BASE64, NOTARY_KEY_ID, NOTARY_ISSUER for an API key
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "Casks/**"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Release tag, equal to CFBundleShortVersionString (e.g. 0.2.0)"
-        required: true
+      level:
+        description: "patch, minor, major, or an exact x.y.z (empty: decide from commit messages)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
+# One release at a time, and never cancelled halfway: a cancelled run could
+# leave a tag without its release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.head_commit.message, '[skip release]')
     runs-on: macos-latest
     env:
-      TAG: ${{ inputs.tag }}
       GH_TOKEN: ${{ github.token }}
       P12: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
       P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
       NOTARY_P8: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+      NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.tag }}
+          fetch-depth: 0
 
       - name: Use the newest Xcode on the runner
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
 
-      - name: Tag matches the bundle version
+      - name: Decide the version
+        id: version
+        env:
+          LEVEL: ${{ inputs.level }}
         run: |
-          v=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' apps/devx-mac/Support/Info.plist)
-          [ "$v" = "$TAG" ] || { echo "tag $TAG but Info.plist says $v"; exit 1; }
+          current=$(bash tools/bump-version.sh --current)
+          last=$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
+          if ! git rev-parse -q --verify "refs/tags/$current" >/dev/null; then
+            next=$current
+            why="CMakeLists.txt already says $current, which has no tag"
+          else
+            level=$LEVEL
+            if [ -z "$level" ]; then
+              messages=$(git log --format=%B ${last:+$last..HEAD})
+              if grep -qiE '\[major\]|BREAKING CHANGE' <<<"$messages"; then level=major
+              elif grep -qi '\[minor\]' <<<"$messages"; then level=minor
+              else level=patch; fi
+            fi
+            next=$(bash tools/bump-version.sh "$level")
+            why="$level bump from $current"
+          fi
+          if git rev-parse -q --verify "refs/tags/$next" >/dev/null; then
+            echo "::error::$next is already tagged"; exit 1
+          fi
+          echo "releasing $next ($why; previous release ${last:-none})"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
 
       - name: Build and test
         run: |
@@ -52,6 +104,7 @@ jobs:
           xcrun simctl list devices > /dev/null  # start CoreSimulatorService before the probe-timing tests
           (cd build && ctest --output-on-failure)
           ./build/bin/devx_swift_tests
+          bash tools/smoke-test.sh
 
       - name: Import the Developer ID certificate
         if: env.P12 != ''
@@ -62,12 +115,22 @@ jobs:
           security unlock-keychain -p "" "$kc"
           echo "$P12" | base64 --decode > "$RUNNER_TEMP/id.p12"
           security import "$RUNNER_TEMP/id.p12" -k "$kc" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/id.p12"
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$kc"
           security list-keychains -d user -s "$kc" $(security list-keychains -d user | tr -d '"')
           echo "DEVX_SIGN_IDENTITY=${{ secrets.DEVELOPER_ID_NAME }}" >> "$GITHUB_ENV"
 
-      - name: Notary credentials
-        if: env.NOTARY_P8 != ''
+      - name: Notary credentials (Apple ID)
+        if: env.P12 != '' && env.NOTARY_APPLE_ID != ''
+        run: |
+          {
+            echo "DEVX_NOTARY_APPLE_ID=${{ secrets.NOTARY_APPLE_ID }}"
+            echo "DEVX_NOTARY_PASSWORD=${{ secrets.NOTARY_PASSWORD }}"
+            echo "DEVX_NOTARY_TEAM_ID=${{ secrets.NOTARY_TEAM_ID }}"
+          } >> "$GITHUB_ENV"
+
+      - name: Notary credentials (API key)
+        if: env.P12 != '' && env.NOTARY_APPLE_ID == '' && env.NOTARY_P8 != ''
         run: |
           echo "$NOTARY_P8" | base64 --decode > "$RUNNER_TEMP/notary.p8"
           {
@@ -78,19 +141,53 @@ jobs:
 
       - name: Disk image
         id: dmg
-        run: bash tools/release.sh | tee "$RUNNER_TEMP/release.out" && grep -E '^(dmg|sha256)=' "$RUNNER_TEMP/release.out" >> "$GITHUB_OUTPUT"
-
-      - name: Attach to the release
         run: |
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "DevX $TAG" --generate-notes --verify-tag
-          gh release upload "$TAG" "${{ steps.dmg.outputs.dmg }}" "${{ steps.dmg.outputs.dmg }}.sha256" --clobber
+          bash tools/release.sh | tee "$RUNNER_TEMP/release.out"
+          grep -E '^(dmg|sha256)=' "$RUNNER_TEMP/release.out" >> "$GITHUB_OUTPUT"
+          if [ -n "${DEVX_SIGN_IDENTITY:-}" ]; then
+            echo "notarized=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "notarized=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Point the cask at it
+      - name: Commit, tag, and keep a backup branch
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.dmg.outputs.sha256 }}
+          NOTARIZED: ${{ steps.dmg.outputs.notarized }}
         run: |
-          git fetch origin main && git checkout main
-          bash tools/bump-cask.sh "$TAG" "${{ steps.dmg.outputs.sha256 }}" ${P12:+notarized}
-          git diff --quiet Casks/devx.rb && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Point the cask at $TAG"
-          git push origin main
+          git add CMakeLists.txt
+          if [ "$NOTARIZED" = true ]; then
+            bash tools/bump-cask.sh "$VERSION" "$SHA" notarized
+            git add Casks/devx.rb
+          fi
+          if ! git diff --cached --quiet; then
+            git commit -m "Release $VERSION [skip release]"
+          fi
+          git tag -a "$VERSION" -m "DevX $VERSION"
+          git branch "v$VERSION"
+          # All three or none: a tag without its branch, or a release commit
+          # that never reached main, would be a half-made release. If main
+          # moved while this built, the push is refused and the newer push
+          # makes its own release.
+          git push --atomic origin HEAD:main "refs/tags/$VERSION" "refs/heads/v$VERSION"
+
+      - name: Publish the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          DMG: ${{ steps.dmg.outputs.dmg }}
+          NOTARIZED: ${{ steps.dmg.outputs.notarized }}
+        run: |
+          if [ "$NOTARIZED" = true ]; then
+            note="Signed with a Developer ID and notarized by Apple."
+            extra=()
+          else
+            note="**Signed ad-hoc, not notarized** (the signing secrets are not set): on first launch, right-click DevX and choose Open. Published as a pre-release, and the Homebrew cask still points at the last notarized release."
+            extra=(--prerelease)
+          fi
+          gh release create "$VERSION" "$DMG" "$DMG.sha256" \
+            --title "DevX $VERSION" --verify-tag --generate-notes \
+            --notes "$note Backup branch: \`v$VERSION\`. sha256 of the image: \`$(cut -d' ' -f1 "$DMG.sha256")\`." \
+            "${extra[@]}"

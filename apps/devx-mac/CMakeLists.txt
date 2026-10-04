@@ -165,12 +165,20 @@ else()
   set(DEVX_PROBE_DEP "")
 endif()
 
+# Info.plist carries the version from project(VERSION), so a release bumps one
+# line. CFBundleVersion has to increase from one release to the next as a
+# number: 0.3.1 becomes 301, which sorts above the 3 that 0.3.0 shipped with.
+math(EXPR DEVX_BUILD_NUMBER
+     "${PROJECT_VERSION_MAJOR} * 10000 + ${PROJECT_VERSION_MINOR} * 100 + ${PROJECT_VERSION_PATCH}")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Support/Info.plist.in
+               ${CMAKE_CURRENT_BINARY_DIR}/Info.plist @ONLY)
+
 add_custom_command(
   OUTPUT ${DEVX_BINARY}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${DEVX_BUNDLE}/Contents/MacOS
   COMMAND ${CMAKE_COMMAND} -E make_directory ${DEVX_BUNDLE}/Contents/Resources
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CMAKE_CURRENT_SOURCE_DIR}/Support/Info.plist
+          ${CMAKE_CURRENT_BINARY_DIR}/Info.plist
           ${DEVX_BUNDLE}/Contents/Info.plist
   COMMAND ${MPI_SWIFTC}
           -O -whole-module-optimization
@@ -208,7 +216,7 @@ add_custom_command(
   COMMAND codesign --force --sign - ${DEVX_BUNDLE}
   DEPENDS ${DEVX_SWIFT_SOURCES} mpi_capi mpi_core mpi_adapters mpi
           ${DEVX_ICON_DEP} ${DEVX_PROBE_DEP}
-          ${CMAKE_CURRENT_SOURCE_DIR}/Support/Info.plist
+          ${CMAKE_CURRENT_BINARY_DIR}/Info.plist
           ${CMAKE_CURRENT_BINARY_DIR}/modules/mpi_capi.h
           ${CMAKE_CURRENT_BINARY_DIR}/modules/module.modulemap
   COMMENT "Building DevX.app (SwiftUI)"
