@@ -13,7 +13,9 @@
 #   DEVX_NOTARY_PROFILE  a keychain profile made once with
 #                        `xcrun notarytool store-credentials`, or
 #   DEVX_NOTARY_KEY, DEVX_NOTARY_KEY_ID, DEVX_NOTARY_ISSUER
-#                        an App Store Connect API key (.p8 path), as CI has.
+#                        an App Store Connect API key (.p8 path), or
+#   DEVX_NOTARY_APPLE_ID, DEVX_NOTARY_PASSWORD, DEVX_NOTARY_TEAM_ID
+#                        an Apple ID with an app-specific password, as CI has.
 #   BUILD_DIR            default: build. Must already hold bin/DevX.app.
 #
 # A Developer ID identity with no notary credentials is refused rather than
@@ -36,10 +38,14 @@ if [ -n "${DEVX_NOTARY_PROFILE:-}" ]; then
   notary_args=(--keychain-profile "$DEVX_NOTARY_PROFILE")
 elif [ -n "${DEVX_NOTARY_KEY:-}" ]; then
   notary_args=(--key "$DEVX_NOTARY_KEY" --key-id "$DEVX_NOTARY_KEY_ID" --issuer "$DEVX_NOTARY_ISSUER")
+elif [ -n "${DEVX_NOTARY_APPLE_ID:-}" ]; then
+  notary_args=(--apple-id "$DEVX_NOTARY_APPLE_ID" --password "$DEVX_NOTARY_PASSWORD"
+               --team-id "$DEVX_NOTARY_TEAM_ID")
 fi
 if [ "$IDENTITY" != "-" ] && [ ${#notary_args[@]} -eq 0 ]; then
   echo "error: a Developer ID identity needs notary credentials too;" \
-       "set DEVX_NOTARY_PROFILE or DEVX_NOTARY_KEY/_KEY_ID/_ISSUER" >&2
+       "set DEVX_NOTARY_PROFILE, DEVX_NOTARY_KEY/_KEY_ID/_ISSUER or" \
+       "DEVX_NOTARY_APPLE_ID/_PASSWORD/_TEAM_ID" >&2
   exit 2
 fi
 

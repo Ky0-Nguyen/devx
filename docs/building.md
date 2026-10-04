@@ -68,8 +68,24 @@ The three `.mpi.json` fixtures are labelled `synthetic` and their reports say so
 
 ## Releasing
 
-`tools/release.sh` builds `build/release/DevX-<version>.dmg`, and
-`.github/workflows/release.yml` runs it in CI. Both are described in
+Every push to `main` is a release, made by `.github/workflows/release.yml`:
+
+1. The version is bumped in its one place, `project(VERSION)` in
+   `CMakeLists.txt` (`tools/bump-version.sh`): a patch by default, a minor or
+   major when a commit message since the last release says `[minor]` or
+   `[major]`. A version set by hand that has no tag yet is released as it is.
+2. Everything is built and every test suite runs.
+3. `tools/release.sh` builds `DevX-<version>.dmg`, Developer ID signed and
+   notarized when the signing secrets are set.
+4. A `Release <version>` commit lands on `main`, tagged `<version>`, with a
+   backup branch `v<version>` at the same commit.
+5. The GitHub release is published with the image. Only a notarized image
+   moves the Homebrew cask; an ad-hoc one is published as a pre-release.
+
+`[skip release]` in the head commit skips it, and a push that only touches
+docs, Markdown or the cask does not release. From Actions > Release, a release
+can also be started by hand with a level (`patch`, `minor`, `major` or `x.y.z`).
+The secrets are listed at the top of the workflow and in
 [packaging and signing](packaging-and-signing.md).
 
 ## Further reading

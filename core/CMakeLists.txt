@@ -54,3 +54,6 @@ add_library(mpi_core STATIC
   discovery/discovery_service.cpp
 )
 target_link_libraries(mpi_core PUBLIC mpi_project_options)
+# The version `mpi`, the MCP server and every session manifest report, taken
+# from project(VERSION) so a release changes it in one place.
+target_compile_definitions(mpi_core PRIVATE MPI_VERSION_STRING="${PROJECT_VERSION}")
