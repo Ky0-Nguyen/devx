@@ -40,7 +40,7 @@ ExpiryState classify_expiry(const std::string& expiry, const std::string& now) {
 }  // namespace
 
 
-std::string engine_version() { return "0.2.0"; }
+std::string engine_version() { return "0.3.0"; }
 
 model::AnalysisResult analyze(const model::NormalizedTrace& trace,
                               const symbols::SymbolService& symbol_service,

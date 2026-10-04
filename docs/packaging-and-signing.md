@@ -154,10 +154,10 @@ project rather than merely anticipated:
   path with a deadline and names the wall instead of hanging (section 5 of
   `known-limitations.md`). Files chosen through the open panel are unaffected:
   picking a file is what grants access to it.
-- **It is not notarized.** It is distributed anyway, as a disk image on each
-  GitHub release, and every machine it lands on pays the right-click > Open
-  step above. Notarization is what would remove that step, and it needs the
-  Developer ID this environment does not have.
+- **It is not notarized.** A release from 0.3.0 on is Developer ID signed
+  and notarized (below), so this applies to a local `devx_dmg` or
+  `devx_install` build and to 0.1.0 and 0.2.0, which pay the right-click >
+  Open step above.
 
 **Releasing: `tools/release.sh`.** It takes `build/bin/DevX.app` and writes
 `build/release/DevX-<version>.dmg` and its `.sha256`. With no identity it
@@ -185,11 +185,22 @@ Release, with a tag). It signs and notarizes when the `DEVELOPER_ID_*` and
 release, and points `Casks/devx.rb` at it with `tools/bump-cask.sh`, which
 also drops the cask's first-launch caveat once a release is notarized.
 
-**What is still missing is the identity.** This machine has an Apple
-Development certificate, which can sign but cannot notarize. A Developer ID
-Application certificate needs a paid Apple Developer Program membership. Until
-then every release is ad-hoc and every recipient clears Gatekeeper by hand
-once.
+**Releases are notarized from 0.3.0.** They are signed with
+"Developer ID Application: Tuan Nguyen (9QCJJFC22X)" and notarized through a
+keychain profile, `devx-notary`, made with `xcrun notarytool
+store-credentials`. The 0.3.0 image was accepted by the notary service, and a
+quarantined copy of the app inside it assessed as `accepted, source=Notarized
+Developer ID`; the layout probe, signed the same way, still loads into a
+simulator app. A local release is:
+
+```bash
+DEVX_SIGN_IDENTITY="Developer ID Application: Tuan Nguyen (9QCJJFC22X)" \
+DEVX_NOTARY_PROFILE=devx-notary bash tools/release.sh
+```
+
+The CI workflow has no secrets yet, so it still signs ad-hoc; adding the six
+listed at the top of `release.yml` makes it notarize too. 0.1.0 and 0.2.0
+remain ad-hoc and keep the right-click > Open step.
 
 ---
 

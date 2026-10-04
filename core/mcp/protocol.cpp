@@ -57,7 +57,7 @@ json::Value Server::initialize_result() const {
 
   json::Value info = json::Value::object();
   info.set("name", json::Value::string("DevX"));
-  info.set("version", json::Value::string("0.2.0"));
+  info.set("version", json::Value::string("0.3.0"));
 
   json::Value out = json::Value::object();
   out.set("protocolVersion", json::Value::string(kProtocolVersion));
