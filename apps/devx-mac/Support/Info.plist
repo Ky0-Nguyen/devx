@@ -10,8 +10,8 @@
   <key>CFBundlePackageType</key><string>APPL</string>
   <!-- Generated at build time by tools/gen-icon.swift; see apps/devx-mac/CMakeLists.txt. -->
   <key>CFBundleIconFile</key><string>DevX</string>
-  <key>CFBundleShortVersionString</key><string>0.2.0</string>
-  <key>CFBundleVersion</key><string>2</string>
+  <key>CFBundleShortVersionString</key><string>0.3.0</string>
+  <key>CFBundleVersion</key><string>3</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <!-- DevX runs device tooling (adb, xcrun) as child processes, so it is not

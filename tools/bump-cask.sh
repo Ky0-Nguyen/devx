@@ -8,7 +8,9 @@ version=$1 sha=$2
 sed -i.bak -E "s/^  version \".*\"/  version \"$version\"/; s/^  sha256 \".*\"/  sha256 \"$sha\"/" "$cask"
 if [ "${3:-}" = notarized ]; then
   sed -i.bak -E '/^  caveats <<~EOS$/,/^  EOS$/d' "$cask"
-  sed -i.bak -e ':a' -e '/^\n*$/{$d;N;ba' -e '}' "$cask"
+  # The caveat was the last stanza, so the blank line before it now sits
+  # against `end`, which `brew style` refuses.
+  perl -0pi -e 's/\n\n(end\n?)\z/\n$1/' "$cask"
 fi
 rm -f "$cask.bak"
 grep -E '^  (version|sha256) ' "$cask"

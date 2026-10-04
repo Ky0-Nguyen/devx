@@ -71,13 +71,11 @@ Or download `DevX-<version>.dmg` from
 [Releases](https://github.com/Ky0-Nguyen/devx/releases) and drag DevX to
 Applications.
 
-**First launch.** Releases are signed ad-hoc and not yet notarized
-([why](docs/packaging-and-signing.md)), so macOS blocks both the app and the
-`mpi` command until you allow them. Right-click DevX in Applications and choose
-**Open**, then confirm. If `mpi` still stops with a security prompt, open
-**System Settings > Privacy & Security** and click **Open Anyway**. If you
-trust this build, `xattr -dr com.apple.quarantine /Applications/DevX.app`
-clears the block for both in one step.
+Releases from 0.3.0 are signed with a Developer ID and notarized by Apple, so
+DevX and `mpi` open like any other downloaded app
+([how a release is built](docs/packaging-and-signing.md)). 0.2.0 and earlier
+were ad-hoc: right-click DevX and choose **Open** once, or run
+`xattr -dr com.apple.quarantine /Applications/DevX.app`.
 
 ### Before you connect a device
 
@@ -293,7 +291,7 @@ fields quietly empty.
 - [iOS: what works, what does not, and what was measured](docs/ios-live-capture-findings.md)
 - [Tested capability matrix](docs/capabilities/tested-capability-matrix.md) — measured probe results
 - [More than one language](docs/internationalisation.md) — English and Vietnamese
-- Release notes: [v0.2.0](docs/RELEASE-v0.2.0.md) · [v0.1.0](docs/RELEASE-v0.1.0.md)
+- Release notes: [v0.3.0](docs/RELEASE-v0.3.0.md) · [v0.2.0](docs/RELEASE-v0.2.0.md) · [v0.1.0](docs/RELEASE-v0.1.0.md)
 
 Working on DevX itself: [building from source](docs/building.md) and
 [architecture](docs/architecture.md).
