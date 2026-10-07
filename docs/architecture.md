@@ -69,7 +69,7 @@ Device tooling on the left is run through proc::run with an argv and never a she
 apps/cli/            the `mpi` command-line interface
 apps/devx-mac/       DevX.app -- native SwiftUI desktop app, over the C ABI
 apps/devx-serve/     the same views over loopback HTTP, for a host without SwiftUI
-core/capi/           the C ABI DevX is built on
+core/capi/           the C ABI DevX is built on, including the window's control endpoint for AI tools
 core/
   model/             normalized trace, identity, capability, build, issue contracts
   discovery/         provider interface, reconciliation across adapters, boot
@@ -81,13 +81,15 @@ core/
   timeline/          binned tracks whose bins carry a state, not a bare number
   heap/              object graph from a heap dump + reference-path search
   observe/           reading a running app: network, console, Redux, screenshots, layout
-  net/               a WebSocket client, one loopback HTTP GET, and the HTTP server devx-serve uses
+  net/               a WebSocket client, one loopback HTTP GET, the HTTP server devx-serve uses, and an HTTP/2 + HPACK + gRPC client for the emulator
   sdk/               the optional in-app SDK's side of the wire, and its loopback endpoint
   util/              JSON, process execution, cancellation, time
 adapters/android/    adb adapter, live capture collector, atrace and HPROF parsers
 adapters/ios/        devicectl / simctl / xctrace adapter, simulator host collector, `sample` call-graph parser
 adapters/ios/view_probe/  the layout probe: a dylib injected into a simulator app at launch
 adapters/layout/     one layout snapshot on either platform, shared by the CLI and DevX
+adapters/android/emulator/  the SDK catalog and installs, AVD files, launching, and gRPC control of an emulator
+adapters/browserstack/      BrowserStack's REST API and the BrowserStack Local tunnel
 adapters/rn/         a React Native app's own inspector, reached through Metro
 sdk/react-native/    the in-app SDK: markers, build handshake, transport (optional)
 sdk/ios, sdk/android READMEs only -- each says why no native SDK is shipped
