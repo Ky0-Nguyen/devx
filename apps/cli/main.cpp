@@ -67,6 +67,18 @@ COMMANDS
                                 rotate, key, tap, text, controls [--pane],
                                 battery --level, gps --lat --lng.
                                 See docs/android-emulator.md.
+  browserstack <command>         Real devices on BrowserStack: status, devices,
+                                builds [<build>], upload <file>,
+                                start <bs://app> <device> <os-version>
+                                [--platform --network --gps --timezone
+                                --language --locale --orientation
+                                --biometric --camera-injection --profiling
+                                --local], screenshot <session> --out,
+                                tap, swipe, type, key back|home|enter,
+                                stop <session> [--import-profiling],
+                                import <session> [--build] (App Profiling
+                                as a DevX session).
+                                See docs/browserstack.md.
   sdk-bridge                    Run the loopback host the optional in-app SDK
                                 reports to.
   mcp                           Serve captures to an AI tool over stdio, as a
@@ -237,7 +249,15 @@ bool needs_value(const std::string& flag) {
       "--pane",
       "--level",
       "--lat",
-      "--lng"};
+      "--lng",
+      "--build",
+      "--product",
+      "--network",
+      "--gps",
+      "--timezone",
+      "--language",
+      "--locale",
+      "--orientation"};
   for (const char* f : kWithValue) {
     if (flag == f) return true;
   }
@@ -269,6 +289,8 @@ bool is_boolean_flag(const std::string& flag) {
       "--relaunch",     "--tree",         "--no-save",
       "--cold",         "--wipe",         "--accept",
       "--override",     "--charging",
+      "--biometric",    "--camera-injection", "--profiling",
+      "--local",        "--import-profiling",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
@@ -558,6 +580,8 @@ int main(int argc, char** argv) {
     code = cmd_layout(parsed.inv);
   } else if (cmd == "emulator") {
     code = cmd_emulator(parsed.inv);
+  } else if (cmd == "browserstack") {
+    code = cmd_browserstack(parsed.inv);
   } else if (cmd == "mcp") {
     return to_int(cmd_mcp(parsed.inv));
   } else if (cmd == "sdk-bridge") {

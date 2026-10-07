@@ -39,9 +39,13 @@ std::string encode(const std::string& in) {
   return out;
 }
 
+bool https_url(const std::string& u) { return u.rfind("https://", 0) == 0; }
+
 // Runs curl with the credentials in an owner-only netrc file that is removed
-// as soon as curl returns. The last line of stdout is the HTTP status.
-Reply curl(const Credentials& c, std::vector<std::string> args) {
+// as soon as curl returns. The netrc names BrowserStack's two hosts only, so
+// a data link to another host never receives them. The last line of stdout is
+// the HTTP status.
+Reply curl(const Credentials& c, std::vector<std::string> args, std::chrono::seconds timeout) {
   Reply r;
   if (!c.valid()) {
     r.error = "no BrowserStack credentials: set BROWSERSTACK_USERNAME and "
@@ -57,15 +61,20 @@ Reply curl(const Credentials& c, std::vector<std::string> args) {
     r.error = "could not create a temporary credentials file";
     return r;
   }
-  const std::string netrc = "machine api-cloud.browserstack.com login " + c.username +
-                            " password " + c.access_key + "\n";
+  std::string netrc;
+  for (const char* host : {"api-cloud.browserstack.com", "hub-cloud.browserstack.com",
+                           "api.browserstack.com"}) {
+    netrc += std::string("machine ") + host + " login " + c.username + " password " +
+             c.access_key + "\n";
+  }
   const ssize_t n = ::write(fd, netrc.data(), netrc.size());
   ::close(fd);
-  std::vector<std::string> argv = {"/usr/bin/curl", "-sS", "--max-time", "120",
-                                   "--netrc-file", tmpl.data(), "-w", "\n%{http_code}"};
+  std::vector<std::string> argv = {"/usr/bin/curl", "-sS", "--max-time",
+                                   std::to_string(timeout.count()), "--netrc-file", tmpl.data(),
+                                   "-w", "\n%{http_code}"};
   argv.insert(argv.end(), args.begin(), args.end());
   proc::Options po;
-  po.timeout = std::chrono::seconds(130);
+  po.timeout = timeout + std::chrono::seconds(10);
   const auto res = n == static_cast<ssize_t>(netrc.size()) ? proc::run(argv, po) : proc::Result{};
   ::unlink(tmpl.data());
   if (!res.spawned || res.timed_out) {
@@ -80,13 +89,33 @@ Reply curl(const Credentials& c, std::vector<std::string> args) {
   const std::string body = nl == std::string::npos ? std::string() : res.out.substr(0, nl);
   r.http_status = std::atoi(res.out.substr(nl == std::string::npos ? 0 : nl + 1).c_str());
   json::ParseError perr;
-  auto doc = json::parse(body, &perr);
-  if (doc) r.body = *doc;
-  r.ok = r.http_status >= 200 && r.http_status < 300 && doc.has_value();
+  json::Limits limits;
+  limits.max_depth = 256;
+  auto doc = json::parse(body, limits, &perr);
+  if (doc) {
+    r.body = *doc;
+  } else {
+    r.text = body;
+  }
+  r.ok = r.http_status >= 200 && r.http_status < 300;
   if (!r.ok) {
+    std::string detail;
+    if (doc) {
+      // WebDriver errors carry value.message; REST errors carry message/error.
+      if (const auto* v = doc->find("value"); v != nullptr && v->is_object()) {
+        if (const auto* m = v->find("message"); m != nullptr && m->is_string()) detail = m->as_string();
+      }
+      for (const char* k : {"message", "error"}) {
+        if (const auto* m = doc->find(k); detail.empty() && m != nullptr && m->is_string()) {
+          detail = m->as_string();
+        }
+      }
+    } else {
+      detail = body.substr(0, 300);
+    }
     r.error = r.http_status == 401 ? "BrowserStack refused the credentials (HTTP 401)"
                                    : "BrowserStack answered HTTP " + std::to_string(r.http_status) +
-                                         (doc ? "" : ": " + body.substr(0, 300));
+                                         (detail.empty() ? "" : ": " + detail);
   }
   return r;
 }
@@ -134,7 +163,26 @@ Reply get(const Credentials& c, const std::string& path) {
     r.error = "not an API path: " + path;
     return r;
   }
-  return curl(c, {std::string(kApi) + path});
+  return curl(c, {std::string(kApi) + path}, std::chrono::seconds(120));
+}
+
+Reply request(const Credentials& c, const std::string& method, const std::string& url,
+              const std::string& body, std::chrono::seconds timeout) {
+  if (!https_url(url)) {
+    Reply r;
+    r.error = "refusing a URL that is not https: " + url;
+    return r;
+  }
+  if (method != "GET" && method != "POST" && method != "DELETE") {
+    Reply r;
+    r.error = "unsupported method " + method;
+    return r;
+  }
+  std::vector<std::string> args = {"-X", method, url};
+  if (!body.empty()) {
+    args.insert(args.end(), {"-H", "Content-Type: application/json", "--data-binary", body});
+  }
+  return curl(c, args, timeout);
 }
 
 Reply upload(const Credentials& c, const std::string& product, const std::string& file) {
@@ -149,7 +197,8 @@ Reply upload(const Credentials& c, const std::string& product, const std::string
     r.error = "no file at " + file;
     return r;
   }
-  return curl(c, {"-X", "POST", std::string(kApi) + product + "/upload", "-F", "file=@" + file});
+  return curl(c, {"-X", "POST", std::string(kApi) + product + "/upload", "-F", "file=@" + file},
+              std::chrono::seconds(600));
 }
 
 std::string app_live_url(const std::string& os, const std::string& os_version,

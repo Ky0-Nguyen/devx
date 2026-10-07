@@ -25,7 +25,10 @@ const std::vector<std::string>& providers_for(SourceKind kind) {
   static const std::vector<std::string> kCpu = {
       "cpu_samples", "simpleperf", "xctrace.time_profile", "time_profile"};
   static const std::vector<std::string> kMemory = {
-      "memory", "dumpsys meminfo", "meminfo", "footprint", "xctrace.allocations"};
+      "memory", "dumpsys meminfo", "meminfo", "footprint", "xctrace.allocations",
+      // Every counter of an imported BrowserStack session: CPU, memory,
+      // battery, I/O and fps, sampled together by BrowserStack.
+      "browserstack.app_profiling"};
   static const std::vector<std::string> kJs = {"js_tasks", "hermes", "js"};
   static const std::vector<std::string> kSdk = {"sdk", "app_sdk", "markers"};
   static const std::vector<std::string> kSched = {

@@ -29,6 +29,8 @@ GetResult loopback_get(std::uint16_t port, const std::string& path,
     out.error = std::string("socket: ") + std::strerror(errno);
     return out;
   }
+  int one = 1;
+  ::setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, sizeof one);
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);

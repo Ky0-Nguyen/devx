@@ -12,6 +12,8 @@ add_library(mpi_adapters STATIC
   android/device_input.cpp
   browserstack/browserstack.cpp
   browserstack/local_tunnel.cpp
+  browserstack/profiling.cpp
+  browserstack/automate.cpp
   layout/layout_capture.cpp
   android/emulator/sdk_repository.cpp
   android/emulator/avd.cpp

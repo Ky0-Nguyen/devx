@@ -87,7 +87,10 @@ captures headers including bearer tokens), `relaunch_with_layout_probe`
 (restarts an app on an iOS simulator with the layout probe injected, losing
 its state), `device_tap`, `device_swipe`, `device_type_text` and `device_key`
 (operate an Android device or emulator), `emulator_start` and `emulator_stop`,
-and `browserstack_upload` (sends a file to a third party).
+`browserstack_upload` (sends a file to a third party), and
+`browserstack_session_start`, `browserstack_session_input` and
+`browserstack_session_stop` (run and operate a real BrowserStack device,
+spending BrowserStack minutes).
 
 The split is not decoration. A model that decides on its own to "just try
 recording" is a different thing from a person asking for it, and a recording
@@ -127,6 +130,8 @@ renders, including every absent value that is absent rather than zero.
 | `devx_window_show` | show a tab, session, issue, layout snapshot, device or emulator in the DevX window; an emulator is added beside any already shown |
 | `browserstack_devices` | real devices on your BrowserStack account |
 | `browserstack_sessions` | App Automate builds and sessions; kept as an observation |
+| `browserstack_import_profiling` | BrowserStack's App Profiling of one session, written as a DevX session |
+| `browserstack_session_screenshot` | the screen of a running BrowserStack session, as an image |
 | `record_capture` | **acts** — records and analyses a new capture |
 | `boot_device` | **acts** — starts a simulator or emulator |
 | `observe_app` | **acts** — attaches a debugger for a window; the observation is saved |
@@ -134,6 +139,7 @@ renders, including every absent value that is absent rather than zero.
 | `device_tap` · `device_swipe` · `device_type_text` · `device_key` | **act** — operate an Android device or emulator through adb |
 | `emulator_start` · `emulator_stop` | **act** — boot or shut down an Android virtual device |
 | `browserstack_upload` | **acts** — uploads an app to BrowserStack |
+| `browserstack_session_start` · `browserstack_session_input` · `browserstack_session_stop` | **act** — start, operate (tap, swipe, type, key) and stop a real BrowserStack device; stop can import its App Profiling |
 
 ## Operating a device
 

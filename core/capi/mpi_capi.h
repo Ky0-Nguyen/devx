@@ -214,6 +214,26 @@ char* mpi_bs_local_start_json(const char* identifier);
 char* mpi_bs_local_stop_json(const char* identifier);
 /* Keeps a BrowserStack reply as an observation, for AI tools. */
 char* mpi_bs_save_json(const char* sessions_dir, const char* what, const char* json_text);
+/* App Profiling of one App Automate session (a paid BrowserStack plan),
+ * written as a DevX session. `build_id` may be empty: it is read from the
+ * session. Blocks; mpi_cancel stops it. */
+char* mpi_bs_import_profiling_json(const char* sessions_dir, const char* build_id,
+                                   const char* session_id);
+/* An App Automate session DevX starts and drives (adapters/browserstack/
+ * automate.hpp). `spec_json` names the fields of AutomateSpec: app_url
+ * (bs://), platform, device, os_version, network_profile, gps_location,
+ * timezone, language, locale, orientation, biometric, camera_injection,
+ * app_profiling, local, local_identifier. Blocks until BrowserStack has the
+ * app running: seconds to a couple of minutes. */
+char* mpi_bs_automate_start_json(const char* spec_json);
+/* The screen, written to `out_path` as a PNG (atomically): {path, width, height}. */
+char* mpi_bs_automate_screenshot_json(const char* session_id, const char* out_path);
+/* One input, in screenshot pixels: {"tap": [x, y]}, {"swipe": [x1, y1, x2, y2]},
+ * {"text": "..."} or {"key": "back" | "home" | "enter"}. */
+char* mpi_bs_automate_input_json(const char* session_id, const char* action_json);
+/* Ends the session. With a sessions directory, imports its App Profiling
+ * there, waiting up to 90 s for BrowserStack to publish it. */
+char* mpi_bs_automate_stop_json(const char* session_id, const char* import_to_sessions_dir);
 
 /* ---- the window's control endpoint ---------------------------------------
  *

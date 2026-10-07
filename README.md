@@ -226,7 +226,7 @@ mpi emulator create --name "Pixel 9" --image "system-images;android-35;google_ap
 mpi emulator start Pixel_9                           # boots it; DevX's Emulator tab shows its screen
 ```
 
-`emulator` runs Android emulators with no Android Studio: Google's own emulator and images, fetched from Google's catalog and verified, with every license shown to you and accepted only by you. The screen is drawn inside DevX, with the emulator's own Extended Controls a click away: [docs/android-emulator.md](docs/android-emulator.md). Real devices on BrowserStack, and the BrowserStack Local tunnel that lets them load a debug build from your Metro, are in the same tab: [docs/browserstack.md](docs/browserstack.md).
+`emulator` runs Android emulators with no Android Studio: Google's own emulator and images, fetched from Google's catalog and verified, with every license shown to you and accepted only by you. The screen is drawn inside DevX, with the emulator's own Extended Controls a click away: [docs/android-emulator.md](docs/android-emulator.md). Real devices on BrowserStack are in the same tab: start your app on one with BrowserStack's settings (network profile, GPS, timezone, locale, biometrics, camera injection), operate it from DevX, and bring its App Profiling (CPU, memory, battery, I/O, fps) back as a DevX session. The BrowserStack Local tunnel lets those devices load a debug build from your Metro: [docs/browserstack.md](docs/browserstack.md).
 
 Layout snapshots and inspect observations are kept under `~/.mpi/sessions/observations/` (owner-only; `--no-save` skips it), next to the capture sessions, so an AI tool connected through `mpi mcp` can read and analyse the whole result rather than a screenshot of it: [docs/mcp-server.md](docs/mcp-server.md#what-is-kept-for-later).
 
@@ -299,7 +299,7 @@ fields quietly empty.
 - [Known limitations](docs/known-limitations.md) — what is not true of this build
 - [Reading a capture from an AI tool](docs/mcp-server.md) — `mpi mcp`, an MCP server over stdio for Cursor, Claude and Codex: read captures, see and operate devices, show things in the DevX window; read-only unless started with `--allow-actions`
 - [Android emulators without Android Studio](docs/android-emulator.md) — install, create, run and show emulators; screen sizes; Extended Controls
-- [BrowserStack](docs/browserstack.md) — real devices, App Live, App Automate sessions, BrowserStack Local
+- [BrowserStack](docs/browserstack.md) — real-device sessions DevX drives, App Profiling import, App Live, BrowserStack Local
 - [Layout](docs/layout.md) — views per screen, depth and navigation stacks, and how the iOS layout probe gets in without touching the app
 - [Inspecting without installing](docs/inspect-without-installing.md) — how `mpi inspect` reads a debug build's inspector, and what it cannot reach
 - [iOS: what works, what does not, and what was measured](docs/ios-live-capture-findings.md)

@@ -157,6 +157,8 @@ ProbeFetch fetch_probe_snapshot(const std::string& socket_path,
       res.error = std::string("socket: ") + std::strerror(errno);
       return res;
     }
+    int one = 1;
+    ::setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, sizeof one);
     if (::connect(fd, reinterpret_cast<sockaddr*>(&addr), sizeof addr) == 0) break;
     const int err = errno;
     ::close(fd);

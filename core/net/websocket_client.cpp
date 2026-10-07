@@ -160,6 +160,9 @@ bool WebSocketClient::connect(std::uint16_t port, const std::string& path,
     return false;
   }
   int yes = 1;
+  // A peer that has gone (Metro restarting, an app killed) must turn a send
+  // into EPIPE, not a SIGPIPE that ends the process before it reports.
+  ::setsockopt(fd_, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
   ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
 
   sockaddr_in addr{};
@@ -189,7 +192,10 @@ bool WebSocketClient::connect(std::uint16_t port, const std::string& path,
       "Connection: Upgrade\r\n"
       "Sec-WebSocket-Key: " + key + "\r\n"
       "Sec-WebSocket-Version: 13\r\n"
-      "Origin: http://127.0.0.1\r\n\r\n";
+      // The server's own origin, port included. React Native's inspector
+      // proxy refuses a debugger with no loopback Origin (401), and Expo's
+      // dev server then drops one whose host:port is not its own.
+      "Origin: http://127.0.0.1:" + std::to_string(port) + "\r\n\r\n";
   if (!write_all(request, error)) {
     close();
     return false;

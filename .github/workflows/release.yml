@@ -9,16 +9,26 @@ name: Release
 #   2. Build and run every test suite.
 #   3. Build DevX-<version>.dmg with tools/release.sh: Developer ID signed and
 #      notarized when the secrets below exist, ad-hoc otherwise.
-#   4. Commit "Release <version>" to main, tag it <version>, and keep a branch
-#      v<version> at the same commit as a backup of exactly what shipped.
-#   5. Publish the GitHub release with the image attached. The Homebrew cask is
-#      moved to it only when it is notarized; an ad-hoc build is published as a
-#      pre-release instead, so nobody installing through Homebrew is handed an
-#      image Gatekeeper refuses.
+#   4. Commit "Release <version>" (the version, and the Homebrew cask when the
+#      image is notarized) on top of what was built, tag it <version>, and
+#      keep a branch v<version> at the same commit as a backup of exactly what
+#      shipped. Only the tag and that branch are pushed: main is never pushed
+#      to, because main takes changes through reviewed pull requests only.
+#   5. Publish the GitHub release with the image attached. An ad-hoc build is
+#      published as a pre-release, and the cask is left alone, so nobody
+#      installing through Homebrew is handed an image Gatekeeper refuses.
+#   6. Open a pull request that brings the release commit to main. Homebrew
+#      reads the cask from main, so `brew upgrade` offers the new version once
+#      that pull request is merged. Its title says [skip release], which ends
+#      up in the merge commit whichever way it is merged, so merging it does
+#      not release again.
 #
-# Not released: a push whose head commit says [skip release], a push that only
-# touches docs, Markdown or the cask, and the release commit itself (a push
-# made with GITHUB_TOKEN starts no workflow).
+# Opening that pull request needs Settings > Actions > General > "Allow GitHub
+# Actions to create and approve pull requests". Without it the release is
+# still complete, and the run prints a link to open the pull request by hand.
+#
+# Not released: a push whose head commit says [skip release], and a push that
+# only touches docs, Markdown or the cask.
 #
 # Notarization secrets:
 #   DEVELOPER_ID_P12_BASE64   the "Developer ID Application" certificate and
@@ -27,14 +37,6 @@ name: Release
 #   DEVELOPER_ID_NAME         "Developer ID Application: Name (TEAMID)"
 #   NOTARY_APPLE_ID, NOTARY_PASSWORD (an app-specific password), NOTARY_TEAM_ID
 #     -- or NOTARY_KEY_P8_BASE64, NOTARY_KEY_ID, NOTARY_ISSUER for an API key
-#
-# main requires pull requests with a review, which GITHUB_TOKEN cannot
-# satisfy. RELEASE_TOKEN -- a fine-grained token of a repository admin with
-# Contents read/write on this repository -- lets the release commit (version
-# and Homebrew cask) land on main, as admins are not held to that rule.
-# Without it the release is still made: tag, v<version> branch and GitHub
-# release, with the release commit on the v<version> branch only and the cask
-# on main left where it was.
 on:
   push:
     branches: [main]
@@ -51,6 +53,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 # One release at a time, and never cancelled halfway: a cancelled run could
 # leave a tag without its release.
@@ -70,12 +73,10 @@ jobs:
       P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
       NOTARY_P8: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
       NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
-      HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
       - name: Use the newest Xcode on the runner
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
@@ -87,8 +88,8 @@ jobs:
         run: |
           current=$(bash tools/bump-version.sh --current)
           last=$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
-          # A release made without RELEASE_TOKEN left main's version behind
-          # its tag; continue from whichever is higher.
+          # Until the last release's pull request is merged, main's version is
+          # behind its tag; continue from whichever is higher.
           highest=$(git tag --list '[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -1)
           if [ -n "$highest" ] && [ "$(printf '%s\n%s\n' "$current" "$highest" | sort -V | tail -1)" = "$highest" ] \
              && [ "$current" != "$highest" ]; then
@@ -186,16 +187,9 @@ jobs:
           fi
           git tag -a "$VERSION" -m "DevX $VERSION"
           git branch "v$VERSION"
-          if [ "$HAS_RELEASE_TOKEN" = true ]; then
-            # All three or none: a tag without its branch, or a release commit
-            # that never reached main, would be a half-made release. If main
-            # moved while this built, the push is refused and the newer push
-            # makes its own release.
-            git push --atomic origin HEAD:main "refs/tags/$VERSION" "refs/heads/v$VERSION"
-          else
-            git push --atomic origin "refs/tags/$VERSION" "refs/heads/v$VERSION"
-            echo "::warning::RELEASE_TOKEN is not set, so main is protected from this workflow: the release commit is on v$VERSION only, and the Homebrew cask on main still points at the previous release."
-          fi
+          # Both or neither: a tag without its backup branch is a half-made
+          # release.
+          git push --atomic origin "refs/tags/$VERSION" "refs/heads/v$VERSION"
 
       - name: Publish the release
         env:
@@ -214,3 +208,34 @@ jobs:
             --title "DevX $VERSION" --verify-tag --generate-notes \
             --notes "$note Backup branch: \`v$VERSION\`. sha256 of the image: \`$(cut -d' ' -f1 "$DMG.sha256")\`." \
             "${extra[@]}"
+
+      - name: Open the pull request that brings the release to main
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NOTARIZED: ${{ steps.dmg.outputs.notarized }}
+        run: |
+          if git diff --quiet "origin/main" "v$VERSION" -- CMakeLists.txt Casks/devx.rb; then
+            echo "main already has this release's version and cask; no pull request needed"
+            exit 0
+          fi
+          # Its own branch, so that deleting it after the merge leaves the
+          # v<version> backup alone.
+          branch="release-to-main/$VERSION"
+          git push origin "v$VERSION:refs/heads/$branch"
+          if [ "$NOTARIZED" = true ]; then
+            what="the version and the Homebrew cask"
+            brew="Once merged, \`brew update && brew upgrade --cask devx\` installs $VERSION."
+          else
+            what="the version"
+            brew="The image is not notarized, so the Homebrew cask stays on the last notarized release."
+          fi
+          body="DevX $VERSION is released: https://github.com/$GITHUB_REPOSITORY/releases/tag/$VERSION
+
+          This brings $what to main. $brew
+
+          The title says [skip release], so merging this does not release again."
+          if ! gh pr create --base main --head "$branch" \
+               --title "Release $VERSION: $what [skip release]" \
+               --body "$body"; then
+            echo "::warning::Could not open the pull request (allow it in Settings > Actions > General > 'Allow GitHub Actions to create and approve pull requests'). Open it by hand: https://github.com/$GITHUB_REPOSITORY/compare/main...$branch?expand=1"
+          fi

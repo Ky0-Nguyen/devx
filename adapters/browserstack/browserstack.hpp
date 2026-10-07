@@ -9,10 +9,12 @@
 // netrc file, never through argv, which any process on the machine can read.
 //
 // Built against BrowserStack's published REST API (api-cloud.browserstack.com)
-// and not exercised against a live account from this repository; every call
-// reports BrowserStack's HTTP status and body as they came.
+// and exercised against a live App Automate account (docs/browserstack.md
+// says what was and was not); every call reports BrowserStack's HTTP status
+// and body as they came.
 #pragma once
 
+#include <chrono>
 #include <optional>
 #include <string>
 
@@ -33,15 +35,24 @@ constexpr const char* kKeychainService = "com.devx.browserstack";
 std::optional<Credentials> find_credentials();
 
 struct Reply {
-  bool ok = false;      // HTTP 2xx and JSON
+  bool ok = false;      // HTTP 2xx (and JSON, unless the body is not JSON: see text)
   int http_status = 0;
   json::Value body;
+  std::string text;     // the body as it came, when it was not JSON
   std::string error;
   json::Value to_json() const;
 };
 
 /// GET https://api-cloud.browserstack.com/<path>.
 Reply get(const Credentials& c, const std::string& path);
+
+/// Any request to a BrowserStack host (api-cloud for REST, hub-cloud for
+/// WebDriver), or to a URL a BrowserStack reply handed back (a profiling
+/// data link). Only https; the credentials are offered to BrowserStack's
+/// hosts alone. `body` is JSON, sent when not empty. `raw` keeps a reply that
+/// is not JSON (a CSV data file) in `Reply::text`.
+Reply request(const Credentials& c, const std::string& method, const std::string& url,
+              const std::string& body = {}, std::chrono::seconds timeout = std::chrono::seconds(120));
 /// Uploads an .apk/.aab/.ipa for App Live (`app-live/upload`) or App Automate
 /// (`app-automate/upload`). Returns BrowserStack's reply with its `app_url`.
 Reply upload(const Credentials& c, const std::string& product, const std::string& file);
