@@ -44,10 +44,10 @@ final class AppState: ObservableObject {
     @Published private(set) var inFlight: [String] = []
     var busy: String? { inFlight.last }
 
-    private func beginOperation(_ label: String) {
+    func beginOperation(_ label: String) {
         inFlight.append(label)
     }
-    private func endOperation(_ label: String) {
+    func endOperation(_ label: String) {
         if let at = inFlight.lastIndex(of: label) { inFlight.remove(at: at) }
     }
 
@@ -166,6 +166,26 @@ final class AppState: ObservableObject {
     @Published var preflightDoc: JSON = .null
     /// The last layout snapshot, as {ok, failure, error?, notes, report}.
     @Published var layoutDoc: JSON = .null
+
+    // ---- Android emulator (AppState+Emulator.swift) ----
+    @Published var androidSdkDoc: JSON = .null
+    @Published var androidCatalogDoc: JSON = .null
+    @Published var androidPresets: [JSON] = []
+    @Published var installDoc: JSON = .null
+    @Published var emulatorSelected: String = ""
+    /// Devices on screen, in the order they were shown: each
+    /// {handle, path, box, serial, avd_id, status}. Several at once.
+    @Published var emulatorDisplays: [JSON] = []
+    /// Each shown device's rotation in degrees, by AVD id.
+    @Published var emulatorRotations: [String: Int] = [:]
+    @Published var emulatorNote: String? = nil
+    var installTimer: Timer?
+
+    // ---- AI tools driving the window (AppState+AIControl.swift) ----
+    /// Shown across the top of the window whenever an AI tool navigated it.
+    @Published var aiNotice: String? = nil
+    var controlTimer: Timer?
+    var aiNoticeClear: DispatchWorkItem?
     @Published var sessionsDoc: JSON = .null
     @Published var sessionDoc: JSON = .null
     @Published var timelineDoc: JSON = .null

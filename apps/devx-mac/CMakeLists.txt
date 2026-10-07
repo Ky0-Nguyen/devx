@@ -41,6 +41,11 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectFilter.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/LayoutView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/EmulatorView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/EmulatorScreenView.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BrowserStackPanel.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Emulator.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+AIControl.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineView.swift

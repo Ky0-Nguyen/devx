@@ -1,5 +1,7 @@
 #include "core/mcp/protocol.hpp"
 
+#include "core/net/websocket_client.hpp"
+
 namespace mpi::mcp {
 namespace {
 
@@ -23,6 +25,22 @@ json::Value text_content(const std::string& text) {
 }
 
 }  // namespace
+
+json::Value text_item(const std::string& text) {
+  json::Value one = json::Value::object();
+  one.set("type", json::Value::string("text"));
+  one.set("text", json::Value::string(text));
+  return one;
+}
+
+json::Value image_item(const std::string& data, const std::string& mime_type) {
+  json::Value one = json::Value::object();
+  one.set("type", json::Value::string("image"));
+  one.set("data", json::Value::string(net::WebSocketClient::base64(
+                      reinterpret_cast<const unsigned char*>(data.data()), data.size())));
+  one.set("mimeType", json::Value::string(mime_type));
+  return one;
+}
 
 json::Value error_response(const json::Value& id, ErrorCode code,
                            const std::string& message) {
@@ -120,8 +138,17 @@ json::Value Server::call_tool(const json::Value& params, bool* is_error) const {
       out.set("isError", json::Value::boolean(true));
       return out;
     }
-    const std::string text = t.run(args != nullptr ? *args : empty);
     json::Value out = json::Value::object();
+    if (t.run_content) {
+      bool failed = false;
+      out.set("content", t.run_content(args != nullptr ? *args : empty, &failed));
+      if (failed) {
+        *is_error = true;
+        out.set("isError", json::Value::boolean(true));
+      }
+      return out;
+    }
+    const std::string text = t.run(args != nullptr ? *args : empty);
     out.set("content", text_content(text));
     return out;
   }

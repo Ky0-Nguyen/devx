@@ -58,6 +58,15 @@ COMMANDS
                                 reads dumpsys; an iOS simulator needs the
                                 layout probe, loaded with --relaunch. Nothing
                                 is added to the app. Not a measurement.
+  emulator <command>             Android emulators without Android Studio:
+                                sdk, catalog, license <id> [--accept],
+                                install <package>, presets, avds,
+                                create --name --image [--preset | --size
+                                --density], delete, resize [--override],
+                                start [--cold] [--wipe], stop, screenshot,
+                                rotate, key, tap, text, controls [--pane],
+                                battery --level, gps --lat --lng.
+                                See docs/android-emulator.md.
   sdk-bridge                    Run the loopback host the optional in-app SDK
                                 reports to.
   mcp                           Serve captures to an AI tool over stdio, as a
@@ -219,7 +228,16 @@ bool needs_value(const std::string& flag) {
       "--suppress-reason",
       "--threshold",
       "--timeout-ms",
-      "--wait-s"};
+      "--wait-s",
+      "--name",
+      "--image",
+      "--size",
+      "--density",
+      "--ram",
+      "--pane",
+      "--level",
+      "--lat",
+      "--lng"};
   for (const char* f : kWithValue) {
     if (flag == f) return true;
   }
@@ -249,6 +267,8 @@ bool is_boolean_flag(const std::string& flag) {
       "--allow-actions",
       "--screenshot",   "--detail",
       "--relaunch",     "--tree",         "--no-save",
+      "--cold",         "--wipe",         "--accept",
+      "--override",     "--charging",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
@@ -536,6 +556,8 @@ int main(int argc, char** argv) {
     return to_int(cmd_inspect(parsed.inv));
   } else if (cmd == "layout") {
     code = cmd_layout(parsed.inv);
+  } else if (cmd == "emulator") {
+    code = cmd_emulator(parsed.inv);
   } else if (cmd == "mcp") {
     return to_int(cmd_mcp(parsed.inv));
   } else if (cmd == "sdk-bridge") {

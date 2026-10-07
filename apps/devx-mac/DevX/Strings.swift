@@ -568,6 +568,7 @@ enum Strings {
         "Detectors": "Bộ phát hiện",
         "Export": "Xuất",
         "Layout": "Bố cục",
+        "Emulator": "Máy ảo",
 
         // ---- Common controls ----
         "Refresh": "Làm mới",

@@ -73,7 +73,16 @@ struct Tool {
   Effect effect = Effect::kReadOnly;
   /// Runs it. Receives the `arguments` object, returns the text to hand back.
   std::function<std::string(const json::Value&)> run;
+  /// Instead of `run`, for a tool whose answer is more than text -- a
+  /// screenshot the model should see. Returns the MCP `content` array, built
+  /// with text_item / image_item; `*is_error` marks a failure.
+  std::function<json::Value(const json::Value&, bool* is_error)> run_content;
 };
+
+/// MCP content items, for run_content.
+json::Value text_item(const std::string& text);
+/// `data` is the raw bytes; they are base64-encoded here.
+json::Value image_item(const std::string& data, const std::string& mime_type);
 
 /// The outcome of one tool call, before it becomes a protocol response.
 struct ToolResult {

@@ -11,6 +11,7 @@ add_executable(mpi
   command_record.cpp
   command_inspect.cpp
   command_layout.cpp
+  command_emulator.cpp
   command_mcp.cpp
   command_sdk_bridge.cpp)
 # mpi_core arrives through mpi_adapters, which links it PUBLIC.

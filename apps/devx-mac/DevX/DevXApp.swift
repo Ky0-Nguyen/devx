@@ -39,6 +39,7 @@ struct DevXApp: App {
         if let c = launch.candidate { state.candidatePath = c }
 
         state.loadLanguage()
+        state.startAIControl()
         state.loadRememberedTarget()
         state.loadRecents()
         state.loadVersion()
@@ -196,6 +197,7 @@ struct RootView: View {
                 case .record: RecordView()
                 case .inspect: InspectView()
                 case .layout: LayoutView()
+                case .emulator: EmulatorView()
                 case .sessions: SessionsView()
                 case .issues: IssuesView()
                 case .threads: ThreadsView()
@@ -223,6 +225,20 @@ struct RootView: View {
                     .overlay(RoundedRectangle(cornerRadius: 3)
                         .strokeBorder(Term.green.opacity(0.45)))
                     .shadow(color: .black.opacity(0.7), radius: 18)
+                }
+            }
+            .safeAreaInset(edge: .top) {
+                if let notice = state.aiNotice {
+                    HStack(spacing: 8) {
+                        Text("AI").font(Term.font(11, .bold)).foregroundStyle(Term.cyan)
+                        Text(notice).font(Term.body).lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        Button { state.aiNotice = nil } label: { Text("[dismiss]").font(Term.font(11)) }
+                            .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(Term.cyan.opacity(0.12))
                 }
             }
             .safeAreaInset(edge: .top) {

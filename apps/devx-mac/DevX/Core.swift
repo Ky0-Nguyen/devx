@@ -180,6 +180,93 @@ enum Core {
         }
     }
 
+    // ---- the window's control endpoint (AI tools through `mpi mcp`) ----
+
+    static func controlStart(dir: String) -> JSON { call { mpi_control_start_json(dir) } }
+    static func controlStop() { mpi_control_stop() }
+    static func controlSetState(_ json: String) { mpi_control_set_state_json(json) }
+    static func controlNext() -> JSON { call { mpi_control_next_json() } }
+    static func controlReply(id: Int, _ json: String) { mpi_control_reply(Int32(id), json) }
+    static func observation(dir: String, id: String) -> JSON {
+        call { mpi_observation_json(dir, id) }
+    }
+
+    // ---- BrowserStack ----
+
+    static func bsStatus() -> JSON { call { mpi_bs_status_json() } }
+    static func bsGet(_ path: String) -> JSON { call { mpi_bs_get_json(path) } }
+    static func bsUpload(product: String, file: String) -> JSON {
+        call { mpi_bs_upload_json(product, file) }
+    }
+    static func bsLiveURL(os: String, version: String, device: String, appURL: String) -> JSON {
+        call { mpi_bs_live_url_json(os, version, device, appURL) }
+    }
+    static func bsSave(sessionsDir: String, what: String, json: String) -> JSON {
+        call { mpi_bs_save_json(sessionsDir, what, json) }
+    }
+    static func bsLocalStatus() -> JSON { call { mpi_bs_local_status_json() } }
+    static func bsLocalInstall() -> JSON { call { mpi_bs_local_install_json() } }
+    static func bsLocalStart(_ id: String) -> JSON { call { mpi_bs_local_start_json(id) } }
+    static func bsLocalStop(_ id: String) -> JSON { call { mpi_bs_local_stop_json(id) } }
+
+    // ---- Android emulator ----
+
+    static func androidSdk() -> JSON { call { mpi_android_sdk_json() } }
+    static func androidCatalog() -> JSON { call { mpi_android_catalog_json(90000) } }
+    static func androidAcceptLicense(_ id: String) -> JSON {
+        call { mpi_android_accept_license_json(id) }
+    }
+    static func androidInstallStart(_ path: String) -> JSON {
+        call { mpi_android_install_start_json(path) }
+    }
+    static func androidInstallPoll() -> JSON { call { mpi_android_install_poll_json() } }
+    static func androidInstallCancel() { mpi_android_install_cancel() }
+    static func androidPresets() -> JSON { call { mpi_android_presets_json() } }
+    static func avdCreate(name: String, image: String, preset: String, width: Int,
+                          height: Int, density: Int, ramMb: Int) -> JSON {
+        call {
+            mpi_avd_create_json(name, image, preset, Int32(width), Int32(height),
+                                Int32(density), Int32(ramMb))
+        }
+    }
+    static func avdDelete(_ id: String) -> JSON { call { mpi_avd_delete_json(id) } }
+    static func avdResize(_ id: String, width: Int, height: Int, density: Int,
+                          override: Bool) -> JSON {
+        call { mpi_avd_resize_json(id, Int32(width), Int32(height), Int32(density), override ? 1 : 0) }
+    }
+    static func emulatorStart(_ id: String, cold: Bool) -> JSON {
+        call { mpi_emulator_start_json(id, cold ? 1 : 0, 0) }
+    }
+    static func emulatorStop(_ id: String) -> JSON { call { mpi_emulator_stop_json(id) } }
+    static func displayOpen(_ id: String, box: Int) -> JSON {
+        call { mpi_emulator_display_open_json(id, Int32(box)) }
+    }
+    /// Closes one session, or every session with 0.
+    static func displayClose(_ handle: Int) { mpi_emulator_display_close(Int32(handle)) }
+    /// The latest frame of a session, or nil once it has ended.
+    static func displayFrame(_ handle: Int) -> (seq: UInt32, width: UInt32, height: UInt32)? {
+        var seq: UInt32 = 0, w: UInt32 = 0, h: UInt32 = 0
+        guard mpi_emulator_display_frame(Int32(handle), &seq, &w, &h) != 0 else { return nil }
+        return (seq, w, h)
+    }
+    static func touch(_ handle: Int, x: Int, y: Int, pressure: Int) {
+        mpi_emulator_touch(Int32(handle), Int32(x), Int32(y), Int32(pressure))
+    }
+    static func key(_ handle: Int, _ key: String, phase: Int = 2) {
+        mpi_emulator_key(Int32(handle), key, Int32(phase))
+    }
+    static func text(_ handle: Int, _ text: String) { mpi_emulator_text(Int32(handle), text) }
+    static func rotate(_ handle: Int, _ degrees: Int) -> JSON {
+        call { mpi_emulator_rotate_json(Int32(handle), Int32(degrees)) }
+    }
+    static func extendedControls(_ handle: Int, pane: Int) -> JSON {
+        call { mpi_emulator_extended_controls_json(Int32(handle), Int32(pane)) }
+    }
+    static func emulatorStatus(_ handle: Int) -> JSON { call { mpi_emulator_status_json(Int32(handle)) } }
+    static func emulatorScreenshot(_ handle: Int, sessionsDir: String) -> JSON {
+        call { mpi_emulator_screenshot_json(Int32(handle), sessionsDir) }
+    }
+
     /// Keeps a result on disk as an observation, where `mpi mcp` reads it.
     static func saveObservation(sessionsDir: String, kind: String, app: String,
                                 device: String, summary: String,

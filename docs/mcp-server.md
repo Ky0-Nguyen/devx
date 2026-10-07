@@ -71,8 +71,8 @@ your captures are not in the default location.
 
 ## Reading is free; acting is not
 
-Started as above, the server **refuses to change anything**. Fifteen tools
-read; four do not, and they are visible in the catalogue with their
+Started as above, the server **refuses to change anything**. Twenty-one tools
+read; eleven do not, and they are visible in the catalogue with their
 descriptions saying they are unavailable and naming the flag that enables
 them.
 
@@ -83,9 +83,11 @@ them.
 That enables `record_capture` (starts processes on a device and writes a
 session package), `boot_device` (changes this machine's state),
 `observe_app` (attaches a debugger to a running app, and with `detail` on
-captures headers including bearer tokens) and `relaunch_with_layout_probe`
+captures headers including bearer tokens), `relaunch_with_layout_probe`
 (restarts an app on an iOS simulator with the layout probe injected, losing
-its state).
+its state), `device_tap`, `device_swipe`, `device_type_text` and `device_key`
+(operate an Android device or emulator), `emulator_start` and `emulator_stop`,
+and `browserstack_upload` (sends a file to a third party).
 
 The split is not decoration. A model that decides on its own to "just try
 recording" is a different thing from a person asking for it, and a recording
@@ -119,10 +121,51 @@ renders, including every absent value that is absent rather than zero.
 | `list_observations` | saved layout snapshots and inspect observations, newest first, each with a summary |
 | `read_observation` | one saved observation in full: every view of a layout, every request of an inspect |
 | `capture_layout` | how the screen an app is showing is built, right now; saved, restarts nothing |
+| `device_screenshot` | a device's or emulator's screen **as an image the model sees**, with its size |
+| `android_avds` | Android virtual devices, their screen sizes, and which are running |
+| `devx_window_state` | what the open DevX window is showing |
+| `devx_window_show` | show a tab, session, issue, layout snapshot, device or emulator in the DevX window; an emulator is added beside any already shown |
+| `browserstack_devices` | real devices on your BrowserStack account |
+| `browserstack_sessions` | App Automate builds and sessions; kept as an observation |
 | `record_capture` | **acts** — records and analyses a new capture |
 | `boot_device` | **acts** — starts a simulator or emulator |
 | `observe_app` | **acts** — attaches a debugger for a window; the observation is saved |
 | `relaunch_with_layout_probe` | **acts** — restarts a simulator app with the layout probe, then snapshots it |
+| `device_tap` · `device_swipe` · `device_type_text` · `device_key` | **act** — operate an Android device or emulator through adb |
+| `emulator_start` · `emulator_stop` | **act** — boot or shut down an Android virtual device |
+| `browserstack_upload` | **acts** — uploads an app to BrowserStack |
+
+## Operating a device
+
+With `--allow-actions`, a model can drive an app the way a tester does:
+`device_screenshot` to see the screen, `capture_layout` to know where every
+element is (each view's frame, in the same pixels), then `device_tap`,
+`device_swipe`, `device_type_text` and `device_key`. It works on any Android
+device or emulator through adb. An iOS simulator gets screenshots and layout
+but no input, because there is no command-line route for touches without
+installing a helper on it, and the tools say so rather than pretend.
+
+Unlike tools that only drive a device, the same server can capture
+performance while it does (`record_capture`), read the app's network,
+console and Redux (`observe_app`), and keep all of it for later
+(`list_observations`).
+
+## Showing things in the DevX window
+
+`devx_window_state` and `devx_window_show` reach the DevX window you have
+open, so a model can put the evidence in front of you: the session and issue
+it is talking about, the timeline, a layout snapshot, the emulator.
+
+- DevX listens on **127.0.0.1 only**, on a port chosen at start, behind a
+  token made at start. Both are written to
+  `~/Library/Application Support/DevX/control.json`, mode `0600`, which is
+  how `mpi mcp` finds the window.
+- A command only changes **what the window shows**. Nothing is recorded,
+  started or changed on a device, which is why these are read tools.
+- Every command puts a notice across the top of the window, **"An AI tool
+  showed you …"** with the model's `reason`, so you always know the window
+  moved because a model moved it.
+- With DevX closed, the tools say so; they do not open it.
 
 ## What is kept for later
 

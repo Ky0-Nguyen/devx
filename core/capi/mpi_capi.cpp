@@ -236,6 +236,12 @@ rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
 
 }  // namespace
 
+namespace mpi::capi {
+// For the other translation units of the C ABI (mpi_capi_emulator.cpp), so
+// one Cancel in the UI reaches their work too.
+CancellationToken current_cancel_token() { return cancel_registry().token(); }
+}  // namespace mpi::capi
+
 extern "C" {
 
 void mpi_string_free(char* s) { std::free(s); }

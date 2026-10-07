@@ -132,6 +132,103 @@ char* mpi_layout_json(const char* device_id, const char* app_identifier,
                       int include_simulators, int timeout_ms,
                       const char* save_to_sessions_dir);
 
+/* ---- Android emulator ----------------------------------------------------
+ *
+ * Android emulators without Android Studio (see docs/android-emulator.md).
+ * The SDK is an existing one when there is one, otherwise DevX's own.
+ * Nothing is installed whose license has not been accepted, and
+ * mpi_android_accept_license_json must only be called after a person read the
+ * license and agreed to it. */
+
+/* Where the SDK is, what it holds, every AVD (with `running` when it is), and
+ * running emulators. */
+char* mpi_android_sdk_json(void);
+/* What can be installed, with license texts. Network: fetches Google's
+ * manifests. The result is cached for accept/install below. */
+char* mpi_android_catalog_json(int timeout_ms);
+char* mpi_android_accept_license_json(const char* license_id);
+/* Installs one package in the background; poll for progress. One at a time. */
+char* mpi_android_install_start_json(const char* package_path);
+char* mpi_android_install_poll_json(void);
+void mpi_android_install_cancel(void);
+char* mpi_android_presets_json(void);
+/* `preset_id` may be empty; then width/height/density are used. */
+char* mpi_avd_create_json(const char* name, const char* system_image, const char* preset_id,
+                          int width, int height, int density, int ram_mb);
+char* mpi_avd_delete_json(const char* avd_id);
+/* `override_running` != 0 changes a running device through `wm` (no restart,
+ * 0 x 0 resets); otherwise the hardware size, at the next (cold) boot. */
+char* mpi_avd_resize_json(const char* avd_id, int width, int height, int density,
+                          int override_running);
+/* Blocks until Android has booted (or the attempt fails); run it off the main
+ * thread. Cancellable with mpi_cancel_all. */
+char* mpi_emulator_start_json(const char* avd_id, int cold_boot, int wipe_data);
+char* mpi_emulator_stop_json(const char* avd_id);
+
+/* The screen of a running AVD, one session per device, so several can be
+ * shown at once. Open returns {handle, path, box, serial, avd_id}: `path` is
+ * a file of box*box*4 bytes the emulator writes RGBA8888 frames into. Opening
+ * a device that is already shown replaces its session. Poll with
+ * mpi_emulator_display_frame, which returns 0 once the session has ended (the
+ * emulator stopped or restarted) and otherwise the latest frame's sequence
+ * number and size. Close one handle, or every session with 0. */
+char* mpi_emulator_display_open_json(const char* avd_id, int box);
+int mpi_emulator_display_frame(int handle, unsigned int* seq, unsigned int* width,
+                               unsigned int* height);
+void mpi_emulator_display_close(int handle);
+/* Input for a session, queued and sent off the caller's thread. Coordinates
+ * are device pixels. `pressure` 0 lifts the finger. Key `phase`: 0 down, 1 up,
+ * 2 press. */
+void mpi_emulator_touch(int handle, int x, int y, int pressure);
+void mpi_emulator_key(int handle, const char* key, int phase);
+void mpi_emulator_text(int handle, const char* utf8);
+/* For a session: rotate (0/90/180/270), extended controls (pane), status, and
+ * a screenshot kept as an observation under `sessions_dir`. */
+char* mpi_emulator_rotate_json(int handle, int degrees);
+char* mpi_emulator_extended_controls_json(int handle, int pane);
+char* mpi_emulator_status_json(int handle);
+char* mpi_emulator_screenshot_json(int handle, const char* sessions_dir);
+
+/* ---- BrowserStack -----------------------------------------------------------
+ *
+ * Real devices in BrowserStack's cloud. Credentials come from
+ * BROWSERSTACK_USERNAME / BROWSERSTACK_ACCESS_KEY or the Keychain (service
+ * "com.devx.browserstack", which the window writes). Every reply carries
+ * BrowserStack's HTTP status and body as they came. */
+/* Whether credentials exist and work: the App Automate plan. */
+char* mpi_bs_status_json(void);
+/* GET api-cloud.browserstack.com/<path>, e.g. "app-automate/devices.json",
+ * "app-automate/builds.json", "app-automate/builds/<id>/sessions.json". */
+char* mpi_bs_get_json(const char* path);
+/* Uploads an app; `product` is "app-live" or "app-automate". */
+char* mpi_bs_upload_json(const char* product, const char* file);
+/* The App Live URL that opens `device` with an uploaded app, for a browser. */
+char* mpi_bs_live_url_json(const char* os, const char* os_version, const char* device,
+                           const char* app_url);
+/* BrowserStack Local, the tunnel that lets BrowserStack's devices reach this
+ * Mac (localhost, Metro). The binary is BrowserStack's, Intel-only (Rosetta
+ * on Apple Silicon), downloaded on request; it takes the key in argv. */
+char* mpi_bs_local_status_json(void);
+char* mpi_bs_local_install_json(void);
+char* mpi_bs_local_start_json(const char* identifier);
+char* mpi_bs_local_stop_json(const char* identifier);
+/* Keeps a BrowserStack reply as an observation, for AI tools. */
+char* mpi_bs_save_json(const char* sessions_dir, const char* what, const char* json_text);
+
+/* ---- the window's control endpoint ---------------------------------------
+ *
+ * Lets an AI tool, through `mpi mcp`, ask this window to show something and
+ * read what it shows (core/capi/control.hpp). Loopback only, token per start,
+ * endpoint written to `<dir>/control.json` with mode 0600. */
+char* mpi_control_start_json(const char* dir);
+void mpi_control_stop(void);
+/* What the window shows, as JSON; returned verbatim to GET /v1/state. */
+void mpi_control_set_state_json(const char* json_text);
+/* The next command for the window ({id, command}) or {} when none. */
+char* mpi_control_next_json(void);
+/* The window's answer to command `id`. */
+void mpi_control_reply(int id, const char* json_text);
+
 /* ---- observations on disk ------------------------------------------------
  *
  * Results that are not session packages -- a layout snapshot, an inspect

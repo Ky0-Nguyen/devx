@@ -4,6 +4,10 @@ add_library(mpi_core STATIC
   net/http_server.cpp
   net/websocket_client.cpp
   net/loopback_http.cpp
+  net/hpack.cpp
+  net/http2_client.cpp
+  net/grpc_client.cpp
+  util/protobuf.cpp
   observe/inspect.cpp
   mcp/protocol.cpp
   observe/screenshot.cpp

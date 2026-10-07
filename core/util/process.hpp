@@ -87,7 +87,10 @@ struct DetachedResult {
   bool spawned = false;
   std::string error;
 };
-DetachedResult spawn_detached(const std::vector<std::string>& argv);
+/// With `log_path`, the program's stdout and stderr go to that file
+/// (truncated) instead of /dev/null, so a launch that fails can say why.
+DetachedResult spawn_detached(const std::vector<std::string>& argv,
+                              const std::string& log_path = {});
 
 // Resolves an executable on PATH. Returns nullopt when absent, which the
 // capability contract reports as `unsupported` with a recovery action rather

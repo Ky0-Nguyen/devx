@@ -9,7 +9,14 @@ add_library(mpi_adapters STATIC
   ios/sample_parser.cpp
   ios/view_probe_client.cpp
   android/view_dump.cpp
+  android/device_input.cpp
+  browserstack/browserstack.cpp
+  browserstack/local_tunnel.cpp
   layout/layout_capture.cpp
+  android/emulator/sdk_repository.cpp
+  android/emulator/avd.cpp
+  android/emulator/emulator_process.cpp
+  android/emulator/emulator_control.cpp
   rn/inspector.cpp
 )
 target_link_libraries(mpi_adapters PUBLIC mpi_core mpi_project_options)

@@ -60,7 +60,8 @@ bool is_safe_argument(const std::string& arg, bool reject_option_like) {
   return true;
 }
 
-DetachedResult spawn_detached(const std::vector<std::string>& argv) {
+DetachedResult spawn_detached(const std::vector<std::string>& argv,
+                              const std::string& log_path) {
   DetachedResult res;
   if (argv.empty()) {
     res.error = "no program to run";
@@ -85,11 +86,15 @@ DetachedResult spawn_detached(const std::vector<std::string>& argv) {
     // writing into a pipe nobody drains would eventually block on a full
     // buffer, which would look like the emulator hanging.
     const int devnull = ::open("/dev/null", O_RDWR);
+    const int log = log_path.empty()
+                        ? -1
+                        : ::open(log_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (devnull >= 0) {
       ::dup2(devnull, STDIN_FILENO);
-      ::dup2(devnull, STDOUT_FILENO);
-      ::dup2(devnull, STDERR_FILENO);
+      ::dup2(log >= 0 ? log : devnull, STDOUT_FILENO);
+      ::dup2(log >= 0 ? log : devnull, STDERR_FILENO);
       if (devnull > STDERR_FILENO) ::close(devnull);
+      if (log > STDERR_FILENO) ::close(log);
     }
     std::vector<char*> raw;
     raw.reserve(argv.size() + 1);

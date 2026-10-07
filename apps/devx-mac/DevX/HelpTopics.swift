@@ -237,6 +237,25 @@ enum HelpTopics {
                     vietnamese: "Các heuristic kèm ngưỡng ghi rõ: screen quá sâu, screen quá nặng, stack quá sâu, quá nhiều screen đang mount, cây view phần lớn bị ẩn. Đó là gợi ý để xem lại, không phải kết luận."),
             ]),
         HelpTopic(
+            id: "emulator",
+            title: "Emulator",
+            english: "Android emulators inside DevX, without Android Studio or Java. An existing Android SDK is used when there is one (ANDROID_HOME, or Android Studio's), otherwise DevX keeps its own. Install images downloads the emulator and system images from Google's own catalog, verifies each against the checksum Google publishes, and asks you to accept Google's license first: DevX never accepts it for you. New makes a virtual device from a standard screen size. Start runs it with its own window hidden and draws its screen here: click to tap, drag to swipe, scroll to scroll, type to type, Esc for Back. The toolbar has Back, Home, Recents, rotation, volume, power, a screenshot kept for AI tools, screen size, and Extended Controls -- the emulator's own panel for location, battery, camera, phone, fingerprint, sensors and snapshots. A running emulator is an ordinary adb device, so Live, Record, Inspect and Layout work on it. BrowserStack reaches real devices in BrowserStack's cloud with your own account.",
+            vietnamese: "Máy ảo Android ngay trong DevX, không cần Android Studio hay Java. Nếu máy đã có Android SDK (ANDROID_HOME hoặc của Android Studio) thì DevX dùng lại, không có thì DevX tự giữ một bản riêng. Install images tải emulator và system image từ danh mục chính thức của Google, kiểm tra từng gói theo checksum Google công bố, và yêu cầu bạn đồng ý giấy phép của Google trước: DevX không bao giờ đồng ý thay bạn. New tạo máy ảo theo kích thước màn hình chuẩn. Start chạy máy ảo với cửa sổ riêng của nó được ẩn đi và vẽ màn hình ngay tại đây: bấm để chạm, kéo để vuốt, cuộn để cuộn, gõ để nhập chữ, Esc là Back. Thanh công cụ có Back, Home, Recents, xoay, âm lượng, nguồn, chụp màn hình (lưu lại cho công cụ AI), đổi kích thước màn hình, và Extended Controls -- bảng điều khiển riêng của emulator cho vị trí, pin, camera, điện thoại, vân tay, cảm biến và snapshot. Máy ảo đang chạy là một thiết bị adb bình thường, nên Live, Record, Inspect và Layout đều dùng được. BrowserStack kết nối tới máy thật trên cloud của BrowserStack bằng tài khoản của bạn.",
+            fields: [
+                HelpField(
+                    name: "screen size",
+                    english: "Override now changes a running device through `wm size` with no restart; the hardware is unchanged. Change the hardware edits the virtual device and takes effect at the next start, which is a cold boot because a snapshot holds the old screen.",
+                    vietnamese: "Override now đổi màn hình của máy đang chạy qua `wm size`, không cần khởi động lại; phần cứng giữ nguyên. Change the hardware sửa cấu hình máy ảo và có hiệu lực ở lần khởi động sau, là lần khởi động lạnh vì snapshot vẫn giữ màn hình cũ."),
+                HelpField(
+                    name: "window class",
+                    english: "Android's window size class for the width: compact under 600 dp, medium under 840 dp, expanded above. Each preset shows it for both orientations.",
+                    vietnamese: "Lớp kích thước cửa sổ của Android theo chiều rộng: compact dưới 600 dp, medium dưới 840 dp, expanded từ 840 dp trở lên. Mỗi preset hiện lớp này cho cả hai chiều xoay."),
+                HelpField(
+                    name: "BrowserStack Local",
+                    english: "BrowserStack's tunnel so its devices reach this Mac: localhost, a staging server, or Metro at bs-local.com:8081. It is BrowserStack's Intel-only binary (Rosetta on Apple Silicon), downloaded when you ask, and it takes the access key on its command line.",
+                    vietnamese: "Đường hầm của BrowserStack để máy của họ truy cập được máy Mac này: localhost, server staging, hoặc Metro tại bs-local.com:8081. Đây là binary của BrowserStack chỉ có bản Intel (cần Rosetta trên Apple Silicon), chỉ tải khi bạn yêu cầu, và nó nhận access key trên dòng lệnh."),
+            ]),
+        HelpTopic(
             id: "sessions",
             title: "Sessions",
             english: "Every capture stored on this machine. Opening one loads its report into Issues, Threads, Timeline and Compare.",
