@@ -27,6 +27,14 @@ name: Release
 #   DEVELOPER_ID_NAME         "Developer ID Application: Name (TEAMID)"
 #   NOTARY_APPLE_ID, NOTARY_PASSWORD (an app-specific password), NOTARY_TEAM_ID
 #     -- or NOTARY_KEY_P8_BASE64, NOTARY_KEY_ID, NOTARY_ISSUER for an API key
+#
+# main requires pull requests with a review, which GITHUB_TOKEN cannot
+# satisfy. RELEASE_TOKEN -- a fine-grained token of a repository admin with
+# Contents read/write on this repository -- lets the release commit (version
+# and Homebrew cask) land on main, as admins are not held to that rule.
+# Without it the release is still made: tag, v<version> branch and GitHub
+# release, with the release commit on the v<version> branch only and the cask
+# on main left where it was.
 on:
   push:
     branches: [main]
@@ -62,10 +70,12 @@ jobs:
       P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
       NOTARY_P8: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
       NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+      HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
       - name: Use the newest Xcode on the runner
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
@@ -77,6 +87,14 @@ jobs:
         run: |
           current=$(bash tools/bump-version.sh --current)
           last=$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
+          # A release made without RELEASE_TOKEN left main's version behind
+          # its tag; continue from whichever is higher.
+          highest=$(git tag --list '[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -1)
+          if [ -n "$highest" ] && [ "$(printf '%s\n%s\n' "$current" "$highest" | sort -V | tail -1)" = "$highest" ] \
+             && [ "$current" != "$highest" ]; then
+            bash tools/bump-version.sh "$highest" >/dev/null
+            current=$highest
+          fi
           if ! git rev-parse -q --verify "refs/tags/$current" >/dev/null; then
             next=$current
             why="CMakeLists.txt already says $current, which has no tag"
@@ -168,11 +186,16 @@ jobs:
           fi
           git tag -a "$VERSION" -m "DevX $VERSION"
           git branch "v$VERSION"
-          # All three or none: a tag without its branch, or a release commit
-          # that never reached main, would be a half-made release. If main
-          # moved while this built, the push is refused and the newer push
-          # makes its own release.
-          git push --atomic origin HEAD:main "refs/tags/$VERSION" "refs/heads/v$VERSION"
+          if [ "$HAS_RELEASE_TOKEN" = true ]; then
+            # All three or none: a tag without its branch, or a release commit
+            # that never reached main, would be a half-made release. If main
+            # moved while this built, the push is refused and the newer push
+            # makes its own release.
+            git push --atomic origin HEAD:main "refs/tags/$VERSION" "refs/heads/v$VERSION"
+          else
+            git push --atomic origin "refs/tags/$VERSION" "refs/heads/v$VERSION"
+            echo "::warning::RELEASE_TOKEN is not set, so main is protected from this workflow: the release commit is on v$VERSION only, and the Homebrew cask on main still points at the previous release."
+          fi
 
       - name: Publish the release
         env:
