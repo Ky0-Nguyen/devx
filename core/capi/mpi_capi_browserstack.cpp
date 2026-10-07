@@ -2,10 +2,18 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <fstream>
+
+#include "adapters/browserstack/automate.hpp"
 #include "adapters/browserstack/browserstack.hpp"
 #include "adapters/browserstack/local_tunnel.hpp"
+#include "adapters/browserstack/profiling.hpp"
 #include "core/capi/mpi_capi.h"
 #include "core/observe/observation_store.hpp"
+
+namespace mpi::capi {
+CancellationToken current_cancel_token();
+}  // namespace mpi::capi
 
 namespace {
 
@@ -106,6 +114,97 @@ char* mpi_bs_local_stop_json(const char* identifier) {
   const auto c = browserstack::find_credentials();
   if (!c) return dup_json(no_credentials());
   return dup_json(browserstack::stop_local(*c, safe(identifier)).to_json());
+}
+
+char* mpi_bs_import_profiling_json(const char* sessions_dir, const char* build_id,
+                                   const char* session_id) {
+  const auto c = browserstack::find_credentials();
+  if (!c) return dup_json(no_credentials());
+  browserstack::ProfilingRequest req;
+  req.sessions_dir = safe(sessions_dir);
+  req.build_id = safe(build_id);
+  req.session_id = safe(session_id);
+  return dup_json(
+      browserstack::import_profiling(*c, req, capi::current_cancel_token()).to_json());
+}
+
+char* mpi_bs_automate_start_json(const char* spec_json) {
+  const auto c = browserstack::find_credentials();
+  if (!c) return dup_json(no_credentials());
+  const auto spec = json::parse(safe(spec_json), nullptr);
+  if (!spec || !spec->is_object()) {
+    json::Value o = json::Value::object();
+    o.set("ok", json::Value::boolean(false));
+    o.set("error", json::Value::string("the session settings are not a JSON object"));
+    return dup_json(o);
+  }
+  return dup_json(
+      browserstack::start_session(*c, browserstack::AutomateSpec::from_json(*spec)).to_json());
+}
+
+char* mpi_bs_automate_screenshot_json(const char* session_id, const char* out_path) {
+  const auto c = browserstack::find_credentials();
+  if (!c) return dup_json(no_credentials());
+  json::Value o = json::Value::object();
+  const auto s = browserstack::screenshot(*c, safe(session_id));
+  if (s.ok) {
+    // Written beside and renamed over, so a reader never sees half a PNG.
+    const std::string out = safe(out_path);
+    const std::string tmp = out + ".part";
+    {
+      std::ofstream f(tmp, std::ios::binary);
+      f.write(s.png.data(), static_cast<std::streamsize>(s.png.size()));
+    }
+    if (std::rename(tmp.c_str(), out.c_str()) != 0) {
+      o.set("ok", json::Value::boolean(false));
+      o.set("error", json::Value::string("could not write " + out));
+      return dup_json(o);
+    }
+    o.set("path", json::Value::string(out));
+    o.set("width", json::Value::integer(s.width));
+    o.set("height", json::Value::integer(s.height));
+  } else {
+    o.set("error", json::Value::string(s.error));
+  }
+  o.set("ok", json::Value::boolean(s.ok));
+  return dup_json(o);
+}
+
+char* mpi_bs_automate_input_json(const char* session_id, const char* action_json) {
+  const auto c = browserstack::find_credentials();
+  if (!c) return dup_json(no_credentials());
+  const std::string sid = safe(session_id);
+  const auto a = json::parse(safe(action_json), nullptr);
+  auto num = [&](const json::Value& arr, std::size_t i) {
+    return i < arr.items().size() && arr.items()[i].is_number()
+               ? static_cast<int>(arr.items()[i].as_double())
+               : 0;
+  };
+  browserstack::Reply r;
+  if (a && a->find("tap") != nullptr && a->find("tap")->is_array()) {
+    const auto& p = *a->find("tap");
+    r = browserstack::tap(*c, sid, num(p, 0), num(p, 1));
+  } else if (a && a->find("swipe") != nullptr && a->find("swipe")->is_array()) {
+    const auto& p = *a->find("swipe");
+    r = browserstack::swipe(*c, sid, num(p, 0), num(p, 1), num(p, 2), num(p, 3));
+  } else if (a && a->find("text") != nullptr && a->find("text")->is_string()) {
+    r = browserstack::type_text(*c, sid, a->find("text")->as_string());
+  } else if (a && a->find("key") != nullptr && a->find("key")->is_string()) {
+    r = browserstack::press(*c, sid, a->find("key")->as_string());
+  } else {
+    r.error = "an action is {\"tap\": [x, y]}, {\"swipe\": [x1, y1, x2, y2]}, "
+              "{\"text\": \"...\"} or {\"key\": \"back|home|enter\"}";
+  }
+  return dup_json(r.to_json());
+}
+
+char* mpi_bs_automate_stop_json(const char* session_id, const char* import_to_sessions_dir) {
+  const auto c = browserstack::find_credentials();
+  if (!c) return dup_json(no_credentials());
+  return dup_json(browserstack::stop_session(*c, safe(session_id),
+                                             safe(import_to_sessions_dir),
+                                             capi::current_cancel_token())
+                      .to_json());
 }
 
 }  // extern "C"

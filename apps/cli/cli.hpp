@@ -74,6 +74,7 @@ ExitCode cmd_rules(const Invocation& inv);
 ExitCode cmd_inspect(const Invocation& inv);
 ExitCode cmd_layout(const Invocation& inv);
 ExitCode cmd_emulator(const Invocation& inv);
+ExitCode cmd_browserstack(const Invocation& inv);
 ExitCode cmd_mcp(const Invocation& inv);
 ExitCode cmd_sdk_bridge(const Invocation& inv);
 

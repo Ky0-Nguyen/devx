@@ -1004,3 +1004,20 @@ MPI_TEST(a_request_carries_the_wall_clock_and_not_the_monotonic_one, {}) {
   MPI_CHECK_MSG(!d.finish(10).network.front().wall_ns.has_value(),
                 "a wallTime of 0 is refused rather than rendered");
 }
+
+MPI_TEST(a_size_react_native_does_not_know_is_absent_not_minus_one, {}) {
+  // React Native reports encodedDataLength -1 when it has no size (seen on
+  // RN 0.87, Android). Printed as it came, the list said "-1 bytes".
+  mpi::observe::InspectAssembler a;
+  mpi::json::ParseError err;
+  for (const char* m : {
+           R"({"method":"Network.requestWillBeSent","params":{"requestId":"s1",
+              "timestamp":1.0,"request":{"method":"GET","url":"https://x"}}})",
+           R"({"method":"Network.loadingFinished","params":{"requestId":"s1",
+              "timestamp":1.2,"encodedDataLength":-1}})"}) {
+    auto doc = mpi::json::parse(m, &err);
+    MPI_CHECK(doc.has_value());
+    a.feed(*doc);
+  }
+  MPI_CHECK(!a.finish(10).network.front().encoded_bytes.has_value());
+}

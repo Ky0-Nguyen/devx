@@ -115,10 +115,14 @@ flattened away; on React Native it is usually a wrapper `View`.
 - Android: Settings on a Pixel 6a emulator (API 33): 174 views, depth 12,
   three added fragments. Recorded as
   [`fixtures/layout/android-dumpsys-activity-top-settings.real.txt`](../fixtures/layout/android-dumpsys-activity-top-settings.real.txt).
-- **React Native: not yet against a real app.** Expo Go's home screen is
-  SwiftUI, and no React Native build was available to relaunch. The
-  React Native rules (host views, architecture, screens mounted against
+- React Native on Android: a React Native CLI 0.87 debug app (new
+  architecture) on a Pixel 9 emulator (API 35): 24 views, 17 React Native
+  host views (`ReactTextView`, `ReactViewGroup`), detected as React Native.
+  The architecture was reported unknown, because nothing in a `dumpsys`
+  dump says which renderer drew a view.
+- The React Native rules (host views, architecture, screens mounted against
   showing) go by class names, `RCT*` and `RNSScreenView` on iOS,
   `com.facebook.react.*` and `com.swmansion.rnscreens.Screen` on Android, and
-  are tested against a labelled synthetic tree. A navigator that does not use
-  react-native-screens mounts no screen view, and then reports none.
+  are also tested against a labelled synthetic tree. A navigator that does
+  not use react-native-screens mounts no screen view, and then reports none;
+  that case, and iOS React Native, are not yet measured on a real app.

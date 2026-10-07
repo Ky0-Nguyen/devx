@@ -572,6 +572,20 @@ namespace {
 /// appear while the finger is still on the screen; slow enough that a quiet
 /// app is not paying for an evaluate four times a second.
 constexpr std::int64_t kReduxDrainIntervalMs = 400;
+
+/// Why the watcher could not be installed, from the evaluate's error. A
+/// runtime that does not offer Runtime.evaluate at all (JSON-RPC "method not
+/// found") has no JavaScript debugger: Expo Go and release builds ship Hermes
+/// without one. Saying so beats "refused", which reads as a bug in the app.
+std::string watcher_refusal(const json::Value* err) {
+  const json::Value* code = err != nullptr ? err->find("code") : nullptr;
+  if (code != nullptr && code->is_number() && code->as_int() == -32601) {
+    return "this runtime has no JavaScript debugger (it does not offer "
+           "Runtime.evaluate): Expo Go and release builds ship Hermes "
+           "without one; a debug or development build of the app has it";
+  }
+  return "the runtime refused the watcher";
+}
 }  // namespace
 
 /// Applies the watcher's install reply.
@@ -898,7 +912,7 @@ observe::InspectReport run(const InspectOptions& options,
       if (value == nullptr || !value->is_object()) {
         const json::Value* err = doc->find("error");
         if (was_install) {
-          redux.basis = "the runtime refused the watcher";
+          redux.basis = watcher_refusal(err);
           redux.note = err != nullptr ? err->dump() : "no result";
           snapshot.basis = redux.basis;
           snapshot.note = redux.note;
@@ -1286,7 +1300,7 @@ void InspectStream::handle(const json::Value& message) {
     if (value == nullptr || !value->is_object()) {
       const json::Value* err = message.find("error");
       if (is_install) {
-        impl_->redux.basis = "the runtime refused the watcher";
+        impl_->redux.basis = watcher_refusal(err);
         impl_->redux.note = err != nullptr ? err->dump() : "no result";
         impl_->snapshot.basis = impl_->redux.basis;
         impl_->snapshot.note = impl_->redux.note;

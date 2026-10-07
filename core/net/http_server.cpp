@@ -412,6 +412,8 @@ void HttpServer::serve(const CancellationToken& cancel) {
     if (prc == 0) continue;
     const int fd = ::accept(listen_fd_, nullptr, nullptr);
     if (fd < 0) continue;
+    int one = 1;
+    ::setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, sizeof one);  // a client that hangs up early
     handle_connection(fd);
     ::close(fd);
   }

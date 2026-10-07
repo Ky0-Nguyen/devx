@@ -31,7 +31,9 @@
 #include "core/mcp/protocol.hpp"
 #include "core/observe/observation_store.hpp"
 #include "adapters/android/device_input.hpp"
+#include "adapters/browserstack/automate.hpp"
 #include "adapters/browserstack/browserstack.hpp"
+#include "adapters/browserstack/profiling.hpp"
 #include "adapters/android/emulator/avd.hpp"
 #include "adapters/android/emulator/emulator_process.hpp"
 #include "adapters/android/emulator/sdk_repository.hpp"
@@ -627,6 +629,134 @@ void register_tools(mcp::Server& server, const std::string& sessions_dir,
           if (saved.ok) out.set("saved_observation", json::Value::string(saved.id));
         }
         return out.dump(2);
+      });
+
+  add(server, "browserstack_import_profiling",
+      "BrowserStack's App Profiling of one App Automate session (CPU, memory, "
+      "frames, ANRs, battery, I/O; a paid BrowserStack plan), written as a DevX "
+      "session that list_sessions, get_issues and the timeline then read like any "
+      "other. The measurements are BrowserStack's, and the session says so.",
+      schema({{"session_id", "BrowserStack's session id (hashed_id)."},
+              {"build_id", "Its build's hashed_id; read from the session when omitted."}},
+             {"session_id"}),
+      mcp::Effect::kReadOnly,
+      [dir](const json::Value& a) {
+        const auto c = browserstack::find_credentials();
+        if (!c) return json_error("no BrowserStack credentials on this Mac");
+        browserstack::ProfilingRequest req;
+        req.session_id = arg_str(a, "session_id");
+        req.build_id = arg_str(a, "build_id");
+        req.sessions_dir = dir;
+        return browserstack::import_profiling(*c, req, CancellationToken::none())
+            .to_json()
+            .dump(2);
+      });
+
+  add(server, "browserstack_session_start",
+      "Start an App Automate session on a real BrowserStack device with an app "
+      "uploaded for app-automate (bs://...), with BrowserStack's settings: "
+      "network_profile (e.g. 4g-lte-good, 3g-umts-good, no-network), "
+      "gps_location (\"lat,lng\"), timezone, language, locale, orientation, "
+      "biometric, camera_injection, app_profiling. Returns the session id for "
+      "the other browserstack_session_* tools. Uses BrowserStack minutes until "
+      "stopped (it ends itself after 300 s idle).",
+      schema({{"app_url", "bs://... from browserstack_upload with product app-automate."},
+              {"device", "As browserstack_devices names it, e.g. Google Pixel 9."},
+              {"os_version", "e.g. 16.0."},
+              {"platform", "android (default) or ios."},
+              {"network_profile", "BrowserStack's network profile name."},
+              {"gps_location", "lat,lng."},
+              {"timezone", "e.g. Tokyo."},
+              {"language", "e.g. fr."},
+              {"locale", "e.g. FR."},
+              {"orientation", "portrait or landscape."},
+              {"biometric", "bool:Enable biometric injection."},
+              {"camera_injection", "bool:Enable camera image injection."},
+              {"app_profiling", "bool:Profile the app (CPU, memory, fps, ...) for import on stop."}},
+             {"app_url", "device", "os_version"}),
+      mcp::Effect::kMutating,
+      [](const json::Value& a) {
+        const auto c = browserstack::find_credentials();
+        if (!c) return json_error("no BrowserStack credentials on this Mac");
+        return browserstack::start_session(*c, browserstack::AutomateSpec::from_json(a))
+            .to_json()
+            .dump(2);
+      });
+
+  mcp::Tool bs_shot;
+  bs_shot.name = "browserstack_session_screenshot";
+  bs_shot.description =
+      "The screen of a running BrowserStack App Automate session, as an image. "
+      "Coordinates for browserstack_session_input are pixels of this image.";
+  bs_shot.input_schema = schema({{"session_id", "From browserstack_session_start."}}, {"session_id"});
+  bs_shot.effect = mcp::Effect::kReadOnly;
+  bs_shot.run_content = [](const json::Value& a, bool* failed) {
+    json::Value content = json::Value::array();
+    const auto c = browserstack::find_credentials();
+    if (!c) {
+      *failed = true;
+      content.push_back(mcp::text_item("no BrowserStack credentials on this Mac"));
+      return content;
+    }
+    const auto s = browserstack::screenshot(*c, arg_str(a, "session_id"));
+    if (!s.ok) {
+      *failed = true;
+      content.push_back(mcp::text_item("no screenshot: " + s.error));
+      return content;
+    }
+    content.push_back(mcp::image_item(s.png, "image/png"));
+    content.push_back(mcp::text_item(std::to_string(s.width) + "x" + std::to_string(s.height) + " px"));
+    return content;
+  };
+  server.add_tool(std::move(bs_shot));
+
+  add(server, "browserstack_session_input",
+      "Operate the app in a BrowserStack App Automate session: tap (x, y), "
+      "swipe (x, y to x2, y2), type text into what has focus, or press a key "
+      "(back, home, enter). Coordinates are screenshot pixels.",
+      schema({{"session_id", "From browserstack_session_start."},
+              {"action", "tap, swipe, type or key."},
+              {"x", "int:Pixels from the left."}, {"y", "int:Pixels from the top."},
+              {"x2", "int:Swipe end x."}, {"y2", "int:Swipe end y."},
+              {"text", "For type."}, {"key", "For key: back, home or enter."}},
+             {"session_id", "action"}),
+      mcp::Effect::kMutating,
+      [](const json::Value& a) {
+        const auto c = browserstack::find_credentials();
+        if (!c) return json_error("no BrowserStack credentials on this Mac");
+        const std::string sid = arg_str(a, "session_id");
+        const std::string action = arg_str(a, "action");
+        browserstack::Reply r;
+        if (action == "tap") {
+          r = browserstack::tap(*c, sid, arg_int(a, "x", 0), arg_int(a, "y", 0));
+        } else if (action == "swipe") {
+          r = browserstack::swipe(*c, sid, arg_int(a, "x", 0), arg_int(a, "y", 0),
+                                  arg_int(a, "x2", 0), arg_int(a, "y2", 0));
+        } else if (action == "type") {
+          r = browserstack::type_text(*c, sid, arg_str(a, "text"));
+        } else if (action == "key") {
+          r = browserstack::press(*c, sid, arg_str(a, "key"));
+        } else {
+          return json_error("action is tap, swipe, type or key");
+        }
+        return r.ok ? json_ok("") : json_error(r.error);
+      });
+
+  add(server, "browserstack_session_stop",
+      "End a BrowserStack App Automate session. With import_profiling, waits for "
+      "BrowserStack's App Profiling of it and imports it as a DevX session.",
+      schema({{"session_id", "From browserstack_session_start."},
+              {"import_profiling", "bool:Import its App Profiling as a DevX session."}},
+             {"session_id"}),
+      mcp::Effect::kMutating,
+      [dir](const json::Value& a) {
+        const auto c = browserstack::find_credentials();
+        if (!c) return json_error("no BrowserStack credentials on this Mac");
+        return browserstack::stop_session(*c, arg_str(a, "session_id"),
+                                          arg_bool(a, "import_profiling", false) ? dir : "",
+                                          CancellationToken::none())
+            .to_json()
+            .dump(2);
       });
 
   add(server, "browserstack_upload",

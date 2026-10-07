@@ -204,6 +204,21 @@ enum Core {
     static func bsSave(sessionsDir: String, what: String, json: String) -> JSON {
         call { mpi_bs_save_json(sessionsDir, what, json) }
     }
+    static func bsImportProfiling(sessionsDir: String, buildID: String, sessionID: String) -> JSON {
+        call { mpi_bs_import_profiling_json(sessionsDir, buildID, sessionID) }
+    }
+    static func bsAutomateStart(_ spec: JSON) -> JSON {
+        call { mpi_bs_automate_start_json(spec.serialized()) }
+    }
+    static func bsAutomateScreenshot(_ session: String, to path: String) -> JSON {
+        call { mpi_bs_automate_screenshot_json(session, path) }
+    }
+    static func bsAutomateInput(_ session: String, _ action: JSON) -> JSON {
+        call { mpi_bs_automate_input_json(session, action.serialized()) }
+    }
+    static func bsAutomateStop(_ session: String, importTo: String) -> JSON {
+        call { mpi_bs_automate_stop_json(session, importTo) }
+    }
     static func bsLocalStatus() -> JSON { call { mpi_bs_local_status_json() } }
     static func bsLocalInstall() -> JSON { call { mpi_bs_local_install_json() } }
     static func bsLocalStart(_ id: String) -> JSON { call { mpi_bs_local_start_json(id) } }

@@ -308,7 +308,8 @@ void InspectAssembler::feed(const json::Value& message) {
       it->second.finished_ns = seconds_to_ns(ts->as_double());
     }
     const json::Value* len = field(params, "encodedDataLength");
-    if (len != nullptr && len->is_number()) {
+    // React Native sends -1 for a size it does not know: no size, not a size.
+    if (len != nullptr && len->is_number() && len->as_double() >= 0) {
       it->second.encoded_bytes = static_cast<std::int64_t>(len->as_double());
     }
     // The caller asks for the body; this only records that there is one to
