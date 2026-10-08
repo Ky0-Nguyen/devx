@@ -1008,6 +1008,10 @@ class SentryConnector : public signals::SignalConnector {
     i.credential_service = "com.devx.sentry";
     i.credential_help = "SENTRY_AUTH_TOKEN, or the Keychain item com.devx.sentry (an auth token "
                         "with org:read, project:read, event:read)";
+    // A personal token: an organization token's fixed scopes are for CI and
+    // do not read issues.
+    i.credential_url = "{base_url}/settings/account/api/auth-tokens/";
+    i.default_base_url = "https://sentry.io";
     i.settings = {
         {"base_url", "Sentry's address; default https://sentry.io. A self-hosted Sentry must use https"},
         {"organization", "The organization slug (required)"},

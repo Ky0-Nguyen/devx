@@ -28,7 +28,7 @@ name: Release
 # still complete, and the run prints a link to open the pull request by hand.
 #
 # Not released: a push whose head commit says [skip release], and a push that
-# only touches docs, Markdown or the cask.
+# only touches docs, Markdown, the cask or the landing page (site/).
 #
 # Notarization secrets:
 #   DEVELOPER_ID_P12_BASE64   the "Developer ID Application" certificate and
@@ -44,6 +44,8 @@ on:
       - "docs/**"
       - "**/*.md"
       - "Casks/**"
+      - "site/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
     inputs:
       level:

@@ -62,6 +62,22 @@ window. A setting whose name looks like a secret (`token`, `password`, `dsn`,
 ...) is refused: credentials belong in the Keychain or the environment, never
 in a file.
 
+**Getting a token.** Wherever a connector needs one, the window has a
+*get a token ↗* button that opens the provider's own page, and
+`mpi intelligence connect` and `integrations` print the same link:
+
+- Sentry: `<base_url>/settings/account/api/auth-tokens/`, a personal token
+  with `org:read`, `project:read` and `event:read`. An organization token's
+  fixed scopes are for CI and do not read issues.
+- GitLab: `<base_url>/-/user_settings/personal_access_tokens?name=DevX&scopes=read_api`,
+  which opens the form with the name and scope filled in.
+- Firebase needs no token: *set it up ↗* opens the console's Integrations page,
+  where the BigQuery card's *Link* turns the export on.
+- BrowserStack: Emulator > BrowserStack has *get your username and access key ↗*.
+
+The link follows the connector's `base_url`, so a self-hosted Sentry or GitLab
+opens its own page.
+
 **A credential belongs to one connector**, so it is never sent to another
 connector's host. The lookup order:
 

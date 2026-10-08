@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DevX</title>
+<meta name="description" content="DevX measures React Native apps on Android and iOS, keeps production and CI evidence by release, and hands your AI tool cited facts instead of guesses.">
+<meta property="og:title" content="DevX — mobile performance, measured and correlated">
+<meta property="og:description" content="Live capture, Inspect, Layout, Android emulators, BrowserStack and production/CI evidence by release, with an MCP server for Claude, Codex and Cursor.">
+<meta property="og:image" content="https://ky0-nguyen.github.io/devx/media/intelligence-release.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23090c0a'/%3E%3Crect x='7' y='8' width='4' height='16' fill='%234fee78'/%3E%3Crect x='14' y='13' width='4' height='11' fill='%234fee78' opacity='.7'/%3E%3Crect x='21' y='17' width='4' height='7' fill='%234fee78' opacity='.45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: the app's own console look, one column of sections; feature rows alternate text and screenshot. */
+:root {
+  --bg: #090c0a;
+  --panel: #111613;
+  --raised: #18201b;
+  --line: #29453a;
+  --ink: #d6efdb;
+  --dim: #85a690;
+  --green: #4fee78;
+  --amber: #ffbf3d;
+  --cyan: #61d6f2;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", Menlo, ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body);
+  font-size: 17px; line-height: 1.65; padding-inline: 16px; padding-block: 0;
+}
+html[data-lang="en"] [lang="vi"], html[data-lang="vi"] [lang="en"] { display: none !important; }
+a { color: var(--green); }
+.wrap { max-width: 1120px; margin: 0 auto; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(6px); border-bottom: 1px solid var(--line);
+  margin-inline: -16px; padding-inline: 16px;
+}
+nav .wrap { display: flex; align-items: center; gap: 18px; height: 58px; }
+.logo { font: 700 16px var(--font-mono); letter-spacing: .18em; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.logo i { display: inline-block; width: 8px; height: 18px; background: var(--green); box-shadow: 0 0 10px var(--green); }
+.links { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+.links a { color: var(--dim); text-decoration: none; font: 500 14px var(--font-mono); }
+.links a:hover { color: var(--green); }
+.lang { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.lang button { background: transparent; color: var(--dim); border: 0; font: 600 12px var(--font-mono); padding: 6px 10px; cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--green); color: var(--bg); }
+@media (max-width: 720px) { .links { display: none; } }
+
+.hero { padding-block: 72px 40px; display: grid; gap: 26px; }
+.prompt { font: 500 14px var(--font-mono); color: var(--green); }
+h1 { font: 700 clamp(34px, 6vw, 62px)/1.08 var(--font-body); margin: 0; letter-spacing: -0.02em; text-wrap: balance; max-width: 18ch; }
+h1 em { font-style: normal; color: var(--green); }
+.sub { font-size: clamp(17px, 2.2vw, 20px); color: var(--dim); max-width: 62ch; margin: 0; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.btn { font: 600 15px var(--font-mono); padding: 11px 18px; border-radius: 4px; text-decoration: none; border: 1px solid var(--green); color: var(--green); display: inline-flex; gap: 8px; align-items: center; }
+.btn.solid { background: var(--green); color: var(--bg); }
+.btn:focus-visible, .lang button:focus-visible, .copy:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.shot { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); box-shadow: 0 30px 80px -30px rgba(79, 238, 120, .25); }
+.shot img { display: block; width: 100%; height: auto; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+.fact { border-left: 2px solid var(--green); padding: 4px 0 4px 14px; }
+.fact b { display: block; font: 700 15px var(--font-mono); color: var(--ink); }
+.fact span { color: var(--dim); font-size: 15px; }
+
+section { padding-block: 64px; border-top: 1px solid var(--line); display: grid; gap: 28px; }
+.eyebrow { font: 600 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--green); }
+h2 { font: 700 clamp(26px, 4vw, 38px)/1.15 var(--font-body); margin: 0; text-wrap: balance; max-width: 24ch; }
+h3 { font: 700 20px/1.3 var(--font-body); margin: 0; }
+p { margin: 0; }
+.lede { color: var(--dim); max-width: 66ch; }
+
+.feature { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 32px; align-items: center; }
+.feature.flip .text { order: 2; }
+.feature .text { display: grid; gap: 12px; min-width: 0; }
+.feature ul { margin: 0; padding-left: 1.1em; color: var(--dim); display: grid; gap: 4px; }
+.feature li::marker { color: var(--green); }
+.tag { font: 600 12px var(--font-mono); color: var(--cyan); }
+@media (max-width: 860px) { .feature { grid-template-columns: 1fr; } .feature.flip .text { order: 0; } }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card .k { font: 700 13px var(--font-mono); color: var(--green); }
+.card p { color: var(--dim); font-size: 15px; }
+
+.basis { display: grid; gap: 10px; }
+.basis div { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: baseline; border-bottom: 1px dashed var(--line); padding-bottom: 10px; }
+.chip { font: 700 12px var(--font-mono); padding: 2px 8px; border-radius: 3px; justify-self: start; }
+.chip.g { color: var(--green); border: 1px solid var(--green); }
+.chip.c { color: var(--cyan); border: 1px solid var(--cyan); }
+.chip.a { color: var(--amber); border: 1px solid var(--amber); }
+@media (max-width: 560px) { .basis div { grid-template-columns: 1fr; } }
+
+.cmd { position: relative; min-width: 0; }
+.cmd pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 90px 14px 16px; overflow-x: auto; font: 14px/1.6 var(--font-mono); color: var(--ink); }
+.cmd pre .c { color: var(--dim); }
+.copy { position: absolute; top: 9px; right: 9px; background: var(--raised); color: var(--green); border: 1px solid var(--line); border-radius: 4px; font: 600 12px var(--font-mono); padding: 5px 10px; cursor: pointer; }
+.asks { display: grid; gap: 10px; }
+.ask { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; }
+.ask .who { font: 600 12px var(--font-mono); color: var(--cyan); }
+.ask .tools { font: 12px var(--font-mono); color: var(--dim); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; align-items: start; }
+.two > * { min-width: 0; display: grid; gap: 14px; }
+.req { color: var(--dim); font-size: 15px; }
+footer { border-top: 1px solid var(--line); padding-block: 36px 48px; color: var(--dim); font-size: 14px; display: flex; flex-wrap: wrap; gap: 18px; justify-content: space-between; }
+footer a { color: var(--dim); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#top"><i></i>DEVX</a>
+    <div class="links">
+      <a href="#capture"><span lang="en">Measure</span><span lang="vi">Đo</span></a>
+      <a href="#intelligence">Intelligence</a>
+      <a href="#ai"><span lang="en">AI tools</span><span lang="vi">Công cụ AI</span></a>
+      <a href="#install"><span lang="en">Install</span><span lang="vi">Cài đặt</span></a>
+      <a href="https://github.com/Ky0-Nguyen/devx">GitHub</a>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-set-lang="vi" aria-pressed="false">VI</button>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap" id="top">
+  <header class="hero">
+    <div class="prompt">$ brew install --cask devx</div>
+    <h1>
+      <span lang="en">Measure the app. Correlate the release. <em>Hand your AI the evidence.</em></span>
+      <span lang="vi">Đo ứng dụng. Nối theo release. <em>Đưa bằng chứng cho AI của bạn.</em></span>
+    </h1>
+    <p class="sub">
+      <span lang="en">DevX is a native macOS profiler for React Native apps on Android and iOS. It captures frames, CPU and memory live, reads network and Redux through Metro, runs Android emulators and real BrowserStack devices, and joins all of it with Sentry, GitLab CI and Firebase by release. It keeps unknown separate from zero, and it never calls a coincidence a cause.</span>
+      <span lang="vi">DevX là profiler macOS gốc cho app React Native trên Android và iOS. Nó đo frame, CPU, bộ nhớ theo thời gian thực, đọc network và Redux qua Metro, chạy emulator Android và máy thật BrowserStack, rồi nối tất cả với Sentry, GitLab CI và Firebase theo từng release. "Không đo được" không bao giờ bị ghi thành 0, và trùng hợp không bao giờ bị gọi là nguyên nhân.</span>
+    </p>
+    <div class="cta">
+      <a class="btn solid" href="#install"><span lang="en">Install</span><span lang="vi">Cài đặt</span></a>
+      <a class="btn" href="https://github.com/Ky0-Nguyen/devx/releases/latest"><span lang="en">Download .dmg</span><span lang="vi">Tải .dmg</span></a>
+      <a class="btn" href="https://github.com/Ky0-Nguyen/devx">GitHub ↗</a>
+    </div>
+    <div class="shot"><img src="media/intelligence-release.jpg" width="1500" height="950" alt="DevX Intelligence: release 5.4.0 joined exactly to the GitLab pipeline that built its commit, with crashes, metrics and links"></div>
+    <div class="facts">
+      <div class="fact"><b>Android · iOS</b><span lang="en">devices, emulators, simulators</span><span lang="vi">máy thật, emulator, simulator</span></div>
+      <div class="fact"><b>exact ≠ candidate</b><span lang="en">every link says what it rests on</span><span lang="vi">mỗi liên kết nói rõ dựa trên gì</span></div>
+      <div class="fact"><b>47 MCP tools</b><span lang="en">for Claude, Codex, Cursor</span><span lang="vi">cho Claude, Codex, Cursor</span></div>
+      <div class="fact"><b>local-first</b><span lang="en">your evidence stays on your Mac</span><span lang="vi">bằng chứng nằm trên máy bạn</span></div>
+    </div>
+  </header>
+
+  <section id="capture">
+    <div class="eyebrow"><span lang="en">Measure</span><span lang="vi">Đo đạc</span></div>
+    <h2><span lang="en">Everything a mobile engineer opens five tools for, in one window</span><span lang="vi">Mọi thứ kỹ sư mobile phải mở năm công cụ, gom vào một cửa sổ</span></h2>
+
+    <div class="feature">
+      <div class="text">
+        <span class="tag">Live · Record</span>
+        <h3><span lang="en">Live capture that shows what it did not measure</span><span lang="vi">Đo trực tiếp, và nói rõ chỗ nào không đo được</span></h3>
+        <p class="lede"><span lang="en">Frames, CPU and memory stream while you use the app. A bin nothing covered reads NOT MEASURED, never zero, and every capture becomes a session you can analyse, compare and hand to an AI tool.</span><span lang="vi">Frame, CPU và bộ nhớ chạy theo thời gian thực khi bạn dùng app. Ô nào không có gì đo được ghi NOT MEASURED, không bao giờ là 0, và mỗi lần đo thành một session để phân tích, so sánh và đưa cho AI.</span></p>
+      </div>
+      <div class="shot"><img src="media/live.jpg" width="1500" height="950" loading="lazy" alt="Live capture streaming memory and CPU from a React Native app on an Android emulator"></div>
+    </div>
+
+    <div class="feature flip">
+      <div class="text">
+        <span class="tag">Inspect</span>
+        <h3><span lang="en">Network, console and Redux, with nothing added to the app</span><span lang="vi">Network, console và Redux, không cần cài gì vào app</span></h3>
+        <p class="lede"><span lang="en">A debug build already talks to Metro. DevX reads that connection: requests with headers and bodies, console lines, and Redux state with action names.</span><span lang="vi">Bản debug vốn đã nói chuyện với Metro. DevX đọc chính kết nối đó: request kèm header và body, dòng console, và state Redux kèm tên action.</span></p>
+      </div>
+      <div class="shot"><img src="media/inspect.jpg" width="1500" height="950" loading="lazy" alt="Inspect showing network requests, console output and Redux from a running app"></div>
+    </div>
+
+    <div class="feature">
+      <div class="text">
+        <span class="tag">Emulator · BrowserStack</span>
+        <h3><span lang="en">Android emulators with no Android Studio, and real devices in the cloud</span><span lang="vi">Emulator Android không cần Android Studio, và máy thật trên cloud</span></h3>
+        <ul>
+          <li><span lang="en">Install Google's emulator and images, pick a standard screen size, see several devices side by side.</span><span lang="vi">Cài emulator và image của Google, chọn kích thước màn hình chuẩn, xem nhiều máy cạnh nhau.</span></li>
+          <li><span lang="en">Drive a real BrowserStack device with network profiles, GPS and timezone, and import its App Profiling as a session.</span><span lang="vi">Điều khiển máy thật BrowserStack với profile mạng, GPS, múi giờ, rồi lấy App Profiling về thành session.</span></li>
+        </ul>
+      </div>
+      <div class="shot"><img src="media/emulator.jpg" width="1500" height="950" loading="lazy" alt="A Pixel 9 emulator screen drawn inside DevX"></div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><span class="k">Layout</span><p><span lang="en">How the screen is built: views per screen, depth, hidden views, React Native host views.</span><span lang="vi">Màn hình được dựng thế nào: số view, độ sâu, view ẩn, host view React Native.</span></p></div>
+      <div class="card"><span class="k">Timeline · Issues</span><p><span lang="en">Twelve detectors with stated thresholds; tracks where coverage is part of the data.</span><span lang="vi">Mười hai detector có ngưỡng ghi rõ; track mà vùng phủ là một phần của dữ liệu.</span></p></div>
+      <div class="card"><span class="k">Compare</span><p><span lang="en">Baseline against candidate, gate status before verdict.</span><span lang="vi">So baseline với candidate, xét điều kiện trước khi kết luận.</span></p></div>
+    </div>
+  </section>
+
+  <section id="intelligence">
+    <div class="eyebrow">Intelligence · 0.5.0</div>
+    <h2><span lang="en">Production and CI evidence, by release, on your Mac</span><span lang="vi">Bằng chứng production và CI, theo release, trên máy bạn</span></h2>
+    <p class="lede"><span lang="en">Connect Sentry, GitLab CI, Firebase exports or any tool's JSONL. DevX stores everything locally first, then groups crashes, pipelines, deploys, metrics and your own sessions around the release they belong to.</span><span lang="vi">Kết nối Sentry, GitLab CI, file export của Firebase hoặc JSONL của bất kỳ công cụ nào. DevX lưu mọi thứ xuống máy trước, rồi gom crash, pipeline, deploy, metric và session của bạn quanh đúng release của chúng.</span></p>
+    <div class="shot"><img src="media/intelligence-overview.jpg" width="1500" height="950" loading="lazy" alt="Intelligence overview: production, CI/CD, tests and local sessions, latest releases and connector freshness"></div>
+    <div class="basis">
+      <div><span class="chip g">exact</span><span><span lang="en">The same full commit, or the same app, version and build, on both sides.</span><span lang="vi">Cùng commit đầy đủ, hoặc cùng app, version và build, ở cả hai phía.</span></span></div>
+      <div><span class="chip g">provider_attributed</span><span><span lang="en">The provider states it: a Sentry event names its release.</span><span lang="vi">Provider tự khai báo: một event Sentry nêu release của nó.</span></span></div>
+      <div><span class="chip c">candidate</span><span><span lang="en">Timing or partial metadata. Shown apart, never called a cause.</span><span lang="vi">Trùng thời gian hoặc metadata thiếu. Hiển thị riêng, không bao giờ gọi là nguyên nhân.</span></span></div>
+      <div><span class="chip a">missing</span><span><span lang="en">No commit, no build, no session for a release: said out loud.</span><span lang="vi">Release thiếu commit, build hay session: được nói rõ ra.</span></span></div>
+    </div>
+    <div class="cards">
+      <div class="card"><span class="k">Sentry</span><p><span lang="en">Issues, crashes with stack and release, releases with their commits.</span><span lang="vi">Issue, crash kèm stack và release, release kèm commit.</span></p></div>
+      <div class="card"><span class="k">GitLab CI</span><p><span lang="en">Pipelines, jobs, tests, deployments. The failing line of a 20 MB log, located locally.</span><span lang="vi">Pipeline, job, test, deploy. Dòng lỗi trong log 20 MB được tìm ngay trên máy.</span></p></div>
+      <div class="card"><span class="k">Firebase</span><p><span lang="en">Crashlytics and Performance from BigQuery exports; percentiles computed by DevX.</span><span lang="vi">Crashlytics và Performance từ export BigQuery; percentile do DevX tính.</span></p></div>
+      <div class="card"><span class="k">Code context</span><p><span lang="en">Stack frames resolved to files at the release's commit, with blame and diff.</span><span lang="vi">Stack frame nối tới file đúng commit của release, kèm blame và diff.</span></p></div>
+    </div>
+  </section>
+
+  <section id="ai">
+    <div class="eyebrow"><span lang="en">AI tools</span><span lang="vi">Công cụ AI</span></div>
+    <h2><span lang="en">Your agent reasons. DevX does the measuring and the joining.</span><span lang="vi">Agent của bạn suy luận. DevX lo phần đo và phần nối.</span></h2>
+    <div class="two">
+      <div>
+        <p class="lede"><span lang="en"><code>mpi mcp</code> serves 47 tools over stdio. Your agent gets small, cited, redacted facts: an evidence pack is at most 64 KB, and a provider token never reaches the model.</span><span lang="vi"><code>mpi mcp</code> cung cấp 47 tool qua stdio. Agent nhận các dữ kiện nhỏ, có trích nguồn, đã che secret: một evidence pack tối đa 64 KB, và token của provider không bao giờ tới model.</span></p>
+        <div class="cmd"><pre id="cmd-claude">claude mcp add devx -- \
+  /Applications/DevX.app/Contents/MacOS/mpi mcp --allow-network</pre><button class="copy" type="button" data-copy="cmd-claude">Copy</button></div>
+        <p class="req"><span lang="en">No flag: reads only. <code>--allow-network</code>: refresh Sentry and GitLab. <code>--allow-actions</code>: operate emulators and BrowserStack devices.</span><span lang="vi">Không cờ: chỉ đọc. <code>--allow-network</code>: làm mới Sentry và GitLab. <code>--allow-actions</code>: điều khiển emulator và máy BrowserStack.</span></p>
+      </div>
+      <div class="asks">
+        <div class="ask"><span class="who">you</span><span lang="en">“Why did 5.4.0 regress against 5.3.0? Keep what is certain apart from what is suspected.”</span><span lang="vi">“Vì sao 5.4.0 tệ hơn 5.3.0? Tách rõ cái chắc chắn và cái chỉ là nghi ngờ.”</span><span class="tools">release_compare · intelligence_evidence_pack</span></div>
+        <div class="ask"><span class="who">you</span><span lang="en">“Take the worst crash in 5.4.0, find the code, and fix it.”</span><span lang="vi">“Lấy crash nặng nhất của 5.4.0, tìm code gây ra và sửa.”</span><span class="tools">signal_read · code_context_for_signal</span></div>
+        <div class="ask"><span class="who">you</span><span lang="en">“Start the Pixel 9, record 20 seconds of the feed, compare memory with the last release.”</span><span lang="vi">“Bật Pixel 9, ghi 20 giây màn hình feed, so bộ nhớ với release trước.”</span><span class="tools">emulator_start · record_capture · read_session</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="eyebrow"><span lang="en">What leaves your Mac</span><span lang="vi">Những gì rời máy bạn</span></div>
+    <h2><span lang="en">A ledger, not a slogan</span><span lang="vi">Một bảng kê, không phải khẩu hiệu</span></h2>
+    <p class="lede"><span lang="en">Captures, sessions and stored evidence stay local. DevX lists, connector by connector, what can be sent, to where, and only when you ask: BrowserStack uploads the app you choose, Sentry and GitLab receive API requests, and Firebase and JSONL only read files. Credentials live in the Keychain, never in a file, a command line or a model's context.</span><span lang="vi">Capture, session và bằng chứng đã lưu đều ở trên máy. DevX liệt kê theo từng connector những gì có thể gửi đi, gửi tới đâu, và chỉ khi bạn yêu cầu: BrowserStack nhận app bạn chọn, Sentry và GitLab nhận request API, còn Firebase và JSONL chỉ đọc file. Thông tin xác thực nằm trong Keychain, không bao giờ trong file, dòng lệnh hay ngữ cảnh của model.</span></p>
+  </section>
+
+  <section id="install">
+    <div class="eyebrow"><span lang="en">Install</span><span lang="vi">Cài đặt</span></div>
+    <h2><span lang="en">Three commands, signed and notarized</span><span lang="vi">Ba lệnh, đã ký và notarize</span></h2>
+    <div class="cmd"><pre id="cmd-brew">brew tap ky0-nguyen/devx https://github.com/Ky0-Nguyen/devx
+brew trust --cask ky0-nguyen/devx/devx
+brew install --cask devx</pre><button class="copy" type="button" data-copy="cmd-brew">Copy</button></div>
+    <div class="cmd"><pre id="cmd-up"><span class="c"># <span lang="en">later, to update</span><span lang="vi">sau này, để cập nhật</span></span>
+brew update &amp;&amp; brew upgrade --cask devx</pre><button class="copy" type="button" data-copy="cmd-up">Copy</button></div>
+    <p class="req"><span lang="en">Apple Silicon, macOS 14 or newer. Android needs Platform Tools on PATH; iOS needs Xcode. Or download the .dmg from Releases.</span><span lang="vi">Apple Silicon, macOS 14 trở lên. Android cần Platform Tools trong PATH; iOS cần Xcode. Hoặc tải file .dmg ở trang Releases.</span></p>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>DevX · MIT License</span>
+  <span>
+    <a href="https://github.com/Ky0-Nguyen/devx">GitHub</a> ·
+    <a href="https://github.com/Ky0-Nguyen/devx/blob/main/docs/intelligence.md">Intelligence docs</a> ·
+    <a href="https://github.com/Ky0-Nguyen/devx/blob/main/docs/mcp-server.md">MCP server</a> ·
+    <a href="https://github.com/Ky0-Nguyen/devx/releases">Releases</a>
+  </span>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  function set(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang);
+    document.querySelectorAll('[data-set-lang]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-set-lang') === lang));
+    });
+    try { localStorage.setItem('devx-lang', lang); } catch (e) {}
+  }
+  var asked = new URLSearchParams(location.search).get('lang');
+  var saved = null;
+  try { saved = localStorage.getItem('devx-lang'); } catch (e) {}
+  var browser = (navigator.language || 'en').toLowerCase().indexOf('vi') === 0 ? 'vi' : 'en';
+  set(asked === 'vi' || asked === 'en' ? asked : (saved === 'vi' || saved === 'en' ? saved : browser));
+  document.querySelectorAll('[data-set-lang]').forEach(function (b) {
+    b.addEventListener('click', function () { set(b.getAttribute('data-set-lang')); });
+  });
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var pre = document.getElementById(b.getAttribute('data-copy'));
+      var text = Array.prototype.filter.call(pre.querySelectorAll('[lang]'), function () { return true; }).length
+        ? pre.innerText : pre.textContent;
+      var label = b.textContent;
+      function done() { b.textContent = root.getAttribute('data-lang') === 'vi' ? 'Đã copy' : 'Copied'; setTimeout(function () { b.textContent = label; }, 1500); }
+      function select() { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+      try { navigator.clipboard.writeText(text).then(done, select); } catch (e) { select(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

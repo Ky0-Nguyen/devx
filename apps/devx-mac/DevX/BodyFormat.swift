@@ -114,6 +114,17 @@ enum BodyFormat {
     static let displayLimit = 20_000
 
     /// Reads one of an exchange's bodies and says what it is.
+    /// A base64 body as UTF-8 text, when it is text: valid UTF-8 with no
+    /// control characters other than tab, CR and LF.
+    static func decodedText(_ base64: String) -> String? {
+        guard let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
+              !data.isEmpty, let s = String(data: data, encoding: .utf8) else { return nil }
+        for u in s.unicodeScalars where u.value < 0x20 && u != "\t" && u != "\n" && u != "\r" {
+            return nil
+        }
+        return s
+    }
+
     static func classify(_ row: JSON, _ field: BodyField,
                          limit: Int = displayLimit) -> FormattedBody {
         // Absent means the key was never emitted, which is not the same as a
@@ -136,6 +147,21 @@ enum BodyFormat {
         // Base64 travels as a flag beside the value and applies to the
         // response only; the request body is whatever the app posted.
         if field == .response, row["response_body_base64"].bool == true {
+            // React Native 0.87 hands even a JSON body over base64. When it
+            // decodes to text, that text is what a reader needs; the raw is
+            // still the base64 exactly as it arrived, and the note says the
+            // decoding was done here. Anything that is not text stays base64.
+            if let decoded = decodedText(body) {
+                let said = "decoded from base64 for display: the runtime sent it encoded"
+                if let pretty = prettyJSON(decoded) {
+                    let (shown, note) = cut(pretty, to: limit)
+                    return FormattedBody(state: .json(shown), raw: decoded,
+                                         note: note.isEmpty ? said : said + "; " + note)
+                }
+                let (shown, note) = cut(decoded, to: limit)
+                return FormattedBody(state: .text(shown), raw: decoded,
+                                     note: note.isEmpty ? said : said + "; " + note)
+            }
             let (shown, note) = cut(body, to: limit)
             return FormattedBody(state: .base64(shown), raw: body, note: note)
         }

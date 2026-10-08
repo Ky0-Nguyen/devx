@@ -49,6 +49,8 @@ Prepared prepare(SignalStore& store, const std::string& ws, const std::string& c
     p.ctx.secret = net::find_secret(src.env_var, src.keychain_services);
     if (!p.ctx.secret && !p.connector->info().credential_optional) {
       p.error = "no credential for " + c->id + ": " + p.connector->info().credential_help;
+      const std::string url = credential_url_for(p.connector->info(), c->settings);
+      if (!url.empty()) p.error += ". Get one at " + url;
     }
   }
   return p;
@@ -131,6 +133,7 @@ json::Value integrations(const SignalStore& store, const std::string& ws) {
       json::Value services = json::Value::array();
       for (const auto& s : src.keychain_services) services.push_back(json::Value::string(s));
       one.set("credential_services", std::move(services));
+      one.set("credential_url", json::Value::string(credential_url_for(conn->info(), c.settings)));
       one.set("credential_env", json::Value::string(src.env_var));
       one.set("credential_present", json::Value::boolean(has_secret));
       if (c.paused) {

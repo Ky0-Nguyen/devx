@@ -1,0 +1,48 @@
+name: Pages
+
+# The landing page, https://ky0-nguyen.github.io/devx/, built from site/ (plus
+# the demo media in docs/media) and deployed with GitHub Pages' own actions.
+# It runs only for changes to the page, and a page change never releases
+# DevX (release.yml ignores site/**).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/media/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/media
+          cp -R site/. _site/
+          # The README's demo, served beside the page's own screenshots.
+          cp docs/media/devx-demo.gif docs/media/devx-demo.mp4 _site/media/ 2>/dev/null || true
+          # Plain files, no Jekyll processing.
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

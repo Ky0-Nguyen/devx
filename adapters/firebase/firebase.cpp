@@ -1058,6 +1058,8 @@ class FirebaseConnector : public signals::SignalConnector {
     i.category = "production";
     i.egress = "Nothing: reads export files on this Mac";
     i.credential_help = "";
+    // Export is switched on in the console (BigQuery card, Link).
+    i.setup_url = "https://console.firebase.google.com/project/_/settings/integrations";
     i.settings = {
         {"export_dir",
          "Required. A directory of Crashlytics and/or Performance Monitoring BigQuery exports: "

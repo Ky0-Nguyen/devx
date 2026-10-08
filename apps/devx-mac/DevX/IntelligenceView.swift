@@ -31,6 +31,24 @@ enum ConnectorKeychain {
 /// checks each piece on its own.
 func cat(_ parts: String...) -> String { parts.joined() }
 
+/// Opens a provider's page (where its token is made, where its export is set
+/// up) in the browser. https only: these links come from the connector
+/// contract and a person's signed-in browser is what opens them.
+func openProviderPage(_ link: String) {
+    guard link.hasPrefix("https://"), let url = URL(string: link) else { return }
+    NSWorkspace.shared.open(url)
+}
+
+/// A connector's token page for the base_url being typed, or its default.
+func tokenURL(_ info: JSON, baseURL: String) -> String {
+    let template = info["credential_url"].text
+    guard !template.isEmpty else { return "" }
+    var base = baseURL.trimmingCharacters(in: .whitespaces)
+    if base.isEmpty { base = info["default_base_url"].text }
+    while base.hasSuffix("/") { base.removeLast() }
+    return template.replacingOccurrences(of: "{base_url}", with: base)
+}
+
 /// The Intelligence module's state. Everything is read through the C ABI;
 /// the window never talks to a provider (FR-17).
 @MainActor
@@ -1005,12 +1023,25 @@ private struct IntelIntegrationsView: View {
                 Text(id).font(Term.font(13, .bold)).foregroundStyle(Term.ink)
                 Text(c["info"]["display_name"].text).font(Term.small).foregroundStyle(Term.dim)
                 Chip(text: h["state"].text, tone: stateTone(h["state"].text))
-                if c["credential_present"].bool == true { Chip(text: "credential stored", tone: .good) }
+                // Only for a connector that uses one: a file import has
+                // nothing stored, and saying "stored" would be untrue.
+                if !c["credential_services"].array.isEmpty || !c["credential_env"].text.isEmpty {
+                    if c["credential_present"].bool == true {
+                        Chip(text: "credential stored", tone: .good)
+                    } else if c["info"]["credential_optional"].bool == true {
+                        Chip(text: "no credential: public access", tone: .neutral)
+                    }
+                }
                 Spacer()
             }
             if !h["detail"].text.isEmpty {
                 Text(h["detail"].text).font(Term.small).foregroundStyle(Term.amber)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+            if h["state"].text == "needs_auth" && !c["credential_url"].text.isEmpty {
+                Button(tr("get a token") + " ↗") { openProviderPage(c["credential_url"].text) }
+                    .buttonStyle(TermButtonStyle(tone: Term.amber))
+                    .help(c["credential_url"].text)
             }
             Text(cat(tr("last success "), sync["last_success_at"].display("never"), " · ", tr("last attempt "),
                      sync["last_attempt_at"].display("never"), " · ", tr("records "),
@@ -1105,10 +1136,26 @@ private struct IntelIntegrationsView: View {
                             .textFieldStyle(TermFieldStyle())
                     }
                 }
+                if !currentProvider["setup_url"].text.isEmpty {
+                    HStack {
+                        Text("").frame(width: 150)
+                        Button(tr("set it up / read how") + " ↗") { openProviderPage(currentProvider["setup_url"].text) }
+                            .buttonStyle(TermButtonStyle())
+                            .help(currentProvider["setup_url"].text)
+                    }
+                }
                 if !currentProvider["credential_service"].text.isEmpty {
+                    let link = tokenURL(currentProvider, baseURL: settings["base_url"] ?? "")
                     HStack {
                         Text(tr("credential")).font(Term.small).foregroundStyle(Term.dim)
                             .frame(width: 150, alignment: .trailing)
+                        if !link.isEmpty {
+                            // The provider's own page for making a token,
+                            // with name and scopes filled in where it allows.
+                            Button(tr("get a token") + " ↗") { openProviderPage(link) }
+                                .buttonStyle(TermButtonStyle(filled: true))
+                                .help(link)
+                        }
                         SecureField(currentProvider["credential_help"].text, text: $secret)
                             .textFieldStyle(TermFieldStyle())
                         TextField(tr("Keychain service (optional)"), text: $credentialRef)
