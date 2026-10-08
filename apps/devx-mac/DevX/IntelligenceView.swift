@@ -25,6 +25,12 @@ enum ConnectorKeychain {
     }
 }
 
+/// Joins pieces of text. A long `+` chain of Strings inside a SwiftUI
+/// builder is what Swift's type checker gives up on ("unable to type-check
+/// this expression in reasonable time" on CI's toolchain); a variadic call
+/// checks each piece on its own.
+func cat(_ parts: String...) -> String { parts.joined() }
+
 /// The Intelligence module's state. Everything is read through the C ABI;
 /// the window never talks to a provider (FR-17).
 @MainActor
@@ -253,7 +259,7 @@ private struct LinkRow: View {
         HStack(alignment: .top, spacing: 6) {
             Chip(text: edge["basis"].text, tone: basisTone(edge["basis"].text))
             VStack(alignment: .leading, spacing: 2) {
-                Text(edge["relation"].text + ": " + edge["from"].text + " → " + edge["to"].text)
+                Text(cat(edge["relation"].text, ": ", edge["from"].text, " → ", edge["to"].text))
                     .font(Term.small).foregroundStyle(Term.dim).lineLimit(1).truncationMode(.middle)
                 Text(edge["evidence"].text).font(Term.body).foregroundStyle(Term.ink)
                     .fixedSize(horizontal: false, vertical: true)
@@ -268,7 +274,7 @@ private struct SignalRow: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(String(s["occurred_at"].text.prefix(16))).font(Term.small).foregroundStyle(Term.dim)
                 .frame(width: 118, alignment: .leading)
-            Text(s["provider"].text + "/" + s["kind"].text).font(Term.small).foregroundStyle(Term.cyan)
+            Text(cat(s["provider"].text, "/", s["kind"].text)).font(Term.small).foregroundStyle(Term.cyan)
                 .frame(width: 130, alignment: .leading).lineLimit(1)
             if !s["severity"].text.isEmpty {
                 Chip(text: s["severity"].text, tone: severityTone(s["severity"].text))
@@ -285,7 +291,7 @@ private struct SignalRow: View {
                     .frame(maxWidth: 260, alignment: .trailing)
             }
             if a["p95"].double != nil {
-                Text("p95 " + a["p95"].display() + " " + a["unit"].text).font(Term.small).foregroundStyle(Term.dim)
+                Text(cat("p95 ", a["p95"].display(), " ", a["unit"].text)).font(Term.small).foregroundStyle(Term.dim)
             }
         }
     }
@@ -321,8 +327,8 @@ private struct IntelOverviewView: View {
                             HStack(spacing: 8) {
                                 Button(r["key"].text) { openRelease(r["key"].text) }
                                     .buttonStyle(.plain).font(Term.font(12, .semibold)).foregroundStyle(Term.green)
-                                Text("crashes \(r["crashes"].int ?? 0) · issues \(r["issues"].int ?? 0) · "
-                                     + "CI failures \(r["ci_failures"].int ?? 0) · sessions \(r["sessions"].int ?? 0)")
+                                Text(cat("crashes \(r["crashes"].int ?? 0) · issues \(r["issues"].int ?? 0) · ",
+                                         "CI failures \(r["ci_failures"].int ?? 0) · sessions \(r["sessions"].int ?? 0)"))
                                     .font(Term.small).foregroundStyle(Term.dim)
                                 if (r["conflicts"].int ?? 0) > 0 {
                                     Chip(text: "\(r["conflicts"].int ?? 0) conflict", tone: .caution)
@@ -344,8 +350,8 @@ private struct IntelOverviewView: View {
                             + "is shown."))
                         .font(Term.body).foregroundStyle(Term.ink).fixedSize(horizontal: false, vertical: true)
                 }
-                Text(tr("Links: \(o["exact_links"].int ?? 0) exact, \(o["candidate_links"].int ?? 0) candidate. "
-                        + "Storage: ") + formatBytes(o["storage"]["total_bytes"].double ?? 0))
+                Text(cat(tr("Links: \(o["exact_links"].int ?? 0) exact, \(o["candidate_links"].int ?? 0) candidate. Storage: "),
+                         formatBytes(o["storage"]["total_bytes"].double ?? 0)))
                     .font(Term.small).foregroundStyle(Term.dim)
             }
             .padding(16)
@@ -369,8 +375,8 @@ private struct IntelOverviewView: View {
             Text(tr("freshness")).font(Term.small).foregroundStyle(Term.dim)
             ForEach(f.keys, id: \.self) { id in
                 let s = f[id]
-                Chip(text: id + ": " + s["state"].text, tone: stateTone(s["state"].text))
-                    .help(tr("last success") + " " + s["last_success_at"].display("never"))
+                Chip(text: cat(id, ": ", s["state"].text), tone: stateTone(s["state"].text))
+                    .help(cat(tr("last success"), " ", s["last_success_at"].display("never")))
             }
             if f.keys.isEmpty {
                 Text(tr("no connectors")).font(Term.small).foregroundStyle(Term.dim)
@@ -398,8 +404,8 @@ private struct IntelReleasesView: View {
                                 Text(key).font(Term.font(12, .semibold))
                                     .foregroundStyle(key == model.selectedRelease ? Term.green : Term.ink)
                                     .lineLimit(1).truncationMode(.middle)
-                                Text("crashes \(r["crashes"].int ?? 0) · CI fail \(r["ci_failures"].int ?? 0) · "
-                                     + "sessions \(r["sessions"].int ?? 0)")
+                                Text(cat("crashes \(r["crashes"].int ?? 0) · CI fail \(r["ci_failures"].int ?? 0) · ",
+                                         "sessions \(r["sessions"].int ?? 0)"))
                                     .font(Term.small).foregroundStyle(Term.dim)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -455,7 +461,7 @@ private struct IntelReleasesView: View {
                                 HStack {
                                     Button(s["id"].text) { state.openSession(s["id"].text, revealIn: .timeline) }
                                         .buttonStyle(.plain).foregroundStyle(Term.green).font(Term.body)
-                                    Text(s["device_id"].text + " · " + s["created_at"].text)
+                                    Text(cat(s["device_id"].text, " · ", s["created_at"].text))
                                         .font(Term.small).foregroundStyle(Term.dim)
                                 }
                             }
@@ -548,8 +554,8 @@ private struct IntelReleasesView: View {
                             Text(m["metric"].text).font(Term.body).foregroundStyle(Term.ink)
                             ForEach(["p50", "p95"], id: \.self) { p in
                                 if !m[p].isNull {
-                                    Text("\(p) " + m[p]["base"].display() + " → " + m[p]["candidate"].display()
-                                         + " " + m["unit"].text)
+                                    Text(cat("\(p) ", m[p]["base"].display(), " → ", m[p]["candidate"].display(),
+                                             " ", m["unit"].text))
                                         .font(Term.small)
                                         .foregroundStyle((m[p]["delta"].double ?? 0) > 0 ? Term.amber : Term.green)
                                 }
@@ -557,8 +563,8 @@ private struct IntelReleasesView: View {
                         }
                     }
                     if !c["issues_only_in_candidate"].array.isEmpty {
-                        Text(tr("Only in this release: ") + c["issues_only_in_candidate"].array.prefix(8)
-                             .map { $0.text }.joined(separator: "; "))
+                        Text(cat(tr("Only in this release: "),
+                                 c["issues_only_in_candidate"].array.prefix(8).map { $0.text }.joined(separator: "; ")))
                             .font(Term.small).foregroundStyle(Term.amber).fixedSize(horizontal: false, vertical: true)
                     }
                     Text(c["note"].text).font(Term.small).foregroundStyle(Term.dim)
@@ -571,9 +577,9 @@ private struct IntelReleasesView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(tr(title).uppercased()).font(Term.font(11, .bold)).foregroundStyle(Term.dim)
             Text("crashes \(s["crashes"].int ?? 0) · issues \(s["issues"].int ?? 0)").font(Term.body)
-            Text(tr("events ") + s["events"].display("not reported") + " · "
-                 + tr("users ") + s["affected_users"].display("not reported")).font(Term.small)
-            Text("CI failures \(s["ci_failures"].int ?? 0) · tests failed " + s["tests_failed"].display("no report"))
+            Text(cat(tr("events "), s["events"].display("not reported"), " · ",
+                     tr("users "), s["affected_users"].display("not reported"))).font(Term.small)
+            Text(cat("CI failures \(s["ci_failures"].int ?? 0) · tests failed ", s["tests_failed"].display("no report")))
                 .font(Term.small)
         }
     }
@@ -690,7 +696,7 @@ private struct IntelSignalDetail: View {
                         .foregroundStyle(Term.ink).textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {
-                        Chip(text: s["provider"].text + "/" + s["kind"].text)
+                        Chip(text: cat(s["provider"].text, "/", s["kind"].text))
                         if !s["severity"].text.isEmpty { Chip(text: s["severity"].text, tone: severityTone(s["severity"].text)) }
                         Chip(text: s["basis"].text, tone: basisTone(s["basis"].text))
                         Spacer()
@@ -764,8 +770,8 @@ private struct IntelSignalDetail: View {
                         Text(f["path"].text).font(Term.font(12, .semibold)).foregroundStyle(Term.green)
                         Text(f["source"]["text"].text).font(Term.font(11)).textSelection(.enabled)
                         if f["blame"]["ok"].bool == true {
-                            Text(tr("last changed in ") + String(f["blame"]["commit"].text.prefix(10)) + " · "
-                                 + f["blame"]["summary"].text + " · " + f["blame"]["author"].text)
+                            Text(cat(tr("last changed in "), String(f["blame"]["commit"].text.prefix(10)), " · ",
+                                     f["blame"]["summary"].text, " · ", f["blame"]["author"].text))
                                 .font(Term.small).foregroundStyle(Term.dim)
                         }
                     } else {
@@ -842,8 +848,8 @@ private struct IntelAIView: View {
                             }
                         }
                     }
-                    Text(tr("Redacted: ") + p["redacted"].serialized() + " · " + tr("sources: ")
-                         + "\(p["source_refs"].array.count)")
+                    Text(cat(tr("Redacted: "), p["redacted"].serialized(), " · ", tr("sources: "),
+                             "\(p["source_refs"].array.count)"))
                         .font(Term.small).foregroundStyle(Term.dim)
                 }
             }
@@ -852,12 +858,13 @@ private struct IntelAIView: View {
     }
 
     private var prompt: String {
-        let scope = model.selectedRelease.isEmpty ? "signal " + model.selectedSignal
-                                                  : "release " + model.selectedRelease
-        return "Using the DevX MCP server (workspace \(model.workspace)), call intelligence_evidence_pack for "
-            + "\(scope) and answer: \(question.isEmpty ? "what changed and what needs attention?" : question) "
-            + "Cite the source_refs, keep exact and candidate links apart, and ask for signal_read, "
-            + "signal_related or code_context_for_signal before guessing."
+        let scope: String = model.selectedRelease.isEmpty ? cat("signal ", model.selectedSignal)
+                                                          : cat("release ", model.selectedRelease)
+        let ask: String = question.isEmpty ? "what changed and what needs attention?" : question
+        return cat("Using the DevX MCP server (workspace \(model.workspace)), call intelligence_evidence_pack for ",
+                   "\(scope) and answer: \(ask) ",
+                   "Cite the source_refs, keep exact and candidate links apart, and ask for signal_read, ",
+                   "signal_related or code_context_for_signal before guessing.")
     }
 
     private func copy(_ s: String) {
@@ -1005,9 +1012,9 @@ private struct IntelIntegrationsView: View {
                 Text(h["detail"].text).font(Term.small).foregroundStyle(Term.amber)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Text(tr("last success ") + sync["last_success_at"].display("never") + " · " + tr("last attempt ")
-                 + sync["last_attempt_at"].display("never") + " · " + tr("records ")
-                 + sync["records_written"].display("0"))
+            Text(cat(tr("last success "), sync["last_success_at"].display("never"), " · ", tr("last attempt "),
+                     sync["last_attempt_at"].display("never"), " · ", tr("records "),
+                     sync["records_written"].display("0")))
                 .font(Term.small).foregroundStyle(Term.dim)
             Text(tr("settings ") + cfg["settings"].serialized()).font(Term.small).foregroundStyle(Term.dim).lineLimit(2)
             HStack {
@@ -1107,9 +1114,9 @@ private struct IntelIntegrationsView: View {
                         TextField(tr("Keychain service (optional)"), text: $credentialRef)
                             .textFieldStyle(TermFieldStyle()).frame(maxWidth: 220)
                     }
-                    Text(tr("Saved to this connector's own Keychain item and never shown again. ")
-                         + currentProvider["credential_env"].text
-                         + tr(" in the environment is used only while this is the workspace's one connector of its kind."))
+                    Text(cat(tr("Saved to this connector's own Keychain item and never shown again. "),
+                             currentProvider["credential_env"].text,
+                             tr(" in the environment is used only while this is the workspace's one connector of its kind.")))
                         .font(Term.small).foregroundStyle(Term.dim)
                 }
                 Button(tr("add connector")) { addConnector() }
@@ -1150,11 +1157,11 @@ private struct IntelIntegrationsView: View {
               subtitle: "Pinned signals and releases are kept. Raw evidence nothing retained points at is removed.") {
             VStack(alignment: .leading, spacing: 6) {
                 let st = model.integrations["storage"]
-                Text(tr("signals ") + st["signals"].display("0") + " · " + tr("raw ")
-                     + formatBytes(st["raw_bytes"].double ?? 0) + " · " + tr("total ")
-                     + formatBytes(st["total_bytes"].double ?? 0) + " · " + tr("oldest ")
-                     + st["oldest_evidence_at"].display("-") + " · " + tr("quarantined ")
-                     + st["quarantined"].display("0"))
+                Text(cat(tr("signals "), st["signals"].display("0"), " · ", tr("raw "),
+                         formatBytes(st["raw_bytes"].double ?? 0), " · ", tr("total "),
+                         formatBytes(st["total_bytes"].double ?? 0), " · ", tr("oldest "),
+                         st["oldest_evidence_at"].display("-"), " · ", tr("quarantined "),
+                         st["quarantined"].display("0")))
                     .font(Term.small).foregroundStyle(Term.dim)
                 HStack {
                     Button(tr("what would be deleted")) { retention(apply: false) }.buttonStyle(TermButtonStyle())
@@ -1163,10 +1170,10 @@ private struct IntelIntegrationsView: View {
                 }
                 let r = model.retention
                 if r["ok"].bool == true {
-                    Text((r["applied"].bool == true ? tr("Deleted: ") : tr("Would delete: "))
-                         + "\(r["signals_expired"].int ?? 0) " + tr("signal(s)") + ", "
-                         + "\(r["raw_deleted"].int ?? 0) " + tr("raw file(s)") + "; "
-                         + "\(r["kept_by_pin"].int ?? 0) " + tr("kept by a pin"))
+                    let verb: String = r["applied"].bool == true ? tr("Deleted: ") : tr("Would delete: ")
+                    Text(cat(verb, "\(r["signals_expired"].int ?? 0) ", tr("signal(s)"), ", ",
+                             "\(r["raw_deleted"].int ?? 0) ", tr("raw file(s)"), "; ",
+                             "\(r["kept_by_pin"].int ?? 0) ", tr("kept by a pin")))
                         .font(Term.body).foregroundStyle(Term.ink)
                 }
             }
@@ -1188,7 +1195,7 @@ private struct IntelIntegrationsView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(r["what"].text).font(Term.body).foregroundStyle(Term.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text(tr("to ") + r["to"].text + " · " + r["when"].text).font(Term.small).foregroundStyle(Term.dim)
+                        Text(cat(tr("to "), r["to"].text, " · ", r["when"].text)).font(Term.small).foregroundStyle(Term.dim)
                     }
                 }
             }

@@ -184,7 +184,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(row["what"].text).font(Term.font(11)).foregroundStyle(Term.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text(tr("to ") + row["to"].text + " · " + row["when"].text)
+                        Text(cat(tr("to "), row["to"].text, " · ", row["when"].text))
                             .font(Term.font(10)).foregroundStyle(Term.dim)
                             .fixedSize(horizontal: false, vertical: true)
                     }
