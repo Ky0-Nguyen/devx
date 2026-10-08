@@ -836,6 +836,10 @@ class GitLabConnector : public sig::SignalConnector {
     i.credential_env = "GITLAB_TOKEN";
     i.credential_service = "com.devx.gitlab";
     i.credential_optional = true;
+    // GitLab pre-fills a new personal access token's name and scopes from
+    // the URL, so the link opens a form that only needs "Create".
+    i.credential_url = "{base_url}/-/user_settings/personal_access_tokens?name=DevX&scopes=read_api";
+    i.default_base_url = "https://gitlab.com";
     i.settings = {
         {"base_url", "Your GitLab, https only (default https://gitlab.com)"},
         {"project", "Numeric project id, or its path such as group/name"},

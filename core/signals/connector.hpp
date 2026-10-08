@@ -40,6 +40,15 @@ struct ConnectorInfo {
   /// True when it also works without one (a public GitLab project); the
   /// connector then runs with no secret and says what it could not reach.
   bool credential_optional = false;
+  /// Where a person gets that credential: the provider's own page, opened
+  /// from the window or printed by the CLI. `{base_url}` is replaced with the
+  /// connector's base_url setting, or `default_base_url`, so a self-hosted
+  /// Sentry or GitLab links to its own page.
+  std::string credential_url;
+  std::string default_base_url;
+  /// Where to set up what a connector without a credential reads (Firebase's
+  /// BigQuery export, say), or its documentation.
+  std::string setup_url;
   /// The settings it understands, name -> description.
   std::vector<std::pair<std::string, std::string>> settings;
   json::Value to_json() const;
@@ -165,5 +174,9 @@ struct CredentialSource {
 };
 CredentialSource credential_source(const ConnectorConfig& config, const ConnectorInfo& info,
                                    bool env_allowed);
+
+/// `info.credential_url` for one connector's settings; empty when there is
+/// none. Only ever an https URL.
+std::string credential_url_for(const ConnectorInfo& info, const json::Value& settings);
 
 }  // namespace mpi::signals
