@@ -1413,8 +1413,17 @@ do {
     let b64 = BodyFormat.classify(
         row("{\"response_body\":\"AAEC\",\"response_body_base64\":true}"),
         .response)
-    check(b64.state == .base64("AAEC"), "a base64 body is reported as base64")
-    if case .json = b64.state { check(false, "base64 is never parsed as JSON") }
+    check(b64.state == .base64("AAEC"), "a base64 body that is not text stays base64")
+    // RN 0.87 sends JSON base64: it is decoded for display, and says so.
+    let b64json = BodyFormat.classify(
+        row("{\"response_body\":\"eyJpZCI6MX0=\",\"response_body_base64\":true}"), .response)
+    if case .json(let shown) = b64json.state {
+        check(shown.contains("\"id\""), "decoded base64 JSON is shown as JSON")
+    } else {
+        check(false, "base64 that decodes to JSON text is shown as JSON")
+    }
+    check(b64json.note.contains("decoded from base64"), "and the note says it was decoded here")
+    if case .json = b64.state { check(false, "binary base64 is never parsed as JSON") }
 
     // The flag applies to the response only -- a request body is whatever the
     // app posted.

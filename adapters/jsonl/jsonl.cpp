@@ -222,6 +222,7 @@ class JsonlConnector : public signals::SignalConnector {
     i.display_name = "JSONL import";
     i.category = "import";
     i.egress = "Nothing: reads a file on this Mac";
+    i.setup_url = "https://github.com/Ky0-Nguyen/devx/blob/main/docs/intelligence.md#connectors";
     i.settings = {
         {"path",
          "Required. A .jsonl file, or a directory of .jsonl / .ndjson files. One JSON object per "

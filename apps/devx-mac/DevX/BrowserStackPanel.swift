@@ -123,9 +123,15 @@ struct BrowserStackPanel: View {
                         .buttonStyle(TermButtonStyle(filled: true))
                         .disabled(username.isEmpty || accessKey.isEmpty)
                     }
-                    Text(tr("From BrowserStack's Account > Settings. Stored in the macOS Keychain; "
-                            + "BROWSERSTACK_USERNAME / BROWSERSTACK_ACCESS_KEY take precedence when set."))
-                        .font(Term.small).foregroundStyle(Term.dim)
+                    HStack {
+                        Button(tr("get your username and access key") + " ↗") {
+                            NSWorkspace.shared.open(URL(string: "https://www.browserstack.com/accounts/settings")!)
+                        }
+                        .buttonStyle(TermButtonStyle())
+                        Text(tr("From BrowserStack's Account > Settings. Stored in the macOS Keychain; "
+                                + "BROWSERSTACK_USERNAME / BROWSERSTACK_ACCESS_KEY take precedence when set."))
+                            .font(Term.small).foregroundStyle(Term.dim)
+                    }
                 }
             }
         }

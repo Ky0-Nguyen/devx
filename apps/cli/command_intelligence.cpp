@@ -158,6 +158,9 @@ ExitCode cmd_intelligence(const Invocation& inv) {
         const json::Value& h = *c.find("health");
         std::cout << jstr(cfg, "id") << "  (" << jstr(cfg, "provider") << ")  " << jstr(h, "state");
         if (!jstr(h, "detail").empty()) std::cout << " -- " << jstr(h, "detail");
+        if (jstr(h, "state") == "needs_auth" && !jstr(c, "credential_url").empty()) {
+          std::cout << "\n    get a token: " << jstr(c, "credential_url");
+        }
         const json::Value* sync = c.find("sync");
         if (sync != nullptr && !jstr(*sync, "last_success_at").empty()) {
           std::cout << "  last success " << jstr(*sync, "last_success_at");
@@ -185,7 +188,29 @@ ExitCode cmd_intelligence(const Invocation& inv) {
       settings.set(v.substr(0, eq), json::Value::string(v.substr(eq + 1)));
     }
     c.set("settings", settings);
-    return emit(intelligence::connector_save(dir, ws, c));
+    const json::Value saved = intelligence::connector_save(dir, ws, c);
+    const ExitCode code = emit(saved);
+    if (code == ExitCode::kOk && text) {
+      // Where to get the credential, and where it goes, right away.
+      const json::Value ints = intelligence::integrations(dir, ws);
+      for (const auto& one : ints.find("connectors") != nullptr ? ints.find("connectors")->items()
+                                                                 : std::vector<json::Value>{}) {
+        const json::Value* cfg = one.find("config");
+        if (cfg == nullptr || jstr(*cfg, "id") != id) continue;
+        const json::Value* present = one.find("credential_present");
+        const json::Value* services = one.find("credential_services");
+        if (present != nullptr && !present->as_bool() && services != nullptr && !services->items().empty()) {
+          std::cout << "\nNo credential for " << id << " yet.\n";
+          if (!jstr(one, "credential_url").empty()) {
+            std::cout << "  1. Get a token:  " << jstr(one, "credential_url") << "\n";
+          }
+          std::cout << "  2. Store it:     security add-generic-password -s "
+                    << services->items().front().as_string() << " -a devx -w\n"
+                    << "  3. Check it:     mpi intelligence validate " << id << "\n";
+        }
+      }
+    }
+    return code;
   }
   if (sub == "disconnect" && !arg(inv, 1).empty()) {
     return emit(intelligence::connector_remove(dir, ws, arg(inv, 1), inv.has_flag("delete-local-data")));

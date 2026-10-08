@@ -1211,6 +1211,12 @@ enum Strings {
             "Những gì vẫn chưa biết",
         "What leaves this machine":
             "Những gì rời khỏi máy này",
+        "get a token":
+            "lấy token",
+        "set it up / read how":
+            "thiết lập / xem hướng dẫn",
+        "get your username and access key":
+            "lấy username và access key",
         "What the evidence supports":
             "Những gì bằng chứng chứng minh được",
         "What these tracks do not say":

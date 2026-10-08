@@ -33,6 +33,9 @@ json::Value ConnectorInfo::to_json() const {
   o.set("credential_env", json::Value::string(credential_env));
   o.set("credential_service", json::Value::string(credential_service));
   o.set("credential_optional", json::Value::boolean(credential_optional));
+  o.set("credential_url", json::Value::string(credential_url));
+  o.set("default_base_url", json::Value::string(default_base_url));
+  o.set("setup_url", json::Value::string(setup_url));
   json::Value s = json::Value::array();
   for (const auto& [name, help] : settings) {
     json::Value one = json::Value::object();
@@ -112,4 +115,19 @@ CredentialSource credential_source(const ConnectorConfig& config, const Connecto
   return s;
 }
 
+std::string credential_url_for(const ConnectorInfo& info, const json::Value& settings) {
+  if (info.credential_url.empty()) return {};
+  std::string base = info.default_base_url;
+  if (const json::Value* b = settings.find("base_url"); b != nullptr && b->is_string() && !b->as_string().empty()) {
+    base = b->as_string();
+  }
+  while (!base.empty() && base.back() == '/') base.pop_back();
+  std::string url = info.credential_url;
+  const std::string key = "{base_url}";
+  if (const auto at = url.find(key); at != std::string::npos) url.replace(at, key.size(), base);
+  // A link someone will open with their account signed in: https only.
+  return url.rfind("https://", 0) == 0 ? url : std::string();
+}
+
 }  // namespace mpi::signals
+

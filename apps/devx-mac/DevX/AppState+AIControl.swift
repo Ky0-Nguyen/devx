@@ -115,9 +115,11 @@ extension AppState {
             let id = cmd["avd"].text
             emulatorSelected = id
             targetTab = .emulator
-            // Added beside whatever is already shown, not instead of it.
-            if avds.contains(where: { $0["id"].text == id && !$0["running"].isNull }),
-               display(for: id) == nil {
+            // Added beside whatever is already shown, not instead of it. Not
+            // gated on the AVD list: when the Emulator tab has never been
+            // opened that list is still empty, and the screen never appeared.
+            // The core says so if the emulator is not running.
+            if display(for: id) == nil {
                 openDisplay(id)
             }
             shown.append("emulator " + id)
