@@ -2,6 +2,8 @@
 
 A cross-platform mobile performance profiler with a C++20 analysis core.
 
+**Website:** [ky0-nguyen.github.io/devx](https://ky0-nguyen.github.io/devx/) (English / Tiếng Việt)
+
 Implements **M0**, **M1** and **M2** on Android of
 `MOBILE_PROFILER_IMPLEMENTATION_SPEC_EN.md` v2.0, which is not checked into this repository. On iOS the simulator streams through its own collector and a physical device records through `xctrace`, which has not completed a recording on this host.
 
