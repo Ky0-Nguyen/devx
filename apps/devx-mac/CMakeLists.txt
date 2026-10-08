@@ -44,6 +44,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/EmulatorView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/EmulatorScreenView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BrowserStackPanel.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IntelligenceView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Emulator.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+AIControl.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift

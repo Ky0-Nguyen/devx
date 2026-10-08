@@ -1,0 +1,11 @@
+{
+  "id": "4504000000000000",
+  "slug": "acme",
+  "name": "Acme Mobile",
+  "dateCreated": "2023-02-14T10:00:00.000000Z",
+  "isEarlyAdopter": false,
+  "require2FA": true,
+  "status": {"id": "active", "name": "active"},
+  "features": ["discover-basic", "performance-view"],
+  "access": ["org:read", "project:read", "event:read"]
+}

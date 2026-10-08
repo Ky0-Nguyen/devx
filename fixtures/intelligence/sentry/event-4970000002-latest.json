@@ -1,0 +1,41 @@
+{
+  "id": "0b9e7c5a3f1d4e2c8a6b4d2f0e8c6a4b",
+  "eventID": "0b9e7c5a3f1d4e2c8a6b4d2f0e8c6a4b",
+  "groupID": "4970000002",
+  "projectID": "4504000000000001",
+  "title": "HTTPError: 503 from /v2/cart",
+  "platform": "cocoa",
+  "dateCreated": "2026-10-06T12:00:00.000000Z",
+  "dist": null,
+  "release": null,
+  "tags": [
+    {"key": "environment", "value": "staging"},
+    {"key": "handled", "value": "yes"},
+    {"key": "level", "value": "error"}
+  ],
+  "contexts": {
+    "app": {"app_identifier": "com.acme.app", "app_version": "5.3.2", "app_build": "53011", "type": "app"}
+  },
+  "entries": [
+    {
+      "type": "exception",
+      "data": {
+        "values": [
+          {"type": "HTTPError", "value": "503 from /v2/cart", "module": null, "mechanism": {"type": "generic", "handled": true}, "stacktrace": null}
+        ]
+      }
+    },
+    {
+      "type": "threads",
+      "data": {
+        "values": [
+          {"id": 1, "crashed": false, "current": false, "name": "com.apple.main-thread", "stacktrace": {"frames": [{"function": "main", "inApp": true}]}},
+          {"id": 7, "crashed": true, "current": true, "name": "cart-refresh", "stacktrace": {"frames": [
+            {"filename": "CartService.swift", "function": "CartService.refresh()", "module": "AcmeApp", "lineNo": 88, "inApp": true},
+            {"filename": "HTTPClient.swift", "function": "HTTPClient.send(_:)", "module": "AcmeApp", "lineNo": 140, "inApp": true}
+          ]}}
+        ]
+      }
+    }
+  ]
+}

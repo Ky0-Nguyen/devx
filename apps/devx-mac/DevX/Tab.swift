@@ -7,7 +7,7 @@ import Foundation
 /// pure layers be unit-tested on their own.
 enum DevXTab: String, CaseIterable, Identifiable {
     case devices, apps, preflight, live, record, inspect, layout, emulator, sessions, issues,
-         threads, timeline, compare, detectors, settings, help
+         threads, timeline, compare, intelligence, detectors, settings, help
     var id: String { rawValue }
     /// Translated at the point of display. The `rawValue` is untouched --
     /// it is what `--tab=` accepts and what LaunchOptions parses, so it is an
@@ -30,6 +30,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .threads: return tr("Threads")
         case .timeline: return tr("Timeline")
         case .compare: return tr("Compare")
+        case .intelligence: return tr("Intelligence")
         case .detectors: return tr("Detectors")
         case .settings: return tr("Export")
         case .help: return tr("Help")
@@ -50,6 +51,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .threads: return "square.stack.3d.up"
         case .timeline: return "chart.bar.xaxis"
         case .compare: return "arrow.left.arrow.right"
+        case .intelligence: return "chart.line.uptrend.xyaxis"
         case .detectors: return "function"
         case .settings: return "square.and.arrow.up"
         case .help: return "questionmark.circle"

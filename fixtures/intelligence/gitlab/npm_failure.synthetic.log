@@ -1,0 +1,45 @@
+[0KRunning with gitlab-runner 17.4.0 (b92ee590)[0;m
+[0K  on docker-runner-3 xR7f2kQp, system ID: s_7a1c2e9d4b10[0;m
+section_start:1759601000:prepare_executor[0K[0K[36;1mPreparing the "docker" executor[0;m[0;m
+[0KUsing Docker executor with image node:20.17-alpine ...[0;m
+[0KPulling docker image node:20.17-alpine ...[0;m
+section_end:1759601011:prepare_executor[0K
+section_start:1759601011:get_sources[collapsed=true][0K[0K[36;1mGetting source from Git repository[0;m[0;m
+[32;1mFetching changes with git depth set to 20...[0;m
+Initialized empty Git repository in /builds/acme/mobile-app/.git/
+[32;1mCreated fresh repository.[0;m
+[32;1mChecking out c7e9a2b4 as detached HEAD (ref is main)...[0;m
+[32;1mSkipping Git submodules setup[0;m
+section_end:1759601017:get_sources[0K
+section_start:1759601017:step_script[0K[0K[36;1mExecuting "step_script" stage of the job script[0;m[0;m
+[32;1m$ npm ci[0;m
+npm WARN config production Use `--omit=dev` instead.
+npm ERR! code ERESOLVE
+npm ERR! ERESOLVE could not resolve
+npm ERR! 
+npm ERR! While resolving: @testing-library/react-native@12.4.3
+npm ERR! Found: react-native@0.74.5
+npm ERR! node_modules/react-native
+npm ERR!   react-native@"0.74.5" from the root project
+npm ERR! 
+npm ERR! Could not resolve dependency:
+npm ERR! peer react-test-renderer@">=16.8.0" from @testing-library/react-native@12.4.3
+npm ERR! 
+npm ERR! Fix the upstream dependency conflict, or retry
+npm ERR! this command with --force or --legacy-peer-deps
+npm ERR! to accept an incorrect (and potentially broken) dependency resolution.
+npm ERR! 
+npm ERR! For a full report see:
+npm ERR! /root/.npm/_logs/2026-10-05T09_14_02_118Z-eresolve-report.txt
+
+npm ERR! A complete log of this run can be found in: /root/.npm/_logs/2026-10-05T09_14_02_118Z-debug-0.log
+section_end:1759601040:step_script[0K
+section_start:1759601040:upload_artifacts_on_failure[0K[0K[36;1mUploading artifacts for failed job[0;m[0;m
+[32;1mUploading artifacts...[0;m
+app/build/reports/: found 412 matching artifact files and directories[0;m 
+Uploading artifacts as "archive" to coordinator... 201 Created[0;m  id[0;m=5011 responseStatus[0;m=201 Created token[0;m=glcbt-64
+section_end:1759601043:upload_artifacts_on_failure[0K
+section_start:1759601043:cleanup_file_variables[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1759601044:cleanup_file_variables[0K
+[31;1mERROR: Job failed: exit code 1
+[0;m

@@ -1,0 +1,49 @@
+[0KRunning with gitlab-runner 17.4.0 (b92ee590)[0;m
+[0K  on docker-runner-3 xR7f2kQp, system ID: s_7a1c2e9d4b10[0;m
+section_start:1759600000:prepare_executor[0K[0K[36;1mPreparing the "docker" executor[0;m[0;m
+[0KUsing Docker executor with image registry.example.com/android-ci:35 ...[0;m
+[0KPulling docker image registry.example.com/android-ci:35 ...[0;m
+section_end:1759600011:prepare_executor[0K
+section_start:1759600011:get_sources[collapsed=true][0K[0K[36;1mGetting source from Git repository[0;m[0;m
+[32;1mFetching changes with git depth set to 20...[0;m
+Initialized empty Git repository in /builds/acme/mobile-app/.git/
+[32;1mCreated fresh repository.[0;m
+[32;1mChecking out c7e9a2b4 as detached HEAD (ref is main)...[0;m
+[32;1mSkipping Git submodules setup[0;m
+section_end:1759600017:get_sources[0K
+section_start:1759600017:step_script[0K[0K[36;1mExecuting "step_script" stage of the job script[0;m[0;m
+[32;1m$ ./gradlew assembleDebug --no-daemon[0;m
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:checkDebugAarMetadata'.
+> Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
+   > Could not find com.acme.analytics:tracker:2.3.1.
+     Searched in the following locations:
+       - https://dl.google.com/dl/android/maven2/com/acme/analytics/tracker/2.3.1/tracker-2.3.1.pom
+       - https://repo.maven.apache.org/maven2/com/acme/analytics/tracker/2.3.1/tracker-2.3.1.pom
+     Required by:
+         project :app
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 12s
+9 actionable tasks: 9 executed
+section_end:1759600090:step_script[0K
+section_start:1759600090:upload_artifacts_on_failure[0K[0K[36;1mUploading artifacts for failed job[0;m[0;m
+[32;1mUploading artifacts...[0;m
+app/build/reports/: found 412 matching artifact files and directories[0;m 
+Uploading artifacts as "archive" to coordinator... 201 Created[0;m  id[0;m=5011 responseStatus[0;m=201 Created token[0;m=glcbt-64
+section_end:1759600093:upload_artifacts_on_failure[0K
+section_start:1759600093:cleanup_file_variables[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1759600094:cleanup_file_variables[0K
+[31;1mERROR: Job failed: exit code 1
+[0;m

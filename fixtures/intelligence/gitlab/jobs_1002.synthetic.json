@@ -1,0 +1,174 @@
+[
+  {
+    "id": 5021,
+    "status": "success",
+    "stage": "test",
+    "name": "unitTest",
+    "ref": "main",
+    "tag": false,
+    "coverage": null,
+    "allow_failure": false,
+    "created_at": "2026-10-06T10:05:41.400Z",
+    "started_at": "2026-10-06T10:12:00.000Z",
+    "finished_at": "2026-10-06T10:20:02.900Z",
+    "erased_at": null,
+    "duration": 482.9,
+    "queued_duration": 1.204,
+    "user": {
+      "id": 4182,
+      "username": "dev.example",
+      "name": "Example Developer",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+      "web_url": "https://gitlab.example.com/dev.example"
+    },
+    "commit": {
+      "id": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+      "short_id": "c7e9a2b4",
+      "created_at": "2026-10-04T15:00:00.000+00:00",
+      "parent_ids": [
+        "0000000000000000000000000000000000000001"
+      ],
+      "title": "Synthetic commit",
+      "message": "Synthetic commit\n",
+      "author_name": "Example Developer",
+      "author_email": "dev@example.com",
+      "authored_date": "2026-10-04T15:00:00.000+00:00",
+      "committer_name": "Example Developer",
+      "committer_email": "dev@example.com",
+      "committed_date": "2026-10-04T15:00:00.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/commit/c7e9a2b4d6f8019283746556473829101a2b3c4d"
+    },
+    "pipeline": {
+      "id": 1002,
+      "iid": 318,
+      "project_id": 4242,
+      "sha": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+      "ref": "main",
+      "status": "success",
+      "source": "push",
+      "created_at": "2026-10-06T10:05:41.220Z",
+      "updated_at": "2026-10-06T10:20:03.118Z",
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/pipelines/1002"
+    },
+    "web_url": "https://gitlab.example.com/acme/mobile-app/-/jobs/5021",
+    "project": {
+      "ci_job_token_scope_enabled": false
+    },
+    "artifacts": [
+      {
+        "file_type": "trace",
+        "size": 18234,
+        "filename": "job.log",
+        "file_format": null
+      }
+    ],
+    "runner": {
+      "id": 31,
+      "description": "docker-runner-3",
+      "ip_address": null,
+      "active": true,
+      "paused": false,
+      "is_shared": false,
+      "runner_type": "group_type",
+      "name": "gitlab-runner",
+      "online": true,
+      "status": "online"
+    },
+    "runner_manager": null,
+    "artifacts_expire_at": null,
+    "archived": false,
+    "tag_list": [
+      "docker"
+    ]
+  },
+  {
+    "id": 5020,
+    "status": "success",
+    "stage": "build",
+    "name": "assembleDebug",
+    "ref": "main",
+    "tag": false,
+    "coverage": null,
+    "allow_failure": false,
+    "created_at": "2026-10-06T10:05:41.380Z",
+    "started_at": "2026-10-06T10:05:44.002Z",
+    "finished_at": "2026-10-06T10:11:59.000Z",
+    "erased_at": null,
+    "duration": 375.0,
+    "queued_duration": 1.204,
+    "user": {
+      "id": 4182,
+      "username": "dev.example",
+      "name": "Example Developer",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+      "web_url": "https://gitlab.example.com/dev.example"
+    },
+    "commit": {
+      "id": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+      "short_id": "c7e9a2b4",
+      "created_at": "2026-10-04T15:00:00.000+00:00",
+      "parent_ids": [
+        "0000000000000000000000000000000000000001"
+      ],
+      "title": "Synthetic commit",
+      "message": "Synthetic commit\n",
+      "author_name": "Example Developer",
+      "author_email": "dev@example.com",
+      "authored_date": "2026-10-04T15:00:00.000+00:00",
+      "committer_name": "Example Developer",
+      "committer_email": "dev@example.com",
+      "committed_date": "2026-10-04T15:00:00.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/commit/c7e9a2b4d6f8019283746556473829101a2b3c4d"
+    },
+    "pipeline": {
+      "id": 1002,
+      "iid": 318,
+      "project_id": 4242,
+      "sha": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+      "ref": "main",
+      "status": "success",
+      "source": "push",
+      "created_at": "2026-10-06T10:05:41.220Z",
+      "updated_at": "2026-10-06T10:20:03.118Z",
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/pipelines/1002"
+    },
+    "web_url": "https://gitlab.example.com/acme/mobile-app/-/jobs/5020",
+    "project": {
+      "ci_job_token_scope_enabled": false
+    },
+    "artifacts": [
+      {
+        "file_type": "trace",
+        "size": 18234,
+        "filename": "job.log",
+        "file_format": null
+      }
+    ],
+    "runner": {
+      "id": 31,
+      "description": "docker-runner-3",
+      "ip_address": null,
+      "active": true,
+      "paused": false,
+      "is_shared": false,
+      "runner_type": "group_type",
+      "name": "gitlab-runner",
+      "online": true,
+      "status": "online"
+    },
+    "runner_manager": null,
+    "artifacts_expire_at": null,
+    "archived": false,
+    "tag_list": [
+      "docker"
+    ]
+  }
+]

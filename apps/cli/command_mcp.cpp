@@ -32,6 +32,7 @@
 #include "core/observe/observation_store.hpp"
 #include "adapters/android/device_input.hpp"
 #include "adapters/browserstack/automate.hpp"
+#include "adapters/intelligence/service.hpp"
 #include "adapters/browserstack/browserstack.hpp"
 #include "adapters/browserstack/profiling.hpp"
 #include "adapters/android/emulator/avd.hpp"
@@ -774,6 +775,184 @@ void register_tools(mcp::Server& server, const std::string& sessions_dir,
             .dump(2);
       });
 
+  // ---- Intelligence: production, CI/CD and other external evidence ----------
+  //
+  // Everything here reads the local store, so it answers offline and needs
+  // no provider credential. Only connector_sync reaches a provider, and only
+  // with --allow-network.
+
+  auto ws_of = [dir](const json::Value& a, std::string* err) {
+    const std::string w = arg_str(a, "workspace");
+    return w.empty() ? intelligence::default_workspace(dir, err) : w;
+  };
+  const char* kWs = "Workspace id; may be omitted when there is only one.";
+
+  add(server, "intelligence_projects",
+      "Intelligence workspaces on this Mac: each binds a repository and app ids to "
+      "connectors (Sentry, GitLab CI, Firebase exports, JSONL imports). With each, "
+      "when its connectors last synced successfully, so you can tell how fresh the "
+      "local evidence is before reasoning over it.",
+      no_args(), mcp::Effect::kReadOnly,
+      [dir](const json::Value&) { return intelligence::workspaces(dir).dump(2); });
+
+  add(server, "connector_status",
+      "The connectors of a workspace: provider, settings (never a credential: only "
+      "whether one is present), health (up_to_date, partial, needs_auth, error, "
+      "never_synced, paused), last success and last attempt, cursor, and local "
+      "storage use. A partial sync means the local cache is not complete.",
+      schema({{"workspace", kWs}}), mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        return intelligence::integrations(dir, ws).dump(2);
+      });
+
+  add(server, "signals_search",
+      "Search normalized local signals across providers: crashes, issues, metrics, "
+      "pipelines, CI jobs, deploys, tests. Filters: provider, kind, severity, "
+      "environment, release (key), version, commit (prefix), since/until (ISO 8601), "
+      "text. Returns compact index entries, newest first, and freshness.",
+      schema({{"workspace", kWs}, {"provider", "sentry, gitlab, firebase, jsonl..."},
+              {"kind", "crash, issue, metric, pipeline, ci_job, deploy, test, release, event"},
+              {"severity", "fatal, error, warning, info"}, {"environment", "e.g. production"},
+              {"release", "A release key from release_overview, e.g. com.acme.app@5.4.0+54019"},
+              {"version", "Release version"}, {"commit", "Commit SHA or prefix"},
+              {"since", "ISO 8601"}, {"until", "ISO 8601"}, {"text", "Words in the title or id"},
+              {"limit", "int:At most this many (default 50)."}}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        json::Value q = json::Value::object();
+        for (const char* k : {"provider", "kind", "severity", "environment", "version", "commit",
+                              "since", "until", "text"}) {
+          const std::string v = arg_str(a, k);
+          if (!v.empty()) q.set(k, json::Value::string(v));
+        }
+        const std::string rel = arg_str(a, "release");
+        if (!rel.empty()) q.set("release_key", json::Value::string(rel));
+        q.set("limit", json::Value::integer(arg_int(a, "limit", 50)));
+        return intelligence::signals_query(dir, ws, q).dump(2);
+      });
+
+  add(server, "signal_read",
+      "One signal in full: normalized fields first. With raw=true, also a bounded, "
+      "redacted excerpt of the provider's raw evidence (for a failed CI job, the "
+      "window around the root error the connector located, not the head of the "
+      "log). Raw evidence can hold personal data; ask for it only when needed.",
+      schema({{"workspace", kWs}, {"signal_id", "From signals_search."},
+              {"raw", "bool:Include a redacted raw excerpt (default false)."}},
+             {"signal_id"}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        return intelligence::signal_read(dir, ws, arg_str(a, "signal_id"), arg_bool(a, "raw", false))
+            .dump(2);
+      });
+
+  add(server, "release_overview",
+      "Without a release: every release the local evidence names, newest first, with "
+      "crash, issue, CI-failure and session counts. With one: its identity (version, "
+      "build, commit) and any conflicts between sources, a build -> test -> deploy -> "
+      "first production signal timeline, evidence by provider, linked DevX and "
+      "BrowserStack sessions, exact links and candidate links kept apart, and the "
+      "evidence that is missing. Candidate links are timing or partial metadata: "
+      "never call them causes.",
+      schema({{"workspace", kWs}, {"release", "A release key; omit to list releases."}}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        const std::string rel = arg_str(a, "release");
+        return (rel.empty() ? intelligence::releases(dir, ws) : intelligence::release(dir, ws, rel))
+            .dump(2);
+      });
+
+  add(server, "release_compare",
+      "Two releases side by side: signals by kind, crash and issue counts, event and "
+      "affected-user totals (only where providers reported them), CI and test "
+      "failures, issues only in the candidate, and metric percentile deltas for the "
+      "same metric in both. Computed by DevX; a difference in evidence is not a "
+      "measured cause.",
+      schema({{"workspace", kWs}, {"base", "Baseline release key."},
+              {"candidate", "Release key to compare."}},
+             {"base", "candidate"}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        return intelligence::compare(dir, ws, arg_str(a, "base"), arg_str(a, "candidate")).dump(2);
+      });
+
+  add(server, "signal_related",
+      "The correlation edges of one signal, exact and candidate apart, each with the "
+      "one-sentence evidence it rests on, and the other evidence of its release.",
+      schema({{"workspace", kWs}, {"signal_id", "From signals_search."}}, {"signal_id"}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        return intelligence::related(dir, ws, arg_str(a, "signal_id")).dump(2);
+      });
+
+  add(server, "code_context_for_signal",
+      "Deterministic code context from the workspace's local git repository: the "
+      "release's commit (or HEAD, said so, when that commit is not here), the "
+      "signal's stack frames resolved to tracked files with the lines around each "
+      "and blame, and the release's diff limited to those files. Bounded; paths "
+      "outside the repository are never read.",
+      schema({{"workspace", kWs}, {"signal_id", "From signals_search."}}, {"signal_id"}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        return intelligence::code_context(dir, ws, arg_str(a, "signal_id")).dump(2);
+      });
+
+  add(server, "intelligence_evidence_pack",
+      "A compact, cited evidence pack for a release or a signal, built for you to "
+      "reason over: freshness, small normalized facts, exact links, candidate links, "
+      "bounded redacted raw excerpts, code context, missing evidence, and the local "
+      "evidence ids every fact came from (cite them). Start here for 'why did this "
+      "release regress' questions, then follow up with the narrower tools.",
+      schema({{"workspace", kWs}, {"release", "A release key."},
+              {"signal_id", "Or one signal (its release is added)."},
+              {"question", "What you are trying to answer, passed through."}}),
+      mcp::Effect::kReadOnly,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        json::Value scope = json::Value::object();
+        for (const char* k : {"release", "signal_id", "question"}) {
+          const std::string v = arg_str(a, k);
+          if (!v.empty()) scope.set(k, json::Value::string(v));
+        }
+        return intelligence::evidence_pack(dir, ws, scope).dump(2);
+      });
+
+  add(server, "connector_sync",
+      "Refresh a workspace's connectors from their providers (Sentry, GitLab...) into "
+      "the local store, incrementally, and report what was written and whether the "
+      "sync was complete or partial. Contacts external services with credentials "
+      "DevX holds (never shown to you), so it needs --allow-network.",
+      schema({{"workspace", kWs}, {"connector_id", "One connector; omit for all that are not paused."}}),
+      mcp::Effect::kNetwork,
+      [dir, ws_of](const json::Value& a) {
+        std::string err;
+        const std::string ws = ws_of(a, &err);
+        if (ws.empty()) return json_error(err);
+        return intelligence::sync(dir, ws, arg_str(a, "connector_id"), CancellationToken::none()).dump(2);
+      });
+
   add(server, "list_observations",
       "Saved results that are not captures: layout snapshots (how a screen is "
       "built) and inspect observations (network, console, Redux). Newest "
@@ -838,13 +1017,15 @@ void register_tools(mcp::Server& server, const std::string& sessions_dir,
 
 ExitCode cmd_mcp(const Invocation& inv) {
   const bool allow_actions = inv.has_flag("allow-actions");
-  mcp::Server server(allow_actions);
+  const bool allow_network = inv.has_flag("allow-network");
+  mcp::Server server(allow_actions, allow_network);
   register_tools(server, inv.global.sessions_dir, inv.global.timeout_ms);
 
   // stderr, never stdout: a stray byte on stdout is a parse error at the host.
   std::cerr << "mpi mcp: ready on stdio, " << server.tools().size()
             << " tool(s), "
             << (allow_actions ? "actions allowed" : "read-only")
+            << (allow_network ? ", network refresh allowed" : "")
             << ". Protocol " << mcp::kProtocolVersion << ".\n";
 
   std::string line;

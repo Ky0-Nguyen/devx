@@ -49,7 +49,8 @@ Three pieces:
 | **Inspect** (network, console, Redux through the app's own inspector) | ✅ verified against a real app on the emulator: 52 slices, headers and bodies, action diffs | ✅ simulator, over the same Metro socket; screenshot via `simctl`; no physical-device screenshot route exists |
 | **Layout** (views per screen, depth, hidden views, navigation stacks) | ✅ verified on the emulator through `dumpsys activity top`, nothing runs in the app | ✅ simulator, through the layout probe injected at relaunch · ❌ physical device: code signing refuses an injected library |
 | **Emulator** (install, create, run and show emulators; no Android Studio) | ✅ in DevX's Emulator tab: Google's emulator, screen drawn in DevX over its gRPC API, Extended Controls, standard screen sizes | — |
-| **BrowserStack** (real devices in the cloud, BrowserStack Local) | ⚙️ built against BrowserStack's API, not exercised against a live account | ⚙️ same |
+| **BrowserStack** (real devices in the cloud, App Profiling, BrowserStack Local) | ✅ exercised on a live account: a Pixel 9 session with settings, input and App Profiling imported | ⚙️ built the same way, not exercised on a live account |
+| **Intelligence** (Sentry, GitLab CI, Firebase exports, JSONL: local, correlated with releases, code and sessions) | ✅ GitLab CI exercised live (public project); Sentry and Firebase against fixtures in their documented shapes | ✅ same |
 | **AI tools** (MCP: see devices, operate them, show things in DevX) | ✅ screenshots as images, tap/swipe/type/keys through adb, DevX window navigation | ✅ screenshots, layout, window navigation · ❌ input on a simulator |
 
 ✅ exercised against real tooling · ⚙️ implemented and unit-tested, awaiting hardware · ❌ not implemented
@@ -228,6 +229,8 @@ mpi emulator start Pixel_9                           # boots it; DevX's Emulator
 
 `emulator` runs Android emulators with no Android Studio: Google's own emulator and images, fetched from Google's catalog and verified, with every license shown to you and accepted only by you. The screen is drawn inside DevX, with the emulator's own Extended Controls a click away: [docs/android-emulator.md](docs/android-emulator.md). Real devices on BrowserStack are in the same tab: start your app on one with BrowserStack's settings (network profile, GPS, timezone, locale, biometrics, camera injection), operate it from DevX, and bring its App Profiling (CPU, memory, battery, I/O, fps) back as a DevX session. The BrowserStack Local tunnel lets those devices load a debug build from your Metro: [docs/browserstack.md](docs/browserstack.md).
 
+`intelligence` brings production and CI/CD evidence next to your captures: Sentry issues and releases, GitLab pipelines, jobs (with the failing line found in the log), tests and deployments, Firebase Crashlytics and Performance exports, or any tool's JSONL. Everything is stored locally first and grouped by release. An exact commit or version + build match is labelled exact; timing alone is only a candidate. Code context comes from your git repository, and AI tools get a small, cited, redacted evidence pack, never your tokens. The window has it under DevX > Intelligence: [docs/intelligence.md](docs/intelligence.md).
+
 Layout snapshots and inspect observations are kept under `~/.mpi/sessions/observations/` (owner-only; `--no-save` skips it), next to the capture sessions, so an AI tool connected through `mpi mcp` can read and analyse the whole result rather than a screenshot of it: [docs/mcp-server.md](docs/mcp-server.md#what-is-kept-for-later).
 
 `inspect` reads the inspector a React Native debug build already runs and connects to Metro -- nothing is added to the app. It is not a performance measurement: a debugger is attached, and the report says so. `--detail` is off by default because that is where the bearer tokens are; values are kept verbatim rather than redacted, so the decision is whether to capture them at all. `--redux-watch` is read-only, through `store.subscribe`, and names no action because Redux passes subscribers none; `--redux-actions` also wraps `store.dispatch`, which modifies the running app for the window and is put back afterwards -- a dispatch reference captured beforehand, as a thunk's is, still bypasses it, and such a change is reported as unnamed rather than misattributed. `--screenshot` requires `--device`; the id is translated to the name Metro publishes. One Metro serves every attached device, so `--target-device` picks which.
@@ -297,9 +300,10 @@ fields quietly empty.
 ## Documentation
 
 - [Known limitations](docs/known-limitations.md) — what is not true of this build
-- [Reading a capture from an AI tool](docs/mcp-server.md) — `mpi mcp`, an MCP server over stdio for Cursor, Claude and Codex: read captures, see and operate devices, show things in the DevX window; read-only unless started with `--allow-actions`
+- [Reading a capture from an AI tool](docs/mcp-server.md) — `mpi mcp`, an MCP server over stdio for Cursor, Claude and Codex: read captures and Intelligence evidence, see and operate devices, show things in the DevX window; read-only unless started with `--allow-actions`, and no provider refresh without `--allow-network`
 - [Android emulators without Android Studio](docs/android-emulator.md) — install, create, run and show emulators; screen sizes; Extended Controls
 - [BrowserStack](docs/browserstack.md) — real-device sessions DevX drives, App Profiling import, App Live, BrowserStack Local
+- [Intelligence](docs/intelligence.md) — Sentry, GitLab CI, Firebase and JSONL evidence, stored locally, correlated with releases, code and sessions, and packed for AI tools
 - [Layout](docs/layout.md) — views per screen, depth and navigation stacks, and how the iOS layout probe gets in without touching the app
 - [Inspecting without installing](docs/inspect-without-installing.md) — how `mpi inspect` reads a debug build's inspector, and what it cannot reach
 - [iOS: what works, what does not, and what was measured](docs/ios-live-capture-findings.md)

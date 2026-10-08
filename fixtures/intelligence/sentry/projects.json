@@ -1,0 +1,26 @@
+[
+  {
+    "id": "4504000000000001",
+    "slug": "mobile-app",
+    "name": "mobile-app",
+    "platform": "apple-ios",
+    "dateCreated": "2023-02-14T10:05:00.000000Z",
+    "isBookmarked": false,
+    "isMember": true,
+    "hasAccess": true,
+    "status": "active",
+    "organization": {"id": "4504000000000000", "slug": "acme", "name": "Acme Mobile"}
+  },
+  {
+    "id": "4504000000000002",
+    "slug": "web-checkout",
+    "name": "web-checkout",
+    "platform": "javascript-react",
+    "dateCreated": "2023-05-01T09:00:00.000000Z",
+    "isBookmarked": false,
+    "isMember": true,
+    "hasAccess": true,
+    "status": "active",
+    "organization": {"id": "4504000000000000", "slug": "acme", "name": "Acme Mobile"}
+  }
+]

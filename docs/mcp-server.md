@@ -71,10 +71,11 @@ your captures are not in the default location.
 
 ## Reading is free; acting is not
 
-Started as above, the server **refuses to change anything**. Twenty-one tools
-read; eleven do not, and they are visible in the catalogue with their
-descriptions saying they are unavailable and naming the flag that enables
-them.
+Started as above, the server **refuses to change anything** and reaches no
+external provider. Thirty-two of its 47 tools read; fourteen act and one
+refreshes evidence from a provider. All fifteen stay visible in the catalogue,
+and their descriptions say they are unavailable and name the flag that
+enables them.
 
 ```json
 { "args": ["mcp", "--allow-actions"] }
@@ -95,6 +96,19 @@ spending BrowserStack minutes).
 The split is not decoration. A model that decides on its own to "just try
 recording" is a different thing from a person asking for it, and a recording
 cannot be un-started. Refused calls say plainly that nothing was done.
+
+### Refreshing Intelligence evidence: `--allow-network`
+
+```json
+{ "args": ["mcp", "--allow-network"] }
+```
+
+The Intelligence tools read production and CI/CD evidence from the local
+store, so they answer offline with no flag. `connector_sync` refreshes that
+store from Sentry or GitLab with credentials DevX holds, which the model never
+sees. It reaches an external service but operates nothing, so it has its own
+flag, independent of `--allow-actions` ([ADR-0011](adr/0011-three-tier-mcp-permissions.md)).
+See [Intelligence](intelligence.md#ai-tools).
 
 ## What the tools return
 
@@ -132,6 +146,16 @@ renders, including every absent value that is absent rather than zero.
 | `browserstack_sessions` | App Automate builds and sessions; kept as an observation |
 | `browserstack_import_profiling` | BrowserStack's App Profiling of one session, written as a DevX session |
 | `browserstack_session_screenshot` | the screen of a running BrowserStack session, as an image |
+| `intelligence_projects` | Intelligence workspaces and how fresh each connector's evidence is |
+| `connector_status` | a workspace's connectors: health, cursor, storage; whether a credential exists, never its value |
+| `signals_search` | production and CI/CD signals, filtered by provider, kind, severity, environment, release, commit, time, text |
+| `signal_read` | one signal; `raw=true` adds a bounded, redacted excerpt of the provider's evidence |
+| `release_overview` | releases, or one release: identity, timeline, evidence, sessions, exact and candidate links, what is missing |
+| `release_compare` | two releases side by side: crashes, CI failures, metric deltas |
+| `signal_related` | one signal's links, each with the evidence it rests on |
+| `code_context_for_signal` | the release's commit, stack frames resolved to files, source, blame, diff |
+| `intelligence_evidence_pack` | a bounded, cited, redacted evidence pack for a release or a signal — start here |
+| `connector_sync` | **network** — refreshes connectors from their providers; needs `--allow-network` |
 | `record_capture` | **acts** — records and analyses a new capture |
 | `boot_device` | **acts** — starts a simulator or emulator |
 | `observe_app` | **acts** — attaches a debugger for a window; the observation is saved |

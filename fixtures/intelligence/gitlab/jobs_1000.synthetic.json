@@ -1,0 +1,88 @@
+[
+  {
+    "id": 5000,
+    "status": "canceled",
+    "stage": "build",
+    "name": "assembleRelease",
+    "ref": "v2.8.0",
+    "tag": true,
+    "coverage": null,
+    "allow_failure": false,
+    "created_at": "2026-10-04T16:40:00.200Z",
+    "started_at": "2026-10-04T16:40:03.000Z",
+    "finished_at": "2026-10-04T16:44:12.100Z",
+    "erased_at": null,
+    "duration": 249.1,
+    "queued_duration": 1.204,
+    "user": {
+      "id": 4182,
+      "username": "dev.example",
+      "name": "Example Developer",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+      "web_url": "https://gitlab.example.com/dev.example"
+    },
+    "commit": {
+      "id": "4b1d6c0e2f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c",
+      "short_id": "4b1d6c0e",
+      "created_at": "2026-10-04T15:00:00.000+00:00",
+      "parent_ids": [
+        "0000000000000000000000000000000000000001"
+      ],
+      "title": "Synthetic commit",
+      "message": "Synthetic commit\n",
+      "author_name": "Example Developer",
+      "author_email": "dev@example.com",
+      "authored_date": "2026-10-04T15:00:00.000+00:00",
+      "committer_name": "Example Developer",
+      "committer_email": "dev@example.com",
+      "committed_date": "2026-10-04T15:00:00.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/commit/4b1d6c0e2f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c"
+    },
+    "pipeline": {
+      "id": 1000,
+      "iid": 316,
+      "project_id": 4242,
+      "sha": "4b1d6c0e2f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c",
+      "ref": "v2.8.0",
+      "status": "canceled",
+      "source": "push",
+      "created_at": "2026-10-04T16:40:00.000Z",
+      "updated_at": "2026-10-04T16:44:12.300Z",
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/pipelines/1000"
+    },
+    "web_url": "https://gitlab.example.com/acme/mobile-app/-/jobs/5000",
+    "project": {
+      "ci_job_token_scope_enabled": false
+    },
+    "artifacts": [
+      {
+        "file_type": "trace",
+        "size": 18234,
+        "filename": "job.log",
+        "file_format": null
+      }
+    ],
+    "runner": {
+      "id": 31,
+      "description": "docker-runner-3",
+      "ip_address": null,
+      "active": true,
+      "paused": false,
+      "is_shared": false,
+      "runner_type": "group_type",
+      "name": "gitlab-runner",
+      "online": true,
+      "status": "online"
+    },
+    "runner_manager": null,
+    "artifacts_expire_at": null,
+    "archived": false,
+    "tag_list": [
+      "docker"
+    ]
+  }
+]

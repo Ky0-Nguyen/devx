@@ -332,7 +332,7 @@ SdkCatalog fetch_catalog(std::chrono::milliseconds timeout, const CancellationTo
   };
   for (const auto& [rel, base] : manifests) {
     std::string body, err;
-    if (!run_ok({"/usr/bin/curl", "-fsSL", "--max-time",
+    if (!run_ok({"/usr/bin/curl", "-q", "-fsSL", "--max-time",
                  std::to_string(std::max<long long>(5, timeout.count() / 1000)),
                  std::string(kRepoBase) + rel},
                 timeout, cancel, &body, &err)) {
@@ -471,7 +471,7 @@ InstallResult install_package(const SdkPackage& pkg, const std::string& root,
   std::string dl_err;
   bool dl_ok = false;
   std::thread dl([&] {
-    dl_ok = run_ok({"/usr/bin/curl", "-fsSL", "--retry", "3", "-C", "-", "-o", part, pkg.archive.url},
+    dl_ok = run_ok({"/usr/bin/curl", "-q", "-fsSL", "--retry", "3", "-C", "-", "-o", part, pkg.archive.url},
                    std::chrono::hours(6), cancel, nullptr, &dl_err);
     finished = true;
   });

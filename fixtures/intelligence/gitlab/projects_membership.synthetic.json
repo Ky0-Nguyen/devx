@@ -1,0 +1,44 @@
+[
+  {
+    "id": 4242,
+    "description": "Acme shopping app (Android + iOS)",
+    "name": "mobile-app",
+    "name_with_namespace": "Acme / mobile-app",
+    "path": "mobile-app",
+    "path_with_namespace": "acme/mobile-app",
+    "created_at": "2024-03-11T08:20:14.512Z",
+    "default_branch": "main",
+    "web_url": "https://gitlab.example.com/acme/mobile-app",
+    "avatar_url": null,
+    "star_count": 3,
+    "last_activity_at": "2026-10-06T11:02:10.481Z",
+    "namespace": {
+      "id": 77,
+      "name": "Acme",
+      "path": "acme",
+      "kind": "group",
+      "full_path": "acme"
+    }
+  },
+  {
+    "id": 4310,
+    "description": "",
+    "name": "web",
+    "name_with_namespace": "Acme / web",
+    "path": "web",
+    "path_with_namespace": "acme/web",
+    "created_at": "2024-05-02T12:00:00.000Z",
+    "default_branch": "main",
+    "web_url": "https://gitlab.example.com/acme/web",
+    "avatar_url": null,
+    "star_count": 0,
+    "last_activity_at": "2026-10-01T09:00:00.000Z",
+    "namespace": {
+      "id": 77,
+      "name": "Acme",
+      "path": "acme",
+      "kind": "group",
+      "full_path": "acme"
+    }
+  }
+]

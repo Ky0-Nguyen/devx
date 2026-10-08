@@ -59,6 +59,12 @@ enum class Effect {
   /// actions enabled. (A read tool may keep what it read as an observation:
   /// that file is the tool's own record, not a change to anything else.)
   kMutating,
+  /// Reaches an external provider on the user's behalf and refreshes the
+  /// local cache with what it returns (an Intelligence connector sync).
+  /// Refused unless the server was started with network enabled
+  /// (--allow-network), which is separate from --allow-actions: refreshing
+  /// evidence is not operating a device (ADR-0011).
+  kNetwork,
 };
 
 /// One tool the server offers.
@@ -100,7 +106,8 @@ struct ToolResult {
 /// handing it JSON, which is why the transport is a dozen lines elsewhere.
 class Server {
  public:
-  explicit Server(bool allow_actions) : allow_actions_(allow_actions) {}
+  explicit Server(bool allow_actions, bool allow_network = false)
+      : allow_actions_(allow_actions), allow_network_(allow_network) {}
 
   void add_tool(Tool tool);
 
@@ -124,6 +131,7 @@ class Server {
   json::Value call_tool(const json::Value& params, bool* is_error) const;
 
   bool allow_actions_;
+  bool allow_network_;
   bool initialized_ = false;
   std::vector<Tool> tools_;
 };

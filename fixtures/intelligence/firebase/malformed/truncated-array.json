@@ -1,0 +1,5 @@
+[
+  {"issue_id": "6a1f0c2e9b8d4f7a8c3e5d1b2a4f6e90", "event_id": "e1000000000000000000000000000001", "error_type": "FATAL",
+   "application": {"display_version": "2.4.0", "build_version": "2401"},
+   "event_timestamp": "2026-10-06 00:00:00 UTC", "bundle_identifier": "com.example.shop"},
+  {"issue_id": "6a1f0c2e9b8d4f7a8c3e5d1b2a4f6e90", "event_id": "e10000
