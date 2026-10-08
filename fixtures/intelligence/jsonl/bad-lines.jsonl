@@ -1,0 +1,5 @@
+{"kind":"issue","external_id":"ticket-202","occurred_at":"2026-10-07T00:00:00Z","title":"Readable line among broken ones"}
+this line is not JSON
+{"kind":"Not A Kind","external_id":"x-1"}
+{"kind":"issue"}
+{"kind":"issue","external_id":"ticket-203","occurred_at":"last tuesday"}

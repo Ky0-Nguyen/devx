@@ -79,12 +79,19 @@ COMMANDS
                                 import <session> [--build] (App Profiling
                                 as a DevX session).
                                 See docs/browserstack.md.
+  intelligence <command>         Production and CI/CD evidence, kept locally
+                                and correlated with releases, code and
+                                sessions: workspaces, connect, sync, signals,
+                                releases, release, compare, pack, code.
+                                See docs/intelligence.md.
   sdk-bridge                    Run the loopback host the optional in-app SDK
                                 reports to.
   mcp                           Serve captures to an AI tool over stdio, as a
                                 Model Context Protocol server (Cursor, Claude,
                                 Codex). Reads only, unless started with
-                                --allow-actions. See docs/mcp-server.md.
+                                --allow-actions; --allow-network lets it
+                                refresh Intelligence connectors.
+                                See docs/mcp-server.md.
 
 GLOBAL OPTIONS
   --device <id>                 Device id (adb serial, or CoreDevice/sim UDID).
@@ -257,7 +264,27 @@ bool needs_value(const std::string& flag) {
       "--timezone",
       "--language",
       "--locale",
-      "--orientation"};
+      "--orientation",
+      "--workspace",
+      "--repo",
+      "--apps",
+      "--env",
+      "--retention-days",
+      "--setting",
+      "--credential-ref",
+      "--provider",
+      "--kind",
+      "--severity",
+      "--environment",
+      "--version",
+      "--commit",
+      "--since",
+      "--until",
+      "--text",
+      "--limit",
+      "--release",
+      "--signal",
+      "--question"};
   for (const char* f : kWithValue) {
     if (flag == f) return true;
   }
@@ -285,12 +312,14 @@ bool is_boolean_flag(const std::string& flag) {
       "--targets",      "--redux",          "--redux-values",
       "--redux-watch",  "--redux-actions",
       "--allow-actions",
+      "--allow-network",
       "--screenshot",   "--detail",
       "--relaunch",     "--tree",         "--no-save",
       "--cold",         "--wipe",         "--accept",
       "--override",     "--charging",
       "--biometric",    "--camera-injection", "--profiling",
       "--local",        "--import-profiling",
+      "--raw", "--apply", "--unpin", "--unlink", "--delete-local-data",
       "--synthetic",    "--help"};
   for (const char* f : kBoolean) {
     if (flag == f) return true;
@@ -582,6 +611,8 @@ int main(int argc, char** argv) {
     code = cmd_emulator(parsed.inv);
   } else if (cmd == "browserstack") {
     code = cmd_browserstack(parsed.inv);
+  } else if (cmd == "intelligence") {
+    code = cmd_intelligence(parsed.inv);
   } else if (cmd == "mcp") {
     return to_int(cmd_mcp(parsed.inv));
   } else if (cmd == "sdk-bridge") {

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "4970000003",
+    "shortId": "MOBILE-APP-1Z",
+    "title": "Slow frame rendering on product list",
+    "culprit": "ProductListView.body",
+    "permalink": "https://sentry.acme.test/organizations/acme/issues/4970000003/",
+    "logger": null,
+    "level": "warning",
+    "status": "unresolved",
+    "statusDetails": {},
+    "substatus": "ongoing",
+    "isPublic": false,
+    "platform": "cocoa",
+    "project": {"id": "4504000000000001", "name": "mobile-app", "slug": "mobile-app", "platform": "apple-ios"},
+    "type": "default",
+    "metadata": {"title": "Slow frame rendering on product list"},
+    "numComments": 0,
+    "assignedTo": null,
+    "isBookmarked": false,
+    "isSubscribed": false,
+    "hasSeen": false,
+    "annotations": [],
+    "issueType": "error",
+    "issueCategory": "error",
+    "isUnhandled": false,
+    "count": "9",
+    "userCount": 7,
+    "firstSeen": "2026-09-30T18:20:00.000000Z",
+    "lastSeen": "2026-10-05T07:45:30.000000Z",
+    "stats": {"14d": [[1759190400, 1], [1759276800, 0]]}
+  }
+]

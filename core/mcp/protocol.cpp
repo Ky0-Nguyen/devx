@@ -83,7 +83,7 @@ json::Value Server::initialize_result() const {
   out.set("serverInfo", std::move(info));
   // Said once, where a host will show it: the difference between this server
   // reading and this server acting.
-  out.set("instructions", json::Value::string(
+  std::string instructions =
       allow_actions_
           ? "Reads captures and can also act: record, boot a device, observe "
             "a running app. Every number it returns was measured or is "
@@ -93,7 +93,14 @@ json::Value Server::initialize_result() const {
             "anything: recording, booting and editing suppressions are "
             "available only when this server is started with --allow-actions. "
             "Every number it returns was measured or is marked as not "
-            "measured; nothing is estimated."));
+            "measured; nothing is estimated.";
+  // Intelligence evidence (production, CI/CD) is read from the local store;
+  // refreshing it from a provider is its own permission.
+  instructions += allow_network_
+      ? " It may refresh Intelligence connectors from their providers (connector_sync)."
+      : " Intelligence evidence is read from the local store; refreshing it from a "
+        "provider (connector_sync) needs --allow-network.";
+  out.set("instructions", json::Value::string(instructions));
   return out;
 }
 
@@ -104,13 +111,15 @@ json::Value Server::tools_list_result() const {
     one.set("name", json::Value::string(t.name));
     // The effect is in the description as well as the schema, because a
     // model reads prose and may not read an annotation.
-    one.set("description",
-            json::Value::string(
-                t.effect == Effect::kMutating && !allow_actions_
-                    ? t.description +
-                          " NOT AVAILABLE: this server was started read-only; "
-                          "restart it with --allow-actions to enable this."
-                    : t.description));
+    std::string desc = t.description;
+    if (t.effect == Effect::kMutating && !allow_actions_) {
+      desc += " NOT AVAILABLE: this server was started read-only; "
+              "restart it with --allow-actions to enable this.";
+    } else if (t.effect == Effect::kNetwork && !allow_network_) {
+      desc += " NOT AVAILABLE: this server does not reach external providers; "
+              "restart it with --allow-network to enable this.";
+    }
+    one.set("description", json::Value::string(desc));
     one.set("inputSchema", t.input_schema);
     arr.push_back(std::move(one));
   }
@@ -135,6 +144,17 @@ json::Value Server::call_tool(const json::Value& params, bool* is_error) const {
           "changes this machine's state, or writes a file -- and this server "
           "was started read-only. Restart it with --allow-actions if that is "
           "what you want. Nothing was done."));
+      out.set("isError", json::Value::boolean(true));
+      return out;
+    }
+    if (t.effect == Effect::kNetwork && !allow_network_) {
+      *is_error = true;
+      json::Value out = json::Value::object();
+      out.set("content", text_content(
+          "refused: '" + name + "' contacts an external provider and changes the "
+          "local evidence cache, and this server was started without network "
+          "access. Restart it with --allow-network if that is what you want. "
+          "The evidence already stored locally is still readable. Nothing was done."));
       out.set("isError", json::Value::boolean(true));
       return out;
     }

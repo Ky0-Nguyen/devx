@@ -235,6 +235,63 @@ char* mpi_bs_automate_input_json(const char* session_id, const char* action_json
  * there, waiting up to 90 s for BrowserStack to publish it. */
 char* mpi_bs_automate_stop_json(const char* session_id, const char* import_to_sessions_dir);
 
+/* ---- Intelligence ----------------------------------------------------------
+ *
+ * Production, CI/CD and other external signals, stored locally and
+ * correlated with releases, code and sessions (docs/intelligence.md). Every
+ * call takes the sessions directory (the store lives under it, in
+ * intelligence/) and answers {"ok": ...}. Credentials are never passed here
+ * or returned: connectors read them from the environment or the Keychain.
+ * validate / discover / sync reach the provider and block; mpi_cancel stops
+ * them. Everything else reads the local store and works offline. */
+char* mpi_intelligence_providers_json(void);
+/* What can leave this machine, connector by connector. */
+char* mpi_intelligence_egress_json(const char* sessions_dir);
+char* mpi_intelligence_workspaces_json(const char* sessions_dir);
+/* {id, name, repository_root, app_identifiers[], environments[], retention{days}} */
+char* mpi_intelligence_workspace_save_json(const char* sessions_dir, const char* workspace_json);
+char* mpi_intelligence_workspace_delete_json(const char* sessions_dir, const char* workspace_id);
+char* mpi_intelligence_integrations_json(const char* sessions_dir, const char* workspace_id);
+/* {id, provider, name, settings{}, credential_ref, retention{days}, paused}.
+ * A setting that looks like a secret is refused. */
+char* mpi_intelligence_connector_save_json(const char* sessions_dir, const char* workspace_id,
+                                           const char* connector_json);
+char* mpi_intelligence_connector_remove_json(const char* sessions_dir, const char* workspace_id,
+                                             const char* connector_id, int delete_local_data);
+char* mpi_intelligence_validate_json(const char* sessions_dir, const char* workspace_id,
+                                     const char* connector_id);
+char* mpi_intelligence_discover_json(const char* sessions_dir, const char* workspace_id,
+                                     const char* connector_id);
+/* connector_id empty: every connector that is not paused. */
+char* mpi_intelligence_sync_json(const char* sessions_dir, const char* workspace_id,
+                                 const char* connector_id);
+char* mpi_intelligence_overview_json(const char* sessions_dir, const char* workspace_id);
+/* {provider, connector_id, kind, severity, environment, release_key, version,
+ *  commit, since, until, text, limit} */
+char* mpi_intelligence_signals_json(const char* sessions_dir, const char* workspace_id,
+                                    const char* query_json);
+char* mpi_intelligence_signal_json(const char* sessions_dir, const char* workspace_id,
+                                   const char* signal_id, int include_raw);
+char* mpi_intelligence_releases_json(const char* sessions_dir, const char* workspace_id);
+char* mpi_intelligence_release_json(const char* sessions_dir, const char* workspace_id,
+                                    const char* release_key);
+char* mpi_intelligence_compare_json(const char* sessions_dir, const char* workspace_id,
+                                    const char* base_release, const char* candidate_release);
+char* mpi_intelligence_related_json(const char* sessions_dir, const char* workspace_id,
+                                    const char* signal_id);
+char* mpi_intelligence_code_context_json(const char* sessions_dir, const char* workspace_id,
+                                         const char* signal_id);
+/* {release?, signal_id?, question?, include_raw?, include_code?} */
+char* mpi_intelligence_evidence_pack_json(const char* sessions_dir, const char* workspace_id,
+                                          const char* scope_json);
+/* apply 0: what retention would delete; 1: delete it. */
+char* mpi_intelligence_retention_json(const char* sessions_dir, const char* workspace_id, int apply);
+/* kind "signal" or "release". */
+char* mpi_intelligence_pin_json(const char* sessions_dir, const char* workspace_id, const char* kind,
+                                const char* id, int pinned);
+char* mpi_intelligence_link_session_json(const char* sessions_dir, const char* workspace_id,
+                                         const char* session_id, const char* release_key, int linked);
+
 /* ---- the window's control endpoint ---------------------------------------
  *
  * Lets an AI tool, through `mpi mcp`, ask this window to show something and

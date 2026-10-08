@@ -420,11 +420,12 @@ The Live tab streams a capture alongside the running app: counters, memory
 sparklines, per-source status, and the preliminary banner over everything
 until the window closes.
 
-The Export view carries the one statement section 13 asks for that has no
-control attached: "no source or trace upload without configured user consent".
-There is no consent switch, because there is nothing to consent to -- this
-build has no upload path. Exporting writes a local file, and the view says so
-outright rather than offering a toggle that implies an upload exists.
+The Export view carries the one statement section 13 asks for: "no source or
+trace upload without configured user consent". No source or trace is ever
+uploaded: exporting writes a local file. Since BrowserStack and the
+Intelligence connectors exist, the view no longer says "nothing leaves this
+machine". It shows an egress ledger instead, listing connector by connector
+what can be sent, to where, and only when you ask.
 
 Still open, and all inherently UI behaviours:
 
@@ -794,3 +795,27 @@ Not limitations to be fixed -- design positions taken from spec sections 2.3,
 **Request detail is off by default.** `--detail` captures headers and response bodies. An `Authorization` header is a bearer token and a login response is whatever the login returned; the values are kept verbatim, because a redacted header is a claim about what was sent that is not true, so the decision is whether to capture at all. "There is no body" and "the body could not be fetched" are one error from the runtime and two facts; where the exchange settles it (HEAD, 204, 304, `Content-Length: 0`) it is reported as having no body by construction.
 
 **A screenshot shows the screen at the moment it was taken, and nothing else.** `--screenshot` needs `--device`, because Metro knows the app and not which device it is on, and a device id is translated to the name Metro publishes through the same device record rather than guessed. Two are taken, before and after the window, each labelled with what it is evidence of; it is not the frame that missed its deadline. A physical iOS device has no command-line screenshot and is reported unavailable rather than attempted. Output that is not a valid PNG is refused rather than written: `adb shell` turns `\n` into `\r\n` and corrupts every PNG it carries, so `exec-out` is used and the header check is what would catch a regression.
+
+## 15. Intelligence evidence is only as joined as its release identity
+
+Intelligence ([docs/intelligence.md](intelligence.md)) joins production and
+CI/CD evidence to releases exactly only when both sides carry the same full
+commit, or the same app, version and build. Without that, links are
+**candidates**, and the window and the AI tools say so. A candidate is
+something to investigate, never a cause.
+
+- **Tested live:** GitLab CI only, anonymously on a public project. Sentry and
+  Firebase are tested against fixtures in their documented shapes. Firebase's
+  BigQuery field names were checked against Google's published schemas; the
+  JSON encoding of BigQuery timestamps was not, so several forms are accepted.
+- **Sentry state changes** (resolved, ignored) reach the local store through a
+  full read of the lookback window once a day; between those, a state can be up
+  to a day old.
+- **Redaction** knows credential shapes, e-mail addresses and IP addresses, not
+  meaning. A secret in an unknown shape passes through into an excerpt, which is
+  why raw views carry a warning.
+- **No webhooks.** The desktop app pulls when you sync; nothing arrives while it
+  is closed.
+- **Storage** is JSON and JSONL files, re-indexed after every sync. It is fine
+  for tens of thousands of signals per workspace and not measured beyond that.
+

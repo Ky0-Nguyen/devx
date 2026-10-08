@@ -69,7 +69,7 @@ Reply curl(const Credentials& c, std::vector<std::string> args, std::chrono::sec
   }
   const ssize_t n = ::write(fd, netrc.data(), netrc.size());
   ::close(fd);
-  std::vector<std::string> argv = {"/usr/bin/curl", "-sS", "--max-time",
+  std::vector<std::string> argv = {"/usr/bin/curl", "-q", "-sS", "--max-time",
                                    std::to_string(timeout.count()), "--netrc-file", tmpl.data(),
                                    "-w", "\n%{http_code}"};
   argv.insert(argv.end(), args.begin(), args.end());

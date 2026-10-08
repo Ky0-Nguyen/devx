@@ -65,6 +65,68 @@ flowchart LR
 
 Device tooling on the left is run through proc::run with an argv and never a shell; the adapters turn its text output into one NormalizedTrace, and everything downstream of the model reads that trace and never asks the device again. The core is exposed three ways: the mpi CLI, devx-serve over loopback HTTP, and DevX.app, which reaches it only through the mpi_capi C ABI as JSON strings. The rn path attaches a debugger to observe network, console and Redux and is not a performance measurement; the in-app SDK is optional, and without it the screen and interaction fields stay empty. The diagram is Mermaid source, not an image, so it changes in the same diff as the code it describes, and GitHub renders the fence.
 
+### The signal plane: Intelligence
+
+Production, CI/CD and other external evidence is a second plane beside the
+measurement one ([ADR-0008](adr/0008-separate-signal-plane.md)). It has its
+own contract, `SignalRecord`, its own store, and it meets the session plane
+only in correlation.
+
+```mermaid
+flowchart LR
+  subgraph PROV["providers"]
+    PSEN["Sentry API"]
+    PGL["GitLab API"]
+    PFB["Firebase BigQuery export files"]
+    PJL["JSONL files"]
+  end
+  subgraph CON["adapters/ connectors (SignalConnector)"]
+    CSEN["sentry"]
+    CGL["gitlab + ci_log"]
+    CFB["firebase"]
+    CJL["jsonl"]
+  end
+  subgraph SIG["core/signals"]
+    SSINK["SignalSink: the persistence boundary"]
+    SSTORE["SignalStore: workspace, connectors, cursors, signals, raw, index, retention"]
+    SRED["redact"]
+  end
+  subgraph COR["core/correlation + core/code"]
+    CENG["engine: releases, exact and candidate edges"]
+    CEV["evidence: signal_read, code context, evidence pack"]
+    CGIT["GitRepository: commit, diff, blame, source"]
+  end
+  SESS["session packages (s-*) and their build facts"]
+  SVC["adapters/intelligence/service: one JSON API"]
+  PSEN -->|"https_fetch: curl -K, token never in argv"| CSEN
+  PGL -->|"https_fetch"| CGL
+  PFB -->|"local files"| CFB
+  PJL -->|"local files"| CJL
+  CSEN & CGL & CFB & CJL --> SSINK --> SSTORE
+  SSTORE --> CENG
+  SESS --> CENG
+  CENG --> CEV
+  CGIT --> CEV
+  SRED --> CEV
+  CEV --> SVC
+  CENG --> SVC
+  SVC -->|"mpi_intelligence_* (C ABI)"| APP["DevX.app > Intelligence"]
+  SVC --> CLI["mpi intelligence"]
+  SVC -->|"read tools; connector_sync with --allow-network"| MCP["mpi mcp"]
+```
+
+A connector's only output is the sink: nothing it fetched is evidence until the
+store has written it, and every reader -- the window, the CLI, correlation, AI
+tools -- reads the store, so everything works offline after a sync
+([ADR-0009](adr/0009-local-first-intelligence-store.md),
+[ADR-0010](adr/0010-provider-neutral-connector-contract.md)). Correlation joins
+by exact identity before anything else and keeps candidate links apart
+([ADR-0012](adr/0012-exact-before-candidate-correlation.md)); AI tools get
+bounded, cited, redacted evidence and never a credential
+([ADR-0011](adr/0011-three-tier-mcp-permissions.md),
+[ADR-0013](adr/0013-external-agents-internal-intelligence.md)). See
+[Intelligence](intelligence.md).
+
 ```
 apps/cli/            the `mpi` command-line interface
 apps/devx-mac/       DevX.app -- native SwiftUI desktop app, over the C ABI
@@ -81,7 +143,10 @@ core/
   timeline/          binned tracks whose bins carry a state, not a bare number
   heap/              object graph from a heap dump + reference-path search
   observe/           reading a running app: network, console, Redux, screenshots, layout
-  net/               a WebSocket client, one loopback HTTP GET, the HTTP server devx-serve uses, and an HTTP/2 + HPACK + gRPC client for the emulator
+  net/               a WebSocket client, one loopback HTTP GET, the HTTP server devx-serve uses, an HTTP/2 + HPACK + gRPC client for the emulator, and https_fetch for Intelligence connectors
+  signals/           the signal plane: SignalRecord, the connector contract, the local Intelligence store, sync, redaction
+  correlation/       releases and exact/candidate links across signals and sessions; evidence packs for AI tools
+  code/              code context from the workspace's git repository: commit, diff, blame, source
   sdk/               the optional in-app SDK's side of the wire, and its loopback endpoint
   util/              JSON, process execution, cancellation, time
 adapters/android/    adb adapter, live capture collector, atrace and HPROF parsers
@@ -91,6 +156,7 @@ adapters/layout/     one layout snapshot on either platform, shared by the CLI a
 adapters/android/emulator/  the SDK catalog and installs, AVD files, launching, and gRPC control of an emulator
 adapters/browserstack/      BrowserStack's REST API and the BrowserStack Local tunnel
 adapters/rn/         a React Native app's own inspector, reached through Metro
+adapters/sentry, gitlab, firebase, jsonl/  Intelligence connectors; adapters/intelligence/ registers them and is the one JSON API the C ABI, CLI and MCP share
 sdk/react-native/    the in-app SDK: markers, build handshake, transport (optional)
 sdk/ios, sdk/android READMEs only -- each says why no native SDK is shipped
 samples/react-native a two-screen app with the SDK wired in, to be copied from
@@ -128,3 +194,9 @@ On an iOS simulator the Live tab offers a stack-profile checkbox with a seconds 
 - [ADR-0005 Conservative by construction](adr/0005-conservative-by-construction-model.md)
 - [ADR-0006 Android text sources, not Perfetto](adr/0006-android-text-sources-not-perfetto.md)
 - [ADR-0007 DevX is a native SwiftUI app](adr/0007-devx-is-a-native-swiftui-app.md)
+- [ADR-0008 A separate signal plane](adr/0008-separate-signal-plane.md)
+- [ADR-0009 A local-first Intelligence store](adr/0009-local-first-intelligence-store.md)
+- [ADR-0010 A provider-neutral connector contract](adr/0010-provider-neutral-connector-contract.md)
+- [ADR-0011 Three-tier MCP permissions](adr/0011-three-tier-mcp-permissions.md)
+- [ADR-0012 Exact before candidate correlation](adr/0012-exact-before-candidate-correlation.md)
+- [ADR-0013 External agents, internal intelligence](adr/0013-external-agents-internal-intelligence.md)

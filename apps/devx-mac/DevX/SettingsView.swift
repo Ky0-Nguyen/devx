@@ -20,6 +20,7 @@ import AppKit
 /// plainly is more useful than a switch that implies an upload exists.
 struct SettingsView: View {
     @EnvironmentObject var state: AppState
+    @State private var egress: JSON = .null
 
     var body: some View {
         ScrollView {
@@ -171,24 +172,36 @@ struct SettingsView: View {
         }
     }
 
+    /// An egress ledger rather than a blanket claim. "Nothing leaves this
+    /// machine" stopped being true when BrowserStack and the Intelligence
+    /// connectors arrived: each of them sends something, deliberately and
+    /// only when asked, and this lists exactly what, to where and when.
     private var privacyPanel: some View {
-        Panel(title: "What leaves this machine") {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Nothing.")
-                    .font(Term.font(13, .bold)).foregroundStyle(Term.green)
-                Text(tr("Spec section 13 asks for no source or trace upload "
-                     + "without configured consent. There is no consent "
-                     + "control here because there is nothing to consent to: "
-                     + "this build has no upload path. Exporting writes a "
-                     + "local file and that is the whole of it."))
-                    .font(Term.font(11)).foregroundStyle(Term.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(tr("The SDK transport is the only network listener, it binds "
-                     + "127.0.0.1 only, it requires a token, and it receives "
-                     + "markers rather than sending anything. There is no "
-                     + "wireless path, on purpose."))
+        Panel(title: "What leaves this machine",
+              subtitle: "Captures, sessions, reports and stored evidence stay here. What can leave, and when:") {
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(Array(egress["ledger"].array.enumerated()), id: \.offset) { _, row in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(row["what"].text).font(Term.font(11)).foregroundStyle(Term.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(tr("to ") + row["to"].text + " · " + row["when"].text)
+                            .font(Term.font(10)).foregroundStyle(Term.dim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Text(tr("Exporting writes a local file. The SDK transport is the only network listener: "
+                     + "it binds 127.0.0.1 only, requires a token, and receives markers rather than "
+                     + "sending anything. Provider credentials stay in the Keychain or the environment "
+                     + "and are never written to a file, a command line or an AI tool's context."))
                     .font(Term.font(10)).foregroundStyle(Term.dim)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onAppear {
+            let dir = state.sessionsDir
+            DispatchQueue.global(qos: .userInitiated).async {
+                let doc = Core.intelEgress(dir)
+                DispatchQueue.main.async { egress = doc }
             }
         }
     }

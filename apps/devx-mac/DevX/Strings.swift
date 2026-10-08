@@ -955,20 +955,14 @@ enum Strings {
             + "hay Downloads: macOS chặn các thư mục đó và một bản build ký "
             + "ad-hoc không thể hiện hộp thoại xin quyền, nên đường dẫn gõ tay "
             + "vào đó sẽ không đọc được.",
-        "Spec section 13 asks for no source or trace upload without configured "
-        + "consent. There is no consent control here because there is nothing "
-        + "to consent to: this build has no upload path. Exporting writes a "
-        + "local file and that is the whole of it.":
-            "Mục 13 của đặc tả yêu cầu không tải lên mã nguồn hay trace mà "
-            + "chưa có sự đồng ý được cấu hình. Ở đây không có tùy chọn đồng ý "
-            + "vì không có gì để đồng ý: bản build này không có đường tải lên "
-            + "nào. Xuất dữ liệu chỉ ghi ra một tệp cục bộ, và chỉ có vậy.",
-        "The SDK transport is the only network listener, it binds 127.0.0.1 "
-        + "only, it requires a token, and it receives markers rather than "
-        + "sending anything. There is no wireless path, on purpose.":
-            "Kênh truyền SDK là listener mạng duy nhất, chỉ bind 127.0.0.1, "
-            + "bắt buộc có token, và chỉ nhận marker chứ không gửi gì đi. "
-            + "Không có đường không dây nào, và đó là chủ đích.",
+        "Exporting writes a local file. The SDK transport is the only network listener: "
+        + "it binds 127.0.0.1 only, requires a token, and receives markers rather than "
+        + "sending anything. Provider credentials stay in the Keychain or the environment "
+        + "and are never written to a file, a command line or an AI tool's context.":
+            "Xuất dữ liệu chỉ ghi ra một tệp cục bộ. Kênh truyền SDK là listener mạng duy nhất: "
+            + "chỉ bind 127.0.0.1, bắt buộc có token, và chỉ nhận marker chứ không gửi gì đi. "
+            + "Thông tin xác thực của provider nằm trong Keychain hoặc biến môi trường, không "
+            + "bao giờ được ghi ra tệp, dòng lệnh hay ngữ cảnh của công cụ AI.",
 
         // ---- Device freshness ----
         "re-scanning every 5s · last looked {when}":

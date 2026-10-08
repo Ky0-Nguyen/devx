@@ -329,6 +329,25 @@ enum HelpTopics {
             english: "Two run sets against each other, with the gate status stated before any verdict. Too few runs, or too much variance between them, is reported as inconclusive rather than as a regression — a difference that the noise could explain is not a finding.",
             vietnamese: "So sánh hai bộ run với nhau, và trạng thái gate được nêu trước mọi kết luận. Quá ít lần chạy, hoặc độ biến thiên giữa các lần quá lớn, sẽ được báo là không kết luận được chứ không báo là hồi quy — một khác biệt mà nhiễu có thể giải thích thì không phải là một phát hiện."),
         HelpTopic(
+            id: "intelligence",
+            title: "Intelligence",
+            english: "Production and CI/CD evidence next to your local measurements. A workspace binds a repository and your app ids to connectors: Sentry (issues, crashes, releases), GitLab CI (pipelines, jobs with the failing line located in the log, tests, deployments), Firebase (Crashlytics and Performance from BigQuery export files) and JSONL imports. A sync stores everything locally first -- normalized records plus the provider's raw evidence -- so every view and every AI tool works offline afterwards. Releases groups evidence by release identity: an exact commit or version + build + app match is labelled exact; timing or partial metadata is labelled candidate and never treated as a cause. AI Analysis builds a small, cited, redacted evidence pack for your AI tool through `mpi mcp`; tokens stay in the Keychain and never reach the model.",
+            vietnamese: "Bằng chứng từ production và CI/CD đặt cạnh số đo cục bộ của bạn. Một workspace gắn repository và app id của bạn với các connector: Sentry (issue, crash, release), GitLab CI (pipeline, job với dòng lỗi được định vị trong log, test, deployment), Firebase (Crashlytics và Performance từ file export BigQuery) và nhập JSONL. Mỗi lần sync lưu mọi thứ xuống máy trước -- record chuẩn hoá cùng bằng chứng gốc của provider -- nên sau đó mọi màn hình và mọi công cụ AI đều chạy được khi offline. Releases gom bằng chứng theo danh tính release: trùng commit, hoặc trùng version + build + app, được ghi là exact; trùng theo thời gian hay metadata thiếu được ghi là candidate và không bao giờ được coi là nguyên nhân. AI Analysis tạo một gói bằng chứng nhỏ, có trích nguồn, đã che secret cho công cụ AI qua `mpi mcp`; token nằm trong Keychain và không bao giờ tới model.",
+            fields: [
+                HelpField(
+                    name: "exact / candidate",
+                    english: "Exact: the same deterministic identity on both sides. Provider attributed: the provider states the link. Candidate: timing, a short commit prefix or a version without its build -- something to investigate, not a conclusion.",
+                    vietnamese: "Exact: cùng một danh tính xác định ở cả hai phía. Provider attributed: provider tự khai báo liên kết. Candidate: theo thời gian, tiền tố commit ngắn, hoặc version thiếu build -- là thứ để điều tra, không phải kết luận."),
+                HelpField(
+                    name: "partial sync",
+                    english: "A sync that stopped early (rate limit, network, a bound) keeps what it wrote and says partial; the cache is never shown as more current than it is, and the next sync resumes.",
+                    vietnamese: "Một lần sync dừng sớm (bị giới hạn tần suất, lỗi mạng, chạm giới hạn) vẫn giữ những gì đã ghi và báo partial; cache không bao giờ được hiển thị là mới hơn thực tế, và lần sync sau sẽ tiếp tục."),
+                HelpField(
+                    name: "retention",
+                    english: "7, 30 or 90 days, or forever, per workspace or connector. Pinned signals and releases are kept. Disconnecting a provider deletes nothing local unless you ask.",
+                    vietnamese: "7, 30 hoặc 90 ngày, hoặc giữ mãi, theo workspace hoặc theo connector. Signal và release đã ghim được giữ lại. Ngắt kết nối provider không xoá dữ liệu cục bộ trừ khi bạn yêu cầu."),
+            ]),
+        HelpTopic(
             id: "detectors",
             title: "Detectors",
             english: "Every detector, its thresholds, and where each threshold came from — a measured platform constant or a configurable heuristic. Read this before arguing about whether a finding is real. It also shows which detectors could not run, and why, which is a different answer from finding nothing.",
@@ -336,8 +355,8 @@ enum HelpTopics {
         HelpTopic(
             id: "settings",
             title: "Export",
-            english: "Export a report as JSON or Markdown, choose the interface language, see where sessions are stored, and read what this tool does and does not send anywhere. Nothing leaves this machine: the only network this app opens is loopback.",
-            vietnamese: "Xuất report ra JSON hoặc Markdown, chọn ngôn ngữ giao diện, xem nơi lưu các phiên thu, và đọc phần công cụ này có gửi gì đi đâu hay không. Không có gì rời khỏi máy này: kết nối mạng duy nhất app mở là loopback."),
+            english: "Export a report as JSON or Markdown, choose the interface language, see where sessions are stored, and read what this tool does and does not send anywhere. What leaves this machine is listed connector by connector: by default nothing does, and BrowserStack, the Google SDK catalog and Intelligence connectors send only what they need, only when you ask.",
+            vietnamese: "Xuất report ra JSON hoặc Markdown, chọn ngôn ngữ giao diện, xem nơi lưu các phiên thu, và đọc phần công cụ này có gửi gì đi đâu hay không. Những gì rời khỏi máy được liệt kê theo từng connector: mặc định không có gì, còn BrowserStack, danh mục SDK của Google và các connector Intelligence chỉ gửi những gì cần thiết, và chỉ khi bạn yêu cầu."),
     ]
 
     /// Ideas that are not a screen but are the reason several screens look the

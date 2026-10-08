@@ -7,6 +7,15 @@ add_library(mpi_core STATIC
   net/hpack.cpp
   net/http2_client.cpp
   net/grpc_client.cpp
+  net/https_fetch.cpp
+  signals/signal.cpp
+  signals/connector.cpp
+  signals/signal_store.cpp
+  signals/redact.cpp
+  signals/sync.cpp
+  code/repository.cpp
+  correlation/engine.cpp
+  correlation/evidence.cpp
   util/protobuf.cpp
   observe/inspect.cpp
   mcp/protocol.cpp

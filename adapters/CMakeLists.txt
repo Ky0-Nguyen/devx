@@ -14,6 +14,13 @@ add_library(mpi_adapters STATIC
   browserstack/local_tunnel.cpp
   browserstack/profiling.cpp
   browserstack/automate.cpp
+  sentry/sentry.cpp
+  gitlab/gitlab.cpp
+  gitlab/ci_log.cpp
+  firebase/firebase.cpp
+  jsonl/jsonl.cpp
+  intelligence/builtin.cpp
+  intelligence/service.cpp
   layout/layout_capture.cpp
   android/emulator/sdk_repository.cpp
   android/emulator/avd.cpp

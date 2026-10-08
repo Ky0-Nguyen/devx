@@ -1,0 +1,26 @@
+[0KRunning with gitlab-runner 17.4.0 (b92ee590)[0;m
+[0K  on docker-runner-3 xR7f2kQp, system ID: s_7a1c2e9d4b10[0;m
+section_start:1759603000:prepare_executor[0K[0K[36;1mPreparing the "docker" executor[0;m[0;m
+[0KUsing Docker executor with image registry.example.com/android-ci:35 ...[0;m
+[0KPulling docker image registry.example.com/android-ci:35 ...[0;m
+section_end:1759603011:prepare_executor[0K
+section_start:1759603011:get_sources[collapsed=true][0K[0K[36;1mGetting source from Git repository[0;m[0;m
+[32;1mFetching changes with git depth set to 20...[0;m
+Initialized empty Git repository in /builds/acme/mobile-app/.git/
+[32;1mCreated fresh repository.[0;m
+[32;1mChecking out c7e9a2b4 as detached HEAD (ref is main)...[0;m
+[32;1mSkipping Git submodules setup[0;m
+section_end:1759603017:get_sources[0K
+section_start:1759603017:step_script[0K[0K[36;1mExecuting "step_script" stage of the job script[0;m[0;m
+[32;1m$ ./gradlew lintDebug --no-daemon[0;m
+> Task :app:lintDebug
+Lint found 0 errors, 3 warnings. First failure: none
+Wrote HTML report to file:///builds/acme/mobile-app/app/build/reports/lint-results-debug.html
+error_prone_annotations-2.26.1.jar: no error-prone checks configured
+
+BUILD SUCCESSFUL in 1m 3s
+section_end:1759603080:step_script[0K
+section_start:1759603080:cleanup_file_variables[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1759603081:cleanup_file_variables[0K
+[32;1mJob succeeded
+[0;m

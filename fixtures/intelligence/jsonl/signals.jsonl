@@ -1,0 +1,8 @@
+{"schema_version":"devx.signal/1","id":"sig_other_bugsnag_5f1","workspace_id":"elsewhere","provider":"bugsnag-export","connector_id":"other","kind":"crash","external_id":"bugsnag:5f1","occurred_at":"2026-10-03T10:00:00Z","observed_at":"2026-10-03T11:00:00Z","severity":"fatal","title":"NullPointerException in CartAdapter","release":{"version":"3.1.0","build_number":"310","commit_sha":"0123456789abcdef0123456789abcdef01234567","bundle_or_package_id":"com.example.shop","source":"build_manifest"},"attributes":{"events":12},"raw_ref":"raw/other/x.json","basis":"exact"}
+{"kind":"issue","external_id":"ticket-101","occurred_at":"2026-10-04T08:00:00Z","title":"Checkout button unresponsive","severity":"warning","environment":"production","release":{"version":"3.1.0","build_number":"310","bundle_or_package_id":"com.example.shop"},"attributes":{"reporter_count":3},"basis":"exact"}
+{"kind":"metric","id":42,"occurred_at":"2026-10-04T09:00:00+07:00","title":"cold start p95 1.4 s","attributes":{"value_ms":1400}}
+{"kind":"deploy","external_id":"deploy-77","occurred_at":"2026-10-05T00:00:00Z","title":"Shipped 3.1.0","release":{"version":"3.1.0"},"basis":"exact"}
+{"kind":"release","external_id":"rel-3.1.0","occurred_at":"2026-10-05T01:00:00Z","release":{"version":"3.1.0","commit_sha":"abc1234"},"basis":"exact"}
+
+{"kind":"event","external_id":"release-train/2026-10/an-identifier-long-enough-to-be-cut-by-make-signal-id-number-1","occurred_at":"2026-10-06T00:00:00Z"}
+{"kind":"event","external_id":"release-train/2026-10/an-identifier-long-enough-to-be-cut-by-make-signal-id-number-2","occurred_at":"2026-10-06T00:00:01Z"}

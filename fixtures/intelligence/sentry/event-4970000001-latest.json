@@ -1,0 +1,63 @@
+{
+  "id": "c1a6e8d2f4b04e5f9a7d3b1c0e2f4a6b",
+  "eventID": "c1a6e8d2f4b04e5f9a7d3b1c0e2f4a6b",
+  "groupID": "4970000001",
+  "projectID": "4504000000000001",
+  "title": "NSInvalidArgumentException: -[__NSCFNumber length]: unrecognized selector sent to instance",
+  "platform": "cocoa",
+  "dateCreated": "2026-10-07T21:40:11.004000Z",
+  "dateReceived": "2026-10-07T21:40:12.250000Z",
+  "dist": "54019",
+  "release": {
+    "version": "com.acme.app@5.4.0+54019",
+    "shortVersion": "5.4.0 (54019)",
+    "dateCreated": "2026-10-01T07:30:00.000000Z",
+    "dateReleased": "2026-10-01T09:00:00.000000Z"
+  },
+  "tags": [
+    {"key": "environment", "value": "production"},
+    {"key": "release", "value": "com.acme.app@5.4.0+54019"},
+    {"key": "dist", "value": "54019"},
+    {"key": "os", "value": "iOS 26.0"},
+    {"key": "device", "value": "iPhone17,1"},
+    {"key": "handled", "value": "no"},
+    {"key": "level", "value": "fatal"}
+  ],
+  "contexts": {
+    "app": {"app_identifier": "com.acme.app", "app_version": "5.4.0", "app_build": "54019", "type": "app"},
+    "os": {"name": "iOS", "version": "26.0", "type": "os"},
+    "device": {"model": "iPhone17,1", "family": "iOS", "type": "device"}
+  },
+  "user": {"id": "u-synthetic-0001"},
+  "entries": [
+    {
+      "type": "exception",
+      "data": {
+        "values": [
+          {
+            "type": "NSInvalidArgumentException",
+            "value": "-[__NSCFNumber length]: unrecognized selector sent to instance",
+            "module": null,
+            "mechanism": {"type": "nsexception", "handled": false},
+            "stacktrace": {
+              "frames": [
+                {"filename": "main.swift", "absPath": "/Users/build/acme/App/main.swift", "function": "main", "module": "AcmeApp", "lineNo": 12, "colNo": null, "inApp": true, "package": "/private/var/containers/Bundle/Application/X/Acme.app/Acme"},
+                {"filename": null, "absPath": null, "function": "UIApplicationMain", "module": null, "lineNo": null, "colNo": null, "inApp": false, "package": "/System/Library/Frameworks/UIKit.framework/UIKit"},
+                {"filename": null, "absPath": null, "function": "-[UIApplication sendAction:to:from:forEvent:]", "module": null, "lineNo": null, "colNo": null, "inApp": false, "package": "/System/Library/Frameworks/UIKit.framework/UIKit"},
+                {"filename": "CartFormatter.swift", "absPath": "/Users/build/acme/App/Checkout/CartFormatter.swift", "function": "CartFormatter.amountString(_:)", "module": "AcmeApp", "lineNo": 57, "colNo": null, "inApp": true, "package": "/private/var/containers/Bundle/Application/X/Acme.app/Acme"},
+                {"filename": "CheckoutViewController.swift", "absPath": "/Users/build/acme/App/Checkout/CheckoutViewController.swift", "function": "-[CheckoutViewController pay:]", "module": "AcmeApp", "lineNo": 214, "colNo": null, "inApp": true, "package": "/private/var/containers/Bundle/Application/X/Acme.app/Acme"}
+              ],
+              "framesOmitted": null,
+              "hasSystemFrames": true
+            }
+          }
+        ],
+        "hasSystemFrames": true
+      }
+    },
+    {
+      "type": "breadcrumbs",
+      "data": {"values": [{"category": "ui.click", "message": "Pay", "timestamp": "2026-10-07T21:40:10.900000Z", "level": "info"}]}
+    }
+  ]
+}

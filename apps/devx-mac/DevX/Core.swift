@@ -220,6 +220,72 @@ enum Core {
         call { mpi_bs_automate_stop_json(session, importTo) }
     }
     static func bsLocalStatus() -> JSON { call { mpi_bs_local_status_json() } }
+
+    // ---- Intelligence (core/capi/mpi_capi_intelligence.cpp) ----
+    static func intelProviders() -> JSON { call { mpi_intelligence_providers_json() } }
+    static func intelEgress(_ dir: String) -> JSON { call { mpi_intelligence_egress_json(dir) } }
+    static func intelWorkspaces(_ dir: String) -> JSON { call { mpi_intelligence_workspaces_json(dir) } }
+    static func intelSaveWorkspace(_ dir: String, _ w: JSON) -> JSON {
+        call { mpi_intelligence_workspace_save_json(dir, w.serialized()) }
+    }
+    static func intelDeleteWorkspace(_ dir: String, _ ws: String) -> JSON {
+        call { mpi_intelligence_workspace_delete_json(dir, ws) }
+    }
+    static func intelIntegrations(_ dir: String, _ ws: String) -> JSON {
+        call { mpi_intelligence_integrations_json(dir, ws) }
+    }
+    static func intelSaveConnector(_ dir: String, _ ws: String, _ c: JSON) -> JSON {
+        call { mpi_intelligence_connector_save_json(dir, ws, c.serialized()) }
+    }
+    static func intelRemoveConnector(_ dir: String, _ ws: String, _ id: String, deleteLocal: Bool) -> JSON {
+        call { mpi_intelligence_connector_remove_json(dir, ws, id, deleteLocal ? 1 : 0) }
+    }
+    static func intelValidate(_ dir: String, _ ws: String, _ id: String) -> JSON {
+        call { mpi_intelligence_validate_json(dir, ws, id) }
+    }
+    static func intelDiscover(_ dir: String, _ ws: String, _ id: String) -> JSON {
+        call { mpi_intelligence_discover_json(dir, ws, id) }
+    }
+    static func intelSync(_ dir: String, _ ws: String, _ id: String) -> JSON {
+        call { mpi_intelligence_sync_json(dir, ws, id) }
+    }
+    static func intelOverview(_ dir: String, _ ws: String) -> JSON {
+        call { mpi_intelligence_overview_json(dir, ws) }
+    }
+    static func intelSignals(_ dir: String, _ ws: String, _ query: JSON) -> JSON {
+        call { mpi_intelligence_signals_json(dir, ws, query.serialized()) }
+    }
+    static func intelSignal(_ dir: String, _ ws: String, _ id: String, raw: Bool) -> JSON {
+        call { mpi_intelligence_signal_json(dir, ws, id, raw ? 1 : 0) }
+    }
+    static func intelReleases(_ dir: String, _ ws: String) -> JSON {
+        call { mpi_intelligence_releases_json(dir, ws) }
+    }
+    static func intelRelease(_ dir: String, _ ws: String, _ key: String) -> JSON {
+        call { mpi_intelligence_release_json(dir, ws, key) }
+    }
+    static func intelCompare(_ dir: String, _ ws: String, _ base: String, _ cand: String) -> JSON {
+        call { mpi_intelligence_compare_json(dir, ws, base, cand) }
+    }
+    static func intelRelated(_ dir: String, _ ws: String, _ id: String) -> JSON {
+        call { mpi_intelligence_related_json(dir, ws, id) }
+    }
+    static func intelCodeContext(_ dir: String, _ ws: String, _ id: String) -> JSON {
+        call { mpi_intelligence_code_context_json(dir, ws, id) }
+    }
+    static func intelPack(_ dir: String, _ ws: String, _ scope: JSON) -> JSON {
+        call { mpi_intelligence_evidence_pack_json(dir, ws, scope.serialized()) }
+    }
+    static func intelRetention(_ dir: String, _ ws: String, apply: Bool) -> JSON {
+        call { mpi_intelligence_retention_json(dir, ws, apply ? 1 : 0) }
+    }
+    static func intelPin(_ dir: String, _ ws: String, kind: String, id: String, pinned: Bool) -> JSON {
+        call { mpi_intelligence_pin_json(dir, ws, kind, id, pinned ? 1 : 0) }
+    }
+    static func intelLinkSession(_ dir: String, _ ws: String, session: String, release: String,
+                                 linked: Bool) -> JSON {
+        call { mpi_intelligence_link_session_json(dir, ws, session, release, linked ? 1 : 0) }
+    }
     static func bsLocalInstall() -> JSON { call { mpi_bs_local_install_json() } }
     static func bsLocalStart(_ id: String) -> JSON { call { mpi_bs_local_start_json(id) } }
     static func bsLocalStop(_ id: String) -> JSON { call { mpi_bs_local_stop_json(id) } }

@@ -93,7 +93,7 @@ LocalReply install_local_binary(const CancellationToken& cancel) {
   proc::Options po;
   po.timeout = std::chrono::minutes(5);
   po.cancel = cancel;
-  auto r = proc::run({"/usr/bin/curl", "-fsSL", "-o", zip, kDownload}, po);
+  auto r = proc::run({"/usr/bin/curl", "-q", "-fsSL", "-o", zip, kDownload}, po);
   if (!r.ok()) {
     out.error = "download failed: " + (r.err.empty() ? std::string("curl exited ") +
                                                            std::to_string(r.exit_code)

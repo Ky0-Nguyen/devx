@@ -1,0 +1,144 @@
+[
+  {
+    "id": 302,
+    "iid": 88,
+    "ref": "main",
+    "sha": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+    "created_at": "2026-10-06T10:20:05.000Z",
+    "updated_at": "2026-10-06T11:02:10.481Z",
+    "finished_at": "2026-10-06T11:02:10.300Z",
+    "status": "success",
+    "user": {
+      "id": 4182,
+      "username": "dev.example",
+      "name": "Example Developer",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+      "web_url": "https://gitlab.example.com/dev.example"
+    },
+    "environment": {
+      "id": 9,
+      "name": "staging",
+      "slug": "staging",
+      "external_url": "https://staging.acme.example",
+      "created_at": "2024-03-11T09:00:00.000Z",
+      "updated_at": "2026-10-06T11:02:10.481Z",
+      "state": "available",
+      "tier": "staging"
+    },
+    "deployable": {
+      "id": 5022,
+      "status": "success",
+      "stage": "deploy",
+      "name": "deploy:staging",
+      "ref": "main",
+      "tag": false,
+      "coverage": null,
+      "created_at": "2026-10-06T10:20:05.000Z",
+      "started_at": "2026-10-06T10:20:05.000Z",
+      "finished_at": "2026-10-06T11:02:10.300Z",
+      "duration": 41.2,
+      "user": {
+        "id": 4182,
+        "username": "dev.example",
+        "name": "Example Developer",
+        "state": "active",
+        "locked": false,
+        "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+        "web_url": "https://gitlab.example.com/dev.example"
+      },
+      "commit": {
+        "id": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+        "short_id": "c7e9a2b4",
+        "title": "Synthetic commit",
+        "author_name": "Example Developer",
+        "author_email": "dev@example.com"
+      },
+      "pipeline": {
+        "id": 1002,
+        "iid": 318,
+        "project_id": 4242,
+        "sha": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+        "ref": "main",
+        "status": "success",
+        "web_url": "https://gitlab.example.com/acme/mobile-app/-/pipelines/1002"
+      },
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/jobs/5022",
+      "artifacts": [],
+      "runner": null,
+      "artifacts_expire_at": null
+    }
+  },
+  {
+    "id": 301,
+    "iid": 87,
+    "ref": "feature/cart-discounts",
+    "sha": "9f2c1e7a5b3d4c6e8f0a1b2c3d4e5f6a7b8c9d0e",
+    "created_at": "2026-10-05T09:18:31.000Z",
+    "updated_at": "2026-10-05T09:20:00.000Z",
+    "finished_at": "2026-10-05T09:19:58.900Z",
+    "status": "failed",
+    "user": {
+      "id": 4182,
+      "username": "dev.example",
+      "name": "Example Developer",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+      "web_url": "https://gitlab.example.com/dev.example"
+    },
+    "environment": {
+      "id": 10,
+      "name": "review-cart-discounts",
+      "slug": "review-cart-discounts",
+      "external_url": "https://review-cart-discounts.acme.example",
+      "created_at": "2024-03-11T09:00:00.000Z",
+      "updated_at": "2026-10-05T09:20:00.000Z",
+      "state": "available",
+      "tier": "review-cart-discounts"
+    },
+    "deployable": {
+      "id": 5013,
+      "status": "failed",
+      "stage": "deploy",
+      "name": "deploy:review-cart-discounts",
+      "ref": "feature/cart-discounts",
+      "tag": false,
+      "coverage": null,
+      "created_at": "2026-10-05T09:18:31.000Z",
+      "started_at": "2026-10-05T09:18:31.000Z",
+      "finished_at": "2026-10-05T09:19:58.900Z",
+      "duration": 41.2,
+      "user": {
+        "id": 4182,
+        "username": "dev.example",
+        "name": "Example Developer",
+        "state": "active",
+        "locked": false,
+        "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+        "web_url": "https://gitlab.example.com/dev.example"
+      },
+      "commit": {
+        "id": "9f2c1e7a5b3d4c6e8f0a1b2c3d4e5f6a7b8c9d0e",
+        "short_id": "9f2c1e7a",
+        "title": "Synthetic commit",
+        "author_name": "Example Developer",
+        "author_email": "dev@example.com"
+      },
+      "pipeline": {
+        "id": 1001,
+        "iid": 317,
+        "project_id": 4242,
+        "sha": "9f2c1e7a5b3d4c6e8f0a1b2c3d4e5f6a7b8c9d0e",
+        "ref": "feature/cart-discounts",
+        "status": "failed",
+        "web_url": "https://gitlab.example.com/acme/mobile-app/-/pipelines/1001"
+      },
+      "web_url": "https://gitlab.example.com/acme/mobile-app/-/jobs/5013",
+      "artifacts": [],
+      "runner": null,
+      "artifacts_expire_at": null
+    }
+  }
+]

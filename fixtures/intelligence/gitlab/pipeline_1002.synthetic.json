@@ -1,0 +1,42 @@
+{
+  "id": 1002,
+  "iid": 318,
+  "project_id": 4242,
+  "sha": "c7e9a2b4d6f8019283746556473829101a2b3c4d",
+  "ref": "main",
+  "status": "success",
+  "source": "push",
+  "created_at": "2026-10-06T10:05:41.220Z",
+  "updated_at": "2026-10-06T10:20:03.118Z",
+  "web_url": "https://gitlab.example.com/acme/mobile-app/-/pipelines/1002",
+  "name": null,
+  "before_sha": "0000000000000000000000000000000000000000",
+  "tag": false,
+  "yaml_errors": null,
+  "user": {
+    "id": 4182,
+    "username": "dev.example",
+    "name": "Example Developer",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.example.com/uploads/-/system/user/avatar/4182/avatar.png",
+    "web_url": "https://gitlab.example.com/dev.example"
+  },
+  "started_at": "2026-10-06T10:05:44.002Z",
+  "finished_at": "2026-10-06T10:20:02.950Z",
+  "committed_at": null,
+  "duration": 858,
+  "queued_duration": 2.1,
+  "coverage": "81.4",
+  "detailed_status": {
+    "icon": "status_success",
+    "text": "success",
+    "label": "success",
+    "group": "success",
+    "tooltip": "success",
+    "has_details": true,
+    "details_path": "/acme/mobile-app/-/pipelines/1002",
+    "illustration": null,
+    "favicon": "/assets/ci_favicons/favicon_status_success.png"
+  }
+}

@@ -1,0 +1,61 @@
+[0KRunning with gitlab-runner 17.4.0 (b92ee590)[0;m
+[0K  on docker-runner-3 xR7f2kQp, system ID: s_7a1c2e9d4b10[0;m
+section_start:1759655530:prepare_executor[0K[0K[36;1mPreparing the "docker" executor[0;m[0;m
+[0KUsing Docker executor with image registry.example.com/android-ci:35 ...[0;m
+[0KPulling docker image registry.example.com/android-ci:35 ...[0;m
+section_end:1759655541:prepare_executor[0K
+section_start:1759655541:get_sources[collapsed=true][0K[0K[36;1mGetting source from Git repository[0;m[0;m
+[32;1mFetching changes with git depth set to 20...[0;m
+Initialized empty Git repository in /builds/acme/mobile-app/.git/
+[32;1mCreated fresh repository.[0;m
+[32;1mChecking out 9f2c1e7a as detached HEAD (ref is feature/cart-discounts)...[0;m
+[32;1mSkipping Git submodules setup[0;m
+section_end:1759655547:get_sources[0K
+section_start:1759655547:step_script[0K[0K[36;1mExecuting "step_script" stage of the job script[0;m[0;m
+[32;1m$ ./gradlew testDebugUnitTest --no-daemon[0;m
+Downloading https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+Welcome to Gradle 8.10.2!
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:compileDebugKotlin
+w: file:///builds/acme/mobile-app/app/src/main/java/com/acme/cart/CartTotals.kt:18:9 Variable 'legacy' is never used
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:testDebugUnitTest
+
+com.acme.cart.CartTotalsTest > appliesPercentageDiscount FAILED
+    java.lang.AssertionError: expected:<90.00> but was:<100.00>
+        at org.junit.Assert.fail(Assert.java:89)
+        at org.junit.Assert.failNotEquals(Assert.java:835)
+        at com.acme.cart.CartTotalsTest.appliesPercentageDiscount(CartTotalsTest.kt:42)
+
+com.acme.cart.CartTotalsTest > roundsHalfUp FAILED
+    java.lang.AssertionError: expected:<10.01> but was:<10.00>
+        at com.acme.cart.CartTotalsTest.roundsHalfUp(CartTotalsTest.kt:58)
+
+214 tests completed, 2 failed, 1 skipped
+
+> Task :app:testDebugUnitTest FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///builds/acme/mobile-app/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 2m 41s
+24 actionable tasks: 24 executed
+section_end:1759655708:step_script[0K
+section_start:1759655708:upload_artifacts_on_failure[0K[0K[36;1mUploading artifacts for failed job[0;m[0;m
+[32;1mUploading artifacts...[0;m
+app/build/reports/: found 412 matching artifact files and directories[0;m 
+Uploading artifacts as "archive" to coordinator... 201 Created[0;m  id[0;m=5011 responseStatus[0;m=201 Created token[0;m=glcbt-64
+section_end:1759655711:upload_artifacts_on_failure[0K
+section_start:1759655711:cleanup_file_variables[0K[0K[36;1mCleaning up project directory and file based variables[0;m[0;m
+section_end:1759655712:cleanup_file_variables[0K
+[31;1mERROR: Job failed: exit code 1
+[0;m
