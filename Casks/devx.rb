@@ -1,6 +1,6 @@
 cask "devx" do
-  version "0.5.0"
-  sha256 "c6d2837b63ed61a0d5ab57ad495b36126e8389fcb56a324da80cd0449ee0d28e"
+  version "0.5.1"
+  sha256 "cb7e1419fe2e1c6e4b6ad23f516b79aa666b2f5f0e35bc8bf74608d0de7f5b66"
 
   url "https://github.com/Ky0-Nguyen/devx/releases/download/#{version}/DevX-#{version}.dmg"
   name "DevX"
