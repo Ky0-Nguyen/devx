@@ -593,7 +593,9 @@ do {
         check(tabs.contains(expected), "the \(expected) view exists",
               req: expected == "settings" ? ["H15"] : [])
     }
-    check(DevXTab.settings.title == "Export",
+    // Named Export until it also held the feature switches; Export is now
+    // one of its panels.
+    check(DevXTab.settings.title == "Settings",
           "the export/settings view is labelled for what it does")
     let o = LaunchOptions.parse(["--tab=settings"])
     check(o.tab == .settings, "and is addressable from the command line")
@@ -2600,6 +2602,111 @@ do {
         check(live.fields.contains { $0.name == name },
               "the Live glossary explains \(name)")
     }
+}
+
+do {
+    // Settings › Features: which tabs the sidebar shows.
+    let all = Set(DevXTab.allCases)
+    check(FeatureSet.decode(shown: nil, known: nil) == FeatureSet.defaults,
+          "a first launch shows the main features")
+    check(FeatureSet.defaults.isSuperset(of: FeatureSet.alwaysShown),
+          "the defaults include Settings and Help")
+    check(FeatureSet.defaults != all, "and leave some features to turn on")
+    for core: DevXTab in [.devices, .apps, .live, .record, .inspect, .sessions, .issues] {
+        check(FeatureSet.defaults.contains(core), "'\(core.rawValue)' is a main feature")
+    }
+
+    // A stored choice round-trips, and Settings/Help cannot be lost.
+    let chosen: Set<DevXTab> = [.devices, .threads]
+    let stored = FeatureSet.encode(chosen)
+    let known = DevXTab.allCases.map(\.rawValue)
+    check(FeatureSet.decode(shown: stored, known: known) == chosen.union(FeatureSet.alwaysShown),
+          "a chosen set survives a relaunch", "got \(FeatureSet.decode(shown: stored, known: known))")
+    check(FeatureSet.decode(shown: [], known: known) == FeatureSet.alwaysShown,
+          "turning everything off still leaves Settings and Help")
+    check(stored == ["devices", "threads", "settings", "help"],
+          "the stored list is in sidebar order", "got \(stored)")
+
+    // A newer version's tab survives a downgrade's re-save.
+    let fromNewer = ["devices", "future-tab", "settings", "help"]
+    check(FeatureSet.encode([.devices], keeping: fromNewer).contains("future-tab"),
+          "a tab this version does not know keeps its stored choice")
+    check(FeatureSet.known(keeping: known + ["future-tab"]).contains("future-tab")
+            && FeatureSet.known(keeping: nil) == known,
+          "and stays known, so it does not reappear at its default")
+
+    // A tab added by a later version was never offered, so it takes its
+    // default instead of reading as one the reader turned off.
+    let oldKnown = known.filter { $0 != "intelligence" && $0 != "layout" }
+    let upgraded = FeatureSet.decode(shown: ["devices"], known: oldKnown)
+    check(upgraded.contains(.intelligence), "a new main feature appears after an upgrade")
+    check(!upgraded.contains(.layout), "a new optional feature stays hidden after an upgrade")
+    check(!FeatureSet.decode(shown: ["devices"], known: known).contains(.intelligence),
+          "but one the reader turned off stays off")
+    check(FeatureSet.decode(shown: ["devices", "no-such-tab"], known: known + ["no-such-tab"])
+            .contains(.devices), "an unknown stored name is ignored, not fatal")
+
+    // The sidebar keeps the open tab even when it is hidden.
+    let shown: Set<DevXTab> = [.devices, .issues]
+    check(FeatureSet.sidebar(shown: shown, current: .devices) == [.devices, .issues, .settings, .help],
+          "the sidebar lists shown tabs in order")
+    check(FeatureSet.sidebar(shown: shown, current: .compare) == [.devices, .issues, .compare, .settings, .help],
+          "a hidden tab something opened stays visible while it is open")
+
+    // Reopening on the last tab.
+    check(FeatureSet.restore(last: "issues", shown: shown) == .issues, "the last tab is reopened")
+    check(FeatureSet.restore(last: "compare", shown: shown) == .devices,
+          "a last tab that is now hidden falls back to the first shown one")
+    check(FeatureSet.restore(last: nil, shown: shown) == .devices, "no stored tab: the first shown one")
+    check(FeatureSet.restore(last: "help", shown: []) == .help, "Settings and Help always reopen")
+    check(FeatureSet.restore(last: "bogus", shown: []) == .settings,
+          "with nothing else shown, Settings is where the reader can fix it")
+
+    // Every tab belongs to exactly one group, so the Settings page lists all.
+    let grouped = FeatureSet.Group.allCases.flatMap(\.tabs)
+    check(grouped.count == DevXTab.allCases.count && Set(grouped) == all,
+          "every tab is listed once in Settings › Features")
+}
+
+do {
+    check(LaunchOptions.parse(["--tour"]).tour == 1, "--tour opens the tour at the first card")
+    check(LaunchOptions.parse(["--tour=6"]).tour == 6, "--tour=N opens it at card N")
+    let both = LaunchOptions.parse(["--tour", "--tab", "issues"])
+    check(both.tour == 1 && both.tab == .issues, "a bare --tour does not swallow the next flag")
+    check(LaunchOptions.parse([]).tour == nil, "no --tour, no forced tour")
+}
+
+do {
+    // The tour covers every feature, in both languages.
+    let tabs = Onboarding.steps.compactMap { step -> DevXTab? in
+        if case .feature(let t) = step.kind { return t } else { return nil }
+    }
+    check(tabs == DevXTab.allCases, "the tour has one card per tab, in sidebar order")
+    check(Onboarding.steps.first?.kind == .welcome, "the tour opens with a welcome")
+    check(Onboarding.steps.last?.kind == .finish, "and ends on choosing features")
+    check(Onboarding.steps.last?.tab == .settings, "which opens Settings, where that choice is made")
+    check(Set(Onboarding.steps.map(\.id)).count == Onboarding.steps.count, "tour step ids are unique")
+    check(Set(Onboarding.guides.map(\.tab)) == Set(DevXTab.allCases)
+            && Onboarding.guides.count == DevXTab.allCases.count,
+          "every tab has exactly one feature description")
+    for g in Onboarding.guides {
+        check(g.english.count > 30 && g.vietnamese.count > 30,
+              "'\(g.tab.rawValue)' is described in English and Vietnamese")
+        check(!g.tryEnglish.isEmpty && !g.tryVietnamese.isEmpty,
+              "'\(g.tab.rawValue)' says what to try, in both languages")
+        check(g.english != g.vietnamese && g.tryEnglish != g.tryVietnamese,
+              "'\(g.tab.rawValue)' is actually translated")
+    }
+    let before = Strings.active
+    let live = Onboarding.guide(.live)
+    Strings.active = .vi
+    check(live.text == live.vietnamese && live.tryIt == live.tryVietnamese
+            && Onboarding.welcomeTitle != "Welcome to DevX",
+          "the tour follows the Vietnamese interface")
+    Strings.active = .en
+    check(live.text == live.english && Onboarding.welcomeTitle == "Welcome to DevX",
+          "and the English one")
+    Strings.active = before
 }
 
 if listingRequirements { exit(0) }

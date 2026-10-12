@@ -32,13 +32,27 @@ struct DevXApp: App {
         if let dir = launch.sessionsDir { state.sessionsDir = dir }
         if let dev = launch.device { state.selectedDevice = dev }
         if let app = launch.app { state.selectedApp = app }
+        // A launch that names where to go wins; otherwise the window reopens
+        // on the tab it was closed on, and a first launch gets the tour.
+        let directed = launch.tab != nil || launch.startLive || launch.session != nil
+            || (launch.baseline != nil && launch.candidate != nil)
         if launch.startLive { state.tab = .live }
         if let tab = launch.tab { state.tab = tab }
+        if !directed { state.restoreLastTab() }
 
         if let b = launch.baseline { state.baselinePath = b }
         if let c = launch.candidate { state.candidatePath = c }
 
         state.loadLanguage()
+        // Once per run: this runs again for every new window.
+        if let card = launch.tour, state.tourStep == nil, !state.tourShownThisRun {
+            state.tourShownThisRun = true
+            state.startTour()
+            state.tourGo(to: min(card, Onboarding.steps.count) - 1)
+        } else if !directed && state.tourPending && state.tourStep == nil && !state.tourShownThisRun {
+            state.tourShownThisRun = true
+            state.startTour()
+        }
         state.startAIControl()
         state.loadRememberedTarget()
         state.loadRecents()
@@ -106,6 +120,7 @@ struct DevXApp: App {
                 }
                 Button(tr("Cancel Running Operation")) { state.cancel() }
                     .keyboardShortcut(".", modifiers: .command)
+                Button(tr("Replay the tour")) { state.startTour() }
             }
         }
     }
@@ -123,15 +138,35 @@ struct RootView: View {
         .font(Term.font(10))
     }
 
+    /// The tab the tour card is about, highlighted in the sidebar while the
+    /// rest dims, so the card and the place it describes read as one.
+    private var tourTab: DevXTab? {
+        state.tourStep.flatMap { Onboarding.steps[$0].tab }
+    }
+
+    private func sidebarRow(_ tab: DevXTab) -> some View {
+        let touring = state.tourStep != nil
+        let lit = touring && tourTab == tab
+        return HStack(spacing: 4) {
+            Label(tab.title.uppercased(), systemImage: tab.icon)
+                .font(Term.font(11, .semibold))
+                .kerning(0.9)
+            Spacer(minLength: 0)
+            if lit { Text("◀").font(Term.font(10)).foregroundStyle(Term.amber) }
+        }
+        .padding(.vertical, 1).padding(.horizontal, 3)
+        .overlay(RoundedRectangle(cornerRadius: 2)
+            .strokeBorder(Term.amber.opacity(lit ? 0.9 : 0)))
+        .opacity(touring && !lit ? 0.4 : 1)
+    }
+
     var body: some View {
         NavigationSplitView {
-            List(DevXTab.allCases, selection: Binding(
+            List(state.sidebarTabs, selection: Binding(
                 get: { state.tab },
                 set: { if let v = $0 { state.tab = v } })) { tab in
                 NavigationLink(value: tab) {
-                    Label(tab.title.uppercased(), systemImage: tab.icon)
-                        .font(Term.font(11, .semibold))
-                        .kerning(0.9)
+                    sidebarRow(tab)
                 }
             }
             .scrollContentBackground(.hidden)
@@ -226,6 +261,15 @@ struct RootView: View {
                     .overlay(RoundedRectangle(cornerRadius: 3)
                         .strokeBorder(Term.green.opacity(0.45)))
                     .shadow(color: .black.opacity(0.7), radius: 18)
+                }
+
+                if let step = state.tourStep {
+                    // The screen stays visible behind the card: the card is
+                    // about it.
+                    Color.black.opacity(0.35).allowsHitTesting(false)
+                    TourCard(index: step)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                        .padding(22)
                 }
             }
             .safeAreaInset(edge: .top) {

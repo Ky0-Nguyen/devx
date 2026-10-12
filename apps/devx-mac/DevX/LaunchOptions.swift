@@ -29,6 +29,9 @@ struct LaunchOptions {
     /// A monospaced family to render the window in, e.g. `--font=Monaco`. An
     /// uninstalled family is reported on stderr and the default is kept.
     var font: String?
+    /// Open the guided tour, at this card (1-based; `--tour` alone is the
+    /// first). For showing the app to someone, or recording it.
+    var tour: Int?
 
     static func parse(_ argv: [String]) -> LaunchOptions {
         var o = LaunchOptions()
@@ -69,6 +72,10 @@ struct LaunchOptions {
                 o.startLive = true
             case "--font":
                 if let v = next { o.font = v; i += step }
+            case "--tour":
+                // The value is optional, so only a joined one is taken: a bare
+                // `--tour` must not swallow the next flag.
+                o.tour = joined.flatMap { Int($0) }.map { max(1, $0) } ?? 1
             case "--live-seconds":
                 if let v = next, let n = Int(v), n > 0 { o.liveSeconds = n; i += step }
             default: break

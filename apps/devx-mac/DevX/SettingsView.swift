@@ -1,9 +1,10 @@
 import SwiftUI
 import AppKit
 
-/// The Export / settings view (spec section 13's eleventh view).
+/// The Settings view (spec section 13's eleventh view, once named Export).
 ///
-/// Two jobs, and a statement that belongs with them.
+/// Which features the sidebar shows (FeaturesPanel), then two jobs and a
+/// statement that belongs with them.
 ///
 /// **Export** copies the open session's stored report to a path the user
 /// picks. Copies, not regenerates: what leaves is what was recorded, and if
@@ -25,6 +26,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                FeaturesPanel()
                 languagePanel
                 exportPanel
                 pathsPanel
@@ -32,7 +34,7 @@ struct SettingsView: View {
             }
             .padding(14)
         }
-        .navigationTitle("~/export")
+        .navigationTitle("~/settings")
     }
 
     /// The interface language, and the boundary of what it changes.

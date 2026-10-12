@@ -32,7 +32,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .compare: return tr("Compare")
         case .intelligence: return tr("Intelligence")
         case .detectors: return tr("Detectors")
-        case .settings: return tr("Export")
+        case .settings: return tr("Settings")
         case .help: return tr("Help")
         }
     }
@@ -53,7 +53,7 @@ enum DevXTab: String, CaseIterable, Identifiable {
         case .compare: return "arrow.left.arrow.right"
         case .intelligence: return "chart.line.uptrend.xyaxis"
         case .detectors: return "function"
-        case .settings: return "square.and.arrow.up"
+        case .settings: return "gearshape"
         case .help: return "questionmark.circle"
         }
     }

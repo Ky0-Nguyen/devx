@@ -354,9 +354,9 @@ enum HelpTopics {
             vietnamese: "Toàn bộ detector, các ngưỡng của chúng, và nguồn gốc từng ngưỡng — là hằng số đo được của nền tảng hay là heuristic có thể cấu hình. Nên đọc màn này trước khi tranh luận một phát hiện có thật hay không. Nó cũng cho biết detector nào không chạy được và vì sao, đó là câu trả lời khác với việc chạy mà không tìm thấy gì."),
         HelpTopic(
             id: "settings",
-            title: "Export",
-            english: "Export a report as JSON or Markdown, choose the interface language, see where sessions are stored, and read what this tool does and does not send anywhere. What leaves this machine is listed connector by connector: by default nothing does, and BrowserStack, the Google SDK catalog and Intelligence connectors send only what they need, only when you ask.",
-            vietnamese: "Xuất report ra JSON hoặc Markdown, chọn ngôn ngữ giao diện, xem nơi lưu các phiên thu, và đọc phần công cụ này có gửi gì đi đâu hay không. Những gì rời khỏi máy được liệt kê theo từng connector: mặc định không có gì, còn BrowserStack, danh mục SDK của Google và các connector Intelligence chỉ gửi những gì cần thiết, và chỉ khi bạn yêu cầu."),
+            title: "Settings",
+            english: "Choose which features the sidebar shows -- the main ones are on by default, the choice is saved on this Mac, and DevX reopens on the tab you left. Export a report as JSON or Markdown, choose the interface language, see where sessions are stored, and read what this tool does and does not send anywhere. What leaves this machine is listed connector by connector: by default nothing does, and BrowserStack, the Google SDK catalog and Intelligence connectors send only what they need, only when you ask.",
+            vietnamese: "Chọn những tính năng thanh bên hiển thị -- các tính năng chính được bật sẵn, lựa chọn được lưu trên máy Mac này, và DevX mở lại đúng tab bạn đang dùng. Xuất report ra JSON hoặc Markdown, chọn ngôn ngữ giao diện, xem nơi lưu các phiên thu, và đọc phần công cụ này có gửi gì đi đâu hay không. Những gì rời khỏi máy được liệt kê theo từng connector: mặc định không có gì, còn BrowserStack, danh mục SDK của Google và các connector Intelligence chỉ gửi những gì cần thiết, và chỉ khi bạn yêu cầu."),
     ]
 
     /// Ideas that are not a screen but are the reason several screens look the

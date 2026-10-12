@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HelpView: View {
+    @EnvironmentObject var state: AppState
     @State private var copied: String? = nil
     /// What Claude Code already has registered, once looked up. Nil until
     /// then: "not checked" and "not registered" are different states and the
@@ -28,6 +29,7 @@ struct HelpView: View {
                     .font(Term.small).foregroundStyle(Term.dim)
                     .fixedSize(horizontal: false, vertical: true)
 
+                tourPanel
                 connectPanel
                 conceptsPanel
                 screensPanel
@@ -35,6 +37,23 @@ struct HelpView: View {
             .padding(14)
         }
         .navigationTitle("~/help")
+    }
+
+    // MARK: - The tour
+
+    @ViewBuilder private var tourPanel: some View {
+        Panel(title: "Guided tour",
+              subtitle: "every feature, one card at a time") {
+            HStack(spacing: 10) {
+                Text(tr("Walks through each tab in the sidebar, opening it as it goes, "
+                      + "and lets you choose which ones to keep."))
+                    .font(Term.small).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Button(tr("Replay the tour")) { state.startTour() }
+                    .buttonStyle(TermButtonStyle(tone: Term.amber, filled: true))
+            }
+        }
     }
 
     // MARK: - Connecting an AI tool

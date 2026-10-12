@@ -108,7 +108,22 @@ open -a DevX --args --session=<session-id>
 # or start streaming a live capture on launch
 open -a DevX --args \
   --device=<id> --app=<identifier> --start-live
+
+# or open the guided tour, at a given card (write it joined: --tour=3)
+open -a DevX --args --tour=1
 ```
+
+**First launch opens a guided tour**, in English or Vietnamese. It walks through
+every tab, opening each one behind its card and highlighting it in the
+sidebar, with what the tab is for and the first thing to try there. Replay it
+from Help, from Settings or from *File › Replay the tour*.
+
+**The sidebar shows the main features by default** -- Devices, Apps, Live,
+Record, Inspect, Emulator, Sessions, Issues, Timeline, Intelligence, Settings
+and Help. Turn any tab on or off in **Settings › Features** (or on its tour
+card). The choice is saved, and DevX reopens on the tab you left. A hidden tab
+still opens when something asks for it (`--tab`, a session link, an AI tool),
+and stays in the sidebar while it is open.
 
 The window is rendered entirely in **Menlo** -- the face Terminal and Xcode are
 read in, which ships with every macOS, so nothing is bundled and the licence
@@ -122,7 +137,7 @@ a bare one, which it treats as a file to open -- see
 [known limitations §5](docs/known-limitations.md).
 
 Native sidebar over Devices · Apps · Preflight · **Live** · Record · **Inspect** · **Layout** · **Emulator** · Sessions ·
-Issues · Threads · Timeline · Compare · Detectors · Export. The Live tab streams a capture alongside the running app --
+Issues · Threads · Timeline · Compare · **Intelligence** · Detectors · Settings · Help. The Live tab streams a capture alongside the running app --
 frame and sample counts, memory sparklines per family, per-source status, and a
 preliminary banner over all of it until the window closes. It renders the engine's output and nothing more: the provenance
 banners, the separate detection and cause columns, the severity rationale and
@@ -145,7 +160,7 @@ flowchart TD
   Sel --> Apps["Apps tab: pick the app by package name or bundle id"]
   Apps --> Live["Live: frames, CPU and memory as they arrive; on an iOS simulator an opt-in stack profile"]
   Apps --> Record["Record: a fixed window, analysed when it closes"]
-  Live -->|"stop and save"| Session["a session package: Sessions · Issues · Threads · Timeline · Compare · Export"]
+  Live -->|"stop and save"| Session["a session package: Sessions · Issues · Threads · Timeline · Compare · Settings › Export"]
   Record --> Session
   CLI["mpi devices · mpi boot · mpi record"] -.-> Session
 ```
@@ -178,7 +193,7 @@ flowchart TD
 On a host without SwiftUI, `devx-serve` serves the same views over loopback
 HTTP (127.0.0.1 only, token required per start).
 
-The interface is available in English and Vietnamese, chosen from the Language menu or the Export tab, or left on System to follow the Mac's preferred languages. The catalog is keyed by the English sentence rather than by an identifier, so a missing translation degrades to correct English rather than to a key on screen. Technical terms stay in English on purpose.
+The interface is available in English and Vietnamese, chosen from the Language menu, the first tour card or the Settings tab, or left on System to follow the Mac's preferred languages. The catalog is keyed by the English sentence rather than by an identifier, so a missing translation degrades to correct English rather than to a key on screen. Technical terms stay in English on purpose.
 
 ## Use
 

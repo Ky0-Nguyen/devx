@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(mobile_perf_inspector
-        VERSION 0.5.1
+        VERSION 0.5.2
         DESCRIPTION "Mobile Performance Inspector -- cross-platform profiler core"
         LANGUAGES CXX)
 
