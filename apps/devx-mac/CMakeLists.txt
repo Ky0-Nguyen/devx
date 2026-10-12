@@ -47,6 +47,10 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IntelligenceView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Emulator.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+AIControl.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Features.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeatureSet.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Onboarding.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/OnboardingView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/IssuesView.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineModel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/TimelineView.swift
@@ -107,6 +111,8 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/CounterFormat.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSelection.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeatureSet.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Onboarding.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

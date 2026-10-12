@@ -31,7 +31,43 @@ final class PollFlag: @unchecked Sendable {
 final class AppState: ObservableObject {
     typealias Tab = DevXTab
 
-    @Published var tab: Tab = .devices
+    /// The open tab. Remembered, so the window reopens where it was left.
+    @Published var tab: Tab = .devices {
+        didSet {
+            if tourStep != nil {
+                // The tour does not decide where the reader works next time,
+                // and a tab changed by anything but the tour (a click, an AI
+                // tool) brings the card to that tab rather than leaving it
+                // describing another screen.
+                if !tourNavigating { tourFollow(tab) }
+            } else {
+                UserDefaults.standard.set(tab.rawValue, forKey: Self.tabKey)
+            }
+        }
+    }
+    /// The tabs the sidebar shows (Settings › Features). See FeatureSet.
+    @Published var shownTabs: Set<Tab> = FeatureSet.decode(
+        shown: UserDefaults.standard.stringArray(forKey: AppState.shownTabsKey),
+        known: UserDefaults.standard.stringArray(forKey: AppState.knownTabsKey)) {
+        didSet {
+            let d = UserDefaults.standard
+            d.set(FeatureSet.encode(shownTabs, keeping: d.stringArray(forKey: Self.shownTabsKey)),
+                  forKey: Self.shownTabsKey)
+            d.set(FeatureSet.known(keeping: d.stringArray(forKey: Self.knownTabsKey)),
+                  forKey: Self.knownTabsKey)
+        }
+    }
+    /// The tour card on screen, as an index into `Onboarding.steps`; nil when
+    /// the tour is not running.
+    @Published var tourStep: Int? = nil
+    /// Where the reader was when the tour started, to go back to on skip.
+    var tabBeforeTour: Tab? = nil
+    /// Set while the tour itself switches tabs.
+    var tourNavigating = false
+    /// Something other than the tour changed the tab since it started, so
+    /// skipping leaves the reader there instead of undoing it.
+    var tourDetached = false
+    var tourShownThisRun = false
     @Published var lastError: String? = nil
 
     // In-flight blocking operations, by label.
@@ -65,6 +101,10 @@ final class AppState: ObservableObject {
         }
     }
     static let languageKey = "devx.language"
+    static let tabKey = "devx.lastTab"
+    static let shownTabsKey = "devx.features.shown"
+    static let knownTabsKey = "devx.features.known"
+    static let tourKey = "devx.onboarding.version"
     static let deviceKey = "devx.lastDevice"
     static let appKey = "devx.lastApp"
 

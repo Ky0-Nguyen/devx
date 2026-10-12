@@ -1,8 +1,17 @@
 # More than one language
 
-DevX's interface is available in English and Vietnamese. Choose it in the
-DevX's interface is available in English and Vietnamese. Choose it from the **Language** menu, from the small picker at the foot of the sidebar, or in the Export tab's **Language** panel, or leave it on *System*, which follows the Mac's preferred languages. The control was only in the Export tab at first, and someone looking for it could not find it: a global preference behind a tab named after something else., or leave it on *System*, which
-follows the Mac's preferred languages.
+DevX's interface is available in English and Vietnamese. Choose it from the
+**Language** menu, from the small picker at the foot of the sidebar, on the
+first card of the guided tour, or in the Settings tab's **Language** panel, or
+leave it on *System*, which follows the Mac's preferred languages. The control
+was only in the Settings tab (then named Export) at first, and someone looking
+for it could not find it: a global preference behind a tab named after
+something else.
+
+The guided tour and the feature descriptions in **Settings › Features** are
+stored as English/Vietnamese pairs in `Onboarding.swift`, like the Help
+topics, rather than in the catalog: they are sentences, and a catalog keyed by
+a sentence orphans its translation on the first edited comma.
 
 ## The catalog is keyed by the English text
 
