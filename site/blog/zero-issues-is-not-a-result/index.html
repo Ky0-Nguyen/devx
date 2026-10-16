@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" data-lang="en" data-title-en="“0 issues” is not a result · DevX blog" data-title-vi="“0 issues” chưa phải là kết quả · DevX blog">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>“0 issues” is not a result · DevX blog</title>
+<meta name="description" content="A real React Native capture on a Pixel 9 came back with zero issues because none of the twelve detectors could run. What a profiler should say when it measured nothing, and how to make every detector run.">
+<meta property="og:title" content="“0 issues” is not a result">
+<meta property="og:description" content="A React Native capture on a Pixel 9 reported zero issues because no detector could run. Here is what DevX says instead, and how to make all twelve run.">
+<meta property="og:image" content="https://ky0-nguyen.github.io/devx/blog/media/zero-issues-detectors.jpg">
+<meta property="og:type" content="article">
+<meta name="author" content="Tuan Nguyen, Technical Lead, Yum! Brands">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23090c0a'/%3E%3Crect x='7' y='8' width='4' height='16' fill='%234fee78'/%3E%3Crect x='14' y='13' width='4' height='11' fill='%234fee78' opacity='.7'/%3E%3Crect x='21' y='17' width='4' height='7' fill='%234fee78' opacity='.45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../blog.css">
+</head>
+<body>
+
+<nav>
+  <div class="bar">
+    <a class="logo" href="../../"><i></i>DEVX</a>
+    <div class="links">
+      <a href="../" aria-current="page">Blog</a>
+      <a class="wide" href="../../#install"><span lang="en">Install</span><span lang="vi">Cài đặt</span></a>
+      <a class="wide" href="https://github.com/Ky0-Nguyen/devx">GitHub</a>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-set-lang="vi" aria-pressed="false">VI</button>
+    </div>
+  </div>
+</nav>
+
+<main>
+<article>
+  <div class="eyebrow"><span lang="en">Profiling React Native</span><span lang="vi">Đo hiệu năng React Native</span></div>
+  <h1><span lang="en">“0 issues” is not a result</span><span lang="vi">“0 issues” chưa phải là một kết quả</span></h1>
+  <p class="dek">
+    <span lang="en">A real capture of a React Native app on a Pixel 9 came back with zero issues. Not because the app is fast, but because none of the twelve detectors could run. Here is what a profiler should say when it measured nothing, and how to make every detector run.</span>
+    <span lang="vi">Một lần đo thật app React Native trên Pixel 9 trả về 0 issue. Không phải vì app nhanh, mà vì không detector nào trong số 12 detector chạy được. Bài này nói một công cụ đo nên báo gì khi nó không đo được gì, và làm sao để mọi detector đều chạy.</span>
+  </p>
+  <div class="meta"><strong>Tuan Nguyen</strong> · Technical Lead, Yum! Brands · 2026-10-16 · <span lang="en">6 min read</span><span lang="vi">6 phút đọc</span></div>
+
+  <h2><span lang="en">The capture</span><span lang="vi">Lần đo</span></h2>
+  <p>
+    <span lang="en">The app is a small React Native CLI test app, <code>com.rncliapp</code>. It ran on a physical Google Pixel 9 with Android 16 in BrowserStack’s device cloud, profiled by BrowserStack App Profiling, and the result was imported into DevX as a session. Every number below is copied from that session’s report.</span>
+    <span lang="vi">App là một app React Native CLI nhỏ để thử, <code>com.rncliapp</code>. Nó chạy trên một chiếc Google Pixel 9 thật, Android 16, trong cloud thiết bị của BrowserStack, được đo bằng BrowserStack App Profiling, rồi kết quả được import vào DevX thành một session. Mọi con số dưới đây chép nguyên từ report của session đó.</span>
+  </p>
+  <div class="facts">
+    <div class="fact"><b>24.655 s</b><span lang="en">capture window</span><span lang="vi">thời gian đo</span></div>
+    <div class="fact"><b>152</b><span lang="en">events, 100% coverage</span><span lang="vi">event, phủ 100%</span></div>
+    <div class="fact"><b>0</b><span lang="en">frames, CPU samples, JS tasks</span><span lang="vi">frame, mẫu CPU, JS task</span></div>
+    <div class="fact"><b class="warn">0 / 12</b><span lang="en">detectors that ran</span><span lang="vi">detector chạy được</span></div>
+  </div>
+  <p>
+    <span lang="en">And the headline: <strong>0 issues</strong>.</span>
+    <span lang="vi">Và dòng tiêu đề: <strong>0 issue</strong>.</span>
+  </p>
+
+  <h2><span lang="en">The tempting reading</span><span lang="vi">Cách đọc dễ dãi</span></h2>
+  <p>
+    <span lang="en">Most dashboards would draw a green check here. Zero issues, ship it. But look at what was collected: 10 counters, and no frames, no CPU samples, no JavaScript tasks. A jank detector with no frames has nothing to look at. Its silence is not evidence that frames were fine. It is the absence of evidence, dressed up as a result.</span>
+    <span lang="vi">Phần lớn dashboard sẽ vẽ một dấu tick xanh ở đây. Không có issue, ship thôi. Nhưng hãy nhìn những gì đã thu được: 10 counter, không có frame, không có mẫu CPU, không có JavaScript task. Một detector bắt giật khung hình mà không có frame thì chẳng có gì để xem. Việc nó im lặng không chứng minh frame ổn. Đó là thiếu bằng chứng, được trình bày như một kết quả.</span>
+  </p>
+  <p>
+    <span lang="en">This is not a BrowserStack problem. App Profiling measures what it is built to measure, and DevX labels it as theirs: “measured by BrowserStack App Profiling on their device, not by DevX”. The same thing happens closer to home. A 273-second live capture on an Android emulator in the same week recorded 4,787 memory-counter events, but zero frames and zero CPU samples. Again: 0 issues, and again every detector skipped.</span>
+    <span lang="vi">Đây không phải lỗi của BrowserStack. App Profiling đo đúng những gì nó được làm ra để đo, và DevX ghi rõ đó là số của họ: “measured by BrowserStack App Profiling on their device, not by DevX”. Chuyện tương tự cũng xảy ra ngay trên máy mình. Một lần đo live 273 giây trên emulator Android cùng tuần ghi được 4.787 event đếm bộ nhớ, nhưng 0 frame và 0 mẫu CPU. Lại 0 issue, và lại toàn bộ detector bị bỏ qua.</span>
+  </p>
+
+  <h2><span lang="en">What DevX says instead</span><span lang="vi">DevX báo gì thay vào đó</span></h2>
+  <p>
+    <span lang="en">DevX puts the detector table next to the issue list, and it says this before it says anything else:</span>
+    <span lang="vi">DevX đặt bảng detector ngay cạnh danh sách issue, và nói điều này trước mọi thứ khác:</span>
+  </p>
+  <blockquote><p>0 detector(s) ran, 0 found something, 12 could not run.</p></blockquote>
+  <figure>
+    <img src="../media/zero-issues-detectors.jpg" alt="DevX Issues tab for the Pixel 9 session: a banner saying no detector that ran produced a finding, and a detector table where DET-01 to DET-05 are marked skipped, each with the reason." width="1200" height="555" loading="lazy">
+    <figcaption>
+      <span lang="en">The Issues tab for that session. Every skipped detector carries its own reason, for example “no frame records were collected; this is a missing collector, not an absence of jank”.</span>
+      <span lang="vi">Tab Issues của session đó. Mỗi detector bị bỏ qua đều kèm lý do riêng, ví dụ “no frame records were collected; this is a missing collector, not an absence of jank” (không thu được frame nào; đây là thiếu bộ thu, không phải không có giật).</span>
+    </figcaption>
+  </figure>
+  <p>
+    <span lang="en">The report also marks the session <code>ineligible</code> for benchmarking, because it was a diagnostic capture: it can be used to investigate behavior, not to certify release performance. Three rules make this possible:</span>
+    <span lang="vi">Report còn đánh dấu session là <code>ineligible</code> để làm benchmark, vì đây là lần đo chẩn đoán: dùng để điều tra hành vi, không dùng để chứng nhận hiệu năng bản release. Ba quy tắc làm được điều này:</span>
+  </p>
+  <ul>
+    <li><span lang="en"><strong>Not measured is not zero.</strong> A value nobody measured is shown as missing, never as 0. On the Timeline, a blank column means NOT MEASURED.</span><span lang="vi"><strong>Không đo không phải là 0.</strong> Giá trị không ai đo được hiển thị là thiếu, không bao giờ là 0. Trên Timeline, cột trống nghĩa là KHÔNG ĐO.</span></li>
+    <li><span lang="en"><strong>A gap is a gap.</strong> Coverage is reported per collector, and an uncovered interval is a gap, not measured idle time.</span><span lang="vi"><strong>Khoảng trống là khoảng trống.</strong> Độ phủ được báo theo từng bộ thu, và một đoạn không được phủ là khoảng trống, không phải thời gian rảnh đã đo.</span></li>
+    <li><span lang="en"><strong>Detection is not cause.</strong> A finding says what was observed. <code>cause: unknown</code> is the normal, honest answer until something establishes why.</span><span lang="vi"><strong>Phát hiện không phải nguyên nhân.</strong> Một phát hiện nói điều đã quan sát được. <code>cause: unknown</code> là câu trả lời bình thường và trung thực cho tới khi có gì đó xác định được vì sao.</span></li>
+  </ul>
+
+  <h2><span lang="en">What each detector needs</span><span lang="vi">Mỗi detector cần gì</span></h2>
+  <p>
+    <span lang="en">Twelve detectors, twelve kinds of evidence. Turning a skipped detector into one that runs is a matter of collecting what it reads:</span>
+    <span lang="vi">Mười hai detector, mười hai loại bằng chứng. Muốn detector bị bỏ qua chạy được thì phải thu đúng thứ nó đọc:</span>
+  </p>
+  <div class="table">
+  <table>
+    <thead><tr><th>Detector</th><th><span lang="en">Looks for</span><span lang="vi">Tìm gì</span></th><th><span lang="en">Needs</span><span lang="vi">Cần</span></th></tr></thead>
+    <tbody>
+      <tr><td>DET-01</td><td><span lang="en">Missed frame deadlines</span><span lang="vi">Trễ hạn khung hình (giật)</span></td><td><span lang="en">Frame records</span><span lang="vi">Dữ liệu frame</span></td></tr>
+      <tr><td>DET-02</td><td><span lang="en">Long JS execution</span><span lang="vi">JS chạy quá lâu</span></td><td><span lang="en">JS execution spans</span><span lang="vi">Các đoạn thực thi JS</span></td></tr>
+      <tr><td>DET-03</td><td><span lang="en">Synchronous I/O on a user-visible thread</span><span lang="vi">I/O đồng bộ trên luồng người dùng thấy</span></td><td><code>--scheduling</code> (atrace)</td></tr>
+      <tr><td>DET-04</td><td><span lang="en">Sampled CPU hotspot</span><span lang="vi">Điểm nóng CPU</span></td><td><span lang="en">CPU samples</span><span lang="vi">Mẫu CPU</span></td></tr>
+      <tr><td>DET-05</td><td><span lang="en">Memory growth across screen cycles</span><span lang="vi">Bộ nhớ tăng qua các vòng mở/đóng màn hình</span></td><td><code>--sdk</code> <span lang="en">screen markers</span><span lang="vi">đánh dấu màn hình</span></td></tr>
+      <tr><td>DET-06</td><td><span lang="en">Retained objects</span><span lang="vi">Object bị giữ lại</span></td><td><code>--heap</code></td></tr>
+      <tr><td>DET-07</td><td><span lang="en">Startup over budget</span><span lang="vi">Khởi động vượt ngân sách</span></td><td><code>--launch</code> + <span lang="en">your budget</span><span lang="vi">ngân sách bạn đặt</span></td></tr>
+      <tr><td>DET-08</td><td><span lang="en">Regression</span><span lang="vi">Hồi quy hiệu năng</span></td><td><code>mpi compare</code> <span lang="en">of two run sets</span><span lang="vi">giữa hai nhóm lần chạy</span></td></tr>
+      <tr><td>DET-09</td><td><span lang="en">Wait / lock contention</span><span lang="vi">Chờ / tranh chấp khoá</span></td><td><code>--scheduling</code></td></tr>
+      <tr><td>DET-10</td><td><span lang="en">Repeated React renders</span><span lang="vi">React render lặp lại</span></td><td><code>--sdk</code> <span lang="en">React commits</span><span lang="vi">dữ liệu commit của React</span></td></tr>
+      <tr><td>DET-11</td><td><span lang="en">Network delay affecting an interaction</span><span lang="vi">Mạng chậm làm trễ thao tác</span></td><td><code>--sdk</code> <span lang="en">request + interaction spans</span><span lang="vi">span request + thao tác</span></td></tr>
+      <tr><td>DET-12</td><td><span lang="en">Expensive dev-tooling activity</span><span lang="vi">Công cụ dev tốn tài nguyên</span></td><td><span lang="en">Sampled stacks</span><span lang="vi">Stack đã lấy mẫu</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    <span lang="en">The startup rule is a good example of the stance. DET-07 will not run without a budget, because no platform publishes one: “a budget is a product decision”, so DevX will not invent a number. You set it.</span>
+    <span lang="vi">Quy tắc khởi động là ví dụ rõ nhất cho cách DevX làm. DET-07 không chạy nếu chưa có ngân sách, vì không nền tảng nào công bố con số đó: “a budget is a product decision” (ngân sách là quyết định sản phẩm), nên DevX không tự bịa ra một con số. Bạn tự đặt.</span>
+  </p>
+
+  <h2><span lang="en">Make them run</span><span lang="vi">Cho chúng chạy</span></h2>
+  <p>
+    <span lang="en">On Android, a capture that DevX records itself collects frames and CPU samples. Ask first what this device and app can give you, then record with the heavier collectors switched on:</span>
+    <span lang="vi">Trên Android, một lần đo do chính DevX ghi sẽ thu frame và mẫu CPU. Hãy hỏi trước thiết bị và app này cho được những gì, rồi ghi với các bộ thu nặng hơn được bật:</span>
+  </p>
+<pre><code><span class="c"># <span lang="en">what can be measured here, and how to fix what cannot</span><span lang="vi">đo được gì ở đây, và sửa chỗ không đo được thế nào</span></span>
+mpi preflight --device &lt;id&gt; --app com.example.app
+
+<span class="c"># <span lang="en">start the app, trace scheduling, take a heap dump</span><span lang="vi">khởi động app, trace lịch CPU, chụp heap dump</span></span>
+mpi record --device &lt;id&gt; --app com.example.app \
+  --duration-s 20 --launch --scheduling --heap
+
+<span class="c"># <span lang="en">add your startup budget</span><span lang="vi">thêm ngân sách khởi động của bạn</span></span>
+mpi analyze &lt;session&gt; --threshold DET-07.budget_ms=&lt;ms&gt;</code></pre>
+  <p>
+    <span lang="en">Two notes. <code>--scheduling</code> runs <code>atrace</code> on the whole device, not just your app, so DevX prints that cost before it starts. <code>--heap</code> pauses the app to write the dump. For screens, React commits and network spans, add the dependency-free in-app SDK and record with <code>--sdk</code>: those come from the app itself, and DevX will not guess a screen from a function name.</span>
+    <span lang="vi">Hai lưu ý. <code>--scheduling</code> chạy <code>atrace</code> trên toàn bộ thiết bị, không chỉ app của bạn, nên DevX in ra chi phí đó trước khi bắt đầu. <code>--heap</code> tạm dừng app để ghi file dump. Với màn hình, React commit và network span, hãy thêm SDK nhỏ (không phụ thuộc thư viện nào) vào app và ghi với <code>--sdk</code>: các dữ liệu này đến từ chính app, và DevX không đoán màn hình từ tên hàm.</span>
+  </p>
+  <p>
+    <span lang="en">In the app it is the same path: Devices → Apps → Preflight → Live or Record → Issues, where the detector table tells you, detector by detector, whether the answer is “nothing found” or “nothing looked”.</span>
+    <span lang="vi">Trong app cũng đi đúng đường đó: Devices → Apps → Preflight → Live hoặc Record → Issues. Ở đó bảng detector cho bạn biết, từng detector một, câu trả lời là “không tìm thấy gì” hay “không ai nhìn”.</span>
+  </p>
+
+  <h2><span lang="en">The point</span><span lang="vi">Điều cần nhớ</span></h2>
+  <p>
+    <span lang="en">A profiler that reports zero issues when it could not look trains you to trust silence. The fix is cheap: say which checks ran, say why the others did not, and never let a missing measurement read as a good one. When a DevX report says 0 issues and 12 of 12 detectors ran, that zero means something.</span>
+    <span lang="vi">Một công cụ đo báo 0 issue khi nó không nhìn được gì sẽ khiến bạn quen tin vào sự im lặng. Cách sửa rất rẻ: nói rõ kiểm tra nào đã chạy, vì sao những cái còn lại không chạy, và không bao giờ để một phép đo bị thiếu trông như một phép đo tốt. Khi report của DevX ghi 0 issue và 12/12 detector đã chạy, con số 0 đó mới có ý nghĩa.</span>
+  </p>
+
+  <div class="next">
+    <p>
+      <span lang="en">DevX is free and open source (MIT), for Apple Silicon Macs on macOS 14 or newer.</span>
+      <span lang="vi">DevX miễn phí và mã nguồn mở (MIT), cho máy Mac Apple Silicon chạy macOS 14 trở lên.</span>
+    </p>
+    <a class="btn solid" href="../../#install"><span lang="en">Install DevX</span><span lang="vi">Cài DevX</span></a>
+  </div>
+</article>
+</main>
+
+<footer>
+  <span>DevX · MIT License</span>
+  <span><a href="../">Blog</a> · <a href="../../">ky0-nguyen.github.io/devx</a> · <a href="https://github.com/Ky0-Nguyen/devx">GitHub</a></span>
+</footer>
+<script src="../lang.js"></script>
+</body>
+</html>

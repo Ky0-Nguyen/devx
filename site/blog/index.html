@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-lang="en" data-title-en="DevX blog" data-title-vi="DevX blog">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DevX blog</title>
+<meta name="description" content="Notes on measuring React Native apps honestly: what was measured, what was not, and how DevX tells them apart.">
+<meta property="og:title" content="DevX blog">
+<meta property="og:description" content="Notes on measuring React Native apps honestly.">
+<meta property="og:image" content="https://ky0-nguyen.github.io/devx/blog/media/zero-issues-detectors.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23090c0a'/%3E%3Crect x='7' y='8' width='4' height='16' fill='%234fee78'/%3E%3Crect x='14' y='13' width='4' height='11' fill='%234fee78' opacity='.7'/%3E%3Crect x='21' y='17' width='4' height='7' fill='%234fee78' opacity='.45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+</head>
+<body>
+
+<nav>
+  <div class="bar">
+    <a class="logo" href="../"><i></i>DEVX</a>
+    <div class="links">
+      <a href="./" aria-current="page">Blog</a>
+      <a class="wide" href="../#install"><span lang="en">Install</span><span lang="vi">Cài đặt</span></a>
+      <a class="wide" href="https://github.com/Ky0-Nguyen/devx">GitHub</a>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-set-lang="vi" aria-pressed="false">VI</button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="eyebrow">Blog</div>
+  <h1><span lang="en">Measured, or not measured</span><span lang="vi">Đã đo, hay chưa đo</span></h1>
+  <p class="dek">
+    <span lang="en">Notes on profiling React Native apps on real devices, and on telling “nothing was wrong” apart from “nothing was measured”.</span>
+    <span lang="vi">Ghi chép về đo hiệu năng app React Native trên thiết bị thật, và về cách phân biệt “không có gì sai” với “không có gì được đo”.</span>
+  </p>
+
+  <div class="posts">
+    <a class="post" href="zero-issues-is-not-a-result/">
+      <div class="date">2026-10-16</div>
+      <h2><span lang="en">“0 issues” is not a result</span><span lang="vi">“0 issues” chưa phải là một kết quả</span></h2>
+      <p>
+        <span lang="en">A React Native capture on a Pixel 9 reported zero issues because none of the twelve detectors could run. What DevX says instead, and how to make every detector run.</span>
+        <span lang="vi">Một lần đo app React Native trên Pixel 9 báo 0 issue vì không detector nào trong 12 detector chạy được. DevX báo gì thay vào đó, và làm sao để mọi detector đều chạy.</span>
+      </p>
+    </a>
+  </div>
+</main>
+
+<footer>
+  <span>DevX · MIT License</span>
+  <span><a href="../">ky0-nguyen.github.io/devx</a> · <a href="https://github.com/Ky0-Nguyen/devx">GitHub</a></span>
+</footer>
+<script src="lang.js"></script>
+</body>
+</html>
