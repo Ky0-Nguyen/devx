@@ -77,6 +77,11 @@ Or download `DevX-<version>.dmg` from
 [Releases](https://github.com/Ky0-Nguyen/devx/releases) and drag DevX to
 Applications.
 
+To update later, use **Settings › Updates › Check for updates** in DevX. It
+updates through Homebrew when Homebrew installed it. Otherwise it downloads the
+release's disk image, checks its SHA-256 and Developer ID signature, then
+replaces the app. Or run `brew update && brew upgrade --cask devx`.
+
 Releases from 0.3.0 are signed with a Developer ID and notarized by Apple, so
 DevX and `mpi` open like any other downloaded app
 ([how a release is built](docs/packaging-and-signing.md)). 0.2.0 and earlier

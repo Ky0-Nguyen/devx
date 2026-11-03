@@ -64,6 +64,17 @@ final class AppState: ObservableObject {
     /// where to go next. See NextStep.
     @Published var nextStep: NextStep? = nil
     var nextStepSerial = 0
+
+    // Updates (AppState+Update.swift).
+    @Published var updateInfo: JSON = .null
+    /// What the update is doing now; nil when idle.
+    @Published var updatePhase: String? = nil
+    @Published var updateMessage = ""
+    /// Off by default: a check is a request to GitHub, and nothing leaves this
+    /// Mac unless someone asked for it.
+    @Published var autoCheckUpdates = UserDefaults.standard.bool(forKey: AppState.updateAutoKey) {
+        didSet { UserDefaults.standard.set(autoCheckUpdates, forKey: Self.updateAutoKey) }
+    }
     /// Where the reader was when the tour started, to go back to on skip.
     var tabBeforeTour: Tab? = nil
     /// Set while the tour itself switches tabs.

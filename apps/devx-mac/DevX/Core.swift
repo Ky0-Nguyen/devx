@@ -135,6 +135,7 @@ enum Core {
     }
 
     static func version() -> JSON { call { mpi_version_json() } }
+    static func updateCheck() -> JSON { call { mpi_update_check_json() } }
 
     static func devices(includeSimulators: Bool, timeoutMs: Int32 = 20000) -> JSON {
         call { mpi_devices_json(includeSimulators ? 1 : 0, timeoutMs) }

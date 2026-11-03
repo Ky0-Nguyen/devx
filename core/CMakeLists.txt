@@ -8,6 +8,7 @@ add_library(mpi_core STATIC
   net/http2_client.cpp
   net/grpc_client.cpp
   net/https_fetch.cpp
+  update/update.cpp
   signals/signal.cpp
   signals/connector.cpp
   signals/signal_store.cpp
