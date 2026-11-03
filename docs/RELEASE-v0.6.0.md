@@ -18,7 +18,9 @@ Check for updates**.
   installed:
   - installed with **Homebrew**: it runs `brew update` and
     `brew upgrade --cask devx`, so Homebrew's record and the `mpi` link stay
-    right;
+    right. It answers Homebrew 7's "[y/n]" upgrade prompt (pressing the button
+    is the yes) and stops brew from quitting DevX mid-upgrade, so DevX can
+    relaunch the new copy;
   - installed from the **disk image**:
     - it downloads the release's `.dmg` and checks it against the
       published SHA-256;

@@ -78,6 +78,12 @@ extension AppState {
                 "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
                 "HOME": NSHomeDirectory(),
                 "HOMEBREW_NO_ENV_HINTS": "1",
+                // Homebrew 7 asks "[y/n]" before an upgrade, and nobody is at
+                // a terminal to answer it: the press of "Update now" is the yes.
+                "HOMEBREW_NO_ASK": "1",
+                // And it quits a running cask app while upgrading it, which
+                // here is DevX itself, before it could relaunch the new copy.
+                "HOMEBREW_NO_UPGRADE_QUIT_CASKS": "1",
             ]
             // brew upgrade only auto-updates its taps once a day; the cask
             // for a release made an hour ago needs this.
@@ -209,6 +215,8 @@ extension AppState {
         let pipe = Pipe()
         p.standardOutput = pipe
         p.standardError = pipe
+        // Nothing can answer a prompt: one reads end-of-file instead of waiting.
+        p.standardInput = FileHandle.nullDevice
         do { try p.run() } catch { return (-1, error.localizedDescription) }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         p.waitUntilExit()
