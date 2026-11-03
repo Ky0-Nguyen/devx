@@ -32,6 +32,7 @@
 #include "core/report/report.hpp"
 #include "core/rules/engine.hpp"
 #include "core/rules/rule_registry.hpp"
+#include "core/update/update.hpp"
 #include "core/session/live_capture.hpp"
 #include "core/session/compare.hpp"
 #include "core/session/session_store.hpp"
@@ -258,6 +259,10 @@ char* mpi_version_json(void) {
     v.set("generated_at", json::Value::string(time_util::now_iso8601_utc()));
     return v;
   });
+}
+
+char* mpi_update_check_json(void) {
+  return guard([] { return update::check(rules::engine_version(), net::Transport(net::https_fetch)); });
 }
 
 char* mpi_devices_json(int include_simulators, int timeout_ms) {

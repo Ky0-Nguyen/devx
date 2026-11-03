@@ -2709,6 +2709,61 @@ do {
     Strings.active = before
 }
 
+do {
+    // The confirmation bar after "use": it must point somewhere useful.
+    check(NextSteps.afterDevice.first == .apps, "after choosing a device, Apps comes first")
+    for tab: DevXTab in [.live, .record, .preflight, .inspect] {
+        check(NextSteps.afterApp.contains(tab), "after choosing an app, \(tab.rawValue) is offered")
+    }
+    check(!NextSteps.offered(NextSteps.afterApp, from: .live).contains(.live),
+          "the screen the reader is on is not offered as the next step")
+    check(NextSteps.offered(NextSteps.afterApp, from: .settings) == NextSteps.afterApp,
+          "and nothing else is dropped")
+    check(NextSteps.lifetime >= 10, "the bar stays long enough to be read")
+}
+
+do {
+    // How a copy of DevX is updated, from where it runs.
+    let none: (String) -> Bool = { _ in false }
+    let brewed: (String) -> Bool = { $0 == "/opt/homebrew/Caskroom/devx" || $0 == "/opt/homebrew/bin/brew" }
+    check(UpdatePlan.method(bundlePath: "/Applications/DevX.app", exists: brewed, writable: { _ in true })
+            == .homebrew(brew: "/opt/homebrew/bin/brew"),
+          "a Homebrew install is updated by Homebrew, never replaced behind its back")
+    check(UpdatePlan.method(bundlePath: "/Applications/DevX.app", exists: none, writable: { _ in true })
+            == .diskImage(target: "/Applications/DevX.app"),
+          "a dragged-in copy is replaced from the release's disk image")
+    check(UpdatePlan.method(bundlePath: "/Users/me/Apps/DevX.app", exists: brewed, writable: { _ in true })
+            == .diskImage(target: "/Users/me/Apps/DevX.app"),
+          "a copy outside /Applications is not Homebrew's, even when Homebrew has one")
+    check(UpdatePlan.method(bundlePath: "/Applications/DevX.app", exists: none, writable: { _ in false })
+            == .manual(target: "/Applications/DevX.app"),
+          "an unwritable folder falls back to opening the disk image")
+    check(UpdatePlan.method(bundlePath: "/Users/me/devx/build/bin/DevX.app", exists: brewed, writable: { _ in true })
+            == .development,
+          "a development build is never replaced by a download")
+
+    let hex = String(repeating: "ab", count: 32)
+    check(UpdatePlan.publishedSHA256(hex.uppercased() + "  DevX-0.6.1.dmg\n") == hex,
+          "the published checksum is read from a shasum line")
+    check(UpdatePlan.publishedSHA256("not-a-hash  DevX.dmg") == nil, "and anything else is refused")
+    check(UpdatePlan.signingRequirement.contains("9QCJJFC22X")
+            && UpdatePlan.signingRequirement.contains("anchor apple generic"),
+          "an update must be signed by the release team's Developer ID")
+
+    let now = Date()
+    check(!UpdatePlan.shouldAutoCheck(enabled: false, last: nil, now: now), "no launch check unless switched on")
+    check(UpdatePlan.shouldAutoCheck(enabled: true, last: nil, now: now), "switched on: the first launch checks")
+    check(!UpdatePlan.shouldAutoCheck(enabled: true, last: now.addingTimeInterval(-3600), now: now),
+          "and then at most once a day")
+    check(UpdatePlan.shouldAutoCheck(enabled: true, last: now.addingTimeInterval(-90000), now: now),
+          "a day later it checks again")
+
+    let notes = "# DevX\n\n## Install\n\n```bash\nbrew upgrade --cask devx\n```\n\n- one\n- two"
+    let summary = UpdatePlan.summary(notes)
+    check(!summary.contains("```") && !summary.contains("brew upgrade"), "the summary drops install commands")
+    check(summary.contains("- one") && !summary.contains("\n\n\n"), "and keeps the notes without blank runs")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

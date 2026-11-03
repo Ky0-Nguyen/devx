@@ -130,8 +130,11 @@ struct HelpView: View {
         Group {
             switch registration {
                 case .none:
-                    Button(tr("check Claude Code")) { checkRegistration(binary) }
-                        .buttonStyle(TermButtonStyle())
+                    Button { checkRegistration(binary) } label: {
+                        BusyLabel(title: tr("check Claude Code"), busy: installing, busyTitle: tr("checking…"))
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    .disabled(installing)
                 case .noClaude:
                     Text(tr("`claude` not found on this machine"))
                         .font(Term.micro).foregroundStyle(Term.amber)

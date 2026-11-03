@@ -48,6 +48,12 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Emulator.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+AIControl.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Features.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Feedback.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Update.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatePlan.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatesPanel.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeedbackViews.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/NextStep.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeatureSet.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Onboarding.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/OnboardingView.swift
@@ -113,6 +119,8 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/InspectSecrets.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeatureSet.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Onboarding.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/NextStep.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatePlan.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

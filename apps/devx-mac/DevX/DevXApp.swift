@@ -57,6 +57,7 @@ struct DevXApp: App {
         state.loadRememberedTarget()
         state.loadRecents()
         state.loadVersion()
+        state.autoCheckForUpdatesIfDue()
         state.loadDevices()
         if state.tab != .sessions { state.loadSessions() }
         if let id = launch.session {
@@ -108,6 +109,12 @@ struct DevXApp: App {
         }
         .windowToolbarStyle(.unified)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button(tr("Check for Updates…")) {
+                    state.tab = .settings
+                    state.checkForUpdates()
+                }
+            }
             CommandGroup(after: .newItem) {
                 Button(tr("Refresh Devices")) { state.loadDevices() }
                     .keyboardShortcut("r")
@@ -208,6 +215,7 @@ struct RootView: View {
                     }
                     .padding(.bottom, 3)
 
+                    ActivityLine()
                     Text("engine \(state.engineVersion) · ruleset \(state.rulesetVersion)")
                         .font(Term.font(10))
                         .foregroundStyle(Term.dim)
@@ -273,6 +281,9 @@ struct RootView: View {
                 }
             }
             .safeAreaInset(edge: .top) {
+                if let step = state.nextStep { NextStepBar(step: step) }
+            }
+            .safeAreaInset(edge: .top) {
                 if let notice = state.aiNotice {
                     HStack(spacing: 8) {
                         Text("AI").font(Term.font(11, .bold)).foregroundStyle(Term.cyan)
@@ -318,6 +329,8 @@ struct RootView: View {
             case .detectors: state.loadRules()
             default: break
             }
+            // Going to one of the suggested screens is the bar's job done.
+            if let step = state.nextStep, step.tabs.contains(tab) { state.nextStep = nil }
         }
         .onChange(of: state.selectedDevice) { _, _ in
             if state.tab == .apps { state.loadApps() }

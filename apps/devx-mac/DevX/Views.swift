@@ -408,8 +408,9 @@ struct AppsView: View {
                 } else {
                     VStack(spacing: 8) {
                         ForEach(Array(state.filteredApps.enumerated()), id: \.offset) { _, a in
-                            AppRow(app: a) {
-                                state.selectedApp = a["application_key"]["app_identifier"].text
+                            let id = a["application_key"]["app_identifier"].text
+                            AppRow(app: a, inUse: id == state.selectedApp) {
+                                state.useApp(id)
                             }
                         }
                     }
@@ -433,6 +434,9 @@ struct AppsView: View {
 
 private struct AppRow: View {
     let app: JSON
+    /// The app currently selected: its button says so instead of offering
+    /// to do again what was already done.
+    var inUse = false
     let use: () -> Void
 
     var body: some View {
@@ -449,7 +453,8 @@ private struct AppRow: View {
                     Text(name).font(Term.small).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("use", action: use).buttonStyle(TermButtonStyle())
+                Button(inUse ? tr("✓ in use") : tr("use"), action: use)
+                    .buttonStyle(TermButtonStyle(filled: inUse))
             }
             HStack(spacing: 6) {
                 Chip(text: runtime, tone: StatusTone.runtime(runtime))
@@ -692,10 +697,10 @@ struct RecentTargetsPanel: View {
                     // Selecting a remembered target does not assert anything
                     // about it: preflight and discovery still decide whether
                     // it can be captured.
-                    state.selectedApp = target.appIdentifier
                     if state.selectedDevice.isEmpty {
                         state.selectedDevice = target.deviceId
                     }
+                    state.useApp(target.appIdentifier)
                 } label: {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(target.appIdentifier)
@@ -924,7 +929,7 @@ private struct DevicePlatformColumnView: View {
                         // cannot use asks why, which is the only question
                         // that row raises.
                         if d["trust"].text == "authorized" {
-                            state.selectedDevice = d["device_id"].text
+                            state.useDevice(d["device_id"].text, name: d["display_name"].text)
                         } else {
                             state.explainDevice(d["device_id"].text)
                         }

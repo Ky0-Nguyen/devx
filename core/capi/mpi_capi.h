@@ -27,6 +27,12 @@ void mpi_string_free(char* s);
 /* {"engine_version": ..., "ruleset_version": ...} */
 char* mpi_version_json(void);
 
+/* Whether a newer DevX has been released: one request to api.github.com for
+ * the latest release, made only when called. Returns {ok, current, latest,
+ * newer, name, notes, published_at, html_url, dmg_url, dmg_name, sha256_url}
+ * or {ok:false, error}. */
+char* mpi_update_check_json(void);
+
 /* A DiscoverySnapshot. `include_simulators` is a boolean. */
 char* mpi_devices_json(int include_simulators, int timeout_ms);
 
