@@ -2709,6 +2709,19 @@ do {
     Strings.active = before
 }
 
+do {
+    // The confirmation bar after "use": it must point somewhere useful.
+    check(NextSteps.afterDevice.first == .apps, "after choosing a device, Apps comes first")
+    for tab: DevXTab in [.live, .record, .preflight, .inspect] {
+        check(NextSteps.afterApp.contains(tab), "after choosing an app, \(tab.rawValue) is offered")
+    }
+    check(!NextSteps.offered(NextSteps.afterApp, from: .live).contains(.live),
+          "the screen the reader is on is not offered as the next step")
+    check(NextSteps.offered(NextSteps.afterApp, from: .settings) == NextSteps.afterApp,
+          "and nothing else is dropped")
+    check(NextSteps.lifetime >= 10, "the bar stays long enough to be read")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

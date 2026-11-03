@@ -60,6 +60,10 @@ final class AppState: ObservableObject {
     /// The tour card on screen, as an index into `Onboarding.steps`; nil when
     /// the tour is not running.
     @Published var tourStep: Int? = nil
+    /// The confirmation bar under the toolbar: what a click just changed and
+    /// where to go next. See NextStep.
+    @Published var nextStep: NextStep? = nil
+    var nextStepSerial = 0
     /// Where the reader was when the tour started, to go back to on skip.
     var tabBeforeTour: Tab? = nil
     /// Set while the tour itself switches tabs.
@@ -85,6 +89,15 @@ final class AppState: ObservableObject {
     }
     func endOperation(_ label: String) {
         if let at = inFlight.lastIndex(of: label) { inFlight.remove(at: at) }
+    }
+
+    /// Work a panel runs with its own pending buttons (BrowserStack,
+    /// Intelligence): listed in the activity line on every tab, without the
+    /// busy overlay over the screen.
+    @Published private(set) var backgroundOps: [String] = []
+    func beginBackground(_ label: String) { backgroundOps.append(label) }
+    func endBackground(_ label: String) {
+        if let at = backgroundOps.lastIndex(of: label) { backgroundOps.remove(at: at) }
     }
 
     /// The interface language.

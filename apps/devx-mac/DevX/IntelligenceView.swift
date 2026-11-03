@@ -72,17 +72,20 @@ final class IntelligenceModel: ObservableObject {
     @Published var egress: JSON = .null
     @Published var retention: JSON = .null
     @Published var message = ""
-    @Published var loading = false
+    /// Reads in flight. A counter: `reloadAll` starts three at once, and the
+    /// first to finish used to clear the spinner for the other two.
+    @Published private(set) var pending = 0
+    var loading: Bool { pending > 0 }
 
     private static let queue = DispatchQueue(label: "devx.intelligence", qos: .userInitiated)
 
     /// A local read: quick, off the main thread, no busy overlay.
     func read(_ work: @escaping @Sendable () -> JSON, then apply: @escaping (JSON) -> Void) {
-        loading = true
+        pending += 1
         Self.queue.async {
             let doc = work()
             DispatchQueue.main.async {
-                self.loading = false
+                self.pending -= 1
                 if doc["ok"].bool == false { self.message = doc["error"].text }
                 apply(doc)
             }
@@ -899,6 +902,8 @@ private struct IntelIntegrationsView: View {
     @ObservedObject var model: IntelligenceModel
     // New / edited workspace.
     @State private var wsId = ""
+    @State private var savingWorkspace = false
+    @State private var addingConnector = false
     @State private var wsName = ""
     @State private var wsRepo = ""
     @State private var wsApps = ""
@@ -971,8 +976,10 @@ private struct IntelIntegrationsView: View {
                     .frame(maxWidth: 170)
                 }
                 HStack {
-                    Button(tr("save workspace")) { saveWorkspace() }
-                        .buttonStyle(TermButtonStyle(filled: true)).disabled(wsId.isEmpty)
+                    Button { saveWorkspace() } label: {
+                        BusyLabel(title: tr("save workspace"), busy: savingWorkspace, busyTitle: tr("saving…"))
+                    }
+                    .buttonStyle(TermButtonStyle(filled: true)).disabled(wsId.isEmpty || savingWorkspace)
                     Button(tr("new")) {
                         wsId = ""; wsName = ""; wsRepo = ""; wsApps = ""; wsEnvs = "production"; wsDays = 30
                     }
@@ -994,10 +1001,14 @@ private struct IntelIntegrationsView: View {
             "retention": .object(["days": .number(Double(wsDays))]),
         ])
         let dir = state.sessionsDir, id = wsId
+        savingWorkspace = true
         model.read({ Core.intelSaveWorkspace(dir, w) }) { doc in
+            savingWorkspace = false
             guard doc["ok"].bool == true else { return }
             model.workspace = id
             model.loadWorkspaces(dir)
+            state.confirm(cat(tr("Workspace saved:"), " ", id), next: [],
+                          hint: tr("Next: add a connector below, then validate and sync it."))
         }
     }
 
@@ -1166,8 +1177,10 @@ private struct IntelIntegrationsView: View {
                              tr(" in the environment is used only while this is the workspace's one connector of its kind.")))
                         .font(Term.small).foregroundStyle(Term.dim)
                 }
-                Button(tr("add connector")) { addConnector() }
-                    .buttonStyle(TermButtonStyle(filled: true)).disabled(connectorId.isEmpty)
+                Button { addConnector() } label: {
+                    BusyLabel(title: tr("add connector"), busy: addingConnector, busyTitle: tr("saving…"))
+                }
+                .buttonStyle(TermButtonStyle(filled: true)).disabled(connectorId.isEmpty || addingConnector)
             }
         }
     }
@@ -1187,8 +1200,12 @@ private struct IntelIntegrationsView: View {
             ? currentProvider["credential_service"].text + "." + id : credentialRef
         let token = secret
         let dir = state.sessionsDir, ws = model.workspace
+        addingConnector = true
         model.read({ Core.intelSaveConnector(dir, ws, c) }) { doc in
+            addingConnector = false
             guard doc["ok"].bool == true else { return }
+            state.confirm(cat(tr("Connector added:"), " ", id), next: [],
+                          hint: tr("Next: press validate on it, then sync now."))
             if !token.isEmpty && !ConnectorKeychain.save(service: service, value: token) {
                 model.message = tr("The connector was saved, but its credential could not be saved to the Keychain.")
             }

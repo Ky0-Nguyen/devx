@@ -184,14 +184,21 @@ struct InspectView: View {
                             Text(t["description"].text).font(Term.micro)
                                 .foregroundStyle(Term.dim)
                             Spacer(minLength: 0)
-                            Button(tr("use")) {
-                                state.selectedApp = t["app_id"].text
+                            let inUse = state.selectedApp == t["app_id"].text
+                                && state.inspectTargetDevice == t["device_name"].text
+                            Button(inUse ? tr("✓ in use") : tr("use")) {
                                 // Pin the device as well. Choosing a row and
                                 // then being observed on a different device
                                 // is the bug this button exists to avoid.
                                 state.inspectTargetDevice = t["device_name"].text
+                                state.selectedApp = t["app_id"].text
+                                // The next step is on this screen, so the bar
+                                // points at it rather than at another tab.
+                                state.confirm(cat(tr("Inspecting:"), " ", t["app_id"].text),
+                                              next: [],
+                                              hint: tr("Choose what to capture under Observe, then press watch live."))
                             }
-                            .buttonStyle(TermButtonStyle())
+                            .buttonStyle(TermButtonStyle(filled: inUse))
                         }
                     }
                 }
@@ -296,9 +303,9 @@ struct InspectView: View {
                             .buttonStyle(TermButtonStyle(filled: true))
                             .disabled(state.selectedApp.isEmpty)
                     }
-                    Button(state.busy == nil
-                            ? tr("observe for \(state.inspectSeconds)s")
-                            : tr("observing…")) {
+                    Button(state.inspectObserving
+                            ? tr("observing…")
+                            : tr("observe for \(state.inspectSeconds)s")) {
                         state.runInspect()
                     }
                     .buttonStyle(TermButtonStyle())

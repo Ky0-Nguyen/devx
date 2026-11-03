@@ -43,7 +43,9 @@ struct BrowserStackPanel: View {
     @State private var localStatus: JSON = .null
     @State private var localState = ""
     @State private var message = ""
-    @State private var working = false
+    /// Calls in flight, by button. A counter rather than a flag: an upload is
+    /// two calls, and the first to finish must not clear the other.
+    @State private var running: [String: Int] = [:]
     // A real-device session DevX drives (App Automate).
     @State private var automateAppURL = ""
     @State private var network = ""
@@ -105,8 +107,11 @@ struct BrowserStackPanel: View {
                         Text(status["username"].text + " · " + status["source"].text)
                             .font(Term.body).foregroundStyle(Term.ink)
                         Spacer()
-                        Button(tr("remove")) { BrowserStackKeychain.remove(); refreshStatus() }
-                            .buttonStyle(TermButtonStyle(tone: Term.red))
+                        Button { BrowserStackKeychain.remove(); refreshStatus() } label: {
+                            BusyLabel(title: tr("remove"), busy: busy("status"))
+                        }
+                        .buttonStyle(TermButtonStyle(tone: Term.red))
+                        .disabled(busy("status"))
                     }
                     if status["ok"].bool != true {
                         Text(status["error"].text).font(Term.small).foregroundStyle(Term.red)
@@ -115,13 +120,16 @@ struct BrowserStackPanel: View {
                     HStack {
                         TextField(tr("username"), text: $username).textFieldStyle(TermFieldStyle())
                         SecureField(tr("access key"), text: $accessKey).textFieldStyle(TermFieldStyle())
-                        Button(tr("save to Keychain")) {
+                        Button {
                             _ = BrowserStackKeychain.save(username: username, key: accessKey)
                             accessKey = ""
                             refreshStatus()
+                        } label: {
+                            BusyLabel(title: tr("save to Keychain"), busy: busy("status"),
+                                      busyTitle: tr("checking…"))
                         }
                         .buttonStyle(TermButtonStyle(filled: true))
-                        .disabled(username.isEmpty || accessKey.isEmpty)
+                        .disabled(username.isEmpty || accessKey.isEmpty || busy("status"))
                     }
                     HStack {
                         Button(tr("get your username and access key") + " ↗") {
@@ -149,18 +157,30 @@ struct BrowserStackPanel: View {
                     .font(Term.small).foregroundStyle(Term.dim).fixedSize(horizontal: false, vertical: true)
                 HStack {
                     if localStatus["installed"].bool != true {
-                        Button(tr("download (10 MB)")) { act { Core.bsLocalInstall() } then: { _ in refreshLocal() } }
-                            .buttonStyle(TermButtonStyle(filled: true))
-                            .disabled(localStatus["can_run"].bool == false)
-                    } else if localState == "connected" {
-                        Chip(text: "connected · " + localId, tone: .good)
-                        Button(tr("stop")) { act { Core.bsLocalStop(localId) } then: { _ in localState = "" } }
-                            .buttonStyle(TermButtonStyle(tone: Term.amber))
-                    } else {
-                        Button(tr("start tunnel")) {
-                            act { Core.bsLocalStart(localId) } then: { d in localState = d["state"].text }
+                        Button {
+                            act("local", tr("Downloading BrowserStack Local…")) { Core.bsLocalInstall() } then: { _ in refreshLocal() }
+                        } label: {
+                            BusyLabel(title: tr("download (10 MB)"), busy: busy("local"), busyTitle: tr("downloading…"))
                         }
                         .buttonStyle(TermButtonStyle(filled: true))
+                        .disabled(localStatus["can_run"].bool == false || busy("local"))
+                    } else if localState == "connected" {
+                        Chip(text: "connected · " + localId, tone: .good)
+                        Button {
+                            act("local", tr("Stopping the tunnel…")) { Core.bsLocalStop(localId) } then: { _ in localState = "" }
+                        } label: {
+                            BusyLabel(title: tr("stop"), busy: busy("local"))
+                        }
+                        .buttonStyle(TermButtonStyle(tone: Term.amber))
+                        .disabled(busy("local"))
+                    } else {
+                        Button {
+                            act("local", tr("Starting the tunnel…")) { Core.bsLocalStart(localId) } then: { d in localState = d["state"].text }
+                        } label: {
+                            BusyLabel(title: tr("start tunnel"), busy: busy("local"), busyTitle: tr("starting…"))
+                        }
+                        .buttonStyle(TermButtonStyle(filled: true))
+                        .disabled(busy("local"))
                     }
                 }
                 if localStatus["can_run"].bool == false {
@@ -181,11 +201,18 @@ struct BrowserStackPanel: View {
         Panel(title: tr("Devices") + " (\(devices.count))") {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Button(tr("load devices")) {
-                        act { Core.bsGet("app-automate/devices.json") } then: { d in devices = d["body"].array }
+                    Button {
+                        act("devices", tr("Loading BrowserStack devices…")) { Core.bsGet("app-automate/devices.json") } then: { d in devices = d["body"].array }
+                    } label: {
+                        BusyLabel(title: tr("load devices"), busy: busy("devices"), busyTitle: tr("loading…"))
                     }
                     .buttonStyle(TermButtonStyle(filled: true))
-                    Button(tr("upload app…")) { upload() }.buttonStyle(TermButtonStyle())
+                    .disabled(busy("devices"))
+                    Button { upload() } label: {
+                        BusyLabel(title: tr("upload app…"), busy: busy("upload"), busyTitle: tr("uploading…"))
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    .disabled(busy("upload"))
                     if !appURL.isEmpty { Chip(text: appURL, tone: .good) }
                     TextField(tr("filter"), text: $filter).textFieldStyle(TermFieldStyle()).frame(maxWidth: 200)
                 }
@@ -194,9 +221,12 @@ struct BrowserStackPanel: View {
                         Text(d["device"].text).font(Term.body).foregroundStyle(Term.ink)
                         Text(d["os"].text + " " + d["os_version"].text).font(Term.small).foregroundStyle(Term.dim)
                         Spacer()
-                        Button(tr("start session")) { startSession(d) }
-                            .buttonStyle(TermButtonStyle(filled: true))
-                            .disabled(automateAppURL.isEmpty || !live.isNull)
+                        Button { startSession(d) } label: {
+                            BusyLabel(title: tr("start session"), busy: busy("start-" + d["device"].text + d["os_version"].text),
+                                      busyTitle: tr("starting…"))
+                        }
+                        .buttonStyle(TermButtonStyle(filled: true))
+                        .disabled(automateAppURL.isEmpty || !live.isNull || busy("start"))
                         Button(tr("open in App Live")) { openLive(d) }
                             .buttonStyle(TermButtonStyle())
                             .disabled(appURL.isEmpty)
@@ -216,10 +246,13 @@ struct BrowserStackPanel: View {
         Panel(title: tr("App Automate sessions")) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Button(tr("load recent builds")) {
-                        act { Core.bsGet("app-automate/builds.json?limit=10") } then: { d in builds = d["body"].array }
+                    Button {
+                        act("builds", tr("Loading recent builds…")) { Core.bsGet("app-automate/builds.json?limit=10") } then: { d in builds = d["body"].array }
+                    } label: {
+                        BusyLabel(title: tr("load recent builds"), busy: busy("builds"), busyTitle: tr("loading…"))
                     }
                     .buttonStyle(TermButtonStyle())
+                    .disabled(busy("builds"))
                 }
                 ForEach(Array(builds.enumerated()), id: \.offset) { _, b in
                     let build = b["automation_build"].isNull ? b : b["automation_build"]
@@ -227,26 +260,33 @@ struct BrowserStackPanel: View {
                         Text(build["name"].text).font(Term.body).foregroundStyle(Term.ink).lineLimit(1)
                         Text(build["status"].text).font(Term.small).foregroundStyle(Term.dim)
                         Spacer()
-                        Button(tr("sessions")) {
+                        Button {
                             let id = build["hashed_id"].text
-                            act { Core.bsGet("app-automate/builds/\(id)/sessions.json") } then: { d in
+                            act("sessions-" + id, tr("Loading sessions…")) { Core.bsGet("app-automate/builds/\(id)/sessions.json") } then: { d in
                                 buildSessions[id] = d["body"].array.map {
                                     $0["automation_session"].isNull ? $0 : $0["automation_session"]
                                 }
                             }
+                        } label: {
+                            BusyLabel(title: tr("sessions"), busy: busy("sessions-" + build["hashed_id"].text))
                         }
                         .buttonStyle(TermButtonStyle())
-                        Button(tr("keep for AI tools")) {
+                        .disabled(busy("sessions-" + build["hashed_id"].text))
+                        Button {
                             let id = build["hashed_id"].text
-                            act { Core.bsGet("app-automate/builds/\(id)/sessions.json") } then: { d in
+                            act("keep-" + id, tr("Saving the build for AI tools…")) { Core.bsGet("app-automate/builds/\(id)/sessions.json") } then: { d in
                                 let saved = Core.bsSave(sessionsDir: state.sessionsDir,
                                                         what: "app-automate build " + id,
                                                         json: d["body"].serialized())
                                 message = saved["ok"].bool == true
                                     ? tr("Saved as observation") + " " + saved["id"].text : saved["error"].text
                             }
+                        } label: {
+                            BusyLabel(title: tr("keep for AI tools"), busy: busy("keep-" + build["hashed_id"].text),
+                                      busyTitle: tr("saving…"))
                         }
                         .buttonStyle(TermButtonStyle())
+                        .disabled(busy("keep-" + build["hashed_id"].text))
                     }
                     ForEach(Array((buildSessions[build["hashed_id"].text] ?? []).enumerated()),
                             id: \.offset) { _, s in
@@ -265,17 +305,21 @@ struct BrowserStackPanel: View {
                 .font(Term.small).foregroundStyle(Term.ink).lineLimit(1)
             Text(s["status"].text).font(Term.small).foregroundStyle(Term.dim)
             Spacer()
-            Button(tr("import profiling")) {
+            Button {
                 let dir = state.sessionsDir
                 let id = s["hashed_id"].text
-                act { Core.bsImportProfiling(sessionsDir: dir, buildID: build, sessionID: id) } then: { d in
+                act("import-" + id, tr("Importing App Profiling…")) { Core.bsImportProfiling(sessionsDir: dir, buildID: build, sessionID: id) } then: { d in
                     guard d["ok"].bool == true else { return }
                     message = tr("Imported as session") + " " + d["session_id"].text
                     state.loadSessions()
                     state.openSession(d["session_id"].text, revealIn: .timeline)
                 }
+            } label: {
+                BusyLabel(title: tr("import profiling"), busy: busy("import-" + s["hashed_id"].text),
+                          busyTitle: tr("importing…"))
             }
             .buttonStyle(TermButtonStyle())
+            .disabled(busy("import-" + s["hashed_id"].text))
         }
     }
 
@@ -349,6 +393,7 @@ struct BrowserStackPanel: View {
                             stopSession()
                         }
                         .buttonStyle(TermButtonStyle(tone: Term.amber))
+                        .disabled(busy("stop"))
                     }
                 }
             }
@@ -403,7 +448,10 @@ struct BrowserStackPanel: View {
         }
         message = tr("Starting a session: BrowserStack picks the device, installs the app and launches it…")
         let s = JSON.object(spec)
-        act { Core.bsAutomateStart(s) } then: { r in
+        let rowKey = "start-" + d["device"].text + d["os_version"].text
+        running[rowKey, default: 0] += 1
+        act("start", tr("Starting a BrowserStack session…")) { Core.bsAutomateStart(s) } then: { r in
+            running[rowKey, default: 1] -= 1
             guard r["ok"].bool == true else { return }
             message = ""
             live = .object(["session_id": r["session_id"], "device": d["device"],
@@ -453,7 +501,8 @@ struct BrowserStackPanel: View {
         liveImage = nil
         message = importTo.isEmpty ? tr("Stopping…")
             : tr("Stopping, then waiting for BrowserStack to publish the profiling (up to 90 s)…")
-        act { Core.bsAutomateStop(sid, importTo: importTo) } then: { r in
+        act("stop", importTo.isEmpty ? tr("Stopping the BrowserStack session…")
+                                     : tr("Importing App Profiling…")) { Core.bsAutomateStop(sid, importTo: importTo) } then: { r in
             let p = r["profiling"]
             if p["ok"].bool == true {
                 message = tr("Imported as session") + " " + p["session_id"].text
@@ -469,12 +518,20 @@ struct BrowserStackPanel: View {
 
     // ---- actions ----
 
-    private func act(_ work: @escaping @Sendable () -> JSON, then apply: @escaping (JSON) -> Void) {
-        working = true
+    private func busy(_ key: String) -> Bool { (running[key] ?? 0) > 0 }
+
+    /// Runs one BrowserStack call off the main thread. `key` drives the
+    /// pressed button's pending state; `label` goes to the activity line at
+    /// the foot of the sidebar, so the call is visible from any tab.
+    private func act(_ key: String, _ label: String, _ work: @escaping @Sendable () -> JSON,
+                     then apply: @escaping (JSON) -> Void) {
+        running[key, default: 0] += 1
+        state.beginBackground(label)
         DispatchQueue.global(qos: .userInitiated).async {
             let d = work()
             DispatchQueue.main.async {
-                working = false
+                running[key, default: 1] -= 1
+                state.endBackground(label)
                 if d["ok"].bool == false { message = d["error"].text }
                 apply(d)
             }
@@ -482,12 +539,12 @@ struct BrowserStackPanel: View {
     }
 
     private func refreshStatus() {
-        act { Core.bsStatus() } then: { d in status = d }
+        act("status", tr("Checking the BrowserStack account…")) { Core.bsStatus() } then: { d in status = d }
         refreshLocal()
     }
 
     private func refreshLocal() {
-        act { Core.bsLocalStatus() } then: { d in localStatus = d }
+        act("local-status", tr("Checking BrowserStack Local…")) { Core.bsLocalStatus() } then: { d in localStatus = d }
     }
 
     private func upload() {
@@ -498,12 +555,26 @@ struct BrowserStackPanel: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let path = url.path
         // App Live and App Automate keep separate uploads; one file serves both.
-        act { Core.bsUpload(product: "app-live", file: path) } then: { d in
+        let name = url.lastPathComponent
+        message = cat(tr("Uploading"), " ", name, " ", tr("to BrowserStack (App Live and App Automate)…"))
+        act("upload", tr("Uploading to BrowserStack…")) { Core.bsUpload(product: "app-live", file: path) } then: { d in
             appURL = d["body"]["app_url"].text
             if appURL.isEmpty { message = d["error"].text.isEmpty ? d["body"].serialized() : d["error"].text }
+            uploadFinished(name)
         }
-        act { Core.bsUpload(product: "app-automate", file: path) } then: { d in
+        act("upload", tr("Uploading to BrowserStack…")) { Core.bsUpload(product: "app-automate", file: path) } then: { d in
             automateAppURL = d["body"]["app_url"].text
+            uploadFinished(name)
+        }
+    }
+
+    /// Once both uploads are back: say so, and say what the upload unlocked.
+    private func uploadFinished(_ name: String) {
+        guard !busy("upload") else { return }
+        if !automateAppURL.isEmpty {
+            message = ""
+            state.confirm(cat(tr("Uploaded:"), " ", name), next: [],
+                          hint: tr("Pick a device below and press start session."))
         }
     }
 

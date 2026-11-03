@@ -372,9 +372,14 @@ struct LiveView: View {
                               + "the saved session is final, not preliminary.")
                 if let id = stop["session_id"].string {
                     Button { state.openSession(id) } label: {
-                        Label(tr("Open in Issues"), systemImage: "arrow.right.circle")
+                        if state.openingSession {
+                            BusyLabel(title: tr("Open in Issues"), busy: true, busyTitle: tr("opening…"))
+                        } else {
+                            Label(tr("Open in Issues"), systemImage: "arrow.right.circle")
+                        }
                     }
                     .buttonStyle(TermButtonStyle(filled: true))
+                    .disabled(state.openingSession)
                 }
             } else if let err = stop["error"].string, !err.isEmpty {
                 Banner(kind: .bad, title: "No session was written", message: err)
