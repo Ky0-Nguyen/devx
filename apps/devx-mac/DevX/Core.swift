@@ -196,8 +196,8 @@ enum Core {
 
     static func bsStatus() -> JSON { call { mpi_bs_status_json() } }
     static func bsGet(_ path: String) -> JSON { call { mpi_bs_get_json(path) } }
-    static func bsUpload(product: String, file: String) -> JSON {
-        call { mpi_bs_upload_json(product, file) }
+    static func bsUpload(product: String, file: String, customID: String = "") -> JSON {
+        call { mpi_bs_upload_json(product, file, customID) }
     }
     static func bsLiveURL(os: String, version: String, device: String, appURL: String) -> JSON {
         call { mpi_bs_live_url_json(os, version, device, appURL) }

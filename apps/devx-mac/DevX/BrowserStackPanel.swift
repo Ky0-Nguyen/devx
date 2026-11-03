@@ -37,7 +37,18 @@ struct BrowserStackPanel: View {
     @State private var status: JSON = .null
     @State private var devices: [JSON] = []
     @State private var filter = ""
-    @State private var appURL = ""
+    // The app sessions run, kept across tabs and launches: a build is
+    // uploaded once. Only BrowserStack's bs:// URLs and the build's name are
+    // stored, never a credential.
+    @AppStorage("devx.browserstack.liveApp") private var appURL = ""
+    @AppStorage("devx.browserstack.automateApp") private var automateAppURL = ""
+    @AppStorage("devx.browserstack.appName") private var appName = ""
+    @AppStorage("devx.browserstack.appUploadedAt") private var appUploadedAt = ""
+    @State private var uploaded: [BrowserStackApps.Entry] = []
+    @State private var uploadedLoaded = false
+    @State private var pasted = ""
+    @State private var uploadName = ""
+    @State private var uploadResult: [String: String] = [:]
     @State private var builds: [JSON] = []
     @State private var buildSessions: [String: [JSON]] = [:]
     @State private var localStatus: JSON = .null
@@ -47,7 +58,6 @@ struct BrowserStackPanel: View {
     /// two calls, and the first to finish must not clear the other.
     @State private var running: [String: Int] = [:]
     // A real-device session DevX drives (App Automate).
-    @State private var automateAppURL = ""
     @State private var network = ""
     @State private var gps = ""
     @State private var timezone = ""
@@ -81,6 +91,7 @@ struct BrowserStackPanel: View {
                 if status["ok"].bool == true {
                     tunnel
                     if !live.isNull { liveSession }
+                    appPanel
                     deviceList
                     if !automateAppURL.isEmpty { sessionSettings }
                     automate
@@ -195,7 +206,142 @@ struct BrowserStackPanel: View {
         }
     }
 
-    // ---- devices, upload, App Live ----
+    // ---- the app sessions run ----
+
+    private var appPanel: some View {
+        Panel(title: tr("App")) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    if automateAppURL.isEmpty && appURL.isEmpty {
+                        Text(tr("No app chosen: upload a build, or use one uploaded before."))
+                            .font(Term.body).foregroundStyle(Term.dim)
+                    } else {
+                        Chip(text: tr("✓ in use"), tone: (chosenDaysLeft ?? 1) > 0 ? .good : .bad)
+                        Text(appName.isEmpty ? (automateAppURL.isEmpty ? appURL : automateAppURL) : appName)
+                            .font(Term.body).foregroundStyle(Term.ink).lineLimit(1)
+                        Text(cat(products(automate: automateAppURL, live: appURL), age(appUploadedAt)))
+                            .font(Term.small).foregroundStyle(Term.dim).lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                }
+                if let left = chosenDaysLeft, left <= 0 {
+                    Text(tr("BrowserStack keeps an upload for 30 days, so this one is gone: upload the build again."))
+                        .font(Term.small).foregroundStyle(Term.red)
+                } else if !automateAppURL.isEmpty && appURL.isEmpty {
+                    Text(tr("Not uploaded to App Live, so open in App Live is off: upload the file to use both."))
+                        .font(Term.small).foregroundStyle(Term.dim)
+                }
+                HStack(spacing: 8) {
+                    Button { upload() } label: {
+                        BusyLabel(title: tr("upload app…"), busy: busy("upload"), busyTitle: tr("uploading…"))
+                    }
+                    .buttonStyle(TermButtonStyle(filled: automateAppURL.isEmpty && appURL.isEmpty))
+                    .disabled(busy("upload"))
+                    TextField(tr("custom id (optional)"), text: $uploadName)
+                        .textFieldStyle(TermFieldStyle()).frame(maxWidth: 180)
+                    Button { loadUploaded() } label: {
+                        BusyLabel(title: tr("load uploaded apps"), busy: busy("uploaded"), busyTitle: tr("loading…"))
+                    }
+                    .buttonStyle(TermButtonStyle())
+                    .disabled(busy("uploaded"))
+                    Spacer(minLength: 0)
+                }
+                HStack(spacing: 8) {
+                    TextField(tr("or paste a bs:// URL, from CI for example"), text: $pasted)
+                        .textFieldStyle(TermFieldStyle())
+                    Button(tr("use")) { usePasted() }
+                        .buttonStyle(TermButtonStyle())
+                        .disabled(!BrowserStackApps.isAppURL(pasted.trimmingCharacters(in: .whitespaces)))
+                }
+                if uploadedLoaded && uploaded.isEmpty {
+                    Text(tr("BrowserStack lists no app uploaded in the last 30 days."))
+                        .font(Term.small).foregroundStyle(Term.dim)
+                }
+                ForEach(Array(uploaded.enumerated()), id: \.offset) { _, e in
+                    uploadedRow(e)
+                }
+            }
+        }
+    }
+
+    private func uploadedRow(_ e: BrowserStackApps.Entry) -> some View {
+        let inUse = e.automate == automateAppURL && e.live == appURL
+        return HStack(spacing: 8) {
+            Text(e.label).font(Term.body).foregroundStyle(Term.ink).lineLimit(1)
+            if !e.customID.isEmpty { Chip(text: e.customID) }
+            Text(cat(products(automate: e.automate, live: e.live), age(e.uploadedAt)))
+                .font(Term.small).foregroundStyle(Term.dim).lineLimit(1)
+            Spacer()
+            Button(inUse ? tr("✓ in use") : tr("use")) { use(e) }
+                .buttonStyle(TermButtonStyle(filled: inUse))
+        }
+    }
+
+    private var chosenDaysLeft: Int? {
+        BrowserStackApps.daysLeft(uploadedAt: appUploadedAt, now: Date())
+    }
+
+    private func products(automate: String, live: String) -> String {
+        switch (automate.isEmpty, live.isEmpty) {
+        case (false, false): return "App Automate + App Live"
+        case (false, true): return "App Automate"
+        case (true, false): return "App Live"
+        case (true, true): return ""
+        }
+    }
+
+    /// " · uploaded 2026-10-07 · 4 days left", or "" when the time is unknown.
+    private func age(_ uploadedAt: String) -> String {
+        guard let left = BrowserStackApps.daysLeft(uploadedAt: uploadedAt, now: Date()) else { return "" }
+        let day = String(uploadedAt.prefix(10))
+        let rest = left <= 0 ? tr("expired") : cat(String(left), " ", tr(left == 1 ? "day left" : "days left"))
+        return cat(" · ", tr("uploaded"), " ", day, " · ", rest)
+    }
+
+    private func use(_ e: BrowserStackApps.Entry) {
+        automateAppURL = e.automate
+        appURL = e.live
+        appName = e.label
+        appUploadedAt = e.uploadedAt
+        confirmApp(e.label)
+    }
+
+    private func usePasted() {
+        let url = pasted.trimmingCharacters(in: .whitespaces)
+        guard BrowserStackApps.isAppURL(url) else { return }
+        // A URL from CI is an App Automate upload; App Live needs its own.
+        let known = uploaded.first { $0.automate == url }
+        automateAppURL = url
+        appURL = known?.live ?? ""
+        appName = known?.label ?? url
+        appUploadedAt = known?.uploadedAt ?? ""
+        pasted = ""
+        confirmApp(appName)
+    }
+
+    private func confirmApp(_ name: String) {
+        state.confirm(cat(tr("Using"), " ", name), next: [],
+                      hint: tr("Pick a device below and press start session."))
+    }
+
+    /// Both products' uploads from the last 30 days.
+    private func loadUploaded() {
+        var replies: [String: JSON] = [:]
+        for product in ["app-automate", "app-live"] {
+            act("uploaded", tr("Loading the apps uploaded to BrowserStack…")) {
+                Core.bsGet(product + "/recent_apps?limit=100")
+            } then: { d in
+                replies[product] = d
+                guard replies.count == 2 else { return }
+                uploaded = BrowserStackApps.entries(
+                    automate: BrowserStackApps.uploads(replies["app-automate"]?["body"] ?? .null),
+                    live: BrowserStackApps.uploads(replies["app-live"]?["body"] ?? .null))
+                uploadedLoaded = replies.values.contains { $0["ok"].bool == true }
+            }
+        }
+    }
+
+    // ---- devices, App Live ----
 
     private var deviceList: some View {
         Panel(title: tr("Devices") + " (\(devices.count))") {
@@ -208,12 +354,6 @@ struct BrowserStackPanel: View {
                     }
                     .buttonStyle(TermButtonStyle(filled: true))
                     .disabled(busy("devices"))
-                    Button { upload() } label: {
-                        BusyLabel(title: tr("upload app…"), busy: busy("upload"), busyTitle: tr("uploading…"))
-                    }
-                    .buttonStyle(TermButtonStyle())
-                    .disabled(busy("upload"))
-                    if !appURL.isEmpty { Chip(text: appURL, tone: .good) }
                     TextField(tr("filter"), text: $filter).textFieldStyle(TermFieldStyle()).frame(maxWidth: 200)
                 }
                 ForEach(Array(shownDevices.prefix(80).enumerated()), id: \.offset) { _, d in
@@ -247,9 +387,9 @@ struct BrowserStackPanel: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Button {
-                        act("builds", tr("Loading recent builds…")) { Core.bsGet("app-automate/builds.json?limit=10") } then: { d in builds = d["body"].array }
+                        act("builds", tr("Loading recent test runs…")) { Core.bsGet("app-automate/builds.json?limit=10") } then: { d in builds = d["body"].array }
                     } label: {
-                        BusyLabel(title: tr("load recent builds"), busy: busy("builds"), busyTitle: tr("loading…"))
+                        BusyLabel(title: tr("load test runs"), busy: busy("builds"), busyTitle: tr("loading…"))
                     }
                     .buttonStyle(TermButtonStyle())
                     .disabled(busy("builds"))
@@ -539,7 +679,10 @@ struct BrowserStackPanel: View {
     }
 
     private func refreshStatus() {
-        act("status", tr("Checking the BrowserStack account…")) { Core.bsStatus() } then: { d in status = d }
+        act("status", tr("Checking the BrowserStack account…")) { Core.bsStatus() } then: { d in
+            status = d
+            if d["ok"].bool == true && !uploadedLoaded { loadUploaded() }
+        }
         refreshLocal()
     }
 
@@ -555,27 +698,47 @@ struct BrowserStackPanel: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let path = url.path
         // App Live and App Automate keep separate uploads; one file serves both.
+        // The custom id goes to App Automate, the upload CI and sessions use.
         let name = url.lastPathComponent
+        let customID = BrowserStackApps.customID(uploadName)
+        let started = Date()
+        uploadResult = [:]
         message = cat(tr("Uploading"), " ", name, " ", tr("to BrowserStack (App Live and App Automate)…"))
-        act("upload", tr("Uploading to BrowserStack…")) { Core.bsUpload(product: "app-live", file: path) } then: { d in
-            appURL = d["body"]["app_url"].text
-            if appURL.isEmpty { message = d["error"].text.isEmpty ? d["body"].serialized() : d["error"].text }
-            uploadFinished(name)
-        }
-        act("upload", tr("Uploading to BrowserStack…")) { Core.bsUpload(product: "app-automate", file: path) } then: { d in
-            automateAppURL = d["body"]["app_url"].text
-            uploadFinished(name)
+        for product in ["app-live", "app-automate"] {
+            let id = product == "app-automate" ? customID : ""
+            act("upload", tr("Uploading to BrowserStack…")) {
+                Core.bsUpload(product: product, file: path, customID: id)
+            } then: { d in
+                uploadResult[product] = d["body"]["app_url"].text
+                if d["ok"].bool == true && uploadResult[product, default: ""].isEmpty {
+                    message = d["body"].serialized()
+                }
+                uploadFinished(name, started: started)
+            }
         }
     }
 
-    /// Once both uploads are back: say so, and say what the upload unlocked.
-    private func uploadFinished(_ name: String) {
+    /// Once both uploads are back: the new build becomes the one in use, and
+    /// the list shows it. The build in use before stays when both failed.
+    private func uploadFinished(_ name: String, started: Date) {
         guard !busy("upload") else { return }
-        if !automateAppURL.isEmpty {
+        let automate = uploadResult["app-automate"] ?? ""
+        let live = uploadResult["app-live"] ?? ""
+        guard !automate.isEmpty || !live.isEmpty else { return }
+        automateAppURL = automate
+        appURL = live
+        appName = name
+        appUploadedAt = BrowserStackApps.uploadedText(started)
+        uploadName = ""
+        if automate.isEmpty {
+            message = cat(tr("Uploaded to App Live only: App Automate refused it, so start session is off."),
+                          " ", message)
+        } else {
             message = ""
             state.confirm(cat(tr("Uploaded:"), " ", name), next: [],
                           hint: tr("Pick a device below and press start session."))
         }
+        loadUploaded()
     }
 
     private func openLive(_ d: JSON) {

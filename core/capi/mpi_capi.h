@@ -206,8 +206,9 @@ char* mpi_bs_status_json(void);
 /* GET api-cloud.browserstack.com/<path>, e.g. "app-automate/devices.json",
  * "app-automate/builds.json", "app-automate/builds/<id>/sessions.json". */
 char* mpi_bs_get_json(const char* path);
-/* Uploads an app; `product` is "app-live" or "app-automate". */
-char* mpi_bs_upload_json(const char* product, const char* file);
+/* Uploads an app; `product` is "app-live" or "app-automate". `custom_id`
+ * names the upload so it can be found again; NULL or "" for none. */
+char* mpi_bs_upload_json(const char* product, const char* file, const char* custom_id);
 /* The App Live URL that opens `device` with an uploaded app, for a browser. */
 char* mpi_bs_live_url_json(const char* os, const char* os_version, const char* device,
                            const char* app_url);

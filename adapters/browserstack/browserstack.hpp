@@ -55,7 +55,10 @@ Reply request(const Credentials& c, const std::string& method, const std::string
               const std::string& body = {}, std::chrono::seconds timeout = std::chrono::seconds(120));
 /// Uploads an .apk/.aab/.ipa for App Live (`app-live/upload`) or App Automate
 /// (`app-automate/upload`). Returns BrowserStack's reply with its `app_url`.
-Reply upload(const Credentials& c, const std::string& product, const std::string& file);
+/// `custom_id`, when not empty, names the upload so it can be found again
+/// (letters, digits, ".", "-", "_", at most 100; anything else is refused).
+Reply upload(const Credentials& c, const std::string& product, const std::string& file,
+             const std::string& custom_id = {});
 
 /// The App Live dashboard URL that opens `device` with an uploaded app
 /// (`app_url` is "bs://<hash>"), for a browser.

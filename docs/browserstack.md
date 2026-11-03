@@ -30,13 +30,27 @@ line, which any process on the Mac can read.
 
 - **Account**: checks the credentials against the App Automate plan.
 - **Devices**: lists BrowserStack's real devices (`app-automate/devices.json`).
-- **Upload app**: uploads an `.apk`, `.aab` or `.ipa` twice, once for App Live
-  and once for App Automate (BrowserStack keeps them apart), and shows the
-  `bs://` app URL.
+- **App**: the build sessions run, kept across tabs and launches, so a build
+  is uploaded once.
+  - *Upload app* uploads an `.apk`, `.aab` or `.ipa` twice, once for App Live
+    and once for App Automate (BrowserStack keeps them apart). An optional
+    *custom id* (letters, digits, `.`, `-`, `_`) names the App Automate
+    upload.
+  - *Load uploaded apps* lists both products' uploads from the last 30 days
+    (`app-automate/recent_apps`, `app-live/recent_apps`); it runs on its own
+    when the panel opens. The App Live upload of a file is paired with the
+    App Automate upload made beside it. *Use* picks one.
+  - A `bs://` URL from CI can be pasted. It is taken as an App Automate
+    upload, so *Open in App Live* needs the file uploaded from DevX.
+  - BrowserStack deletes an upload after 30 days; the panel shows the days
+    left and says when the build in use is gone.
+  - Only the `bs://` URLs, the build's name and its upload time are stored
+    (in DevX's preferences), never a credential.
 - **Open in App Live**: opens the App Live dashboard in your browser with the
   chosen device and the uploaded app. App Live is BrowserStack's interactive
   stream, and it runs in their web page; DevX cannot embed it.
-- **App Automate sessions**: recent builds and their sessions. *Keep for AI
+- **App Automate sessions**: recent test runs (BrowserStack calls them
+  builds) and their sessions. *Keep for AI
   tools* saves a build's sessions (status, device, video and log URLs) as an
   observation `mpi mcp` can read. *Import profiling* brings one session's App
   Profiling into DevX (below).

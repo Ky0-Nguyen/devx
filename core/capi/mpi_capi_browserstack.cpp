@@ -57,10 +57,10 @@ char* mpi_bs_get_json(const char* path) {
   return dup_json(browserstack::get(*c, safe(path)).to_json());
 }
 
-char* mpi_bs_upload_json(const char* product, const char* file) {
+char* mpi_bs_upload_json(const char* product, const char* file, const char* custom_id) {
   const auto c = browserstack::find_credentials();
   if (!c) return dup_json(no_credentials());
-  return dup_json(browserstack::upload(*c, safe(product), safe(file)).to_json());
+  return dup_json(browserstack::upload(*c, safe(product), safe(file), safe(custom_id)).to_json());
 }
 
 char* mpi_bs_live_url_json(const char* os, const char* os_version, const char* device,
