@@ -8,6 +8,9 @@ struct EmulatorView: View {
     @EnvironmentObject var state: AppState
     @State private var section = 0
     @State private var showNew = false
+    /// The device whose delete was pressed, held until it is confirmed:
+    /// deleting an AVD removes its disk image and cannot be undone.
+    @State private var pendingDelete: (id: String, name: String)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -33,6 +36,16 @@ struct EmulatorView: View {
         .navigationTitle("~/emulator")
         .onAppear { state.loadAndroidSdk() }
         .sheet(isPresented: $showNew) { NewDeviceSheet(isPresented: $showNew) }
+        .confirmationDialog(DeviceFreshness.fill(tr("Delete the virtual device {name}?"),
+                                                 "{name}", pendingDelete?.name ?? ""),
+                            isPresented: Binding(get: { pendingDelete != nil },
+                                                 set: { if !$0 { pendingDelete = nil } }),
+                            presenting: pendingDelete) { avd in
+            Button(tr("Delete"), role: .destructive) { state.deleteAvd(avd.id) }
+        } message: { _ in
+            Text(tr("Its disk image and all its data, including installed apps, "
+                 + "are deleted. This cannot be undone."))
+        }
     }
 
     private var devices: some View {
@@ -107,7 +120,10 @@ struct EmulatorView: View {
                         .buttonStyle(TermButtonStyle(filled: true))
                     Button(tr("cold boot")) { state.emulatorSelected = id; state.startEmulator(id, cold: true) }
                         .buttonStyle(TermButtonStyle())
-                    Button(tr("delete")) { state.deleteAvd(id) }
+                    Button(tr("delete")) {
+                        let name = a["display_name"].text
+                        pendingDelete = (id, name.isEmpty ? id : name)
+                    }
                         .buttonStyle(TermButtonStyle(tone: Term.red))
                 }
             }

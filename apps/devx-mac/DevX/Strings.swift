@@ -1510,6 +1510,13 @@ enum Strings {
         "Relaunch the app with the layout probe?":
             "Khởi động lại app kèm layout probe?",
         "Relaunch": "Khởi động lại",
+        "delete": "xoá",
+        "Delete": "Xoá",
+        "Delete the virtual device {name}?": "Xoá máy ảo {name}?",
+        "Its disk image and all its data, including installed apps, "
+        + "are deleted. This cannot be undone.":
+            "Ổ đĩa ảo và toàn bộ dữ liệu của nó, kể cả các app đã cài, "
+            + "sẽ bị xoá. Không thể hoàn tác.",
         "The app restarts and its current state is lost. iOS "
         + "simulator only; Android needs no relaunch.":
             "App sẽ khởi động lại và mất trạng thái hiện tại. Chỉ dành cho iOS "
