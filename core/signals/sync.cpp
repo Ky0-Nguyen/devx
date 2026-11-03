@@ -214,6 +214,9 @@ json::Value egress_ledger(const SignalStore& store) {
       "only when you upload, start a session or load BrowserStack data");
   row("Google SDK catalog and package downloads (no data about you or your apps)", "dl.google.com",
       "only when you open Install images or install a package");
+  row("The version number of the latest DevX release (the request names DevX and its version; nothing about you or your apps), and the release's .dmg when you install it",
+      "api.github.com and github.com",
+      "only when you check for updates, or at launch if you switched that on");
   row("Whatever an AI host asks DevX for through `mpi mcp`: by default local evidence only; "
       "--allow-network adds connector refresh, --allow-actions adds device and provider actions",
       "the AI host you configured (Claude, Codex, Cursor), under its own rules",

@@ -604,6 +604,55 @@ enum Strings {
         "Next: add a connector below, then validate and sync it.": "Tiếp theo: thêm connector bên dưới, rồi validate và sync.",
         "Connector added:": "Đã thêm connector:",
         "Next: press validate on it, then sync now.": "Tiếp theo: bấm validate, rồi sync now.",
+        // Updates.
+        "Updates": "Cập nhật",
+        "from DevX's GitHub releases, only when you ask": "từ các bản phát hành DevX trên GitHub, chỉ khi bạn yêu cầu",
+        "this copy": "bản này",
+        "updated by": "cập nhật bằng",
+        "Check for updates": "Kiểm tra cập nhật",
+        "Check for Updates…": "Kiểm tra cập nhật…",
+        "Checking for updates…": "Đang kiểm tra cập nhật…",
+        "Check when DevX opens (at most once a day)": "Kiểm tra khi mở DevX (tối đa mỗi ngày một lần)",
+        "is available.": "đã có.",
+        "You have": "Bạn đang dùng",
+        "You have the latest version.": "Bạn đang dùng bản mới nhất.",
+        "Update now and restart": "Cập nhật và khởi động lại",
+        "release notes ↗": "ghi chú phát hành ↗",
+        "Homebrew, which installed it: brew update, then brew upgrade --cask devx.":
+            "Homebrew, công cụ đã cài nó: brew update, rồi brew upgrade --cask devx.",
+        "The release's disk image: downloaded from GitHub, its checksum and Developer ID signature checked, then it replaces this copy.":
+            "File disk image của bản phát hành: tải từ GitHub, kiểm tra checksum và chữ ký Developer ID, rồi thay thế bản này.",
+        "By hand: this folder cannot be written, so the checked disk image is opened for you to drag to Applications.":
+            "Thủ công: thư mục này không ghi được, nên disk image đã kiểm tra sẽ được mở để bạn kéo vào Applications.",
+        "git pull and a rebuild: this is a development build.": "git pull rồi build lại: đây là bản development.",
+        "Stop the running capture first: updating restarts DevX.": "Hãy dừng phiên đang thu trước: cập nhật sẽ khởi động lại DevX.",
+        "A development build is updated with git pull and a rebuild.": "Bản development được cập nhật bằng git pull rồi build lại.",
+        "Updating Homebrew…": "Đang cập nhật Homebrew…",
+        "Installing DevX": "Đang cài DevX",
+        "Homebrew does not offer": "Homebrew chưa có bản",
+        "yet: its cask is updated shortly after each release. Try again later.":
+            "lúc này: cask được cập nhật ngay sau mỗi bản phát hành. Hãy thử lại sau.",
+        "Homebrew could not update DevX:": "Homebrew không cập nhật được DevX:",
+        "This release has no disk image to install from. Open the release page instead.":
+            "Bản phát hành này không có disk image để cài. Hãy mở trang phát hành.",
+        "Downloading DevX": "Đang tải DevX",
+        "The release's checksum file could not be read.": "Không đọc được file checksum của bản phát hành.",
+        "The downloaded disk image does not match the release's checksum. Nothing was changed.":
+            "Disk image đã tải không khớp checksum của bản phát hành. Không có gì bị thay đổi.",
+        "This folder cannot be written, so the checked disk image is open in Finder: quit DevX and drag the new one to Applications.":
+            "Thư mục này không ghi được, nên disk image đã kiểm tra đang mở trong Finder: thoát DevX rồi kéo bản mới vào Applications.",
+        "Checking the signature…": "Đang kiểm tra chữ ký…",
+        "The disk image could not be opened:": "Không mở được disk image:",
+        "The app in the disk image is not the version the release names. Nothing was changed.":
+            "App trong disk image không đúng phiên bản của bản phát hành. Không có gì bị thay đổi.",
+        "Installing…": "Đang cài…",
+        "The new version could not be copied:": "Không chép được bản mới:",
+        "The download did not finish.": "Tải xuống chưa xong.",
+        "GitHub answered HTTP": "GitHub trả về HTTP",
+        "The new app's signature could not be read. Nothing was changed.":
+            "Không đọc được chữ ký của app mới. Không có gì bị thay đổi.",
+        "The new app is not signed by DevX's Developer ID. Nothing was changed.":
+            "App mới không được ký bằng Developer ID của DevX. Không có gì bị thay đổi.",
         // The tour and Settings › Features.
         "Set up": "Thiết lập",
         "Capture": "Thu dữ liệu",

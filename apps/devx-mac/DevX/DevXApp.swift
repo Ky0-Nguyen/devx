@@ -57,6 +57,7 @@ struct DevXApp: App {
         state.loadRememberedTarget()
         state.loadRecents()
         state.loadVersion()
+        state.autoCheckForUpdatesIfDue()
         state.loadDevices()
         if state.tab != .sessions { state.loadSessions() }
         if let id = launch.session {
@@ -108,6 +109,12 @@ struct DevXApp: App {
         }
         .windowToolbarStyle(.unified)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button(tr("Check for Updates…")) {
+                    state.tab = .settings
+                    state.checkForUpdates()
+                }
+            }
             CommandGroup(after: .newItem) {
                 Button(tr("Refresh Devices")) { state.loadDevices() }
                     .keyboardShortcut("r")
