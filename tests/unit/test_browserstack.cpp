@@ -5,6 +5,7 @@
 // `*_data` series. The first test is that shape as BrowserStack served it for
 // a Pixel 9 (Android 16) session; the others pin the fallbacks.
 #include "adapters/browserstack/automate.hpp"
+#include "adapters/browserstack/browserstack.hpp"
 #include "adapters/browserstack/profiling.hpp"
 #include "tests/unit/test_framework.hpp"
 
@@ -110,4 +111,16 @@ MPI_TEST(automate_capabilities_send_only_the_settings_asked_for, {}) {
   MPI_CHECK_MSG(bs->find("gpsLocation") == nullptr && bs->find("enableBiometric") == nullptr,
                 "a setting not asked for is not sent, so BrowserStack's default holds");
   MPI_CHECK(always->find("appium:locale") == nullptr);
+}
+
+MPI_TEST(upload_refuses_a_custom_id_curl_would_read_as_more_than_a_name, {}) {
+  // Refused before the file is looked at or anything is sent.
+  const mpi::browserstack::Credentials c{"user", "key", "environment"};
+  const auto bad = mpi::browserstack::upload(c, "app-automate", "/no/such.apk", "x;type=text/html");
+  MPI_CHECK(bad.error.find("custom_id") != std::string::npos);
+  const auto long_id = mpi::browserstack::upload(c, "app-automate", "/no/such.apk", std::string(101, 'a'));
+  MPI_CHECK(long_id.error.find("custom_id") != std::string::npos);
+  const auto ok = mpi::browserstack::upload(c, "app-automate", "/no/such.apk", "petx-1.4.2_rc.1");
+  MPI_CHECK_MSG(ok.error.find("no file") != std::string::npos,
+                "a valid custom_id passes, and the missing file is what stops it");
 }

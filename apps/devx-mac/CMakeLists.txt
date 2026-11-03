@@ -51,6 +51,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Feedback.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/AppState+Update.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatePlan.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BrowserStackApps.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatesPanel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeedbackViews.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/NextStep.swift
@@ -121,6 +122,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/Onboarding.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/NextStep.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatePlan.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BrowserStackApps.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

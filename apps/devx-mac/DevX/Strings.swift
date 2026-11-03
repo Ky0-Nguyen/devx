@@ -589,7 +589,28 @@ enum Strings {
         "Uploaded:": "Đã tải lên:",
         "Pick a device below and press start session.": "Chọn một thiết bị bên dưới rồi bấm start session.",
         "Loading BrowserStack devices…": "Đang tải danh sách thiết bị BrowserStack…",
-        "Loading recent builds…": "Đang tải các build gần đây…",
+        "Loading recent test runs…": "Đang tải các lượt chạy test gần đây…",
+        "App": "Ứng dụng",
+        "No app chosen: upload a build, or use one uploaded before.":
+            "Chưa chọn ứng dụng: tải một bản build lên, hoặc dùng bản đã tải lên trước đó.",
+        "BrowserStack keeps an upload for 30 days, so this one is gone: upload the build again.":
+            "BrowserStack chỉ giữ bản tải lên 30 ngày nên bản này đã bị xoá: hãy tải bản build lên lại.",
+        "Not uploaded to App Live, so open in App Live is off: upload the file to use both.":
+            "Bản này chưa có trên App Live nên nút open in App Live bị tắt: tải file lên để dùng được cả hai.",
+        "custom id (optional)": "custom id (không bắt buộc)",
+        "load uploaded apps": "tải danh sách app đã upload",
+        "load test runs": "tải các lượt chạy test",
+        "or paste a bs:// URL, from CI for example": "hoặc dán một URL bs://, ví dụ từ CI",
+        "BrowserStack lists no app uploaded in the last 30 days.":
+            "BrowserStack không có app nào được tải lên trong 30 ngày qua.",
+        "expired": "đã hết hạn",
+        "day left": "ngày nữa",
+        "days left": "ngày nữa",
+        "uploaded": "tải lên",
+        "Using": "Đang dùng",
+        "Loading the apps uploaded to BrowserStack…": "Đang tải danh sách app đã tải lên BrowserStack…",
+        "Uploaded to App Live only: App Automate refused it, so start session is off.":
+            "Chỉ tải lên được App Live: App Automate từ chối nên nút start session bị tắt.",
         "Loading sessions…": "Đang tải các phiên…",
         "Saving the build for AI tools…": "Đang lưu build cho công cụ AI…",
         "Importing App Profiling…": "Đang import App Profiling…",

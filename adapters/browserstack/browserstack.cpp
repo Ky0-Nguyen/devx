@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <sstream>
@@ -185,10 +187,21 @@ Reply request(const Credentials& c, const std::string& method, const std::string
   return curl(c, args, timeout);
 }
 
-Reply upload(const Credentials& c, const std::string& product, const std::string& file) {
+Reply upload(const Credentials& c, const std::string& product, const std::string& file,
+             const std::string& custom_id) {
   if (product != "app-live" && product != "app-automate") {
     Reply r;
     r.error = "product is app-live or app-automate";
+    return r;
+  }
+  const bool id_ok = custom_id.size() <= 100 &&
+                     std::all_of(custom_id.begin(), custom_id.end(), [](char ch) {
+                       return std::isalnum(static_cast<unsigned char>(ch)) || ch == '.' ||
+                              ch == '-' || ch == '_';
+                     });
+  if (!id_ok) {
+    Reply r;
+    r.error = "a custom_id is letters, digits, \".\", \"-\" and \"_\", at most 100";
     return r;
   }
   std::error_code ec;
@@ -197,8 +210,10 @@ Reply upload(const Credentials& c, const std::string& product, const std::string
     r.error = "no file at " + file;
     return r;
   }
-  return curl(c, {"-X", "POST", std::string(kApi) + product + "/upload", "-F", "file=@" + file},
-              std::chrono::seconds(600));
+  std::vector<std::string> args = {"-X", "POST", std::string(kApi) + product + "/upload",
+                                    "-F", "file=@" + file};
+  if (!custom_id.empty()) args.insert(args.end(), {"--form-string", "custom_id=" + custom_id});
+  return curl(c, args, std::chrono::seconds(600));
 }
 
 std::string app_live_url(const std::string& os, const std::string& os_version,

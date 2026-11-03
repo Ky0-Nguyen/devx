@@ -2764,6 +2764,53 @@ do {
     check(summary.contains("- one") && !summary.contains("\n\n\n"), "and keeps the notes without blank runs")
 }
 
+do {
+    // Apps already uploaded to BrowserStack, used again instead of uploaded again.
+    let reply = JSON.parse("""
+    [{"app_name":"app-release.apk","app_version":"1.0","app_url":"bs://d7cb59bc73e6",
+      "app_id":"d7cb59bc73e6","uploaded_at":"2026-10-07 16:36:49 UTC"},
+     {"app_name":"broken","app_url":"https://example.com/x"}]
+    """)
+    let automate = BrowserStackApps.uploads(reply)
+    check(automate.count == 1 && automate[0].url == "bs://d7cb59bc73e6",
+          "recent_apps is read as BrowserStack serves it, and an entry without a bs:// URL is dropped")
+    check(BrowserStackApps.uploads(JSON.parse(#"{"message":"No results found"}"#)).isEmpty,
+          "BrowserStack's 'No results found' is an empty list, not an error")
+
+    func up(_ url: String, _ at: String, name: String = "app-release.apk") -> BrowserStackApps.Upload {
+        BrowserStackApps.Upload(name: name, version: "1.0", url: url, customID: "", uploadedAt: at)
+    }
+    let older = up("bs://a1", "2026-10-01 10:00:00 UTC")
+    let newer = up("bs://a2", "2026-10-07 16:36:49 UTC")
+    let live = up("bs://l2", "2026-10-07 16:37:30 UTC")
+    let alone = up("bs://l9", "2026-10-02 09:00:00 UTC", name: "other.ipa")
+    let entries = BrowserStackApps.entries(automate: [older, newer], live: [live, alone])
+    check(entries.map(\.automate) == ["bs://a2", "", "bs://a1"], "newest first, every upload its own entry")
+    check(entries[0].live == "bs://l2", "the App Live upload of the same file pairs with the one made beside it")
+    check(entries[2].live.isEmpty,
+          "a build with the same name and version uploaded days apart is not paired: every release build is app-release.apk 1.0")
+    check(entries[1].live == "bs://l9" && entries[1].automate.isEmpty, "an App Live upload with no partner stands alone")
+
+    check(BrowserStackApps.isAppURL("bs://d7cb59bc73e62d2b4df1d00e51cee22c582db531"), "a bs:// URL is accepted")
+    for bad in ["bs://", "http://x", "bs://abc def", "bs://../x", " bs://abc"] {
+        check(!BrowserStackApps.isAppURL(bad), "and \(bad) is not")
+    }
+    check(BrowserStackApps.customID("PetX 1.4.2-rc/1_é") == "PetX1.4.2-rc1_",
+          "a custom id keeps only what BrowserStack keeps")
+    check(BrowserStackApps.customID(String(repeating: "a", count: 140)).count == 100, "at most 100 characters")
+
+    let uploadedAt = "2026-10-07 16:36:49 UTC"
+    let at = BrowserStackApps.uploadedDate(uploadedAt)!
+    check(BrowserStackApps.uploadedText(at) == uploadedAt, "an upload time round-trips in BrowserStack's form")
+    check(BrowserStackApps.daysLeft(uploadedAt: uploadedAt, now: at.addingTimeInterval(86400 * 27)) == 3,
+          "an upload is kept 30 days")
+    check(BrowserStackApps.daysLeft(uploadedAt: uploadedAt, now: at.addingTimeInterval(86400 * 29.5)) == 1,
+          "a part day left still counts as a day")
+    check((BrowserStackApps.daysLeft(uploadedAt: uploadedAt, now: at.addingTimeInterval(86400 * 31)) ?? 1) <= 0,
+          "and after that it is gone")
+    check(BrowserStackApps.daysLeft(uploadedAt: "", now: at) == nil, "a pasted URL's age is unknown, not guessed")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
