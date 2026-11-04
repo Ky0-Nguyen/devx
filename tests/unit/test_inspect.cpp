@@ -1047,12 +1047,15 @@ MPI_TEST(a_missing_request_body_says_why, {}) {
   feed(a, R"({"method":"Network.requestWillBeSent","params":{"requestId":"5",
       "timestamp":4.0,"request":{"method":"GET","url":"https://api.example.com/graphql?query=%7Bx%7D",
       "headers":{},"postData":""}}})");
+  feed(a, R"({"method":"Network.requestWillBeSent","params":{"requestId":"7",
+      "timestamp":5.0,"request":{"method":"POST","url":"https://api.example.com/graphql",
+      "headers":{"Content-Type":"application/json"},"postData":"[Preview unavailable]"}}})");
   // A response for a request that began before the debugger attached.
   feed(a, R"({"method":"Network.responseReceived","params":{"requestId":"6",
       "response":{"url":"https://api.example.com/graphql","status":200,"headers":{}}}})");
 
   const auto report = a.finish(1000);
-  MPI_CHECK(report.network.size() == 5);
+  MPI_CHECK(report.network.size() == 6);
   const auto& graphql = report.network[0];
   MPI_CHECK_MSG(graphql.request_body.value_or("").find("country(code") != std::string::npos,
                 "a GraphQL POST's body is kept as the runtime sent it");
@@ -1065,7 +1068,10 @@ MPI_TEST(a_missing_request_body_says_why, {}) {
                 "an OkHttp object's name is not shown as the body the app posted");
   MPI_CHECK_MSG(report.network[3].request_body_missing.empty(),
                 "a GET has no body to miss");
-  MPI_CHECK_MSG(!report.network[4].request_seen,
+  MPI_CHECK_MSG(report.network[4].request_body_missing == "preview_unavailable" &&
+                    !report.network[4].request_body.has_value(),
+                "React Native's placeholder is not shown as the body the app posted");
+  MPI_CHECK_MSG(!report.network[5].request_seen,
                 "a request that began before attaching is marked as never seen");
   const std::string json = report.to_json().dump();
   MPI_CHECK(json.find("\"request_seen\":false") != std::string::npos);

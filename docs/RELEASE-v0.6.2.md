@@ -45,6 +45,13 @@ Or download `DevX-0.6.2.dmg`. Signed with a Developer ID and notarized.
   - **React Native before 0.83 on Android** sends the name of OkHttp's body
     object (`okhttp3.RequestBody…@5f3a1c2`) in place of the body. It is no
     longer shown as if the app had posted that string;
+  - **React Native 0.85 or later** sends the 21-character placeholder
+    `[Preview unavailable]` instead of a body it would not read: on iOS a
+    body that is not UTF-8 text (binary, or compressed with something other
+    than gzip), on Android a file or stream body it can read only once. It
+    was shown as a 21-byte text body; it is now explained, with the request's
+    Content-Encoding when it has one. React Native has no command to fetch
+    the body itself;
   - a **GET** (a GraphQL persisted query, say) has no body: its data is in the
     URL.
 - Checked against a real Expo 57 / React Native 0.86 app on the iOS

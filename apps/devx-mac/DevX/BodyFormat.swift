@@ -337,6 +337,9 @@ enum RequestBodyGap: Equatable {
     case notSent(bytes: Int?)
     /// React Native before 0.83 on Android sent OkHttp's object name.
     case okhttpObject
+    /// React Native 0.85 or later sent "[Preview unavailable]" instead of the
+    /// body. `encoding` is the request's Content-Encoding, when it has one.
+    case previewUnavailable(encoding: String?)
     /// A GET, HEAD or OPTIONS: no body is expected.
     case noBodyMethod
 
@@ -354,6 +357,14 @@ enum RequestBodyGap: Equatable {
             return .notSent(bytes: bytes)
         case "okhttp_object":
             return .okhttpObject
+        case "preview_unavailable":
+            var encoding: String?
+            if case .object(let headers) = row["request_headers"] {
+                for (k, v) in headers where k.lowercased() == "content-encoding" && !v.text.isEmpty {
+                    encoding = v.text
+                }
+            }
+            return .previewUnavailable(encoding: encoding)
         default:
             return ["GET", "HEAD", "OPTIONS"].contains(row["method"].text) ? .noBodyMethod : nil
         }
@@ -364,6 +375,7 @@ enum RequestBodyGap: Equatable {
         switch self {
         case .beforeAttach: return tr("not seen")
         case .notSent, .okhttpObject: return tr("not sent by the app")
+        case .previewUnavailable: return tr("withheld by React Native")
         case .noBodyMethod: return tr("none")
         }
     }
@@ -386,6 +398,17 @@ enum RequestBodyGap: Equatable {
             return tr("React Native before 0.83 on Android sends the name of OkHttp's body object "
                       + "instead of the body, so there is no body to show. React Native 0.83 or "
                       + "later sends the body.")
+        case .previewUnavailable(let encoding):
+            let said: String = tr("React Native sent the placeholder \"[Preview unavailable]\" instead of this "
+                                  + "body, and offers no way to ask for the body itself.")
+            let why: String = tr("On iOS it does that when the body is not UTF-8 text: binary, or compressed "
+                                 + "with something other than gzip. On Android, when the body is a file or "
+                                 + "stream it can read only once. A JSON string from fetch, axios or Apollo "
+                                 + "is neither, so something in the app turned this body into bytes before "
+                                 + "sending it.")
+            let header: String = tr("This request is sent with Content-Encoding:")
+            let enc: String = encoding.map { " " + header + " " + $0 + "." } ?? ""
+            return said + " " + why + enc
         case .noBodyMethod:
             return tr("No body: this method carries its data in the URL. A GraphQL GET puts "
                       + "query and variables in the query string.")

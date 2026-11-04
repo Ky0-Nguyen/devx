@@ -2825,6 +2825,13 @@ do {
             == .notSent(bytes: nil), "and without a size when none was sent")
     check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"okhttp_object"}"#)) == .okhttpObject,
           "Android's OkHttp object name is explained, not shown as the body")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"preview_unavailable","request_headers":{"Content-Encoding":"deflate"}}"#))
+            == .previewUnavailable(encoding: "deflate"),
+          "React Native's placeholder is explained, with the encoding that likely caused it")
+    check(RequestBodyGap.previewUnavailable(encoding: "deflate").explanation.contains("deflate"),
+          "and the explanation names that encoding")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"preview_unavailable","request_headers":{}}"#))
+            == .previewUnavailable(encoding: nil), "or none when the request has none")
     check(RequestBodyGap.of(row(#"{"method":"GET"}"#)) == .noBodyMethod, "a GET has no body to miss")
     check(RequestBodyGap.of(row(#"{"method":"POST"}"#)) == nil,
           "a POST with nothing recorded about its body falls back to the general explanation")
