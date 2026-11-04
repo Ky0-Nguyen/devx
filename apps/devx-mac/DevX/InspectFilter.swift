@@ -87,8 +87,10 @@ enum InspectFilter {
         var shown: [JSON] = []
         for r in rows {
             let status = r["status"].int.map(String.init) ?? ""
+            // The operation too: every GraphQL request has the same URL.
+            let operations = GraphQLRequest.operations(r).map(\.label).joined(separator: " ")
             let haystack = (r["method"].text + " " + r["url"].text + " "
-                            + status).lowercased()
+                            + status + " " + operations).lowercased()
             if haystack.contains(want) { shown.append(r) }
         }
         return InspectFilterResult(shown: shown, hidden: rows.count - shown.count)

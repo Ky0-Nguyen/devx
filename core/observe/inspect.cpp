@@ -1,6 +1,7 @@
 #include "core/observe/inspect.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 
 namespace mpi::observe {
@@ -26,6 +27,22 @@ std::map<std::string, std::string> read_headers(const json::Value* headers) {
                                                   : member.second.dump();
   }
   return out;
+}
+
+/// What React Native before 0.83 sent on Android in place of a request body:
+/// `RequestBody.toString()`, the object's name, e.g.
+/// "okhttp3.RequestBody$Companion$toRequestBody$2@5f3a1c2". Shown as a body,
+/// it reads as the app having posted that string.
+bool is_okhttp_object_name(const std::string& text) {
+  if (text.rfind("okhttp3.", 0) != 0 || text.size() > 200) return false;
+  const std::size_t at = text.rfind('@');
+  if (at == std::string::npos || at + 1 == text.size()) return false;
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    const unsigned char c = static_cast<unsigned char>(text[i]);
+    if (std::isspace(c)) return false;
+    if (i > at && !std::isxdigit(c)) return false;
+  }
+  return true;
 }
 
 /// CDP timestamps are seconds as a double (monotonic, not wall clock). The
@@ -229,16 +246,27 @@ void InspectAssembler::feed(const json::Value& message) {
       order_.push_back(id);
     }
     if (req != nullptr) {
+      ex.request_seen = true;
       ex.method = str(field(*req, "method"));
       ex.url = str(field(*req, "url"));
       if (capture_detail_) {
         ex.request_headers = read_headers(field(*req, "headers"));
         const json::Value* post = field(*req, "postData");
+        const std::string text =
+            post != nullptr && post->is_string() ? post->as_string() : std::string();
         // Only when there is one. An empty string is not a body, and
         // recording it produced a blank "body" line that read as a request
         // that sent nothing deliberately.
-        if (post != nullptr && post->is_string() && !post->as_string().empty()) {
-          ex.request_body = post->as_string();
+        if (is_okhttp_object_name(text)) {
+          ex.request_body_missing = "okhttp_object";
+        } else if (!text.empty()) {
+          ex.request_body = text;
+          ex.request_body_missing.clear();
+        } else if (ex.method != "GET" && ex.method != "HEAD" && ex.method != "OPTIONS" &&
+                   !ex.request_body.has_value()) {
+          // A GET has no body to miss; anything else is said to be missing
+          // rather than left to read as "not captured".
+          ex.request_body_missing = "not_sent";
         }
       }
     }
@@ -558,6 +586,10 @@ json::Value InspectReport::to_json() const {
     }
     if (e.request_body.has_value()) {
       v.set("request_body", json::Value::string(*e.request_body));
+    }
+    if (!e.request_seen) v.set("request_seen", json::Value::boolean(false));
+    if (!e.request_body_missing.empty()) {
+      v.set("request_body_missing", json::Value::string(e.request_body_missing));
     }
     if (e.response_body.has_value()) {
       v.set("response_body", json::Value::string(*e.response_body));

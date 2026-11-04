@@ -325,6 +325,74 @@ enum BodyFormat {
 /// collapsing by default had a 2000-character bearer token flooding the
 /// pane; the fix is only an improvement if the closed state still answers
 /// "is there anything in here, and how much".
+/// Why a request shows no body, when the data says why. Only for the
+/// request: a response body is asked for, and the runtime's answer says why
+/// there is none.
+enum RequestBodyGap: Equatable {
+    /// The request began before the debugger attached: only its response was
+    /// seen.
+    case beforeAttach
+    /// The runtime reported the request with no body. `bytes` is its
+    /// Content-Length, when it sent one: proof that there was a body.
+    case notSent(bytes: Int?)
+    /// React Native before 0.83 on Android sent OkHttp's object name.
+    case okhttpObject
+    /// A GET, HEAD or OPTIONS: no body is expected.
+    case noBodyMethod
+
+    static func of(_ row: JSON) -> RequestBodyGap? {
+        guard row.isAbsent(BodyField.request.key) else { return nil }
+        if row["request_seen"].bool == false { return .beforeAttach }
+        switch row["request_body_missing"].text {
+        case "not_sent":
+            var bytes: Int?
+            if case .object(let headers) = row["request_headers"] {
+                for (k, v) in headers where k.lowercased() == "content-length" {
+                    if let n = Int(v.text), n > 0 { bytes = n }
+                }
+            }
+            return .notSent(bytes: bytes)
+        case "okhttp_object":
+            return .okhttpObject
+        default:
+            return ["GET", "HEAD", "OPTIONS"].contains(row["method"].text) ? .noBodyMethod : nil
+        }
+    }
+
+    /// The closed section's summary.
+    var summary: String {
+        switch self {
+        case .beforeAttach: return tr("not seen")
+        case .notSent, .okhttpObject: return tr("not sent by the app")
+        case .noBodyMethod: return tr("none")
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .beforeAttach:
+            return tr("This request began before DevX attached, so only its response was seen. "
+                      + "Start watching, then do what sends it.")
+        case .notSent(let bytes):
+            let said: String = tr("The app reported this request to the debugger without its body.")
+            let says: String = tr("Its Content-Length says")
+            let unit: String = tr("bytes were sent.")
+            let sent: String = bytes.map { " " + says + " " + String($0) + " " + unit } ?? ""
+            let limits: String = tr("React Native and Expo include a request body only when it is text they "
+                                    + "can read: not a file or binary upload, and not on React Native "
+                                    + "before 0.81 (iOS) or 0.83 (Android).")
+            return said + sent + " " + limits
+        case .okhttpObject:
+            return tr("React Native before 0.83 on Android sends the name of OkHttp's body object "
+                      + "instead of the body, so there is no body to show. React Native 0.83 or "
+                      + "later sends the body.")
+        case .noBodyMethod:
+            return tr("No body: this method carries its data in the URL. A GraphQL GET puts "
+                      + "query and variables in the query string.")
+        }
+    }
+}
+
 enum BodySummary {
     /// A short, honest description: the state, and the size when there is one.
     ///

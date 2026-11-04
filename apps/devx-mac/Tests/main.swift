@@ -2811,6 +2811,82 @@ do {
     check(BrowserStackApps.daysLeft(uploadedAt: "", now: at) == nil, "a pasted URL's age is unknown, not guessed")
 }
 
+do {
+    // Why a request shows no body, from what the core recorded.
+    func row(_ text: String) -> JSON { JSON.parse(text) }
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body":"{\"query\":\"{ x }\"}"}"#)) == nil,
+          "a request with a body has no gap")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_seen":false}"#)) == .beforeAttach,
+          "a request that began before attaching says so instead of 'not captured'")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"not_sent","request_headers":{"content-length":"512"}}"#))
+            == .notSent(bytes: 512),
+          "a body the app did not send is told apart, with the bytes it did send")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"not_sent","request_headers":{}}"#))
+            == .notSent(bytes: nil), "and without a size when none was sent")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"okhttp_object"}"#)) == .okhttpObject,
+          "Android's OkHttp object name is explained, not shown as the body")
+    check(RequestBodyGap.of(row(#"{"method":"GET"}"#)) == .noBodyMethod, "a GET has no body to miss")
+    check(RequestBodyGap.of(row(#"{"method":"POST"}"#)) == nil,
+          "a POST with nothing recorded about its body falls back to the general explanation")
+    check(RequestBodyGap.notSent(bytes: 97).explanation.contains("97"), "the explanation carries the size")
+}
+
+do {
+    // GraphQL, however a request carries it.
+    func ops(_ method: String, _ url: String, _ body: String?, _ type: String = "application/json") -> [GraphQLOperation] {
+        GraphQLRequest.operations(method: method, url: url, body: body, contentType: type)
+    }
+    let apollo = ops("POST", "https://api.example.com/graphql", #"""
+    {"operationName":"GetMenu","variables":{"store":"VN-001","price":1.0},"query":"fragment Item on MenuItem { id name }\nquery GetMenu($store: ID!) {\n  menu(store: $store) { ...Item }\n}"}
+    """#)
+    check(apollo.count == 1 && apollo[0].kind == "query" && apollo[0].name == "GetMenu",
+          "an Apollo POST is read as the query it names, past a fragment defined first")
+    check(apollo[0].document.contains("\n  menu(store: $store)"), "the document keeps its own line breaks")
+    check(apollo[0].variables == #"{"store":"VN-001","price":1.0}"#,
+          "variables are the JSON exactly as sent: 1.0 stays 1.0")
+    check(apollo[0].label == "query GetMenu", "and the row is labelled by the operation")
+
+    let mutation = ops("POST", "https://x/graphql", #"{"query":"mutation AddToCart($id: ID!) { add(id: $id) { ok } }"}"#)
+    check(mutation.first?.kind == "mutation" && mutation.first?.name == "AddToCart",
+          "with no operationName the name comes from the document")
+    let shorthand = ops("POST", "https://x/graphql", #"{"query":"{ search(query: \"shoes\") { id } }"}"#)
+    check(shorthand.first?.label == "query (anonymous)",
+          "the shorthand is an anonymous query, and an argument called query is not a definition")
+
+    let batch = ops("POST", "https://x/graphql", #"[{"query":"query A { a }"},{"query":"mutation B { b }"}]"#)
+    check(batch.map(\.label) == ["query A", "mutation B"], "a batch is every operation in it")
+    check(ops("POST", "https://x/api", #"[{"id":1},{"query":"query A { a }"}]"#).isEmpty,
+          "an array that is not all operations is not GraphQL")
+
+    let get = ops("GET", "https://x/graphql?operationName=GetMenu&query=query%20GetMenu%20%7B%20menu%20%7B%20id%20%7D%20%7D&variables=%7B%22store%22%3A%22VN%22%7D", nil)
+    check(get.first?.name == "GetMenu" && get.first?.variables == #"{"store":"VN"}"#,
+          "a GET carries the same fields in its query string")
+    let apq = ops("GET", "https://x/graphql?operationName=GetMenu&variables=%7B%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38%22%7D%7D", nil)
+    check(apq.first?.persistedHash.hasPrefix("ecf4edb4") == true && apq.first?.document.isEmpty == true
+            && apq.first?.label == "persisted GetMenu",
+          "an automatic persisted query sends only a hash, and says so")
+
+    let multipart = "------B\r\ncontent-disposition: form-data; name=\"operations\"\r\n\r\n"
+        + #"{"query":"mutation Upload($f: Upload!) { upload(file: $f) { id } }","variables":{"f":null}}"#
+        + "\r\n------B\r\ncontent-disposition: form-data; name=\"map\"\r\n\r\n{\"0\":[\"variables.f\"]}\r\n------B--\r\n"
+    check(ops("POST", "https://x/graphql", multipart, "multipart/form-data; boundary=----B").first?.name == "Upload",
+          "a multipart upload is read from its operations part")
+    check(ops("POST", "https://x/graphql", "query Me { me { id } }", "application/graphql").first?.label == "query Me",
+          "application/graphql is the document itself")
+
+    check(ops("POST", "https://x/search", #"{"query":"shoes","page":2}"#).isEmpty,
+          "a REST search with a 'query' field is not called GraphQL")
+    check(ops("GET", "https://x/search?query=shoes", nil).isEmpty, "nor is a GET with ?query=")
+    check(ops("POST", "https://x/graphql", nil).isEmpty, "no body, nothing to read")
+
+    check(GraphQLRequest.errorMessages(inResponse: #"{"data":null,"errors":[{"message":"Store closed","path":["menu"]}]}"#)
+            == ["Store closed"], "errors inside a 200 are read out")
+    check(GraphQLRequest.errorMessages(inResponse: #"{"data":{"menu":[]}}"#) == [], "a result without errors has none")
+    check(GraphQLRequest.errorMessages(inResponse: #"[{"data":{}},{"errors":[{"message":"x"}]}]"#) == ["x"],
+          "a batch's errors are collected")
+    check(GraphQLRequest.errorMessages(inResponse: #"{"items":[]}"#) == nil, "a body that is not a GraphQL result says nothing")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)
