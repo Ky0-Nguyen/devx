@@ -45,6 +45,12 @@ bool is_okhttp_object_name(const std::string& text) {
   return true;
 }
 
+/// What React Native 0.85 and later send in place of a body they would not
+/// read: on iOS a body that is not UTF-8 text, on Android a body that can be
+/// read only once (a file or stream) or that failed to read. Shown as a body,
+/// it reads as the app having posted those 21 characters.
+constexpr const char* kPreviewUnavailable = "[Preview unavailable]";
+
 /// CDP timestamps are seconds as a double (monotonic, not wall clock). The
 /// model keeps nanoseconds, and the conversion is done once here rather than
 /// at each use so a unit mistake cannot be made twice.
@@ -259,6 +265,8 @@ void InspectAssembler::feed(const json::Value& message) {
         // that sent nothing deliberately.
         if (is_okhttp_object_name(text)) {
           ex.request_body_missing = "okhttp_object";
+        } else if (text == kPreviewUnavailable) {
+          ex.request_body_missing = "preview_unavailable";
         } else if (!text.empty()) {
           ex.request_body = text;
           ex.request_body_missing.clear();

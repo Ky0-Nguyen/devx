@@ -138,7 +138,9 @@ struct NetworkExchange {
   /// the request was seen. "not_sent": the runtime reported it with no
   /// postData (a body it could not read as text, or a runtime too old to
   /// send one). "okhttp_object": React Native before 0.83 on Android sent
-  /// the name of OkHttp's body object instead of the body. Empty otherwise.
+  /// the name of OkHttp's body object instead of the body.
+  /// "preview_unavailable": React Native 0.85 or later sent its
+  /// "[Preview unavailable]" placeholder instead. Empty otherwise.
   std::string request_body_missing;
   /// The response body, fetched with `Network.getResponseBody`.
   std::optional<std::string> response_body;
