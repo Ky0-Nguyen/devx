@@ -849,6 +849,7 @@ private struct ExchangeColumn: View {
             summary
             visibilityNote
             captureNote
+            GraphQLSection(row: row)
             HeaderSection(title: "Request headers", row: row,
                           key: "request_headers", capture: capture,
                           emptyText: tr("no request headers were recorded"))
@@ -1005,6 +1006,76 @@ private struct ExchangeColumn: View {
 }
 
 /// One header map, with four distinguishable empty states.
+/// The GraphQL a request carried, read out of its body or URL: the operation,
+/// its document with its own line breaks, its variables, and the errors the
+/// response reported inside a 200. Absent for a request that is not GraphQL.
+private struct GraphQLSection: View {
+    let row: JSON
+
+    var body: some View {
+        let ops = GraphQLRequest.operations(row)
+        if !ops.isEmpty {
+            let response = BodyFormat.classify(row, .response, limit: Int.max).raw
+            let errors = response.flatMap { GraphQLRequest.errorMessages(inResponse: $0) }
+            DisclosureSection(title: "GraphQL",
+                              summary: ops.count == 1 ? ops[0].label : "\(ops.count) " + tr("operations"),
+                              startsOpen: true) {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(ops.enumerated()), id: \.offset) { _, op in
+                        operation(op)
+                    }
+                    if let errors, !errors.isEmpty {
+                        VStack(alignment: .leading, spacing: 3) {
+                            let ok = (200..<300).contains(row["status"].int ?? 0)
+                            Text("\(errors.count) " + (ok ? tr("errors in the response, although its status says success")
+                                                         : tr("errors in the response")))
+                                .font(Term.small).foregroundStyle(Term.red)
+                            ForEach(Array(errors.prefix(20).enumerated()), id: \.offset) { _, m in
+                                Text("• " + m).font(Term.small).foregroundStyle(Term.ink)
+                                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func operation(_ op: GraphQLOperation) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(op.label).font(Term.font(12, .medium)).foregroundStyle(Term.cyan)
+            if !op.persistedHash.isEmpty {
+                Field(label: "persisted query") {
+                    Text(op.persistedHash).font(Term.micro).textSelection(.enabled)
+                }
+                if op.document.isEmpty {
+                    Text(tr("Only the hash was sent: the server already has the document. "
+                            + "A request that sends the full query appears when the server asks for it."))
+                        .font(Term.micro).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if !op.document.isEmpty {
+                block(BodyFormat.cut(op.document, to: BodyFormat.displayLimit).0)
+            }
+            if !op.variables.isEmpty {
+                Text(tr("variables")).font(Term.micro).foregroundStyle(Term.dim)
+                block(BodyFormat.cut(BodyFormat.prettyJSON(op.variables) ?? op.variables,
+                                     to: BodyFormat.displayLimit).0)
+            }
+        }
+    }
+
+    private func block(_ text: String) -> some View {
+        Text(text).font(Term.font(11)).foregroundStyle(Term.ink)
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Term.bg, in: RoundedRectangle(cornerRadius: 2))
+    }
+}
+
 private struct HeaderSection: View {
     let title: String
     let row: JSON
@@ -1300,6 +1371,14 @@ private struct NetworkRow: View {
                 .frame(width: 64, alignment: .trailing)
             // Head-truncated: a URL's path is what identifies it, and cutting
             // the end leaves every request from one host looking identical.
+            // Every GraphQL request goes to one URL, so the operation is what
+            // tells them apart.
+            let ops = GraphQLRequest.operations(row)
+            if !ops.isEmpty {
+                Text(ops.count == 1 ? ops[0].label : "\(ops.count) " + tr("operations"))
+                    .font(Term.small).foregroundStyle(Term.cyan).lineLimit(1)
+                    .layoutPriority(1)
+            }
             Text(row["url"].text).font(Term.small)
                 .lineLimit(1).truncationMode(.head)
             Spacer(minLength: 0)

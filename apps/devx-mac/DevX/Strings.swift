@@ -853,6 +853,14 @@ enum Strings {
         "the request failed, so no body was ever asked for":
             "request đã thất bại, nên chưa hề yêu cầu body",
         "not seen": "không thấy",
+        "operations": "operation",
+        "errors in the response": "lỗi trong response",
+        "errors in the response, although its status says success":
+            "lỗi trong response, dù status báo thành công",
+        "Only the hash was sent: the server already has the document. "
+        + "A request that sends the full query appears when the server asks for it.":
+            "Chỉ gửi mã hash vì server đã có sẵn query. Nếu server yêu cầu, sẽ có thêm "
+            + "một request gửi đầy đủ query.",
         "not sent by the app": "app không gửi",
         "none": "không có",
         "This request began before DevX attached, so only its response was seen. "

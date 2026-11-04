@@ -13,6 +13,24 @@ Or download `DevX-0.6.2.dmg`. Signed with a Developer ID and notarized.
 
 ## What changed
 
+- **GraphQL in Inspect, however it is sent.** Every GraphQL request goes to
+  one URL, so the list now labels each row with its operation
+  (`query GetMenu`, `mutation AddToCart`, `3 operations`), and the search box
+  matches operation names. A **GraphQL** section in the request's detail
+  shows the operation, its document with its own line breaks, and its
+  variables exactly as sent. It reads:
+  - a POST of `query` / `operationName` / `variables` (Apollo, urql,
+    graphql-request, Relay, fetch or axios);
+  - a batch (a JSON array of operations);
+  - a GET with those fields in the query string, and Apollo's automatic
+    persisted queries, which send only a hash (said so, with the hash);
+  - a multipart upload (its `operations` part);
+  - `Content-Type: application/graphql`.
+
+  `errors` in the response is listed too. A GraphQL server reports a failed
+  operation inside a 200, so the status alone said everything was fine.
+  A REST call with a `query` field (`{"query":"shoes"}`) is not called
+  GraphQL.
 - **Inspect says why a request has no body.** It used to show "not captured"
   with "the body was asked for and no answer came back", which is wrong for a
   request body: nobody asks for it, the app sends it with the request. A
