@@ -1095,12 +1095,18 @@ private struct BodySection: View {
         // The response body opens; everything else starts closed. It is the
         // thing a reader clicked the row for, and the request body is
         // usually absent or a few dozen bytes.
-        DisclosureSection(title: title, summary: BodySummary.short(b),
+        let gap = field == .request ? RequestBodyGap.of(row) : nil
+        DisclosureSection(title: title, summary: gap?.summary ?? BodySummary.short(b),
                           startsOpen: field == .response) {
             VStack(alignment: .leading, spacing: 4) {
                 switch b.state {
                 case .notCaptured:
-                    notCapturedText
+                    if let gap, capture != .off {
+                        Text(gap.explanation).font(Term.micro).foregroundStyle(Term.cyan)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        notCapturedText
+                    }
                 case .unavailable(let why):
                     // The runtime's own words, never translated: the core
                     // writes this only when a body was asked for and there

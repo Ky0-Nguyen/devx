@@ -852,6 +852,33 @@ enum Strings {
             "vẫn đang chạy khi phiên kết thúc, nên chưa hề yêu cầu body",
         "the request failed, so no body was ever asked for":
             "request đã thất bại, nên chưa hề yêu cầu body",
+        "not seen": "không thấy",
+        "not sent by the app": "app không gửi",
+        "none": "không có",
+        "This request began before DevX attached, so only its response was seen. "
+        + "Start watching, then do what sends it.":
+            "Request này bắt đầu trước khi DevX gắn vào app, nên DevX chỉ thấy response. "
+            + "Hãy bấm theo dõi trước, rồi mới thao tác để app gửi request.",
+        "The app reported this request to the debugger without its body.":
+            "App báo request này cho debugger mà không kèm body.",
+        "Its Content-Length says": "Content-Length cho biết đã gửi",
+        "bytes were sent.": "byte.",
+        "React Native and Expo include a request body only when it is text they "
+        + "can read: not a file or binary upload, and not on React Native "
+        + "before 0.81 (iOS) or 0.83 (Android).":
+            "React Native và Expo chỉ gửi kèm request body khi đó là text đọc được: "
+            + "không gửi file hay dữ liệu nhị phân, và không gửi trên React Native "
+            + "trước 0.81 (iOS) hoặc 0.83 (Android).",
+        "React Native before 0.83 on Android sends the name of OkHttp's body object "
+        + "instead of the body, so there is no body to show. React Native 0.83 or "
+        + "later sends the body.":
+            "React Native trước 0.83 trên Android gửi tên object body của OkHttp thay "
+            + "cho body, nên không có body để hiển thị. Từ React Native 0.83 trở đi "
+            + "body được gửi đầy đủ.",
+        "No body: this method carries its data in the URL. A GraphQL GET puts "
+        + "query and variables in the query string.":
+            "Không có body: method này đặt dữ liệu trên URL. GraphQL dạng GET đặt "
+            + "query và variables trong query string.",
         "the runtime reported this request as failed and gave no reason":
             "runtime báo request này thất bại mà không nêu lý do",
         "not text: the runtime returned this body base64, and it is shown as it arrived rather than decoded":

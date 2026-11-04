@@ -2811,6 +2811,26 @@ do {
     check(BrowserStackApps.daysLeft(uploadedAt: "", now: at) == nil, "a pasted URL's age is unknown, not guessed")
 }
 
+do {
+    // Why a request shows no body, from what the core recorded.
+    func row(_ text: String) -> JSON { JSON.parse(text) }
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body":"{\"query\":\"{ x }\"}"}"#)) == nil,
+          "a request with a body has no gap")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_seen":false}"#)) == .beforeAttach,
+          "a request that began before attaching says so instead of 'not captured'")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"not_sent","request_headers":{"content-length":"512"}}"#))
+            == .notSent(bytes: 512),
+          "a body the app did not send is told apart, with the bytes it did send")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"not_sent","request_headers":{}}"#))
+            == .notSent(bytes: nil), "and without a size when none was sent")
+    check(RequestBodyGap.of(row(#"{"method":"POST","request_body_missing":"okhttp_object"}"#)) == .okhttpObject,
+          "Android's OkHttp object name is explained, not shown as the body")
+    check(RequestBodyGap.of(row(#"{"method":"GET"}"#)) == .noBodyMethod, "a GET has no body to miss")
+    check(RequestBodyGap.of(row(#"{"method":"POST"}"#)) == nil,
+          "a POST with nothing recorded about its body falls back to the general explanation")
+    check(RequestBodyGap.notSent(bytes: 97).explanation.contains("97"), "the explanation carries the size")
+}
+
 if listingRequirements { exit(0) }
 print("\(passed) passed, \(failures.count) failed")
 exit(failures.isEmpty ? 0 : 1)

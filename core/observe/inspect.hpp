@@ -130,6 +130,16 @@ struct NetworkExchange {
   std::map<std::string, std::string> response_headers;
   /// The request body, when the request had one (`request.postData`).
   std::optional<std::string> request_body;
+  /// Whether `Network.requestWillBeSent` was seen. A request that began
+  /// before the debugger attached shows up first in its response, and then
+  /// its headers and body were never there to be seen.
+  bool request_seen = false;
+  /// Why a request that should carry a body has none, when detail is on and
+  /// the request was seen. "not_sent": the runtime reported it with no
+  /// postData (a body it could not read as text, or a runtime too old to
+  /// send one). "okhttp_object": React Native before 0.83 on Android sent
+  /// the name of OkHttp's body object instead of the body. Empty otherwise.
+  std::string request_body_missing;
   /// The response body, fetched with `Network.getResponseBody`.
   std::optional<std::string> response_body;
   /// Whether `response_body` is base64. The runtime decides: text comes back

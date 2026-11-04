@@ -1021,3 +1021,53 @@ MPI_TEST(a_size_react_native_does_not_know_is_absent_not_minus_one, {}) {
   }
   MPI_CHECK(!a.finish(10).network.front().encoded_bytes.has_value());
 }
+
+MPI_TEST(a_missing_request_body_says_why, {}) {
+  // Each request as a runtime reports it. The first is what an Expo 57 /
+  // React Native 0.86 app on iOS sent for a GraphQL POST, recorded from the
+  // inspector; the others are the shapes that leave the body out.
+  auto feed = [](mpi::observe::InspectAssembler& a, const char* text) {
+    mpi::json::ParseError err;
+    auto doc = mpi::json::parse(text, &err);
+    MPI_CHECK(doc.has_value());
+    a.feed(*doc);
+  };
+  mpi::observe::InspectAssembler a;
+  a.capture_detail(true);
+  feed(a, R"({"method":"Network.requestWillBeSent","params":{"requestId":"2",
+      "timestamp":1.0,"request":{"method":"POST","url":"https://countries.trevorblades.com/graphql",
+      "headers":{"Content-Type":"application/json","Content-Length":"97"},
+      "postData":"{\"operationName\":\"Q\",\"query\":\"query Q { country(code: \\\"VN\\\") { name capital } }\",\"variables\":{}}"}}})");
+  feed(a, R"({"method":"Network.requestWillBeSent","params":{"requestId":"3",
+      "timestamp":2.0,"request":{"method":"POST","url":"https://api.example.com/graphql",
+      "headers":{"Content-Length":"512"},"postData":""}}})");
+  feed(a, R"({"method":"Network.requestWillBeSent","params":{"requestId":"4",
+      "timestamp":3.0,"request":{"method":"POST","url":"https://api.example.com/graphql",
+      "headers":{},"postData":"okhttp3.RequestBody$Companion$toRequestBody$2@5f3a1c2"}}})");
+  feed(a, R"({"method":"Network.requestWillBeSent","params":{"requestId":"5",
+      "timestamp":4.0,"request":{"method":"GET","url":"https://api.example.com/graphql?query=%7Bx%7D",
+      "headers":{},"postData":""}}})");
+  // A response for a request that began before the debugger attached.
+  feed(a, R"({"method":"Network.responseReceived","params":{"requestId":"6",
+      "response":{"url":"https://api.example.com/graphql","status":200,"headers":{}}}})");
+
+  const auto report = a.finish(1000);
+  MPI_CHECK(report.network.size() == 5);
+  const auto& graphql = report.network[0];
+  MPI_CHECK_MSG(graphql.request_body.value_or("").find("country(code") != std::string::npos,
+                "a GraphQL POST's body is kept as the runtime sent it");
+  MPI_CHECK(graphql.request_body_missing.empty() && graphql.request_seen);
+  MPI_CHECK_MSG(report.network[1].request_body_missing == "not_sent" &&
+                    !report.network[1].request_body.has_value(),
+                "a POST reported with no body says it was not sent, not 'not captured'");
+  MPI_CHECK_MSG(report.network[2].request_body_missing == "okhttp_object" &&
+                    !report.network[2].request_body.has_value(),
+                "an OkHttp object's name is not shown as the body the app posted");
+  MPI_CHECK_MSG(report.network[3].request_body_missing.empty(),
+                "a GET has no body to miss");
+  MPI_CHECK_MSG(!report.network[4].request_seen,
+                "a request that began before attaching is marked as never seen");
+  const std::string json = report.to_json().dump();
+  MPI_CHECK(json.find("\"request_seen\":false") != std::string::npos);
+  MPI_CHECK(json.find("\"request_body_missing\":\"not_sent\"") != std::string::npos);
+}
