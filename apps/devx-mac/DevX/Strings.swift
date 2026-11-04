@@ -883,6 +883,22 @@ enum Strings {
             "React Native trước 0.83 trên Android gửi tên object body của OkHttp thay "
             + "cho body, nên không có body để hiển thị. Từ React Native 0.83 trở đi "
             + "body được gửi đầy đủ.",
+        "withheld by React Native": "React Native không gửi",
+        "React Native sent the placeholder \"[Preview unavailable]\" instead of this "
+        + "body, and offers no way to ask for the body itself.":
+            "React Native gửi chuỗi thay thế \"[Preview unavailable]\" thay cho body này, "
+            + "và không có cách nào để lấy body thật.",
+        "On iOS it does that when the body is not UTF-8 text: binary, or compressed "
+        + "with something other than gzip. On Android, when the body is a file or "
+        + "stream it can read only once. A JSON string from fetch, axios or Apollo "
+        + "is neither, so something in the app turned this body into bytes before "
+        + "sending it.":
+            "Trên iOS, điều này xảy ra khi body không phải text UTF-8: dữ liệu nhị phân, "
+            + "hoặc được nén bằng cách khác gzip. Trên Android, khi body là file hoặc "
+            + "stream chỉ đọc được một lần. Chuỗi JSON từ fetch, axios hay Apollo không "
+            + "thuộc trường hợp nào ở trên, nên có thứ gì đó trong app đã biến body này "
+            + "thành bytes trước khi gửi.",
+        "This request is sent with Content-Encoding:": "Request này được gửi với Content-Encoding:",
         "No body: this method carries its data in the URL. A GraphQL GET puts "
         + "query and variables in the query string.":
             "Không có body: method này đặt dữ liệu trên URL. GraphQL dạng GET đặt "
