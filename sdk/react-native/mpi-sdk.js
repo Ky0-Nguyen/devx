@@ -391,4 +391,607 @@ export class MpiSdk {
   }
 }
 
-export { redactUrl, KINDS };
+// --- trackNetwork(): Inspect for a release build -----------------------------
+//
+// A release build runs no inspector, so DevX's Inspect tab has nothing to
+// attach to. This wraps the app's own `fetch` and `XMLHttpRequest` and sends
+// what they did to DevX as the Network events a debugger would have received,
+// with the bodies a debugger would have asked for. DevX shows them exactly as
+// it shows a debug build's requests.
+//
+//   import { trackNetwork } from './mpi-sdk.js';
+//
+//   if (Config.DEVX_INSPECT === '1') {            // never in a store build
+//     trackNetwork({
+//       endpoint: 'http://127.0.0.1:47081',     // shown in DevX's Inspect tab
+//       token: 'devx-...',                      // shown beside it
+//       app: { app_identifier: 'com.example', app_version: '9.1',
+//              platform: Platform.OS, device: DeviceInfo.getModel() },
+//     });
+//   }
+//
+// What it does and does not do, so nothing here surprises an app:
+//
+//   * It records only while DevX is listening. Until then it asks every few
+//     seconds whether DevX is there and records nothing, so a request made
+//     while nobody is looking is not kept anywhere.
+//   * With `detail` (the default) headers and bodies are sent verbatim,
+//     Authorization included -- the point is to see what the app sent. They go
+//     to the endpoint given here and nowhere else.
+//   * Only JavaScript requests: a WebView, a native networking module and the
+//     image loader are not fetch or XMLHttpRequest.
+//   * It never throws into the app, and every request goes through untouched:
+//     a failure inside the tracker loses a record, never a request.
+//   * `stop()` puts fetch and XMLHttpRequest back.
+
+const NETWORK_DEFAULTS = {
+  detail: true,
+  // Per body. React Native's own debugger stops at the same size.
+  maxBodyBytes: 512 * 1024,
+  flushIntervalMs: 500,
+  // How often to ask whether DevX is listening, while it is not.
+  probeIntervalMs: 5000,
+  requestTimeoutMs: 5000,
+  // Events held while a batch is in flight; the oldest go first, counted.
+  bufferEvents: 4000,
+  // One batch. The host refuses a request over 4 MB.
+  maxBatchBytes: 3 * 1024 * 1024,
+  // URLs not to record: strings (prefixes) or RegExps.
+  ignore: [],
+  sdkVersion: '0.2.0',
+};
+
+const TEXT_TYPES = /json|text|xml|graphql|javascript|x-www-form-urlencoded/i;
+
+function nowSeconds() {
+  if (typeof globalThis.performance?.now === 'function') {
+    return globalThis.performance.now() / 1000;
+  }
+  return Date.now() / 1000;
+}
+
+function capBody(text, max) {
+  if (typeof text !== 'string') return undefined;
+  if (text.length <= max) return text;
+  return `${text.slice(0, max)}\n... (cut by the DevX SDK at ${max} of ${text.length} characters)`;
+}
+
+// Headers in any of the shapes fetch accepts, as a plain object.
+function headerObject(headers) {
+  const out = {};
+  if (!headers) return out;
+  try {
+    if (typeof headers.forEach === 'function' && !Array.isArray(headers)) {
+      headers.forEach((value, key) => {
+        out[key] = String(value);
+      });
+    } else if (Array.isArray(headers)) {
+      for (const pair of headers) {
+        if (Array.isArray(pair) && pair.length >= 2) out[String(pair[0])] = String(pair[1]);
+      }
+    } else if (typeof headers === 'object') {
+      for (const key of Object.keys(headers)) out[key] = String(headers[key]);
+    }
+  } catch {
+    // A header object we cannot read is left out, not guessed at.
+  }
+  return out;
+}
+
+function parseRawHeaders(raw) {
+  const out = {};
+  if (typeof raw !== 'string') return out;
+  for (const line of raw.split(/\r?\n/)) {
+    const at = line.indexOf(':');
+    if (at > 0) out[line.slice(0, at).trim()] = line.slice(at + 1).trim();
+  }
+  return out;
+}
+
+function headerValue(headers, name) {
+  const want = name.toLowerCase();
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === want) return headers[key];
+  }
+  return '';
+}
+
+// A request body as text, when it is text. React Native's FormData keeps its
+// parts in `_parts` / `getParts()`; it is written out as multipart so a GraphQL
+// upload's `operations` part reads as the operation it is. A file part shows
+// its name and type, never its bytes. Anything binary is left out (undefined):
+// a stand-in string would read as the body the app sent.
+function requestBodyText(body, max) {
+  if (body === undefined || body === null) return undefined;
+  if (typeof body === 'string') return capBody(body, max);
+  if (typeof URLSearchParams === 'function' && body instanceof URLSearchParams) {
+    return capBody(body.toString(), max);
+  }
+  const parts =
+    typeof body.getParts === 'function' ? body.getParts() : Array.isArray(body._parts) ? body._parts : null;
+  if (parts) {
+    const boundary = '----devx-sdk';
+    let out = '';
+    for (const part of parts) {
+      // getParts(): { string | uri, headers }; _parts: [name, value].
+      let name = '';
+      let value = part;
+      if (Array.isArray(part)) {
+        [name, value] = part;
+      } else if (part && part.headers) {
+        const disposition = String(part.headers['content-disposition'] || '');
+        const m = /name="([^"]*)"/.exec(disposition);
+        name = m ? m[1] : '';
+        value = part.string !== undefined ? part.string : part;
+      }
+      out += `--${boundary}\r\ncontent-disposition: form-data; name="${name}"`;
+      if (value && typeof value === 'object') {
+        const file = value.name || value.fileName || value.uri || 'file';
+        out += `; filename="${file}"\r\ncontent-type: ${value.type || 'application/octet-stream'}\r\n\r\n[file ${value.uri || file}]\r\n`;
+      } else {
+        out += `\r\n\r\n${String(value)}\r\n`;
+      }
+    }
+    return capBody(`${out}--${boundary}--\r\n`, max);
+  }
+  return undefined;
+}
+
+class NetworkTracker {
+  constructor(options) {
+    const opts = { ...NETWORK_DEFAULTS, ...(options || {}) };
+    this._opts = opts;
+    this._endpoint = String(opts.endpoint || '').replace(/\/+$/, '');
+    this._token = String(opts.token || '');
+    this._global = opts.global || globalThis;
+    // Captured before anything is wrapped, so the tracker's own sends are
+    // never recorded as the app's.
+    this._fetch = this._global.fetch;
+    this._XHR = this._global.XMLHttpRequest;
+    this._connected = false;
+    this._stopped = false;
+    this._events = [];
+    this._dropped = 0;
+    this._sequence = 1;
+    this._sending = false;
+    this._nextId = 1;
+    this._internal = 0;     // > 0 while the tracker itself is sending
+    this._insideFetch = 0;  // > 0 while app fetch is creating its XHR
+    this._lastError = '';
+    this._restore = [];
+    this._timer = null;
+    this._probe = null;
+  }
+
+  start() {
+    if (!this._endpoint || !this._token) {
+      this._lastError = 'endpoint and token are required';
+      return this;
+    }
+    this._wrapFetch();
+    this._wrapXHR();
+    this._timer = setInterval(() => {
+      void this._flush();
+    }, this._opts.flushIntervalMs);
+    if (typeof this._timer?.unref === 'function') this._timer.unref();
+    void this._hello();
+    return this;
+  }
+
+  async stop() {
+    if (this._stopped) return;
+    await this._flush();
+    this._stopped = true;
+    this._connected = false;
+    for (const undo of this._restore.reverse()) {
+      try {
+        undo();
+      } catch {
+        // Put back what can be put back.
+      }
+    }
+    this._restore = [];
+    if (this._timer) clearInterval(this._timer);
+    if (this._probe) clearTimeout(this._probe);
+    this._events = [];
+  }
+
+  status() {
+    return {
+      connected: this._connected,
+      stopped: this._stopped,
+      buffered: this._events.length,
+      dropped: this._dropped,
+      lastError: this._lastError,
+    };
+  }
+
+  // --- recording -------------------------------------------------------------
+
+  _ignored(url) {
+    if (typeof url !== 'string') return true;
+    if (url.startsWith(this._endpoint)) return true;
+    for (const rule of this._opts.ignore || []) {
+      if (typeof rule === 'string' && url.startsWith(rule)) return true;
+      if (rule instanceof RegExp && rule.test(url)) return true;
+    }
+    return false;
+  }
+
+  _emit(method, params) {
+    if (!this._connected || this._stopped) return;
+    if (this._events.length >= this._opts.bufferEvents) {
+      this._events.shift();
+      this._dropped += 1;
+    }
+    this._events.push({ method, params });
+  }
+
+  _begin(method, url, headers, bodyText) {
+    const requestId = `devx-${this._nextId++}`;
+    const request = { method, url };
+    if (this._opts.detail) {
+      request.headers = headers;
+      if (bodyText !== undefined) request.postData = bodyText;
+    }
+    this._emit('Network.requestWillBeSent', {
+      requestId,
+      timestamp: nowSeconds(),
+      wallTime: Date.now() / 1000,
+      request,
+    });
+    return requestId;
+  }
+
+  _response(requestId, url, status, headers) {
+    const response = {
+      url,
+      status,
+      mimeType: headerValue(headers, 'content-type').split(';')[0].trim(),
+    };
+    if (this._opts.detail) response.headers = headers;
+    this._emit('Network.responseReceived', { requestId, timestamp: nowSeconds(), response });
+  }
+
+  _finished(requestId) {
+    // -1: the size on the wire is not known from JavaScript.
+    this._emit('Network.loadingFinished', {
+      requestId,
+      timestamp: nowSeconds(),
+      encodedDataLength: -1,
+    });
+  }
+
+  _failed(requestId, errorText) {
+    this._emit('Network.loadingFailed', {
+      requestId,
+      timestamp: nowSeconds(),
+      errorText: errorText || 'failed',
+    });
+  }
+
+  _body(requestId, text, unavailable) {
+    if (!this._opts.detail) return;
+    if (typeof text === 'string') {
+      this._emit('DevX.responseBody', {
+        requestId,
+        body: capBody(text, this._opts.maxBodyBytes),
+        base64Encoded: false,
+      });
+    } else {
+      this._emit('DevX.responseBody', { requestId, unavailable });
+    }
+  }
+
+  _wrapFetch() {
+    const g = this._global;
+    const original = g.fetch;
+    if (typeof original !== 'function') return;
+    const tracker = this;
+    const wrapped = function devxFetch(input, init) {
+      let requestId = null;
+      let url = '';
+      try {
+        url = typeof input === 'string' ? input : String(input?.url ?? input);
+        if (tracker._connected && tracker._internal === 0 && !tracker._ignored(url)) {
+          const method = String(init?.method || input?.method || 'GET').toUpperCase();
+          const headers = headerObject(init?.headers || input?.headers);
+          const body = requestBodyText(init?.body, tracker._opts.maxBodyBytes);
+          requestId = tracker._begin(method, url, headers, body);
+        }
+      } catch {
+        requestId = null;
+      }
+      let promise;
+      // A fetch built on XMLHttpRequest (React Native's is) creates and sends
+      // its XHR synchronously, inside this call: the counter keeps that XHR
+      // from being recorded a second time.
+      tracker._insideFetch += 1;
+      try {
+        promise = original.apply(this, arguments);
+      } finally {
+        tracker._insideFetch -= 1;
+      }
+      if (requestId === null || !promise || typeof promise.then !== 'function') return promise;
+      return promise.then(
+        (response) => {
+          try {
+            const headers = headerObject(response.headers);
+            tracker._response(requestId, response.url || url, response.status, headers);
+            tracker._readFetchBody(requestId, response, headers);
+          } catch {
+            tracker._finished(requestId);
+          }
+          return response;
+        },
+        (error) => {
+          try {
+            tracker._failed(requestId, String(error?.message || error));
+          } catch {
+            // nothing to do
+          }
+          throw error;
+        },
+      );
+    };
+    g.fetch = wrapped;
+    this._restore.push(() => {
+      if (g.fetch === wrapped) g.fetch = original;
+    });
+  }
+
+  _readFetchBody(requestId, response, headers) {
+    const type = headerValue(headers, 'content-type');
+    if (!this._opts.detail) {
+      this._finished(requestId);
+      return;
+    }
+    if (type && !TEXT_TYPES.test(type)) {
+      this._finished(requestId);
+      this._body(requestId, undefined, `a ${type} response, which is not text`);
+      return;
+    }
+    let copy;
+    try {
+      copy = response.clone();
+    } catch {
+      this._finished(requestId);
+      this._body(requestId, undefined, 'the response could not be copied to read it');
+      return;
+    }
+    copy.text().then(
+      (text) => {
+        this._finished(requestId);
+        this._body(requestId, text);
+      },
+      (error) => {
+        this._failed(requestId, String(error?.message || error));
+      },
+    );
+  }
+
+  _wrapXHR() {
+    const XHR = this._XHR;
+    const proto = XHR?.prototype;
+    if (!proto || typeof proto.open !== 'function' || typeof proto.send !== 'function') return;
+    const tracker = this;
+    const open = proto.open;
+    const send = proto.send;
+    const setRequestHeader = proto.setRequestHeader;
+
+    proto.open = function devxOpen(method, url) {
+      try {
+        // Created by an app fetch already recorded, or by the tracker itself.
+        const skip = tracker._insideFetch > 0 || tracker._internal > 0 || tracker._ignored(String(url));
+        this.__devx = skip ? null : { method: String(method || 'GET').toUpperCase(), url: String(url), headers: {} };
+      } catch {
+        this.__devx = null;
+      }
+      return open.apply(this, arguments);
+    };
+    proto.setRequestHeader = function devxSetRequestHeader(key, value) {
+      try {
+        if (this.__devx) this.__devx.headers[String(key)] = String(value);
+      } catch {
+        // nothing to do
+      }
+      return setRequestHeader.apply(this, arguments);
+    };
+    proto.send = function devxSend(body) {
+      try {
+        const r = this.__devx;
+        if (r && tracker._connected) {
+          tracker._trackXHR(this, r, body);
+        }
+      } catch {
+        // The request still goes.
+      }
+      return send.apply(this, arguments);
+    };
+    this._restore.push(() => {
+      if (proto.open.name === 'devxOpen') proto.open = open;
+      if (proto.send.name === 'devxSend') proto.send = send;
+      if (proto.setRequestHeader.name === 'devxSetRequestHeader') proto.setRequestHeader = setRequestHeader;
+    });
+  }
+
+  _trackXHR(xhr, r, body) {
+    const requestId = this._begin(r.method, r.url, r.headers, requestBodyText(body, this._opts.maxBodyBytes));
+    let responded = false;
+    let settled = false;
+    const respond = () => {
+      if (responded) return;
+      responded = true;
+      let headers = {};
+      try {
+        headers = parseRawHeaders(xhr.getAllResponseHeaders());
+      } catch {
+        headers = {};
+      }
+      this._response(requestId, xhr.responseURL || r.url, xhr.status, headers);
+    };
+    const settle = (fn) => {
+      if (settled) return;
+      settled = true;
+      try {
+        fn();
+      } catch {
+        // A lost record, not a lost request.
+      }
+    };
+    const listen = (name, fn) => {
+      if (typeof xhr.addEventListener === 'function') xhr.addEventListener(name, fn);
+    };
+    listen('readystatechange', () => {
+      if (xhr.readyState >= 2) respond();
+    });
+    listen('load', () =>
+      settle(() => {
+        respond();
+        this._finished(requestId);
+        const type = xhr.responseType || '';
+        if (type === '' || type === 'text') {
+          this._body(requestId, xhr.responseText);
+        } else if (type === 'json') {
+          this._body(requestId, JSON.stringify(xhr.response));
+        } else {
+          this._body(requestId, undefined, `a ${type} response, which is not text`);
+        }
+      }),
+    );
+    listen('error', () => settle(() => this._failed(requestId, 'network error')));
+    listen('timeout', () => settle(() => this._failed(requestId, 'timed out')));
+    listen('abort', () => settle(() => this._failed(requestId, 'aborted')));
+  }
+
+  // --- transport -------------------------------------------------------------
+
+  async _hello() {
+    if (this._stopped) return;
+    const app = this._opts.app || {};
+    const result = await this._post('/sdk/v1/network/hello', {
+      ...app,
+      sdk_version: this._opts.sdkVersion,
+      detail: Boolean(this._opts.detail),
+    });
+    if (this._stopped) return;
+    if (result.ok) {
+      this._connected = true;
+      this._sequence = typeof result.json?.next_sequence === 'number' ? result.json.next_sequence : 1;
+      this._lastError = '';
+      return;
+    }
+    this._lastError = result.error;
+    this._probe = setTimeout(() => {
+      void this._hello();
+    }, this._opts.probeIntervalMs);
+    if (typeof this._probe?.unref === 'function') this._probe.unref();
+  }
+
+  _disconnect(error) {
+    // DevX stopped listening. What was buffered was for that session; it is
+    // not kept for a later one.
+    this._connected = false;
+    this._events = [];
+    this._lastError = error;
+    if (!this._stopped) {
+      this._probe = setTimeout(() => {
+        void this._hello();
+      }, this._opts.probeIntervalMs);
+      if (typeof this._probe?.unref === 'function') this._probe.unref();
+    }
+  }
+
+  async _flush() {
+    if (!this._connected || this._sending || this._events.length === 0) return false;
+    this._sending = true;
+    try {
+      const batch = [];
+      let bytes = 0;
+      for (const event of this._events) {
+        let size = 0;
+        try {
+          size = JSON.stringify(event).length;
+        } catch {
+          size = 0;
+        }
+        if (batch.length > 0 && (bytes + size > this._opts.maxBatchBytes || batch.length >= 1000)) break;
+        batch.push(event);
+        bytes += size;
+      }
+      const dropped = this._dropped;
+      const body = { sequence: this._sequence, events: batch };
+      if (dropped > 0) body.dropped_by_app = dropped;
+      const result = await this._post('/sdk/v1/network', body);
+      if (result.ok) {
+        this._events.splice(0, batch.length);
+        this._dropped -= dropped;
+        this._sequence =
+          typeof result.json?.next_sequence === 'number' ? result.json.next_sequence : this._sequence + 1;
+        return true;
+      }
+      this._disconnect(result.error);
+      return false;
+    } finally {
+      this._sending = false;
+    }
+  }
+
+  async _post(path, body) {
+    const fetchFn = this._fetch;
+    if (typeof fetchFn !== 'function') {
+      return { ok: false, status: 0, error: 'no fetch implementation available' };
+    }
+    let timer = null;
+    let promise;
+    try {
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      if (controller) timer = setTimeout(() => controller.abort(), this._opts.requestTimeoutMs);
+      // Marked as the tracker's own for as long as fetch is creating its
+      // XHR, which is synchronous; the URL check covers the rest.
+      this._internal += 1;
+      try {
+        promise = fetchFn.call(this._global, `${this._endpoint}${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this._token}` },
+          body: JSON.stringify(body),
+          signal: controller ? controller.signal : undefined,
+        });
+      } finally {
+        this._internal -= 1;
+      }
+      const response = await promise;
+      const text = await response.text();
+      let json = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
+      if (!response.ok) {
+        return { ok: false, status: response.status, error: json?.error || `HTTP ${response.status}`, json };
+      }
+      return { ok: true, status: response.status, json };
+    } catch (err) {
+      return { ok: false, status: 0, error: String(err && err.message ? err.message : err) };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+}
+
+// Starts recording the app's fetch and XMLHttpRequest for DevX. Returns the
+// tracker: `status()` says whether DevX is listening, `stop()` undoes it all.
+// Never throws.
+function trackNetwork(options) {
+  try {
+    return new NetworkTracker(options).start();
+  } catch (err) {
+    return {
+      stop: async () => {},
+      status: () => ({ connected: false, stopped: true, lastError: String(err) }),
+    };
+  }
+}
+
+export { redactUrl, KINDS, trackNetwork };

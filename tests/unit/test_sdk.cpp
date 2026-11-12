@@ -2,6 +2,7 @@
 #include <string>
 
 #include "core/sdk/marker_ingest.hpp"
+#include "core/sdk/network_inspect.hpp"
 #include "core/sdk/sdk_bridge.hpp"
 #include "tests/unit/test_framework.hpp"
 
@@ -243,4 +244,85 @@ MPI_TEST(sdk_bridge_binds_loopback_and_requires_a_token, {"J06", "section-14"}) 
   MPI_CHECK(bridge.adb_reverse_command().find("adb reverse tcp:") !=
             std::string::npos);
   bridge.stop();
+}
+
+// --- trackNetwork(): Inspect for a release build ------------------------------
+
+namespace {
+
+// What the SDK sends for one GraphQL POST: the events a debugger would have
+// received, and the response body it would have asked for.
+const char* kGraphqlBatch = R"({"sequence": 1, "events": [
+  {"method":"Network.requestWillBeSent","params":{"requestId":"sdk-1",
+   "timestamp":10.0,"wallTime":1762905600.5,
+   "request":{"method":"POST","url":"https://api.example.com/graphql",
+     "headers":{"Content-Type":"application/json","Authorization":"Bearer abc"},
+     "postData":"{\"operationName\":\"GetMenu\",\"query\":\"query GetMenu { menu { id } }\"}"}}},
+  {"method":"Network.responseReceived","params":{"requestId":"sdk-1","timestamp":10.2,
+   "response":{"url":"https://api.example.com/graphql","status":200,
+     "mimeType":"application/json","headers":{"content-type":"application/json"}}}},
+  {"method":"Network.loadingFinished","params":{"requestId":"sdk-1","timestamp":10.3,
+   "encodedDataLength":27}},
+  {"method":"DevX.responseBody","params":{"requestId":"sdk-1",
+   "body":"{\"data\":{\"menu\":[{\"id\":1}]}}","base64Encoded":false}},
+  {"method":"Runtime.evaluate","params":{}}
+]})";
+
+}  // namespace
+
+MPI_TEST(sdk_network_reads_like_a_debug_build_inspect, {}) {
+  sdk::NetworkInspect listener;
+  MPI_CHECK_MSG(listener.receive_events(parse_or_die(kGraphqlBatch)).http_status == 409,
+                "a batch before hello is refused, so the SDK says hello again");
+  const auto hello = listener.receive_hello(parse_or_die(
+      R"({"app_identifier":"com.kfc.app","app_version":"9.1","platform":"android",
+          "device":"Pixel 8","sdk_version":"0.2.0","detail":true})"));
+  MPI_CHECK(hello.accepted);
+  const auto r = listener.receive_events(parse_or_die(kGraphqlBatch));
+  MPI_CHECK(r.accepted);
+  MPI_CHECK_MSG(r.markers_accepted == 4 && r.markers_rejected == 1,
+                "the four network events are taken; a Runtime command is not");
+
+  const auto report = listener.snapshot();
+  MPI_CHECK(report.debugger_attached && report.app_id == "com.kfc.app");
+  MPI_CHECK(report.network.size() == 1);
+  const auto& ex = report.network[0];
+  MPI_CHECK(ex.method == "POST" && ex.status.value_or(0) == 200);
+  MPI_CHECK_MSG(ex.request_body.value_or("").find("GetMenu") != std::string::npos,
+                "the request body arrives as the app sent it");
+  MPI_CHECK_MSG(ex.response_body.value_or("") == R"({"data":{"menu":[{"id":1}]}})",
+                "and so does the response body");
+  MPI_CHECK_MSG(ex.request_headers.count("Authorization") == 1,
+                "headers are kept: the app chose to send them");
+  MPI_CHECK(report.sources.size() == 1 &&
+            report.sources[0].state == observe::SourceState::kAttached);
+  MPI_CHECK(mentions(report.caveats, "malformed"));
+
+  // The same batch again -- its reply was lost and the SDK resent it.
+  listener.receive_events(parse_or_die(kGraphqlBatch));
+  MPI_CHECK_MSG(listener.snapshot().network.size() == 1,
+                "a resent batch is not applied twice");
+  // A gap in the numbering is a batch that never arrived.
+  listener.receive_events(parse_or_die(R"({"sequence": 4, "events": []})"));
+  MPI_CHECK(mentions(listener.snapshot().caveats, "never arrived"));
+}
+
+MPI_TEST(sdk_network_before_any_app_says_so, {}) {
+  sdk::NetworkInspect listener;
+  const auto report = listener.snapshot();
+  MPI_CHECK(!report.debugger_attached);
+  MPI_CHECK(report.sources.size() == 1 &&
+            report.sources[0].state == observe::SourceState::kUnavailable);
+  MPI_CHECK(listener.receive_hello(parse_or_die(R"({"app_identifier":"x"})")).http_status == 400);
+}
+
+MPI_TEST(sdk_network_keeps_a_token_a_build_has_built_in, {"section-14"}) {
+  sdk::NetworkInspect weak;
+  std::string error;
+  MPI_CHECK_MSG(!weak.start(0, "short", &error), "a weak token is refused");
+  MPI_CHECK(!weak.running());
+  sdk::NetworkInspect fixed;
+  MPI_CHECK_MSG(fixed.start(0, "devx-0123456789abcdef", &error), error);
+  MPI_CHECK(fixed.token() == "devx-0123456789abcdef");
+  fixed.stop();
 }

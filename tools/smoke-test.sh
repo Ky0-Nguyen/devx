@@ -115,6 +115,14 @@ if command -v node >/dev/null 2>&1; then
     printf '  FAIL the SDK end-to-end test failed:\n'; sed 's/^/       /' "$TMP/sdk-e2e.log" | tail -20
     fail=$((fail+1))
   fi
+  # trackNetwork(): a release build's requests, through the real listener.
+  if node sdk/react-native/test/network-e2e.mjs "$MPI" > "$TMP/sdk-network.log" 2>&1; then
+    printf '  ok   trackNetwork() reaches mpi sdk-network (%s checks)\n' \
+      "$(grep -c '  ok ' "$TMP/sdk-network.log")"; pass=$((pass+1))
+  else
+    printf '  FAIL the trackNetwork end-to-end test failed:\n'; sed 's/^/       /' "$TMP/sdk-network.log" | tail -20
+    fail=$((fail+1))
+  fi
   # The sample app's own instrumentation module, driven the way its screens
   # drive it. `App.js` needs React Native and is not built here, but the module
   # it imports is plain JavaScript -- so the part a developer copies is the

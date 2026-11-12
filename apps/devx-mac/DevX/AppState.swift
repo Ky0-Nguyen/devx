@@ -354,6 +354,32 @@ final class AppState: ObservableObject {
     /// InspectSecrets. Nothing is masked, so the honest warning is that this
     /// captures what was actually sent, and a report can be exported.
     @Published var inspectDetail: Bool = true
+    /// Where Inspect reads from: a debug build's inspector through Metro,
+    /// or a release build's `trackNetwork()`.
+    @Published var inspectFromSdk: Bool = UserDefaults.standard.bool(forKey: AppState.inspectSourceKey) {
+        didSet { UserDefaults.standard.set(inspectFromSdk, forKey: Self.inspectSourceKey) }
+    }
+    static let inspectSourceKey = "devx.inspect.fromSdk"
+    /// The release-build listener: whether it runs, the app that connected,
+    /// and the port and token the app was built with.
+    @Published var sdkListening: Bool = false
+    @Published var sdkApp: JSON = .null
+    @Published var sdkError: String = ""
+    @Published var sdkPort: Int = {
+        let p = UserDefaults.standard.integer(forKey: SdkNetwork.portKey)
+        return SdkNetwork.isValidPort(p) ? p : SdkNetwork.defaultPort
+    }() {
+        didSet { UserDefaults.standard.set(sdkPort, forKey: SdkNetwork.portKey) }
+    }
+    @Published var sdkToken: String = {
+        if let t = UserDefaults.standard.string(forKey: SdkNetwork.tokenKey),
+           SdkNetwork.isValidToken(t) { return t }
+        let t = SdkNetwork.newToken()
+        UserDefaults.standard.set(t, forKey: SdkNetwork.tokenKey)
+        return t
+    }() {
+        didSet { UserDefaults.standard.set(sdkToken, forKey: SdkNetwork.tokenKey) }
+    }
     /// Live observation state.
     @Published var inspectStreaming: Bool = false
     @Published var inspectDisconnect: String = ""
@@ -872,6 +898,7 @@ final class AppState: ObservableObject {
     /// cannot be connected to what they just did.
     func startInspectStream() {
         guard !selectedApp.isEmpty, !inspectStreaming else { return }
+        if sdkListening { stopSdkListening() }
         let app = selectedApp
         let redux = inspectRedux
         let values = inspectReduxValues
@@ -952,6 +979,67 @@ final class AppState: ObservableObject {
                     self.keepInspectObservation(doc["report"], app: self.selectedApp,
                                                 device: self.selectedDevice)
                 }
+            }
+        }
+    }
+
+    // MARK: - Release build, through the SDK
+
+    private var sdkTimer: Timer? = nil
+
+    /// Starts listening for the app's `trackNetwork()` on the kept port and
+    /// token. The Metro observation is stopped first: the two fill the same
+    /// pane, and mixing their requests would make neither readable.
+    func startSdkListening() {
+        guard !sdkListening else { return }
+        if inspectStreaming { stopInspectStream() }
+        let port = sdkPort, token = sdkToken
+        sdkError = ""
+        sdkApp = .null
+        selectedRequestId = ""
+        run("Listening on 127.0.0.1:\(port)…", { Core.sdkNetworkStart(port: port, token: token) }) { doc in
+            guard doc["listening"].bool == true else {
+                self.sdkError = doc["error"].text
+                return
+            }
+            self.inspectDoc = doc["report"]
+            // Whatever the app sends is kept; whether it sends headers and
+            // bodies is its own setting, read from its hello below.
+            self.inspectDocCapturedDetail = nil
+            self.sdkListening = true
+            let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.pollSdk() }
+            }
+            RunLoop.main.add(timer, forMode: .common)
+            self.sdkTimer = timer
+        }
+    }
+
+    private func pollSdk() {
+        guard sdkListening else { return }
+        Self.coreQueue.async {
+            let doc = Core.sdkNetworkPoll()
+            DispatchQueue.main.async {
+                guard self.sdkListening else { return }
+                if !doc["report"].isNull { self.inspectDoc = doc["report"] }
+                self.sdkApp = doc["app"]
+                if !doc["app"].isNull { self.inspectDocCapturedDetail = doc["app"]["detail"].bool }
+            }
+        }
+    }
+
+    func stopSdkListening() {
+        sdkTimer?.invalidate()
+        sdkTimer = nil
+        guard sdkListening else { return }
+        sdkListening = false
+        Self.coreQueue.async {
+            let doc = Core.sdkNetworkStop()
+            DispatchQueue.main.async {
+                guard !doc["report"].isNull else { return }
+                self.inspectDoc = doc["report"]
+                let app = doc["app"]["app_identifier"].text
+                self.keepInspectObservation(doc["report"], app: app, device: doc["app"]["device"].text)
             }
         }
     }

@@ -395,6 +395,19 @@ enum Core {
         call { mpi_inspect_stream_stop() }
     }
 
+    /// Listens for a release build's `trackNetwork()`. One listener at a time.
+    static func sdkNetworkStart(port: Int, token: String) -> JSON {
+        call { mpi_sdk_network_start(Int32(port), token) }
+    }
+
+    static func sdkNetworkPoll() -> JSON {
+        call { mpi_sdk_network_poll() }
+    }
+
+    static func sdkNetworkStop() -> JSON {
+        call { mpi_sdk_network_stop() }
+    }
+
     /// Reads a running app's network calls, console output and Redux state
     /// through the inspector the app already runs. Blocks for the whole
     /// window, so the caller runs it off the main thread.

@@ -78,6 +78,7 @@ ExitCode cmd_browserstack(const Invocation& inv);
 ExitCode cmd_intelligence(const Invocation& inv);
 ExitCode cmd_mcp(const Invocation& inv);
 ExitCode cmd_sdk_bridge(const Invocation& inv);
+ExitCode cmd_sdk_network(const Invocation& inv);
 
 // Shared helpers.
 void print_json(const json::Value& v);

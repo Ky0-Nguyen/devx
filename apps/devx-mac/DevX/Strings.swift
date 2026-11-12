@@ -884,6 +884,54 @@ enum Strings {
             + "cho body, nên không có body để hiển thị. Từ React Native 0.83 trở đi "
             + "body được gửi đầy đủ.",
         "withheld by React Native": "React Native không gửi",
+        "A release build runs no inspector. The DevX SDK in the app "
+        + "wraps its fetch and XMLHttpRequest and sends each request "
+        + "here, with headers and bodies, while DevX is listening.":
+            "Bản release không chạy inspector. DevX SDK đặt trong app sẽ bắt "
+            + "fetch và XMLHttpRequest rồi gửi từng request về đây, kèm headers "
+            + "và body, trong lúc DevX đang lắng nghe.",
+        "Waiting for the app": "Đang chờ app",
+        "Open the app built with trackNetwork(). "
+        + "It looks for DevX every few seconds.":
+            "Mở bản app đã gắn trackNetwork(). App sẽ tìm DevX sau mỗi vài giây.",
+        "debug build · Metro": "bản debug · Metro",
+        "release build · SDK": "bản release · SDK",
+        "copy": "sao chép",
+        "Release build": "Bản release",
+        "the app sends its requests to this Mac while DevX listens":
+            "app gửi request về máy Mac này trong lúc DevX lắng nghe",
+        "endpoint": "địa chỉ",
+        "port": "cổng",
+        "token": "mã token",
+        "new token": "tạo token mới",
+        "The port and token are kept between launches, because a release "
+        + "build has them built in. A new token means a new build.":
+            "Cổng và token được giữ nguyên giữa các lần mở DevX, vì bản release đã "
+            + "gắn sẵn chúng khi build. Đổi token thì phải build lại app.",
+        "in the app": "trong app",
+        "mpi-sdk.js is in sdk/react-native in the DevX repository":
+            "mpi-sdk.js nằm trong thư mục sdk/react-native của repo DevX",
+        "Run it once per connected device or emulator, and again after it "
+        + "reconnects. The iOS simulator shares this Mac's loopback and needs "
+        + "nothing. A physical iPhone cannot reach it: the listener takes "
+        + "connections from this Mac only.":
+            "Chạy lệnh này một lần cho mỗi máy hoặc emulator đang kết nối, và chạy lại "
+            + "khi máy kết nối lại. Simulator iOS dùng chung loopback với máy Mac nên "
+            + "không cần gì thêm. iPhone thật không kết nối tới được, vì DevX chỉ nhận "
+            + "kết nối từ chính máy Mac này.",
+        "trackNetwork() sends headers and bodies verbatim, Authorization "
+        + "included. Keep it out of a build that goes to the store.":
+            "trackNetwork() gửi nguyên văn headers và body, kể cả Authorization. "
+            + "Đừng để nó lọt vào bản build lên store.",
+        "stop listening": "dừng lắng nghe",
+        "listening — waiting for the app": "đang lắng nghe — chờ app kết nối",
+        "connected:": "đã kết nối:",
+        "listen": "lắng nghe",
+        "The app was built with detail: false, so it sends no headers or bodies.":
+            "App được build với detail: false nên không gửi headers hay body.",
+        "Could not listen": "Không lắng nghe được",
+        "hide setup": "ẩn hướng dẫn",
+        "show setup": "xem hướng dẫn",
         "React Native sent the placeholder \"[Preview unavailable]\" instead of this "
         + "body, and offers no way to ask for the body itself.":
             "React Native gửi chuỗi thay thế \"[Preview unavailable]\" thay cho body này, "

@@ -65,6 +65,61 @@ To check an integration without recording anything:
 mpi sdk-bridge            # prints the endpoint, then reports what arrived
 ```
 
+## Inspect a release build: `trackNetwork()`
+
+A release build runs no inspector, so DevX's Inspect tab has nothing to attach
+to. `trackNetwork()` wraps the app's own `fetch` and `XMLHttpRequest` and sends
+each request to DevX as the Network events a debugger would have received, with
+the request and response bodies. DevX shows them exactly as it shows a debug
+build's requests: headers, bodies, GraphQL operations and variables, errors
+inside a 200, durations, failures, copy as cURL.
+
+```js
+import { Platform } from 'react-native';
+import { trackNetwork } from './mpi-sdk';
+
+// Only in a build made for inspecting -- never one that goes to the store.
+if (process.env.EXPO_PUBLIC_DEVX_INSPECT === '1') {
+  trackNetwork({
+    endpoint: 'http://127.0.0.1:47081',   // DevX › Inspect › release build · SDK
+    token: 'devx-…',                      // shown there; kept between launches
+    app: { app_identifier: 'com.example.app', app_version: '9.1', platform: Platform.OS },
+    // detail: false   -> method, URL, status and timing only
+    // maxBodyBytes    -> per body, 512 KB by default
+    // ignore: ['https://analytics.example.com', /\/health$/]
+  });
+}
+```
+
+Then in DevX: **Inspect › release build · SDK › listen**, run the `adb reverse`
+line it shows for an Android device, and open the app. From the command line,
+`mpi sdk-network --port 47081 --token devx-…` does the same and prints the
+report when stopped.
+
+The port and token stay the same between DevX launches, because a release
+build has them built in. **new token** in DevX changes it, which means a new
+build.
+
+What it does, so nothing surprises the app:
+
+- **It records only while DevX listens.** Until then it asks every five
+  seconds whether DevX is there and records nothing. When DevX stops, what was
+  waiting to be sent is discarded, not kept for later.
+- **Headers and bodies are sent verbatim**, Authorization included: the point
+  is to see what the app sent. They go to the endpoint given and nowhere else.
+  Text bodies only; a binary request body is left out and a binary response is
+  named by its type.
+- **One request is one row.** React Native's `fetch` is built on
+  `XMLHttpRequest`; the XHR it creates is not recorded a second time, and
+  neither are the tracker's own sends to DevX.
+- **Every request goes through untouched.** The wrappers never throw into the
+  app; a failure inside the tracker loses a record, never a request.
+  `stop()` puts `fetch` and `XMLHttpRequest` back.
+- **JavaScript only.** A WebView, a native networking module and the image
+  loader are not `fetch` or `XMLHttpRequest`, so they do not appear.
+- **Times are the app's own**, measured around the call in JavaScript, so they
+  include time the JavaScript thread was busy.
+
 ## Reaching the host
 
 The endpoint binds `127.0.0.1` only and requires the token on every request.
@@ -121,7 +176,11 @@ unmapped clock stays unmapped (spec section 6).
 
 ```bash
 node sdk/react-native/test/e2e.mjs build/bin/mpi
+node sdk/react-native/test/network-e2e.mjs build/bin/mpi
 ```
+
+The second drives `trackNetwork()` against `mpi sdk-network` with a real API
+server, including a `fetch` built on `XMLHttpRequest` as React Native's is.
 
 Drives this client over real HTTP into the real C++ ingest through
 `mpi sdk-bridge`. A mock host would not exercise the two behaviours that only

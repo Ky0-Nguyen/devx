@@ -463,7 +463,7 @@ void InspectAssembler::feed(const json::Value& message) {
   unrecognised_++;
 }
 
-InspectReport InspectAssembler::finish(std::int64_t wall_ms) {
+InspectReport InspectAssembler::finish(std::int64_t wall_ms) const {
   InspectReport report;
   report.duration_ms = wall_ms;
 

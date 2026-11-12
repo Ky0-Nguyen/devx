@@ -24,6 +24,9 @@ private struct LiveDot: View {
 
 struct InspectView: View {
     @EnvironmentObject var state: AppState
+    /// The release-build setup, open until an app connects: after that it is
+    /// done, and the requests are what the reader came for.
+    @State private var sdkSetupOpen = false
 
     var body: some View {
         // The split is the ROOT of the pane, as in IssuesView, and the two
@@ -45,37 +48,60 @@ struct InspectView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("~/inspect")
-        .onAppear { state.loadInspectTargetsIfNeeded() }
+        .onAppear {
+            // The SDK source has no Metro to ask, and asking anyway put a
+            // "connection refused" error over a screen that was working.
+            if !state.inspectFromSdk { state.loadInspectTargetsIfNeeded() }
+        }
     }
 
     private var activityColumn: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(tr("A React Native debug build already runs an inspector "
-                      + "and already connects itself to Metro. This reads that "
-                      + "connection, so nothing is added to the app: no "
-                      + "dependency, no import, no rebuild. A release build "
-                      + "runs no inspector, and an empty capture there means "
-                      + "there was nothing to attach to."))
-                    .font(Term.small).foregroundStyle(Term.dim)
-                    .fixedSize(horizontal: false, vertical: true)
+                sourcePicker
+                if state.inspectFromSdk {
+                    Text(tr("A release build runs no inspector. The DevX SDK in the app "
+                          + "wraps its fetch and XMLHttpRequest and sends each request "
+                          + "here, with headers and bodies, while DevX is listening."))
+                        .font(Term.small).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                    sdkPanel
+                } else {
+                    Text(tr("A React Native debug build already runs an inspector "
+                          + "and already connects itself to Metro. This reads that "
+                          + "connection, so nothing is added to the app: no "
+                          + "dependency, no import, no rebuild. A release build "
+                          + "runs no inspector, and an empty capture there means "
+                          + "there was nothing to attach to."))
+                        .font(Term.small).foregroundStyle(Term.dim)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                targetsPanel
-                configPanel
+                    targetsPanel
+                    configPanel
+                }
 
                 if !state.inspectDoc.isNull {
                     if state.inspectDoc["debugger_attached"].bool == false {
-                        Banner(kind: .caution,
-                               title: "Nothing was attached",
-                               message: tr("Nothing below is a statement "
-                                         + "about the app."))
+                        if state.inspectFromSdk && state.sdkListening {
+                            Banner(kind: .info,
+                                   title: "Waiting for the app",
+                                   message: tr("Open the app built with trackNetwork(). "
+                                             + "It looks for DevX every few seconds."))
+                        } else {
+                            Banner(kind: .caution,
+                                   title: "Nothing was attached",
+                                   message: tr("Nothing below is a statement "
+                                             + "about the app."))
+                        }
                     }
                     sourcesPanel
                     filterBar
                     networkPanel
-                    consolePanel
-                    if state.inspectRedux { reduxPanel }
-                    if state.inspectReduxWatch { reduxActivityPanel }
+                    if !state.inspectFromSdk {
+                        consolePanel
+                        if state.inspectRedux { reduxPanel }
+                        if state.inspectReduxWatch { reduxActivityPanel }
+                    }
                     if !state.inspectDoc["screenshots"].array.isEmpty {
                         screenshotsPanel
                     }
@@ -153,6 +179,132 @@ struct InspectView: View {
         case .some(true): return .on
         case .some(false): return .off
         case nil: return .unknown
+        }
+    }
+
+    /// Debug build through Metro, or release build through the SDK. Two
+    /// buttons rather than a menu: which one is in use decides everything
+    /// below, so it stays visible.
+    private var sourcePicker: some View {
+        HStack(spacing: 8) {
+            Button(tr("debug build · Metro")) {
+                guard state.inspectFromSdk else { return }
+                state.stopSdkListening()
+                state.inspectFromSdk = false
+                state.loadInspectTargetsIfNeeded()
+            }
+            .buttonStyle(TermButtonStyle(filled: !state.inspectFromSdk))
+            Button(tr("release build · SDK")) {
+                guard !state.inspectFromSdk else { return }
+                state.stopInspectStream()
+                state.inspectFromSdk = true
+            }
+            .buttonStyle(TermButtonStyle(filled: state.inspectFromSdk))
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func copyButton(_ text: String) -> some View {
+        Button(tr("copy")) {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+        }
+        .buttonStyle(TermButtonStyle())
+    }
+
+    @ViewBuilder private var sdkPanel: some View {
+        let port = state.sdkPort, token = state.sdkToken
+        Panel(title: "Release build",
+              subtitle: "the app sends its requests to this Mac while DevX listens") {
+            VStack(alignment: .leading, spacing: 8) {
+                Field(label: "endpoint") {
+                    HStack(spacing: 8) {
+                        Text(SdkNetwork.endpoint(port: port)).font(Term.body).textSelection(.enabled)
+                        if !state.sdkListening {
+                            Stepper(value: $state.sdkPort, in: 1024...65535) {
+                                Text(tr("port")).font(Term.micro).foregroundStyle(Term.dim)
+                            }
+                        }
+                    }
+                }
+                Field(label: "token") {
+                    HStack(spacing: 8) {
+                        Text(token).font(Term.body).textSelection(.enabled)
+                        copyButton(token)
+                        if !state.sdkListening {
+                            Button(tr("new token")) { state.sdkToken = SdkNetwork.newToken() }
+                                .buttonStyle(TermButtonStyle())
+                        }
+                    }
+                }
+                if state.sdkApp.isNull || sdkSetupOpen {
+                Text(tr("The port and token are kept between launches, because a release "
+                      + "build has them built in. A new token means a new build."))
+                    .font(Term.micro).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                Field(label: "in the app") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(SdkNetwork.snippet(port: port, token: token))
+                            .font(Term.micro).textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 8) {
+                            copyButton(SdkNetwork.snippet(port: port, token: token))
+                            Text(tr("mpi-sdk.js is in sdk/react-native in the DevX repository"))
+                                .font(Term.micro).foregroundStyle(Term.dim)
+                        }
+                    }
+                }
+                Field(label: "Android") {
+                    HStack(spacing: 8) {
+                        Text(SdkNetwork.adbReverse(port: port)).font(Term.body).textSelection(.enabled)
+                        copyButton(SdkNetwork.adbReverse(port: port))
+                    }
+                }
+                Text(tr("Run it once per connected device or emulator, and again after it "
+                      + "reconnects. The iOS simulator shares this Mac's loopback and needs "
+                      + "nothing. A physical iPhone cannot reach it: the listener takes "
+                      + "connections from this Mac only."))
+                    .font(Term.micro).foregroundStyle(Term.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(tr("trackNetwork() sends headers and bodies verbatim, Authorization "
+                      + "included. Keep it out of a build that goes to the store."))
+                    .font(Term.micro).foregroundStyle(Term.amber)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                HStack(spacing: 10) {
+                    if state.sdkListening {
+                        Button(tr("stop listening")) { state.stopSdkListening() }
+                            .buttonStyle(TermButtonStyle(tone: Term.amber, filled: true))
+                        LiveDot()
+                        if state.sdkApp.isNull {
+                            Text(tr("listening — waiting for the app"))
+                                .font(Term.micro).foregroundStyle(Term.green)
+                        } else {
+                            let connected: String = tr("connected:")
+                            Text(connected + " " + SdkNetwork.appLine(state.sdkApp))
+                                .font(Term.micro).foregroundStyle(Term.green)
+                        }
+                    } else {
+                        Button(tr("listen")) { state.startSdkListening() }
+                            .buttonStyle(TermButtonStyle(filled: true))
+                            .disabled(state.busy != nil)
+                    }
+                    Spacer(minLength: 0)
+                    if !state.sdkApp.isNull {
+                        Button(sdkSetupOpen ? tr("hide setup") : tr("show setup")) {
+                            sdkSetupOpen.toggle()
+                        }
+                        .buttonStyle(TermButtonStyle())
+                    }
+                }
+                if !state.sdkApp.isNull && state.sdkApp["detail"].bool == false {
+                    Text(tr("The app was built with detail: false, so it sends no headers or bodies."))
+                        .font(Term.micro).foregroundStyle(Term.amber)
+                }
+                if !state.sdkError.isEmpty {
+                    Banner(kind: .bad, title: "Could not listen", message: state.sdkError)
+                }
+            }
         }
     }
 

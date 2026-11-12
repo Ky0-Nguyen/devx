@@ -53,6 +53,7 @@ set(DEVX_SWIFT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatePlan.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BrowserStackApps.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/GraphQLRequest.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/SdkNetwork.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatesPanel.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/FeedbackViews.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/NextStep.swift
@@ -125,6 +126,7 @@ set(DEVX_TESTABLE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/UpdatePlan.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/BrowserStackApps.swift
   ${CMAKE_CURRENT_SOURCE_DIR}/DevX/GraphQLRequest.swift
+  ${CMAKE_CURRENT_SOURCE_DIR}/DevX/SdkNetwork.swift
 )
 
 set(DEVX_BUNDLE  ${CMAKE_BINARY_DIR}/bin/DevX.app)

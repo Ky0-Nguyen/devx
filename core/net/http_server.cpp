@@ -257,6 +257,17 @@ std::string html_escape(const std::string& in) {
 
 HttpServer::HttpServer() : token_(make_token()) {}
 
+bool HttpServer::set_token(const std::string& token) {
+  if (token.size() < 16 || token.size() > 128) return false;
+  for (const char c : token) {
+    const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9') || c == '-' || c == '_';
+    if (!ok) return false;
+  }
+  token_ = token;
+  return true;
+}
+
 HttpServer::~HttpServer() {
   if (listen_fd_ >= 0) ::close(listen_fd_);
 }

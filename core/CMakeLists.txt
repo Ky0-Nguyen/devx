@@ -25,6 +25,7 @@ add_library(mpi_core STATIC
   observe/observation_store.cpp
   sdk/marker_ingest.cpp
   sdk/sdk_bridge.cpp
+  sdk/network_inspect.cpp
   util/process.cpp
   util/time.cpp
   model/capability.cpp

@@ -2839,6 +2839,27 @@ do {
 }
 
 do {
+    // A release build's endpoint and token, kept between launches.
+    let token = SdkNetwork.newToken()
+    check(token.hasPrefix("devx-") && token.count == 29 && SdkNetwork.isValidToken(token),
+          "a new token is one the listener accepts")
+    check(SdkNetwork.newToken() != token, "and a different one each time")
+    check(!SdkNetwork.isValidToken("short") && !SdkNetwork.isValidToken("devx-0123456789abcdef'; x"),
+          "a short token, or one that could break out of a header or the snippet, is refused")
+    check(SdkNetwork.isValidPort(47081) && !SdkNetwork.isValidPort(80) && !SdkNetwork.isValidPort(70000),
+          "the port is an unprivileged one")
+    let snippet = SdkNetwork.snippet(port: 47081, token: token)
+    check(snippet.contains("http://127.0.0.1:47081") && snippet.contains(token)
+            && snippet.contains("trackNetwork("),
+          "the snippet carries the endpoint and token the listener uses")
+    check(SdkNetwork.adbReverse(port: 47081) == "adb reverse tcp:47081 tcp:47081", "and the adb line")
+    let app = JSON.parse(#"{"app_identifier":"com.kfc.app","app_version":"9.1","platform":"android","device":"Pixel 8","build_configuration":""}"#)
+    check(SdkNetwork.appLine(app) == "com.kfc.app 9.1 · android · Pixel 8",
+          "the connected app in one line, with nothing for what it did not say")
+    check(SdkNetwork.appLine(.null) == "", "and nothing before an app connects")
+}
+
+do {
     // GraphQL, however a request carries it.
     func ops(_ method: String, _ url: String, _ body: String?, _ type: String = "application/json") -> [GraphQLOperation] {
         GraphQLRequest.operations(method: method, url: url, body: body, contentType: type)

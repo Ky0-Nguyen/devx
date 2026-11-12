@@ -118,6 +118,20 @@ char* mpi_inspect_stream_poll(int budget_ms);
 /* Stops and returns the final observation. */
 char* mpi_inspect_stream_stop(void);
 
+/* Inspect for a release build, which runs no inspector: the in-app SDK's
+ * `trackNetwork()` sends the app's fetch/XMLHttpRequest traffic to a loopback
+ * listener started here. See core/sdk/network_inspect.hpp.
+ *
+ * `port` 0 takes an ephemeral port. `token` empty generates one; otherwise it
+ * is used as given -- a release build has its endpoint and token built in, so
+ * they have to stay the same between runs. Returns {listening, port, token,
+ * adb_reverse, report} or {error}. Poll returns {running, app, report}; the
+ * report has the same shape as `mpi_inspect_stream_poll`'s. One listener at a
+ * time. */
+char* mpi_sdk_network_start(int port, const char* token);
+char* mpi_sdk_network_poll(void);
+char* mpi_sdk_network_stop(void);
+
 /* ---- layout ---------------------------------------------------------------
  *
  * How the screen an app is showing is built: views per screen, nesting depth,

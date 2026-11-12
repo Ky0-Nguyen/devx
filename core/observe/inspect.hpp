@@ -418,7 +418,7 @@ class InspectAssembler {
   }
 
   /// Finishes the report. `wall_ms` is the capture's own duration.
-  InspectReport finish(std::int64_t wall_ms);
+  InspectReport finish(std::int64_t wall_ms) const;
 
   std::int64_t unrecognised() const { return unrecognised_; }
 
