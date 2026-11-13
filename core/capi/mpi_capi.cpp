@@ -25,6 +25,7 @@
 #include "adapters/ios/xctrace_collector.hpp"
 #include "adapters/layout/layout_capture.hpp"
 #include "core/observe/observation_store.hpp"
+#include "core/sdk/network_inspect.hpp"
 #include "core/discovery/boot.hpp"
 #include "core/discovery/discovery_service.hpp"
 #include "core/ingestion/normalize.hpp"
@@ -202,6 +203,29 @@ struct InspectStreamHolder {
 InspectStreamHolder& inspect_stream() {
   static InspectStreamHolder holder;
   return holder;
+}
+
+struct SdkNetworkHolder {
+  std::mutex mu;
+  std::unique_ptr<sdk::NetworkInspect> listener;
+};
+SdkNetworkHolder& sdk_network() {
+  static SdkNetworkHolder holder;
+  return holder;
+}
+
+json::Value sdk_hello_json(const sdk::NetworkInspect& listener) {
+  const auto h = listener.hello();
+  if (!h.has_value()) return json::Value::null();
+  json::Value app = json::Value::object();
+  app.set("app_identifier", json::Value::string(h->app_identifier));
+  app.set("app_version", json::Value::string(h->app_version));
+  app.set("build_configuration", json::Value::string(h->build_configuration));
+  app.set("platform", json::Value::string(h->platform));
+  app.set("device", json::Value::string(h->device));
+  app.set("sdk_version", json::Value::string(h->sdk_version));
+  app.set("detail", json::Value::boolean(h->detail));
+  return app;
 }
 
 rn::InspectOptions inspect_options_from(const char* app_id, int metro_port,
@@ -613,6 +637,73 @@ char* mpi_inspect_stream_stop(void) {
     out.set("report", holder.stream->snapshot().to_json());
     out.set("running", json::Value::boolean(false));
     holder.stream.reset();
+    return out;
+  });
+}
+
+char* mpi_sdk_network_start(int port, const char* token) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& holder = sdk_network();
+    std::lock_guard<std::mutex> lock(holder.mu);
+    if (holder.listener != nullptr && holder.listener->running()) {
+      out.set("error", json::Value::string(
+          "the SDK listener is already running; stop it before starting "
+          "another"));
+      return out;
+    }
+    if (port < 0 || port > 65535) {
+      out.set("error", json::Value::string("the port must be 0 to 65535"));
+      return out;
+    }
+    auto listener = std::make_unique<sdk::NetworkInspect>();
+    std::string error;
+    if (!listener->start(static_cast<std::uint16_t>(port), safe(token), &error)) {
+      out.set("error", json::Value::string(error));
+      out.set("listening", json::Value::boolean(false));
+      return out;
+    }
+    holder.listener = std::move(listener);
+    out.set("listening", json::Value::boolean(true));
+    out.set("port", json::Value::integer(holder.listener->port()));
+    out.set("token", json::Value::string(holder.listener->token()));
+    out.set("adb_reverse", json::Value::string(holder.listener->adb_reverse_command()));
+    out.set("report", holder.listener->snapshot().to_json());
+    return out;
+  });
+}
+
+char* mpi_sdk_network_poll(void) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& holder = sdk_network();
+    std::lock_guard<std::mutex> lock(holder.mu);
+    if (holder.listener == nullptr) {
+      out.set("error", json::Value::string("the SDK listener is not running"));
+      out.set("running", json::Value::boolean(false));
+      return out;
+    }
+    out.set("running", json::Value::boolean(holder.listener->running()));
+    out.set("app", sdk_hello_json(*holder.listener));
+    out.set("report", holder.listener->snapshot().to_json());
+    return out;
+  });
+}
+
+char* mpi_sdk_network_stop(void) {
+  return guard([&] {
+    json::Value out = json::Value::object();
+    auto& holder = sdk_network();
+    std::lock_guard<std::mutex> lock(holder.mu);
+    if (holder.listener == nullptr) {
+      out.set("error", json::Value::string("the SDK listener is not running"));
+      return out;
+    }
+    holder.listener->stop();
+    out.set("app", sdk_hello_json(*holder.listener));
+    out.set("report", holder.listener->snapshot().to_json());
+    out.set("running", json::Value::boolean(false));
+    holder.listener.reset();
     return out;
   });
 }

@@ -15,7 +15,8 @@ add_executable(mpi
   command_browserstack.cpp
   command_intelligence.cpp
   command_mcp.cpp
-  command_sdk_bridge.cpp)
+  command_sdk_bridge.cpp
+  command_sdk_network.cpp)
 # mpi_core arrives through mpi_adapters, which links it PUBLIC.
 #
 # mpi_capi is linked for `mpi mcp` alone. The C ABI is the designated

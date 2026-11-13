@@ -232,6 +232,7 @@ mpi inspect --app <identifier> --seconds 15     # network calls, console output,
 mpi inspect --app <identifier> --detail         # plus request/response headers and bodies
 mpi inspect --app <identifier> --redux --redux-watch   # the store's slices, and every change to them
 mpi inspect --app <identifier> --device <id> --screenshot
+mpi sdk-network --port 47081 --token <token>    # a release build's requests, sent by the SDK's trackNetwork()
 ```
 
 ```bash

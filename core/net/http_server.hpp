@@ -74,6 +74,12 @@ class HttpServer {
   std::uint16_t port() const { return port_; }
   // The token every request must present.
   const std::string& token() const { return token_; }
+  // Replaces the generated token with one the caller keeps, for a client that
+  // cannot be told a new one each run: a release build has its endpoint and
+  // token built in. Refused (false) unless it is 16 to 128 characters of
+  // letters, digits, '-' or '_', so a weak or header-breaking value cannot
+  // become the only thing guarding the listener. Call before serve().
+  bool set_token(const std::string& token);
 
   // Serves until `cancel` is cancelled. Blocking.
   void serve(const CancellationToken& cancel);

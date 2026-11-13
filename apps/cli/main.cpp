@@ -86,6 +86,11 @@ COMMANDS
                                 See docs/intelligence.md.
   sdk-bridge                    Run the loopback host the optional in-app SDK
                                 reports to.
+  sdk-network                   Inspect a release build: receive the requests
+                                the SDK's trackNetwork() sends, and print them
+                                as `mpi inspect --detail` would. --port,
+                                --token (to keep one a build has built in),
+                                --duration-s, --out.
   mcp                           Serve captures to an AI tool over stdio, as a
                                 Model Context Protocol server (Cursor, Claude,
                                 Codex). Reads only, unless started with
@@ -233,6 +238,8 @@ bool needs_value(const std::string& flag) {
       "--redux-buffer",
       "--sample-hz",
       "--sdk-port",
+      "--port",
+      "--token",
       "--tick-ms",
       "--wait-for-app-s",
       "--search",
@@ -617,6 +624,8 @@ int main(int argc, char** argv) {
     return to_int(cmd_mcp(parsed.inv));
   } else if (cmd == "sdk-bridge") {
     code = cmd_sdk_bridge(parsed.inv);
+  } else if (cmd == "sdk-network") {
+    code = cmd_sdk_network(parsed.inv);
   } else if (cmd == "version") {
     std::cout << "mpi " << mpi::rules::engine_version() << " (ruleset "
               << mpi::rules::ruleset_version() << ")\n";
